@@ -1,20 +1,97 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-export default function App() {
+import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import HomeIcon from './src/components/HomeIcon';
+import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
+import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
+import MediaVaultScreen from './src/screens/MediaVaultScreen';
+import BookVaultScreen from './src/screens/BookVaultScreen';
+import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
+import LoveDatingScreen from './src/screens/LoveDatingScreen';
+import StoryBankScreen from './src/screens/StoryBankScreen';
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+// Knowledge Stack Navigator
+const KnowledgeStack = () => {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="KnowledgeHubMain" component={KnowledgeHubScreen} />
+      <Stack.Screen name="MindsetIdentity" component={MindsetIdentityScreen} />
+      <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
+      <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
+      <Stack.Screen name="BookVault" component={BookVaultScreen} />
+      <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
+      <Stack.Screen name="LoveDating" component={LoveDatingScreen} />
+      <Stack.Screen name="StoryBank" component={StoryBankScreen} />
+    </Stack.Navigator>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const App = (): React.JSX.Element => {
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <StatusBar style="auto" />
+        <Tab.Navigator
+          initialRouteName="Dashboard"
+          screenOptions={{
+            tabBarActiveTintColor: '#007AFF',
+            tabBarInactiveTintColor: '#8E8E93',
+            headerShown: false,
+          }}
+        >
+          <Tab.Screen
+            name="KnowledgeHub"
+            component={KnowledgeStack}
+            options={{
+              title: 'Knowledge Hub',
+              tabBarLabel: 'Knowledge',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="library-outline" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Dashboard"
+            component={DashboardScreen}
+            options={{
+              title: 'Dashboard',
+              tabBarLabel: 'Home',
+              headerShown: false,
+              tabBarIcon: ({ color, size }) => (
+                <HomeIcon size={size} color={color} />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Calendar"
+            component={CalendarScreen}
+            options={{
+              title: 'Calendar',
+              tabBarLabel: 'Calendar',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="calendar-outline" size={size} color={color} />
+              ),
+            }}
+          />
+        </Tab.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+};
+
+export default App;
