@@ -9,6 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
+import InboxScreen from './src/screens/InboxScreen';
+import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import HomeIcon from './src/components/HomeIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
@@ -20,6 +22,21 @@ import StoryBankScreen from './src/screens/StoryBankScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+// Dashboard Stack Navigator
+const DashboardStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="DashboardMain" component={DashboardScreen} />
+      <Stack.Screen name="Inbox" component={InboxScreen} />
+      <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
+    </Stack.Navigator>
+  );
+};
 
 // Knowledge Stack Navigator
 const KnowledgeStack = () => {
@@ -67,7 +84,7 @@ const App = (): React.JSX.Element => {
           />
           <Tab.Screen
             name="Dashboard"
-            component={DashboardScreen}
+            component={DashboardStack}
             options={{
               title: 'Dashboard',
               tabBarLabel: 'Home',

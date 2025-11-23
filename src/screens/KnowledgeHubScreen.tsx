@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F1EEE0', // Same as Dashboard
+    backgroundColor: '#F7F5F2', // Same as Dashboard
   },
   scrollContent: {
     paddingBottom: 40,

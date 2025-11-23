@@ -16,7 +16,13 @@ import PremiumStatsChart from '../components/PremiumStatsChart';
 
 type ChartVariable = 'sleep' | 'nutrition' | 'wellbeing' | null;
 
-const DashboardScreen = (): React.JSX.Element => {
+interface DashboardScreenProps {
+  navigation?: {
+    navigate: (screen: string) => void;
+  };
+}
+
+const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.Element => {
   // SafeArea insets for dynamic button positioning
   const insets = useSafeAreaInsets();
 
@@ -37,44 +43,60 @@ const DashboardScreen = (): React.JSX.Element => {
   // Streak count (placeholder - will be dynamic later)
   const [streakCount] = useState(0);
 
-  // Flippable insight card state
-  const [isInsightFlipped, setIsInsightFlipped] = useState(false);
-  const flipAnimation = useRef(new Animated.Value(0)).current;
-  const [hasNewMessages] = useState(true); // TODO: Make this dynamic based on actual messages
-
   // 24h timer state (hours since last 12:00 noon Europe/Berlin)
   const [timerHours, setTimerHours] = useState(0);
 
-  // Message navigation state
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
-
-  // Mock messages data (TODO: Replace with real data from API)
-  const messages = [
+  // Mock messages data (Frontend only - no backend integration)
+  const mockMessages = [
     {
       id: 1,
       subject: 'Weekly Progress Summary',
-      body: 'Great work this week! You completed 5 out of 7 daily check-ins and maintained a consistent sleep schedule. Keep up the momentum!',
+      body: 'Great work this week! You completed 5 out of 7 daily check-ins and maintained a consistent sleep schedule.',
+      sender: 'Life OS',
       date: '2 hours ago',
       isRead: false,
       type: 'summary',
     },
     {
       id: 2,
-      subject: 'Hydration Reminder',
-      body: "You've been doing well with your water intake, but today's goal hasn't been met yet. Remember to drink more water throughout the day!",
+      subject: 'Reflection Reminder',
+      body: "Don't forget to complete your weekly reflection. It's a great way to track your progress!",
+      sender: 'Life OS',
       date: '5 hours ago',
-      isRead: true,
+      isRead: false,
       type: 'reminder',
     },
     {
       id: 3,
       subject: 'New Insight Available',
-      body: 'Based on your tracking patterns, we noticed you perform best when you exercise in the morning. Consider scheduling workouts earlier in the day.',
+      body: 'Based on your tracking patterns, we noticed you perform best when you exercise in the morning.',
+      sender: 'Life OS',
       date: 'Yesterday',
       isRead: true,
       type: 'insight',
     },
+    {
+      id: 4,
+      subject: 'Streak Milestone',
+      body: 'Congratulations on maintaining your daily tracking streak for 7 days!',
+      sender: 'Life OS',
+      date: '2 days ago',
+      isRead: true,
+      type: 'achievement',
+    },
   ];
+
+  const unreadCount = mockMessages.filter(m => !m.isRead).length;
+  const newestMessage = mockMessages[0];
+
+  // Mock insight data (Frontend only)
+  const todaysInsight = {
+    title: 'Small steps every day lead to remarkable transformations',
+    preview: 'Building sustainable habits starts with consistency, not perfection. When you commit to showing up daily, even in small ways, you create momentum that compounds over time.',
+    fullContent: 'Building sustainable habits starts with consistency, not perfection. When you commit to showing up daily, even in small ways, you create momentum that compounds over time.\n\nResearch shows that it takes an average of 66 days to form a new habit. But the real magic happens when you stop focusing on the end goal and start celebrating the process itself.\n\nEvery time you complete your morning routine, track your meals, or take a moment to reflect, you\'re not just checking off a box—you\'re reinforcing your identity as someone who values growth and self-improvement.\n\nRemember: transformation isn\'t about dramatic overnight changes. It\'s about the small, consistent actions that, when stacked together, create the life you want to live.',
+    readTime: '3 min read',
+    category: 'Mindset',
+  };
 
   // Dynamic greeting based on time of day
   const getGreeting = (): string => {
@@ -175,30 +197,28 @@ const DashboardScreen = (): React.JSX.Element => {
     console.log('Navigate to Streak Details');
   };
 
+  const handleOpenInbox = (): void => {
+    if (navigation) {
+      navigation.navigate('Inbox');
+    } else {
+      console.log('Navigate to Inbox');
+    }
+  };
+
+  const handleOpenInsightDetail = (): void => {
+    if (navigation) {
+      navigation.navigate('InsightDetail');
+    } else {
+      console.log('Navigate to Insight Detail');
+    }
+  };
+
   const handleLegendPress = (variable: ChartVariable): void => {
     // Toggle behavior: tap same variable to return to all active
     if (activeVariable === variable) {
       setActiveVariable(null);
     } else {
       setActiveVariable(variable);
-    }
-  };
-
-  const handleFlipInsightCard = (): void => {
-    const toValue = isInsightFlipped ? 0 : 1;
-
-    Animated.spring(flipAnimation, {
-      toValue,
-      friction: 8,
-      tension: 10,
-      useNativeDriver: true,
-    }).start();
-
-    setIsInsightFlipped(!isInsightFlipped);
-
-    // Reset message selection when flipping back to front
-    if (isInsightFlipped) {
-      setSelectedMessage(null);
     }
   };
 
@@ -271,40 +291,6 @@ const DashboardScreen = (): React.JSX.Element => {
     extrapolate: 'clamp',
   });
 
-  // Flip animation interpolations
-  const frontRotation = flipAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
-  const backRotation = flipAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['180deg', '360deg'],
-  });
-
-  const frontOpacity = flipAnimation.interpolate({
-    inputRange: [0, 0.5, 0.5],
-    outputRange: [1, 1, 0],
-  });
-
-  const backOpacity = flipAnimation.interpolate({
-    inputRange: [0.5, 0.5, 1],
-    outputRange: [0, 1, 1],
-  });
-
-  // Get daily insight - placeholder for now, can be dynamic from API
-  const getDailyInsight = (): string => {
-    const insights = [
-      'Small steps every day lead to remarkable transformations.',
-      'Your consistency is building the future you desire.',
-      'Progress, not perfection, is the goal.',
-      'Every moment is a fresh beginning.',
-      'The best time to start was yesterday. The next best time is now.',
-    ];
-    // For now, return a fixed insight. Later: rotate daily or fetch from API
-    return insights[0];
-  };
-
   // Mock data for 7-day statistics (ready for API integration)
   const weekStatistics = {
     sleep: [5, 6, 4, 5, 6, 7, 5], // Range 3-7 for realistic sleep variation
@@ -332,12 +318,26 @@ const DashboardScreen = (): React.JSX.Element => {
       >
         {/* Header Section (SCROLLABLE) */}
         <View style={styles.header}>
-          {/* Button row (will be overlapped by fixed buttons) */}
+          {/* Button row */}
           <View style={styles.headerContent}>
-            {/* Spacer for streak button */}
-            <View style={{ width: 64, height: 40 }} />
-            {/* Spacer for profile button */}
-            <View style={{ width: 40, height: 40 }} />
+            {/* Left: Streak Button */}
+            <TouchableOpacity
+              style={styles.streakButton}
+              onPress={handleStreak}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="flame" size={18} color="#F59E0B" />
+              <Text style={styles.streakNumber}>{streakCount}</Text>
+            </TouchableOpacity>
+
+            {/* Right: Profile Button */}
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={handleProfile}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
+            </TouchableOpacity>
           </View>
 
           {/* Greeting (centered, as in original) */}
@@ -398,153 +398,43 @@ const DashboardScreen = (): React.JSX.Element => {
             </TouchableOpacity>
           </View>
 
-          {/* Daily Insight Card - Flippable Design */}
-          <View style={styles.insightContainer}>
-            {/* Front Side - Insight */}
-            <Animated.View
-              style={[
-                styles.flipCardSide,
-                {
-                  transform: [{ rotateY: frontRotation }],
-                  opacity: frontOpacity,
-                },
-              ]}
+          {/* Today's Insight Section */}
+          <View style={styles.insightSection}>
+            <LinearGradient
+              colors={['#FFFBEB', '#FEF3C7', '#FECACA']}
+              style={styles.insightSectionCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <LinearGradient
-                colors={['#FFFBEB', '#FEF3C7', '#FECACA']}
-                style={styles.insightCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              {/* Header */}
+              <View style={styles.insightSectionHeader}>
+                <Text style={styles.insightSectionTitle}>Today's Insight</Text>
+              </View>
+
+              {/* Insight Preview Card */}
+              <TouchableOpacity
+                style={styles.insightPreview}
+                onPress={handleOpenInsightDetail}
+                activeOpacity={0.8}
               >
-                {/* Mail Icon Button - Top Right */}
-                <TouchableOpacity
-                  style={styles.mailIconButton}
-                  onPress={handleFlipInsightCard}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="mail-outline" size={22} color="#92400E" />
-                  {/* Blue notification dot */}
-                  {hasNewMessages && <View style={styles.newMessageDot} />}
-                </TouchableOpacity>
-
-                {/* Content */}
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightTitle}>TODAY'S INSIGHT</Text>
-                  <Text style={styles.insightQuote}>{getDailyInsight()}</Text>
+                <View style={styles.insightPreviewContent}>
+                  <Text style={styles.insightPreviewTitle} numberOfLines={2}>
+                    {todaysInsight.title}
+                  </Text>
+                  <Text style={styles.insightPreviewBody} numberOfLines={2}>
+                    {todaysInsight.preview}
+                  </Text>
+                  <Text style={styles.insightPreviewReadTime}>{todaysInsight.readTime}</Text>
                 </View>
+                <Ionicons name="chevron-forward" size={20} color="#D97706" />
+              </TouchableOpacity>
 
-                {/* 24h Timer - Bottom Right */}
-                <View style={styles.timerIndicator}>
-                  <Ionicons name="hourglass-outline" size={16} color="#92400E" />
-                  <Text style={styles.timerText}>{timerHours}h</Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Back Side - Messages */}
-            <Animated.View
-              style={[
-                styles.flipCardSide,
-                styles.flipCardBack,
-                {
-                  transform: [{ rotateY: backRotation }],
-                  opacity: backOpacity,
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['#EEF2FF', '#E0E7FF', '#DDD6FE']}
-                style={styles.insightCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Flip Back Button - Top Right (always visible) */}
-                <TouchableOpacity
-                  style={styles.flipBackButton}
-                  onPress={handleFlipInsightCard}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="arrow-back" size={22} color="#4C1D95" />
-                </TouchableOpacity>
-
-                {selectedMessage === null ? (
-                  /* LEVEL 1: Message List View */
-                  <View style={styles.messageListContainer}>
-                    {/* Header Row */}
-                    <View style={styles.messageListHeader}>
-                      <Text style={styles.messageListTitle}>Messages</Text>
-                      <View style={styles.messageCount}>
-                        <Text style={styles.messageCountText}>{messages.length}</Text>
-                      </View>
-                    </View>
-
-                    {/* Scrollable Message List */}
-                    <ScrollView
-                      style={styles.messageScrollView}
-                      contentContainerStyle={styles.messageScrollContent}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      {messages.map((message) => (
-                        <TouchableOpacity
-                          key={message.id}
-                          style={styles.messageListItem}
-                          onPress={() => setSelectedMessage(message)}
-                          activeOpacity={0.8}
-                        >
-                          <View style={styles.messageItemContent}>
-                            <View style={styles.messageItemHeader}>
-                              <Text
-                                style={[
-                                  styles.messageSubject,
-                                  !message.isRead && styles.messageSubjectUnread,
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {message.subject}
-                              </Text>
-                              {!message.isRead && <View style={styles.unreadDot} />}
-                            </View>
-                            <Text style={styles.messageDate} numberOfLines={1}>
-                              {message.date}
-                            </Text>
-                          </View>
-                          <Ionicons name="chevron-forward" size={16} color="#A78BFA" />
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                ) : (
-                  /* LEVEL 2: Individual Message View */
-                  <View style={styles.messageDetailContainer}>
-                    {/* Back to List Button - Top Left */}
-                    <TouchableOpacity
-                      style={styles.backToListButton}
-                      onPress={() => setSelectedMessage(null)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="chevron-back" size={20} color="#4C1D95" />
-                      <Text style={styles.backToListText}>Back</Text>
-                    </TouchableOpacity>
-
-                    {/* Message Content */}
-                    <ScrollView
-                      style={styles.messageDetailScrollView}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      <Text style={styles.messageDetailSubject}>
-                        {selectedMessage.subject}
-                      </Text>
-                      <Text style={styles.messageDetailDate}>
-                        {selectedMessage.date}
-                      </Text>
-                      <Text style={styles.messageDetailBody}>
-                        {selectedMessage.body}
-                      </Text>
-                    </ScrollView>
-                  </View>
-                )}
-              </LinearGradient>
-            </Animated.View>
+              {/* Timer Indicator - Original Design (Bottom Right) */}
+              <View style={styles.timerIndicator}>
+                <Ionicons name="hourglass-outline" size={16} color="#92400E" />
+                <Text style={styles.timerText}>{timerHours}h</Text>
+              </View>
+            </LinearGradient>
           </View>
 
           {/* Statistics Preview Card - Light Mode */}
@@ -796,48 +686,70 @@ const DashboardScreen = (): React.JSX.Element => {
           </TouchableOpacity>
         </View>
 
+        {/* Messages Section */}
+        <View style={styles.messagesSection}>
+          <LinearGradient
+            colors={['#EEF2FF', '#E0E7FF', '#DDD6FE']}
+            style={styles.messagesCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {/* Header */}
+            <View style={styles.messagesHeader}>
+              <Text style={styles.messagesTitle}>Messages</Text>
+              <Text style={styles.messagesSubtitle}>Stay updated with insights</Text>
+            </View>
+
+            {/* Newest Message Preview */}
+            <TouchableOpacity
+              style={styles.messagePreview}
+              onPress={handleOpenInbox}
+              activeOpacity={0.8}
+            >
+              <View style={styles.messagePreviewContent}>
+                <View style={styles.messagePreviewHeader}>
+                  <Text style={styles.messagePreviewSubject} numberOfLines={1}>
+                    {newestMessage.subject}
+                  </Text>
+                  {!newestMessage.isRead && <View style={styles.unreadDot} />}
+                </View>
+                <Text style={styles.messagePreviewBody} numberOfLines={2}>
+                  {newestMessage.body}
+                </Text>
+                <Text style={styles.messagePreviewDate}>{newestMessage.date}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6366F1" />
+            </TouchableOpacity>
+
+            {/* Unread Counter or Empty State */}
+            {unreadCount > 1 ? (
+              <View style={styles.unreadCounter}>
+                <Ionicons name="mail-unread-outline" size={16} color="#6366F1" />
+                <Text style={styles.unreadCounterText}>
+                  +{unreadCount - 1} more unread {unreadCount - 1 === 1 ? 'message' : 'messages'}
+                </Text>
+              </View>
+            ) : unreadCount === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>You're all caught up ✨</Text>
+              </View>
+            ) : null}
+
+            {/* Open Inbox Button */}
+            <TouchableOpacity
+              style={styles.inboxButton}
+              onPress={handleOpenInbox}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.inboxButtonText}>Open Inbox</Text>
+              <Ionicons name="arrow-forward" size={16} color="#6366F1" />
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </Animated.ScrollView>
-
-      {/* LAYER 2: Fixed Button HUD (rendered on top) */}
-      <Animated.View
-        style={[
-          styles.fixedButtonHUD,
-          {
-            shadowOpacity: buttonShadowOpacity,
-          },
-        ]}
-        pointerEvents="box-none"
-      >
-        {/* Fixed Buttons - Dynamic positioning based on SafeArea */}
-        <View
-          style={[
-            styles.fixedButtonsRow,
-            { top: insets.top + 8 } // 8px below SafeArea top (status bar)
-          ]}
-          pointerEvents="box-none"
-        >
-          {/* Left: Streak Button */}
-          <TouchableOpacity
-            style={styles.streakButton}
-            onPress={handleStreak}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="flame" size={18} color="#F59E0B" />
-            <Text style={styles.streakNumber}>{streakCount}</Text>
-          </TouchableOpacity>
-
-          {/* Right: Profile Button */}
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={handleProfile}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -849,7 +761,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F1EEE0',
+    backgroundColor: '#F7F5F2',
   },
 
   // LAYER 2: Fixed Button HUD Styles
@@ -881,7 +793,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 12,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
@@ -900,7 +812,7 @@ const styles = StyleSheet.create({
   },
   greetingContainer: {
     position: 'absolute',
-    top: 16,
+    top: 12,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -908,15 +820,15 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   greeting: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.3,
-    lineHeight: 27,
+    lineHeight: 24,
   },
   date: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: '#6B7280',
     textAlign: 'center',
@@ -1071,66 +983,75 @@ const styles = StyleSheet.create({
   cardTouchable: {
     marginBottom: 16,
   },
-  insightContainer: {
+
+  // Today's Insight Section Styles (Redesigned)
+  insightSection: {
     marginBottom: 20,
-    height: 260,
   },
-  flipCardSide: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backfaceVisibility: 'hidden',
+  insightSectionCard: {
     borderRadius: 20,
-    overflow: 'hidden',
-  },
-  flipCardBack: {
-    position: 'absolute',
-  },
-  insightCard: {
-    height: 260,
-    borderRadius: 20,
-    paddingHorizontal: 28,
-    paddingVertical: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 24,
     shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 6,
   },
-  mailIconButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
+  insightSectionHeader: {
+    marginBottom: 16,
   },
-  newMessageDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#3B82F6',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+  insightSectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+  },
+  insightPreview: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  insightPreviewContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  insightPreviewTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  insightPreviewBody: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#1F2937',
+    lineHeight: 18,
+    letterSpacing: -0.1,
+    marginBottom: 10,
+  },
+  insightPreviewReadTime: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#D97706',
+    opacity: 0.65,
   },
   timerIndicator: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    top: 22,
+    right: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -1149,195 +1070,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400E',
     letterSpacing: -0.2,
-  },
-  flipBackButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
-  },
-
-  // Message List View Styles (Level 1)
-  messageListContainer: {
-    flex: 1,
-    width: '100%',
-    paddingHorizontal: 20,
-  },
-  messageListHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingLeft: 0,
-    paddingRight: 0,
-    marginTop: -16,
-    height: 44,
-    marginBottom: 12,
-    gap: 8,
-  },
-  messageListTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4C1D95',
-    letterSpacing: -0.4,
-    lineHeight: 24,
-  },
-  messageCount: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    minWidth: 28,
-    alignItems: 'center',
-  },
-  messageCountText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6366F1',
-  },
-  messageScrollView: {
-    flex: 1,
-  },
-  messageScrollContent: {
-    paddingHorizontal: 0,
-    paddingBottom: 8,
-  },
-  messageListItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#5B21B6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  messageItemContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  messageItemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  messageSubject: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#3730A3',
-    flex: 1,
-    letterSpacing: -0.3,
-    lineHeight: 20,
-  },
-  messageSubjectUnread: {
-    fontWeight: '700',
-    color: '#4C1D95',
-  },
-  messageDate: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#8B5CF6',
-    opacity: 0.65,
-  },
-  unreadDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#6366F1',
-    marginLeft: 8,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
-  },
-
-  // Message Detail View Styles (Level 2)
-  messageDetailContainer: {
-    flex: 1,
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  backToListButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    marginBottom: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    paddingRight: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 12,
-  },
-  backToListText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4C1D95',
-    marginLeft: 2,
-  },
-  messageDetailScrollView: {
-    flex: 1,
-  },
-  messageDetailSubject: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#4C1D95',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-    lineHeight: 24,
-  },
-  messageDetailDate: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#7C3AED',
-    opacity: 0.7,
-    marginBottom: 10,
-  },
-  messageDetailBody: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#5B21B6',
-    lineHeight: 22,
-    letterSpacing: -0.1,
-  },
-  insightContent: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  insightTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#92400E',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  insightQuote: {
-    fontSize: 19,
-    fontWeight: '400',
-    color: '#78350F',
-    lineHeight: 28,
-    textAlign: 'center',
-    maxWidth: '90%',
   },
   statisticsPreviewCard: {
     borderRadius: 20,
@@ -1512,6 +1244,141 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+
+  // Messages Section Styles
+  messagesSection: {
+    marginBottom: 20,
+  },
+  messagesCard: {
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  messagesHeader: {
+    marginBottom: 16,
+  },
+  messagesTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#4C1D95',
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  messagesSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#7C3AED',
+    opacity: 0.7,
+  },
+  messagePreview: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#5B21B6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  messagePreviewContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  messagePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  messagePreviewSubject: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#4C1D95',
+    flex: 1,
+    letterSpacing: -0.3,
+    lineHeight: 20,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#6366F1',
+    marginLeft: 8,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 3,
+  },
+  messagePreviewBody: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#5B21B6',
+    lineHeight: 18,
+    letterSpacing: -0.1,
+    marginBottom: 6,
+  },
+  messagePreviewDate: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8B5CF6',
+    opacity: 0.65,
+  },
+  unreadCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 6,
+  },
+  unreadCounterText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  emptyState: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#7C3AED',
+    opacity: 0.8,
+  },
+  inboxButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inboxButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6366F1',
+    letterSpacing: -0.1,
   },
 });
 
