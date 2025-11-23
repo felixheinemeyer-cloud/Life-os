@@ -29,13 +29,13 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   // State for interactive chart legend - Sleep is active by default
   const [activeVariable, setActiveVariable] = useState<ChartVariable>('sleep');
 
-  // State for expandable recap cards
-  const [isGoodExpanded, setIsGoodExpanded] = useState(false);
-  const [isImprovableExpanded, setIsImprovableExpanded] = useState(false);
+  // State for expandable focus cards
+  const [isWeekExpanded, setIsWeekExpanded] = useState(false);
+  const [isMonthExpanded, setIsMonthExpanded] = useState(false);
 
   // Animation values for card glow
-  const goodGlowAnim = useRef(new Animated.Value(0)).current;
-  const improvableGlowAnim = useRef(new Animated.Value(0)).current;
+  const weekGlowAnim = useRef(new Animated.Value(0)).current;
+  const monthGlowAnim = useRef(new Animated.Value(0)).current;
 
   // Scroll tracking for blur/fade effect
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -222,64 +222,64 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
-  // Toggle Good card with glow animation
-  const toggleGood = (): void => {
-    const toValue = isGoodExpanded ? 0 : 1;
+  // Toggle Week card with glow animation
+  const toggleWeek = (): void => {
+    const toValue = isWeekExpanded ? 0 : 1;
 
-    Animated.timing(goodGlowAnim, {
+    Animated.timing(weekGlowAnim, {
       toValue,
-      duration: isGoodExpanded ? 250 : 300,
-      easing: isGoodExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
-      delay: isGoodExpanded ? 0 : 50,
+      duration: isWeekExpanded ? 250 : 300,
+      easing: isWeekExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
+      delay: isWeekExpanded ? 0 : 50,
       useNativeDriver: false,
     }).start();
 
-    setIsGoodExpanded(!isGoodExpanded);
+    setIsWeekExpanded(!isWeekExpanded);
   };
 
-  // Toggle Improvable card with glow animation
-  const toggleImprovable = (): void => {
-    const toValue = isImprovableExpanded ? 0 : 1;
+  // Toggle Month card with glow animation
+  const toggleMonth = (): void => {
+    const toValue = isMonthExpanded ? 0 : 1;
 
-    Animated.timing(improvableGlowAnim, {
+    Animated.timing(monthGlowAnim, {
       toValue,
-      duration: isImprovableExpanded ? 250 : 300,
-      easing: isImprovableExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
-      delay: isImprovableExpanded ? 0 : 50,
+      duration: isMonthExpanded ? 250 : 300,
+      easing: isMonthExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
+      delay: isMonthExpanded ? 0 : 50,
       useNativeDriver: false,
     }).start();
 
-    setIsImprovableExpanded(!isImprovableExpanded);
+    setIsMonthExpanded(!isMonthExpanded);
   };
 
-  // Interpolated shadow values for Good card (Variation A: Soft & Subtle)
-  const goodShadowOpacity = goodGlowAnim.interpolate({
+  // Interpolated shadow values for Week card (Variation A: Soft & Subtle)
+  const weekShadowOpacity = weekGlowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.04, 0.18],
+    outputRange: [0.02, 0.10],
   });
 
-  const goodShadowRadius = goodGlowAnim.interpolate({
+  const weekShadowRadius = weekGlowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [8, 20],
+    outputRange: [4, 12],
   });
 
-  const goodShadowOffsetY = goodGlowAnim.interpolate({
+  const weekShadowOffsetY = weekGlowAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [2, 4],
   });
 
-  // Interpolated shadow values for Improvable card (Variation A: Soft & Subtle)
-  const improvableShadowOpacity = improvableGlowAnim.interpolate({
+  // Interpolated shadow values for Month card (Variation A: Soft & Subtle)
+  const monthShadowOpacity = monthGlowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.04, 0.18],
+    outputRange: [0.02, 0.10],
   });
 
-  const improvableShadowRadius = improvableGlowAnim.interpolate({
+  const monthShadowRadius = monthGlowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [8, 20],
+    outputRange: [4, 12],
   });
 
-  const improvableShadowOffsetY = improvableGlowAnim.interpolate({
+  const monthShadowOffsetY = monthGlowAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [2, 4],
   });
@@ -298,10 +298,10 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     wellbeing: [7, 6, 7, 8, 7, 8, 9],
   };
 
-  // Recap content texts
-  const RECAP_CONTENT = {
-    good: "I did all my routines. If I didn't have time for the full one, I at least did the most important part of my routine. I went to the gym 4 days a week and drank enough water. All in all great week.",
-    improvable: "The week went really well but I should have performed better. On some days I scrolled a little too much in the evening. This badly influenced my sleep and my performance during the day. Next week will be dominated.",
+  // Focus content texts
+  const FOCUS_CONTENT = {
+    week: "Complete all daily routines, maintain consistent sleep schedule, and hit gym targets 4x. Focus on deep work sessions and minimize evening screen time for better recovery.",
+    month: "Establish sustainable habits, review and adjust quarterly goals, and build momentum in key focus areas. Prioritize long-term health metrics and professional development milestones.",
   };
 
   return (
@@ -408,7 +408,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             >
               {/* Header */}
               <View style={styles.insightSectionHeader}>
-                <Text style={styles.insightSectionTitle}>Today's Insight</Text>
+                <Text style={styles.insightSectionTitle}>Daily Insight</Text>
               </View>
 
               {/* Insight Preview Card */}
@@ -417,14 +417,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 onPress={handleOpenInsightDetail}
                 activeOpacity={0.8}
               >
+                <Text style={styles.insightPreviewReadTime}>{todaysInsight.readTime}</Text>
                 <View style={styles.insightPreviewContent}>
-                  <Text style={styles.insightPreviewTitle} numberOfLines={2}>
+                  <Text style={styles.insightPreviewTitle} numberOfLines={3}>
                     {todaysInsight.title}
                   </Text>
-                  <Text style={styles.insightPreviewBody} numberOfLines={2}>
-                    {todaysInsight.preview}
-                  </Text>
-                  <Text style={styles.insightPreviewReadTime}>{todaysInsight.readTime}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#D97706" />
               </TouchableOpacity>
@@ -444,7 +441,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               <Text style={styles.statsTitle}>Last 7 Days</Text>
               <TouchableOpacity onPress={handleStatistics} style={styles.seeAllButton}>
                 <Text style={styles.seeAllLink}>See All</Text>
-                <Ionicons name="chevron-forward" size={14} color="#3B82F6" />
+                <Ionicons name="chevron-forward" size={16} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
@@ -570,30 +567,31 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
           </View>
         </View>
 
-        {/* Last Week's Recap Section - Premium Design */}
+        {/* Focus Section - Premium Design */}
         <View style={styles.recapSection}>
-          {/* Section Header */}
-          <Text style={styles.recapTitle}>Last week's recap</Text>
+          <View style={styles.recapOuterCard}>
+            {/* Section Header */}
+            <Text style={styles.recapTitle}>Focus</Text>
 
-          {/* Good Container - Premium Gradient Card */}
+            {/* Week Container - Premium Gradient Card */}
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={toggleGood}
+            onPress={toggleWeek}
             style={styles.recapCardTouchable}
           >
             <Animated.View
               style={[
                 styles.recapCardShadow,
                 {
-                  shadowOpacity: goodShadowOpacity,
-                  shadowRadius: goodShadowRadius,
-                  shadowColor: isGoodExpanded ? '#10B981' : '#000',
-                  shadowOffset: { width: 0, height: goodShadowOffsetY },
+                  shadowOpacity: weekShadowOpacity,
+                  shadowRadius: weekShadowRadius,
+                  shadowColor: isWeekExpanded ? '#3B82F6' : '#000',
+                  shadowOffset: { width: 0, height: weekShadowOffsetY },
                 },
               ]}
             >
               <LinearGradient
-                colors={['#ECFDF5', 'rgba(236, 253, 245, 0.4)', '#FFFFFF']} // Gradient fades from green (left) to white (right)
+                colors={['#DBEAFE', 'rgba(219, 234, 254, 0.8)', 'rgba(239, 246, 255, 0.9)']} // Gradient fades from blue (left) to light blue (right)
                 locations={[0, 0.5, 1]}
                 style={styles.recapCard}
                 start={{ x: 0, y: 0.5 }} // Horizontal gradient (left to right)
@@ -601,54 +599,52 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
-                  <View style={[styles.recapIconCircle, styles.goodIconCircle]}>
-                    <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                  </View>
-                  <Text style={styles.goodLabel}>Good</Text>
+                  <Text style={styles.weekLabel}>Week</Text>
                 </View>
 
                 {/* Body Text */}
                 <Text
                   style={styles.recapText}
-                  numberOfLines={isGoodExpanded ? undefined : 2}
+                  numberOfLines={isWeekExpanded ? undefined : 2}
                 >
-                  {RECAP_CONTENT.good}
+                  {FOCUS_CONTENT.week}
                 </Text>
 
-                {/* View More Button - Styled Chip */}
+                {/* View More Button - Minimal Text Style */}
                 <View style={styles.viewMoreButton}>
-                  <Text style={styles.viewMoreButtonText}>
-                    {isGoodExpanded ? 'View Less' : 'View More'}
+                  <Text style={[styles.viewMoreButtonText, styles.weekButtonText]}>
+                    {isWeekExpanded ? 'Show less' : 'Read more'}
                   </Text>
                   <Ionicons
-                    name={isGoodExpanded ? 'chevron-up' : 'chevron-down'}
+                    name={isWeekExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#3B82F6" // Use same blue as "See All" button
+                    color="#3B82F6"
+                    style={styles.viewMoreArrow}
                   />
                 </View>
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
 
-          {/* Improvable Container - Premium Gradient Card */}
+          {/* Month Container - Premium Gradient Card */}
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={toggleImprovable}
+            onPress={toggleMonth}
             style={styles.recapCardTouchable}
           >
             <Animated.View
               style={[
                 styles.recapCardShadow,
                 {
-                  shadowOpacity: improvableShadowOpacity,
-                  shadowRadius: improvableShadowRadius,
-                  shadowColor: isImprovableExpanded ? '#F59E0B' : '#000',
-                  shadowOffset: { width: 0, height: improvableShadowOffsetY },
+                  shadowOpacity: monthShadowOpacity,
+                  shadowRadius: monthShadowRadius,
+                  shadowColor: isMonthExpanded ? '#8B5CF6' : '#000',
+                  shadowOffset: { width: 0, height: monthShadowOffsetY },
                 },
               ]}
             >
               <LinearGradient
-                colors={['#FFFBEB', 'rgba(255, 251, 235, 0.4)', '#FFFFFF']} // Gradient fades from amber (left) to white (right)
+                colors={['#EDE9FE', 'rgba(237, 233, 254, 0.8)', 'rgba(245, 243, 255, 0.9)']} // Gradient fades from purple (left) to light purple (right)
                 locations={[0, 0.5, 1]}
                 style={styles.recapCard}
                 start={{ x: 0, y: 0.5 }} // Horizontal gradient (left to right)
@@ -656,34 +652,33 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
-                  <View style={[styles.recapIconCircle, styles.improvableIconCircle]}>
-                    <Ionicons name="arrow-up-circle" size={18} color="#D97706" />
-                  </View>
-                  <Text style={styles.improvableLabel}>Improvable</Text>
+                  <Text style={styles.monthLabel}>Month</Text>
                 </View>
 
                 {/* Body Text */}
                 <Text
                   style={styles.recapText}
-                  numberOfLines={isImprovableExpanded ? undefined : 2}
+                  numberOfLines={isMonthExpanded ? undefined : 2}
                 >
-                  {RECAP_CONTENT.improvable}
+                  {FOCUS_CONTENT.month}
                 </Text>
 
-                {/* View More Button - Styled Chip */}
+                {/* View More Button - Minimal Text Style */}
                 <View style={styles.viewMoreButton}>
-                  <Text style={styles.viewMoreButtonText}>
-                    {isImprovableExpanded ? 'View Less' : 'View More'}
+                  <Text style={[styles.viewMoreButtonText, styles.monthButtonText]}>
+                    {isMonthExpanded ? 'Show less' : 'Read more'}
                   </Text>
                   <Ionicons
-                    name={isImprovableExpanded ? 'chevron-up' : 'chevron-down'}
+                    name={isMonthExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#3B82F6" // Use same blue as "See All" button
+                    color="#8B5CF6"
+                    style={styles.viewMoreArrow}
                   />
                 </View>
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
+          </View>
         </View>
 
         {/* Messages Section */}
@@ -761,7 +756,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // LAYER 2: Fixed Button HUD Styles
@@ -876,18 +871,18 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     paddingHorizontal: 16, // Distance from screen edges to cards (matches Knowledge Hub)
-    marginTop: 24,
+    marginTop: 16,
   },
   trackingRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     marginBottom: 16,
   },
   trackingCardTouchable: {
     flex: 1,
   },
   trackingCard: {
-    height: 190,
+    aspectRatio: 1,
     borderRadius: 16,
     padding: 20,
     justifyContent: 'center',
@@ -909,8 +904,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     shadowColor: '#FCD34D',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   trackingIconInnerCircle: {
     width: 82,
@@ -986,7 +981,7 @@ const styles = StyleSheet.create({
 
   // Today's Insight Section Styles (Redesigned)
   insightSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   insightSectionCard: {
     borderRadius: 20,
@@ -1010,6 +1005,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 14,
     padding: 16,
+    minHeight: 130,
     marginBottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1027,12 +1023,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   insightPreviewTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#1F2937',
     letterSpacing: -0.3,
-    lineHeight: 20,
-    marginBottom: 10,
+    lineHeight: 22,
+    paddingRight: 70,
   },
   insightPreviewBody: {
     fontSize: 13,
@@ -1043,6 +1039,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   insightPreviewReadTime: {
+    position: 'absolute',
+    bottom: 16,
+    right: 24,
     fontSize: 12,
     fontWeight: '500',
     color: '#D97706',
@@ -1074,7 +1073,7 @@ const styles = StyleSheet.create({
   statisticsPreviewCard: {
     borderRadius: 20,
     padding: 24,
-    marginBottom: 20,
+    marginBottom: 0,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
@@ -1099,14 +1098,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   seeAllLink: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#3B82F6',
-    marginRight: 2,
+    color: '#4B5563',
+    marginRight: 3,
+    letterSpacing: -0.1,
   },
   statsLegend: {
     flexDirection: 'row',
@@ -1149,7 +1156,19 @@ const styles = StyleSheet.create({
   // Recap Section - Premium Design
   recapSection: {
     paddingHorizontal: 16, // Distance from screen edges to recap cards (matches Knowledge Hub)
-    marginTop: 32,
+    marginTop: 16,
+  },
+  recapOuterCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 32,
+    elevation: 12,
   },
   recapTitle: {
     fontSize: 20,
@@ -1166,9 +1185,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   recapCard: {
     // Gradient card container
@@ -1195,22 +1214,28 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  goodIconCircle: {
+  weekIconCircle: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
-  improvableIconCircle: {
+  monthIconCircle: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
-  goodLabel: {
+  focusNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+  },
+  weekLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#059669',
+    color: '#1F2937',
     letterSpacing: -0.2,
   },
-  improvableLabel: {
+  monthLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#D97706',
+    color: '#1F2937',
     letterSpacing: -0.2,
   },
   recapText: {
@@ -1223,24 +1248,22 @@ const styles = StyleSheet.create({
   viewMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
+    alignSelf: 'flex-start',
+    marginTop: 14,
   },
   viewMoreButtonText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#3B82F6', // Use same blue as "See All" button
-    marginRight: 4,
-    letterSpacing: -0.1,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  viewMoreArrow: {
+    marginLeft: 4,
+  },
+  weekButtonText: {
+    color: '#3B82F6',
+  },
+  monthButtonText: {
+    color: '#8B5CF6',
   },
   bottomSpacer: {
     height: 40,
@@ -1248,6 +1271,8 @@ const styles = StyleSheet.create({
 
   // Messages Section Styles
   messagesSection: {
+    paddingHorizontal: 16,
+    marginTop: 32,
     marginBottom: 20,
   },
   messagesCard: {
