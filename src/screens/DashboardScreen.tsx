@@ -173,8 +173,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   }, []);
 
   const handleMorningTracking = (): void => {
-    // TODO: Navigate to morning tracking screen
-    console.log('Navigate to Morning Tracking');
+    if (navigation) {
+      navigation.navigate('MorningTracking');
+    } else {
+      console.log('Navigate to Morning Tracking');
+    }
   };
 
   const handleEveningTracking = (): void => {

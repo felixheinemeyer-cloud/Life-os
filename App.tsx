@@ -11,6 +11,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
+import MorningTrackingScreen from './src/screens/MorningTrackingScreen';
 import HomeIcon from './src/components/HomeIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
@@ -34,6 +35,7 @@ const DashboardStack = () => {
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
       <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
+      <Stack.Screen name="MorningTracking" component={MorningTrackingScreen} />
     </Stack.Navigator>
   );
 };
