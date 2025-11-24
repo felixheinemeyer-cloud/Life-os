@@ -19,6 +19,7 @@ type VaultItem = {
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
   gradientColors: string[];
+  iconColor: string;
   route: string;
   itemCount: number;
 };
@@ -38,6 +39,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Beliefs, rules & affirmations',
       icon: 'diamond',
       gradientColors: ['#F3E8FF', '#E9D5FF', '#D8B4FE'],
+      iconColor: '#A855F7',
       route: 'MindsetIdentity',
       itemCount: 12,
     },
@@ -47,6 +49,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Notes, concepts & frameworks',
       icon: 'bulb',
       gradientColors: ['#E0E7FF', '#C7D2FE', '#A5B4FC'],
+      iconColor: '#6366F1',
       route: 'KnowledgeVault',
       itemCount: 36,
     },
@@ -56,6 +59,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Podcasts, videos & articles',
       icon: 'play-circle',
       gradientColors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
+      iconColor: '#EC4899',
       route: 'MediaVault',
       itemCount: 42,
     },
@@ -65,6 +69,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Summaries & highlights',
       icon: 'book',
       gradientColors: ['#FEF3C7', '#FDE68A', '#FCD34D'],
+      iconColor: '#F59E0B',
       route: 'BookVault',
       itemCount: 18,
     },
@@ -74,6 +79,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Relationships & network',
       icon: 'people',
       gradientColors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
+      iconColor: '#3B82F6',
       route: 'PeopleCRM',
       itemCount: 24,
     },
@@ -83,6 +89,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Dates & romantic insights',
       icon: 'heart',
       gradientColors: ['#FFE4E6', '#FECDD3', '#FDA4AF'],
+      iconColor: '#F43F5E',
       route: 'LoveDating',
       itemCount: 8,
     },
@@ -92,6 +99,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       subtitle: 'Personal stories & anecdotes',
       icon: 'bookmark',
       gradientColors: ['#ECFCCB', '#D9F99D', '#BEF264'],
+      iconColor: '#84CC16',
       route: 'StoryBank',
       itemCount: 15,
     },
@@ -176,16 +184,18 @@ const VaultCard: React.FC<{
           { transform: [{ scale: scaleAnim }] },
         ]}
       >
-        <LinearGradient
-          colors={vault.gradientColors as [string, string, ...string[]]}
-          style={styles.vaultCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
+        <View style={styles.vaultCard}>
           {/* Icon */}
           <View style={styles.vaultIconContainer}>
-            <View style={styles.vaultIconCircle}>
-              <Ionicons name={vault.icon} size={28} color="#1F2937" />
+            <View style={[
+              styles.vaultIconCircle,
+              {
+                backgroundColor: `${vault.iconColor}26`,
+                borderWidth: 1.5,
+                borderColor: `${vault.iconColor}33`
+              }
+            ]}>
+              <Ionicons name={vault.icon} size={24} color={vault.iconColor} />
             </View>
           </View>
 
@@ -203,7 +213,7 @@ const VaultCard: React.FC<{
           <View style={styles.vaultChevron}>
             <Ionicons name="chevron-forward" size={16} color="#6B7280" />
           </View>
-        </LinearGradient>
+        </View>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -226,8 +236,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 24,
+    paddingTop: 12,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
     shadowColor: '#000',
@@ -237,21 +247,21 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#6B7280',
   },
 
   // Vaults Grid
   vaultsSection: {
-    marginTop: 20,
+    marginTop: 16,
     paddingHorizontal: 16, // Distance from screen edges to vault cards
   },
   vaultsGrid: {
@@ -261,15 +271,17 @@ const styles = StyleSheet.create({
   },
   vaultCardTouchable: {
     width: '48%',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   vaultCardWrapper: {
     width: '100%',
   },
   vaultCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
-    minHeight: 160,
+    paddingHorizontal: 15,
+    paddingVertical: 16,
+    minHeight: 140,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -280,13 +292,12 @@ const styles = StyleSheet.create({
 
   // Vault Card Content
   vaultIconContainer: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   vaultIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -316,12 +327,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 14,
     right: 14,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   // Bottom Spacer

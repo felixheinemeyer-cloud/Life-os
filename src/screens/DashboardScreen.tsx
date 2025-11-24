@@ -417,13 +417,27 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 onPress={handleOpenInsightDetail}
                 activeOpacity={0.8}
               >
-                <Text style={styles.insightPreviewReadTime}>{todaysInsight.readTime}</Text>
                 <View style={styles.insightPreviewContent}>
-                  <Text style={styles.insightPreviewTitle} numberOfLines={3}>
+                  {/* Category Badge */}
+                  <View style={styles.insightCategoryBadge}>
+                    <Ionicons name="diamond-outline" size={11} color="#D97706" />
+                    <Text style={styles.insightCategoryText}>{todaysInsight.category.toUpperCase()}</Text>
+                  </View>
+
+                  {/* Title */}
+                  <Text style={styles.insightPreviewTitle} numberOfLines={2}>
                     {todaysInsight.title}
                   </Text>
+
+                  {/* Meta Row */}
+                  <View style={styles.insightMetaRow}>
+                    <View style={styles.insightMetaItem}>
+                      <Ionicons name="time-outline" size={13} color="#D97706" />
+                      <Text style={styles.insightMetaText}>{todaysInsight.readTime}</Text>
+                    </View>
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#D97706" />
+                <Ionicons name="chevron-forward" size={20} color="#D97706" style={styles.insightArrow} />
               </TouchableOpacity>
 
               {/* Timer Indicator - Original Design (Bottom Right) */}
@@ -590,12 +604,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 },
               ]}
             >
-              <LinearGradient
-                colors={['#DBEAFE', 'rgba(219, 234, 254, 0.8)', 'rgba(239, 246, 255, 0.9)']} // Gradient fades from blue (left) to light blue (right)
-                locations={[0, 0.5, 1]}
-                style={styles.recapCard}
-                start={{ x: 0, y: 0.5 }} // Horizontal gradient (left to right)
-                end={{ x: 1, y: 0.5 }}
+              <View
+                style={[styles.recapCard, { backgroundColor: '#DBEAFE' }]}
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
@@ -622,7 +632,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     style={styles.viewMoreArrow}
                   />
                 </View>
-              </LinearGradient>
+              </View>
             </Animated.View>
           </TouchableOpacity>
 
@@ -643,12 +653,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 },
               ]}
             >
-              <LinearGradient
-                colors={['#EDE9FE', 'rgba(237, 233, 254, 0.8)', 'rgba(245, 243, 255, 0.9)']} // Gradient fades from purple (left) to light purple (right)
-                locations={[0, 0.5, 1]}
-                style={styles.recapCard}
-                start={{ x: 0, y: 0.5 }} // Horizontal gradient (left to right)
-                end={{ x: 1, y: 0.5 }}
+              <View
+                style={[styles.recapCard, { backgroundColor: '#EDE9FE' }]}
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
@@ -675,7 +681,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     style={styles.viewMoreArrow}
                   />
                 </View>
-              </LinearGradient>
+              </View>
             </Animated.View>
           </TouchableOpacity>
           </View>
@@ -902,10 +908,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#FCD34D',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   trackingIconInnerCircle: {
     width: 82,
@@ -1002,50 +1004,78 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   insightPreview: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 14,
-    padding: 16,
-    minHeight: 130,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 18,
     marginBottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   insightPreviewContent: {
     flex: 1,
     marginRight: 12,
   },
+  insightCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 10,
+  },
+  insightCategoryText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#D97706',
+    letterSpacing: 0.8,
+  },
   insightPreviewTitle: {
     fontSize: 16,
     fontWeight: '500',
     color: '#1F2937',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
     lineHeight: 22,
-    paddingRight: 70,
+    marginBottom: 10,
+  },
+  insightMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  insightMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  insightMetaText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#D97706',
+    opacity: 0.85,
+  },
+  insightArrow: {
+    opacity: 0.6,
   },
   insightPreviewBody: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#1F2937',
-    lineHeight: 18,
-    letterSpacing: -0.1,
-    marginBottom: 10,
+    color: '#6B7280',
+    lineHeight: 19,
+    letterSpacing: -0.2,
+    marginBottom: 12,
   },
   insightPreviewReadTime: {
-    position: 'absolute',
-    bottom: 16,
-    right: 24,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#D97706',
-    opacity: 0.65,
+    opacity: 0.7,
+    letterSpacing: 0.2,
   },
   timerIndicator: {
     position: 'absolute',
@@ -1119,7 +1149,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 0,
     paddingHorizontal: 8,
   },
   legendButton: {
