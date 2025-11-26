@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   PanResponder,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -48,42 +49,91 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
 }) => {
   const [sliderWidth, setSliderWidth] = useState(SLIDER_WIDTH);
 
-  const handleSliderPress = (event: any) => {
-    const { locationX } = event.nativeEvent;
-    // Account for thumb size padding
-    const effectiveWidth = sliderWidth - THUMB_SIZE;
-    const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
-    const newValue = Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
-    if (newValue !== value) {
-      Haptics.selectionAsync();
-      onValueChange(newValue);
-    }
-  };
+  // Animated value for smooth thumb movement
+  const animatedValue = useRef(new Animated.Value(value)).current;
 
-  const panResponder = PanResponder.create({
+  // Refs to avoid stale closures in PanResponder
+  const sliderWidthRef = useRef(SLIDER_WIDTH);
+  const valueRef = useRef(value);
+  const onValueChangeRef = useRef(onValueChange);
+  const isGestureActive = useRef(false);
+  const lastHapticTime = useRef(0);
+
+  // Sync animated value when prop changes (from external source)
+  useEffect(() => {
+    if (!isGestureActive.current) {
+      animatedValue.setValue(value);
+    }
+    valueRef.current = value;
+  }, [value]);
+
+  // Keep refs in sync
+  useEffect(() => {
+    sliderWidthRef.current = sliderWidth;
+  }, [sliderWidth]);
+
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  // Throttled haptic feedback (max once per 80ms)
+  const triggerHaptic = useCallback(() => {
+    const now = Date.now();
+    if (now - lastHapticTime.current > 80) {
+      lastHapticTime.current = now;
+      Haptics.selectionAsync();
+    }
+  }, []);
+
+  // Calculate value from touch position
+  const calculateValue = useCallback((locationX: number): number => {
+    const effectiveWidth = sliderWidthRef.current - THUMB_SIZE;
+    const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
+    return Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
+  }, []);
+
+  // Create PanResponder only once
+  const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event) => {
-      handleSliderPress(event);
-    },
-    onPanResponderMove: (event) => {
-      const { locationX } = event.nativeEvent;
-      const effectiveWidth = sliderWidth - THUMB_SIZE;
-      const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
-      const newValue = Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
-      if (newValue !== value) {
-        Haptics.selectionAsync();
-        onValueChange(newValue);
+      isGestureActive.current = true;
+      const newValue = calculateValue(event.nativeEvent.locationX);
+      animatedValue.setValue(newValue);
+      if (newValue !== valueRef.current) {
+        valueRef.current = newValue;
+        triggerHaptic();
+        onValueChangeRef.current(newValue);
       }
     },
+    onPanResponderMove: (event) => {
+      if (!isGestureActive.current) return;
+      const newValue = calculateValue(event.nativeEvent.locationX);
+      animatedValue.setValue(newValue);
+      if (newValue !== valueRef.current) {
+        valueRef.current = newValue;
+        triggerHaptic();
+        onValueChangeRef.current(newValue);
+      }
+    },
+    onPanResponderRelease: () => {
+      isGestureActive.current = false;
+    },
+    onPanResponderTerminate: () => {
+      isGestureActive.current = false;
+    },
+  }), [calculateValue, triggerHaptic]);
+
+  // Interpolate thumb position from animated value
+  const thumbLeft = animatedValue.interpolate({
+    inputRange: [1, 10],
+    outputRange: ['4%', '96%'],
   });
 
-  // Calculate thumb position with padding to stay inside track
-  // At value 1: position at ~4% (thumb radius from left edge)
-  // At value 10: position at ~96% (thumb radius from right edge)
-  const thumbPosition = 4 + ((value - 1) / 9) * 92;
-  // Fill extends past thumb to surround it, goes to 105% at max to cover rounded edge
-  const fillWidth = value === 10 ? 105 : thumbPosition + 4;
+  const fillWidthAnimated = animatedValue.interpolate({
+    inputRange: [1, 10],
+    outputRange: ['8%', '100%'],
+  });
 
   return (
     <View style={styles.sliderContainer}>
@@ -100,19 +150,16 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       >
         {/* Background track (unfilled) */}
         <View style={styles.sliderTrackBackground} />
-        {/* Filled portion */}
-        <LinearGradient
-          colors={['#4B5563', '#374151', '#1F2937']}
-          style={[styles.sliderFill, { width: `${fillWidth}%` }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+        {/* Filled portion - Animated */}
+        <Animated.View
+          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: '#A78BFA' }]}
         />
-        {/* Thumb */}
-        <View
+        {/* Thumb - Animated */}
+        <Animated.View
           style={[
             styles.sliderThumb,
             {
-              left: `${thumbPosition}%`,
+              left: thumbLeft,
             },
           ]}
         />
@@ -213,7 +260,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
               icon="sparkles"
               value={satisfaction}
               onValueChange={setSatisfaction}
-              themeColor="#7C3AED"
+              themeColor="#3B82F6"
               minLabel="Unfulfilled"
               maxLabel="Fulfilled"
             />
@@ -410,7 +457,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     marginLeft: -11,
     top: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

@@ -553,7 +553,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   ]}
                 >
                   <LinearGradient
-                    colors={['#7C3AED', '#A78BFA']}
+                    colors={['#3B82F6', '#60A5FA']}
                     style={styles.gradientDot}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}

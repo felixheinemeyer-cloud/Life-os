@@ -194,15 +194,15 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Stop offset="100%" stopColor="#D97706" stopOpacity="0" />
           </LinearGradient>
 
-          {/* Satisfaction Line Gradients - Purple (matches legend) */}
+          {/* Satisfaction Line Gradients - Blue (matches legend) */}
           <LinearGradient id="satisfactionLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#7C3AED" />
-            <Stop offset="100%" stopColor="#A78BFA" />
+            <Stop offset="0%" stopColor="#3B82F6" />
+            <Stop offset="100%" stopColor="#60A5FA" />
           </LinearGradient>
 
           <LinearGradient id="satisfactionFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#7C3AED" stopOpacity="0.15" />
-            <Stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
+            <Stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
@@ -344,7 +344,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           {satisfactionShowGlow && (
             <Path
               d={generateSmoothPath(data.satisfaction)}
-              stroke="#A78BFA"
+              stroke="#60A5FA"
               strokeWidth="8"
               fill="none"
               opacity={satisfactionOpacity.lineGlow}
@@ -445,7 +445,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
                 cx={getX(index)}
                 cy={getY(value)}
                 r="7"
-                fill="#A78BFA"
+                fill="#60A5FA"
                 opacity={satisfactionOpacity.pointGlowOuter}
               />
             )}
@@ -455,7 +455,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
                 cx={getX(index)}
                 cy={getY(value)}
                 r="5"
-                fill="#7C3AED"
+                fill="#3B82F6"
                 opacity={satisfactionOpacity.pointGlowMiddle}
               />
             )}
@@ -464,7 +464,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
               cx={getX(index)}
               cy={getY(value)}
               r="3.5"
-              fill="#7C3AED"
+              fill="#3B82F6"
               stroke="#FFFFFF"
               strokeWidth="2"
               opacity={satisfactionOpacity.point}
