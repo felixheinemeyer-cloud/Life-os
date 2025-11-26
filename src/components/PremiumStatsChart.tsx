@@ -18,14 +18,14 @@ interface DataPoint {
 }
 
 interface ChartData {
-  sleep: number[];
   nutrition: number[];
-  wellbeing: number[];
+  energy: number[];
+  satisfaction: number[];
 }
 
 interface PremiumStatsChartProps {
   data: ChartData;
-  activeVariable?: 'sleep' | 'nutrition' | 'wellbeing' | null;
+  activeVariable?: 'nutrition' | 'energy' | 'satisfaction' | null;
 }
 
 // Opacity configuration for interactive legend
@@ -68,7 +68,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
   const padding = { top: 35, right: 32, bottom: 40, left: 32 };
 
   // Determine opacity for each variable based on active state
-  const getVariableOpacity = (variable: 'sleep' | 'nutrition' | 'wellbeing') => {
+  const getVariableOpacity = (variable: 'nutrition' | 'energy' | 'satisfaction') => {
     if (activeVariable === null) {
       return OPACITY_CONFIG.allActive; // All variables equally visible
     }
@@ -78,18 +78,18 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
   };
 
   // Determine if glow should be rendered for a specific variable
-  const shouldRenderGlow = (variable: 'sleep' | 'nutrition' | 'wellbeing') => {
+  const shouldRenderGlow = (variable: 'nutrition' | 'energy' | 'satisfaction') => {
     if (activeVariable === null) return true; // All active - show all glows
     return activeVariable === variable; // Only show glow for selected variable
   };
 
-  const sleepOpacity = getVariableOpacity('sleep');
   const nutritionOpacity = getVariableOpacity('nutrition');
-  const wellbeingOpacity = getVariableOpacity('wellbeing');
+  const energyOpacity = getVariableOpacity('energy');
+  const satisfactionOpacity = getVariableOpacity('satisfaction');
 
-  const sleepShowGlow = shouldRenderGlow('sleep');
   const nutritionShowGlow = shouldRenderGlow('nutrition');
-  const wellbeingShowGlow = shouldRenderGlow('wellbeing');
+  const energyShowGlow = shouldRenderGlow('energy');
+  const satisfactionShowGlow = shouldRenderGlow('satisfaction');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -172,17 +172,6 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Stop offset="100%" stopColor="#FFFFFF" />
           </LinearGradient>
 
-          {/* Sleep Line Gradients - Purple (matches legend) */}
-          <LinearGradient id="sleepLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#9333EA" />
-            <Stop offset="100%" stopColor="#C084FC" />
-          </LinearGradient>
-
-          <LinearGradient id="sleepFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#9333EA" stopOpacity="0.15" />
-            <Stop offset="100%" stopColor="#9333EA" stopOpacity="0" />
-          </LinearGradient>
-
           {/* Nutrition Line Gradients - Emerald (matches legend) */}
           <LinearGradient id="nutritionLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#059669" />
@@ -194,15 +183,26 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Stop offset="100%" stopColor="#059669" stopOpacity="0" />
           </LinearGradient>
 
-          {/* Wellbeing Line Gradients - Orange (matches legend) */}
-          <LinearGradient id="wellbeingLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#EA580C" />
-            <Stop offset="100%" stopColor="#FB923C" />
+          {/* Energy Line Gradients - Yellow/Amber (matches legend) */}
+          <LinearGradient id="energyLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#D97706" />
+            <Stop offset="100%" stopColor="#FBBF24" />
           </LinearGradient>
 
-          <LinearGradient id="wellbeingFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#EA580C" stopOpacity="0.15" />
-            <Stop offset="100%" stopColor="#EA580C" stopOpacity="0" />
+          <LinearGradient id="energyFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#D97706" stopOpacity="0.15" />
+            <Stop offset="100%" stopColor="#D97706" stopOpacity="0" />
+          </LinearGradient>
+
+          {/* Satisfaction Line Gradients - Purple (matches legend) */}
+          <LinearGradient id="satisfactionLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#7C3AED" />
+            <Stop offset="100%" stopColor="#A78BFA" />
+          </LinearGradient>
+
+          <LinearGradient id="satisfactionFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#7C3AED" stopOpacity="0.15" />
+            <Stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
@@ -264,13 +264,6 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
         />
 
         {/* Area Fills - Conditional (only when active) */}
-        {sleepShowGlow && (
-          <Path
-            d={generateAreaPath(data.sleep)}
-            fill="url(#sleepFillGrad)"
-            opacity={sleepOpacity.areaFill}
-          />
-        )}
         {nutritionShowGlow && (
           <Path
             d={generateAreaPath(data.nutrition)}
@@ -278,39 +271,20 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             opacity={nutritionOpacity.areaFill}
           />
         )}
-        {wellbeingShowGlow && (
+        {energyShowGlow && (
           <Path
-            d={generateAreaPath(data.wellbeing)}
-            fill="url(#wellbeingFillGrad)"
-            opacity={wellbeingOpacity.areaFill}
+            d={generateAreaPath(data.energy)}
+            fill="url(#energyFillGrad)"
+            opacity={energyOpacity.areaFill}
           />
         )}
-
-        {/* Sleep Line - With Conditional Glow */}
-        <G>
-          {/* Soft colored glow layer - only when active */}
-          {sleepShowGlow && (
-            <Path
-              d={generateSmoothPath(data.sleep)}
-              stroke="#C084FC"
-              strokeWidth="8"
-              fill="none"
-              opacity={sleepOpacity.lineGlow}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-          {/* Main line - always visible */}
+        {satisfactionShowGlow && (
           <Path
-            d={generateSmoothPath(data.sleep)}
-            stroke="url(#sleepLineGrad)"
-            strokeWidth="3"
-            fill="none"
-            opacity={sleepOpacity.line}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            d={generateAreaPath(data.satisfaction)}
+            fill="url(#satisfactionFillGrad)"
+            opacity={satisfactionOpacity.areaFill}
           />
-        </G>
+        )}
 
         {/* Nutrition Line - With Conditional Glow */}
         <G>
@@ -338,67 +312,57 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           />
         </G>
 
-        {/* Wellbeing Line - With Conditional Glow */}
+        {/* Energy Line - With Conditional Glow */}
         <G>
           {/* Soft colored glow layer - only when active */}
-          {wellbeingShowGlow && (
+          {energyShowGlow && (
             <Path
-              d={generateSmoothPath(data.wellbeing)}
-              stroke="#FB923C"
+              d={generateSmoothPath(data.energy)}
+              stroke="#FBBF24"
               strokeWidth="8"
               fill="none"
-              opacity={wellbeingOpacity.lineGlow}
+              opacity={energyOpacity.lineGlow}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           )}
           {/* Main line - always visible */}
           <Path
-            d={generateSmoothPath(data.wellbeing)}
-            stroke="url(#wellbeingLineGrad)"
+            d={generateSmoothPath(data.energy)}
+            stroke="url(#energyLineGrad)"
             strokeWidth="3"
             fill="none"
-            opacity={wellbeingOpacity.line}
+            opacity={energyOpacity.line}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </G>
 
-        {/* Data Points - Sleep (with conditional glow) */}
-        {data.sleep.map((value, index) => (
-          <G key={`sleep-${index}`}>
-            {/* Soft glow halo - only when active */}
-            {sleepShowGlow && sleepOpacity.pointGlowOuter > 0 && (
-              <Circle
-                cx={getX(index)}
-                cy={getY(value)}
-                r="7"
-                fill="#C084FC"
-                opacity={sleepOpacity.pointGlowOuter}
-              />
-            )}
-            {/* Medium glow ring - only when active */}
-            {sleepShowGlow && sleepOpacity.pointGlowMiddle > 0 && (
-              <Circle
-                cx={getX(index)}
-                cy={getY(value)}
-                r="5"
-                fill="#9333EA"
-                opacity={sleepOpacity.pointGlowMiddle}
-              />
-            )}
-            {/* Core point - always visible */}
-            <Circle
-              cx={getX(index)}
-              cy={getY(value)}
-              r="3.5"
-              fill="#9333EA"
-              stroke="#FFFFFF"
-              strokeWidth="2"
-              opacity={sleepOpacity.point}
+        {/* Satisfaction Line - With Conditional Glow */}
+        <G>
+          {/* Soft colored glow layer - only when active */}
+          {satisfactionShowGlow && (
+            <Path
+              d={generateSmoothPath(data.satisfaction)}
+              stroke="#A78BFA"
+              strokeWidth="8"
+              fill="none"
+              opacity={satisfactionOpacity.lineGlow}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          </G>
-        ))}
+          )}
+          {/* Main line - always visible */}
+          <Path
+            d={generateSmoothPath(data.satisfaction)}
+            stroke="url(#satisfactionLineGrad)"
+            strokeWidth="3"
+            fill="none"
+            opacity={satisfactionOpacity.line}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </G>
 
         {/* Data Points - Nutrition (with conditional glow) */}
         {data.nutrition.map((value, index) => (
@@ -436,27 +400,27 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           </G>
         ))}
 
-        {/* Data Points - Wellbeing (with conditional glow) */}
-        {data.wellbeing.map((value, index) => (
-          <G key={`wellbeing-${index}`}>
+        {/* Data Points - Energy (with conditional glow) */}
+        {data.energy.map((value, index) => (
+          <G key={`energy-${index}`}>
             {/* Soft glow halo - only when active */}
-            {wellbeingShowGlow && wellbeingOpacity.pointGlowOuter > 0 && (
+            {energyShowGlow && energyOpacity.pointGlowOuter > 0 && (
               <Circle
                 cx={getX(index)}
                 cy={getY(value)}
                 r="7"
-                fill="#FB923C"
-                opacity={wellbeingOpacity.pointGlowOuter}
+                fill="#FBBF24"
+                opacity={energyOpacity.pointGlowOuter}
               />
             )}
             {/* Medium glow ring - only when active */}
-            {wellbeingShowGlow && wellbeingOpacity.pointGlowMiddle > 0 && (
+            {energyShowGlow && energyOpacity.pointGlowMiddle > 0 && (
               <Circle
                 cx={getX(index)}
                 cy={getY(value)}
                 r="5"
-                fill="#EA580C"
-                opacity={wellbeingOpacity.pointGlowMiddle}
+                fill="#D97706"
+                opacity={energyOpacity.pointGlowMiddle}
               />
             )}
             {/* Core point - always visible */}
@@ -464,10 +428,46 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
               cx={getX(index)}
               cy={getY(value)}
               r="3.5"
-              fill="#EA580C"
+              fill="#D97706"
               stroke="#FFFFFF"
               strokeWidth="2"
-              opacity={wellbeingOpacity.point}
+              opacity={energyOpacity.point}
+            />
+          </G>
+        ))}
+
+        {/* Data Points - Satisfaction (with conditional glow) */}
+        {data.satisfaction.map((value, index) => (
+          <G key={`satisfaction-${index}`}>
+            {/* Soft glow halo - only when active */}
+            {satisfactionShowGlow && satisfactionOpacity.pointGlowOuter > 0 && (
+              <Circle
+                cx={getX(index)}
+                cy={getY(value)}
+                r="7"
+                fill="#A78BFA"
+                opacity={satisfactionOpacity.pointGlowOuter}
+              />
+            )}
+            {/* Medium glow ring - only when active */}
+            {satisfactionShowGlow && satisfactionOpacity.pointGlowMiddle > 0 && (
+              <Circle
+                cx={getX(index)}
+                cy={getY(value)}
+                r="5"
+                fill="#7C3AED"
+                opacity={satisfactionOpacity.pointGlowMiddle}
+              />
+            )}
+            {/* Core point - always visible */}
+            <Circle
+              cx={getX(index)}
+              cy={getY(value)}
+              r="3.5"
+              fill="#7C3AED"
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              opacity={satisfactionOpacity.point}
             />
           </G>
         ))}

@@ -185,8 +185,7 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
   };
 
   const handleContinue = (): void => {
-    // TODO: Navigate to next step in Morning Tracking flow
-    console.log('Continue to next step');
+    navigation?.navigate('MorningTrackingGratitude');
   };
 
   return (
@@ -207,7 +206,13 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Morning Check-in</Text>
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressDotActive} />
+            <View style={styles.progressDotInactive} />
+            <View style={styles.progressDotInactive} />
+            <View style={styles.progressDotInactive} />
+          </View>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -256,6 +261,9 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
             </View>
           </View>
 
+          {/* Top Spacer for equal spacing */}
+          <View style={{ flex: 1 }} />
+
           {/* Circular Sleep Slider - Interactive */}
           <View
             style={styles.sliderContainer}
@@ -270,7 +278,7 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
             />
           </View>
 
-          {/* Spacer to push bottom elements down */}
+          {/* Bottom Spacer for equal spacing */}
           <View style={{ flex: 1 }} />
 
           {/* Total Sleep Summary */}
@@ -584,14 +592,26 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-  },
   headerSpacer: {
     width: 40,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  progressDotActive: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#6366F1',
+  },
+  progressDotInactive: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D1D5DB',
   },
 
   // Content
@@ -605,7 +625,6 @@ const styles = StyleSheet.create({
   timeCardsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 20,
   },
   timeCard: {
     flex: 1,
@@ -659,7 +678,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 0,
     paddingHorizontal: 16,
-    marginTop: 32,
   },
   circularSliderWrapper: {
     alignItems: 'center',

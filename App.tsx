@@ -12,6 +12,12 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import MorningTrackingScreen from './src/screens/MorningTrackingScreen';
+import MorningTrackingGratitudeScreen from './src/screens/MorningTrackingGratitudeScreen';
+import MorningTrackingIntentionScreen from './src/screens/MorningTrackingIntentionScreen';
+import EveningTrackingPriorityScreen from './src/screens/EveningTrackingPriorityScreen';
+import EveningTrackingRatingsScreen from './src/screens/EveningTrackingRatingsScreen';
+import EveningTrackingJournalScreen from './src/screens/EveningTrackingJournalScreen';
+import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
 import HomeIcon from './src/components/HomeIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
@@ -36,6 +42,12 @@ const DashboardStack = () => {
       <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
       <Stack.Screen name="MorningTracking" component={MorningTrackingScreen} />
+      <Stack.Screen name="MorningTrackingGratitude" component={MorningTrackingGratitudeScreen} />
+      <Stack.Screen name="MorningTrackingIntention" component={MorningTrackingIntentionScreen} />
+      <Stack.Screen name="EveningTrackingPriority" component={EveningTrackingPriorityScreen} />
+      <Stack.Screen name="EveningTrackingRatings" component={EveningTrackingRatingsScreen} />
+      <Stack.Screen name="EveningTrackingJournal" component={EveningTrackingJournalScreen} />
+      <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
     </Stack.Navigator>
   );
 };

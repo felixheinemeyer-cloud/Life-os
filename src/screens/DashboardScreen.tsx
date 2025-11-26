@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PremiumStatsChart from '../components/PremiumStatsChart';
 
-type ChartVariable = 'sleep' | 'nutrition' | 'wellbeing' | null;
+type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
 
 interface DashboardScreenProps {
   navigation?: {
@@ -26,8 +26,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   // SafeArea insets for dynamic button positioning
   const insets = useSafeAreaInsets();
 
-  // State for interactive chart legend - Sleep is active by default
-  const [activeVariable, setActiveVariable] = useState<ChartVariable>('sleep');
+  // State for interactive chart legend - Nutrition is active by default
+  const [activeVariable, setActiveVariable] = useState<ChartVariable>('nutrition');
 
   // State for expandable focus cards
   const [isWeekExpanded, setIsWeekExpanded] = useState(false);
@@ -181,8 +181,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   };
 
   const handleEveningTracking = (): void => {
-    // TODO: Navigate to evening tracking screen
-    console.log('Navigate to Evening Tracking');
+    if (navigation) {
+      navigation.navigate('EveningTrackingPriority');
+    } else {
+      console.log('Navigate to Evening Tracking');
+    }
   };
 
   const handleStatistics = (): void => {
@@ -296,9 +299,9 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
   // Mock data for 7-day statistics (ready for API integration)
   const weekStatistics = {
-    sleep: [5, 6, 4, 5, 6, 7, 5], // Range 3-7 for realistic sleep variation
     nutrition: [6, 7, 8, 7, 6, 8, 9],
-    wellbeing: [7, 6, 7, 8, 7, 8, 9],
+    energy: [7, 6, 7, 8, 7, 8, 9],
+    satisfaction: [5, 6, 4, 5, 6, 7, 5],
   };
 
   // Focus content texts
@@ -464,43 +467,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
             {/* Interactive Legend Row */}
             <View style={styles.statsLegend}>
-              {/* Sleep Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('sleep')}
-                activeOpacity={0.7}
-              >
-                <Animated.View
-                  style={[
-                    styles.legendItem,
-                    {
-                      transform: [{ scale: activeVariable === 'sleep' ? 1.05 : 1.0 }],
-                      backgroundColor: activeVariable === 'sleep'
-                        ? 'rgba(147, 51, 234, 0.08)'
-                        : 'transparent',
-                      borderBottomWidth: activeVariable === 'sleep' ? 2 : 0,
-                      borderBottomColor: activeVariable === 'sleep' ? '#C084FC' : 'transparent',
-                    },
-                  ]}
-                >
-                  <LinearGradient
-                    colors={['#9333EA', '#C084FC']}
-                    style={styles.gradientDot}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'sleep' && styles.legendLabelActive,
-                      activeVariable === 'sleep' && { color: '#C084FC' },
-                    ]}
-                  >
-                    Sleep
-                  </Text>
-                </Animated.View>
-              </TouchableOpacity>
-
               {/* Nutrition Button */}
               <TouchableOpacity
                 style={styles.legendButton}
@@ -538,27 +504,27 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 </Animated.View>
               </TouchableOpacity>
 
-              {/* Wellbeing Button */}
+              {/* Energy Button */}
               <TouchableOpacity
                 style={styles.legendButton}
-                onPress={() => handleLegendPress('wellbeing')}
+                onPress={() => handleLegendPress('energy')}
                 activeOpacity={0.7}
               >
                 <Animated.View
                   style={[
                     styles.legendItem,
                     {
-                      transform: [{ scale: activeVariable === 'wellbeing' ? 1.05 : 1.0 }],
-                      backgroundColor: activeVariable === 'wellbeing'
-                        ? 'rgba(234, 88, 12, 0.08)'
+                      transform: [{ scale: activeVariable === 'energy' ? 1.05 : 1.0 }],
+                      backgroundColor: activeVariable === 'energy'
+                        ? 'rgba(217, 119, 6, 0.08)'
                         : 'transparent',
-                      borderBottomWidth: activeVariable === 'wellbeing' ? 2 : 0,
-                      borderBottomColor: activeVariable === 'wellbeing' ? '#FB923C' : 'transparent',
+                      borderBottomWidth: activeVariable === 'energy' ? 2 : 0,
+                      borderBottomColor: activeVariable === 'energy' ? '#FBBF24' : 'transparent',
                     },
                   ]}
                 >
                   <LinearGradient
-                    colors={['#EA580C', '#FB923C']}
+                    colors={['#D97706', '#FBBF24']}
                     style={styles.gradientDot}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -566,11 +532,48 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Text
                     style={[
                       styles.legendLabel,
-                      activeVariable === 'wellbeing' && styles.legendLabelActive,
-                      activeVariable === 'wellbeing' && { color: '#FB923C' },
+                      activeVariable === 'energy' && styles.legendLabelActive,
+                      activeVariable === 'energy' && { color: '#FBBF24' },
                     ]}
                   >
-                    Wellbeing
+                    Energy
+                  </Text>
+                </Animated.View>
+              </TouchableOpacity>
+
+              {/* Satisfaction Button */}
+              <TouchableOpacity
+                style={styles.legendButton}
+                onPress={() => handleLegendPress('satisfaction')}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  style={[
+                    styles.legendItem,
+                    {
+                      transform: [{ scale: activeVariable === 'satisfaction' ? 1.05 : 1.0 }],
+                      backgroundColor: activeVariable === 'satisfaction'
+                        ? 'rgba(124, 58, 237, 0.08)'
+                        : 'transparent',
+                      borderBottomWidth: activeVariable === 'satisfaction' ? 2 : 0,
+                      borderBottomColor: activeVariable === 'satisfaction' ? '#A78BFA' : 'transparent',
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={['#7C3AED', '#A78BFA']}
+                    style={styles.gradientDot}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  />
+                  <Text
+                    style={[
+                      styles.legendLabel,
+                      activeVariable === 'satisfaction' && styles.legendLabelActive,
+                      activeVariable === 'satisfaction' && { color: '#A78BFA' },
+                    ]}
+                  >
+                    Satisfaction
                   </Text>
                 </Animated.View>
               </TouchableOpacity>
@@ -602,13 +605,13 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 {
                   shadowOpacity: weekShadowOpacity,
                   shadowRadius: weekShadowRadius,
-                  shadowColor: isWeekExpanded ? '#3B82F6' : '#000',
+                  shadowColor: '#000',
                   shadowOffset: { width: 0, height: weekShadowOffsetY },
                 },
               ]}
             >
               <View
-                style={[styles.recapCard, { backgroundColor: '#DBEAFE' }]}
+                style={[styles.recapCard, { backgroundColor: '#EEF2FF' }]}
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
@@ -631,7 +634,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Ionicons
                     name={isWeekExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#3B82F6"
+                    color="#6366F1"
                     style={styles.viewMoreArrow}
                   />
                 </View>
@@ -651,13 +654,13 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 {
                   shadowOpacity: monthShadowOpacity,
                   shadowRadius: monthShadowRadius,
-                  shadowColor: isMonthExpanded ? '#8B5CF6' : '#000',
+                  shadowColor: '#000',
                   shadowOffset: { width: 0, height: monthShadowOffsetY },
                 },
               ]}
             >
               <View
-                style={[styles.recapCard, { backgroundColor: '#EDE9FE' }]}
+                style={[styles.recapCard, { backgroundColor: '#EEF2FF' }]}
               >
                 {/* Status Chip */}
                 <View style={styles.recapStatusChip}>
@@ -680,7 +683,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Ionicons
                     name={isMonthExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#8B5CF6"
+                    color="#6366F1"
                     style={styles.viewMoreArrow}
                   />
                 </View>
@@ -1294,10 +1297,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   weekButtonText: {
-    color: '#3B82F6',
+    color: '#6366F1',
   },
   monthButtonText: {
-    color: '#8B5CF6',
+    color: '#6366F1',
   },
   bottomSpacer: {
     height: 40,
