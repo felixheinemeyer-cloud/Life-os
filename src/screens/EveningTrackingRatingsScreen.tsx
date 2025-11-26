@@ -27,8 +27,7 @@ interface RatingSliderProps {
   icon: keyof typeof Ionicons.glyphMap;
   value: number;
   onValueChange: (value: number) => void;
-  gradientColors: [string, string, string];
-  thumbBorderColor: string;
+  themeColor: string;
   minLabel: string;
   maxLabel: string;
 }
@@ -36,13 +35,14 @@ interface RatingSliderProps {
 const TRACK_HEIGHT = 28;
 const THUMB_SIZE = 24;
 
+const SLIDER_COLOR = '#1F2937';
+
 const RatingSlider: React.FC<RatingSliderProps> = ({
   label,
   icon,
   value,
   onValueChange,
-  gradientColors,
-  thumbBorderColor,
+  themeColor,
   minLabel,
   maxLabel,
 }) => {
@@ -88,9 +88,9 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
   return (
     <View style={styles.sliderContainer}>
       <View style={styles.sliderHeader}>
-        <Ionicons name={icon} size={18} color={gradientColors[2]} />
-        <Text style={styles.sliderLabel}>{label}</Text>
-        <Text style={[styles.valueText, { color: gradientColors[2] }]}>{value}/10</Text>
+        <Ionicons name={icon} size={18} color={themeColor} />
+        <Text style={[styles.sliderLabel, { color: themeColor }]}>{label}</Text>
+        <Text style={[styles.valueText, { color: SLIDER_COLOR }]}>{value}/10</Text>
       </View>
 
       <View
@@ -100,9 +100,9 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       >
         {/* Background track (unfilled) */}
         <View style={styles.sliderTrackBackground} />
-        {/* Filled portion - extends past thumb center to surround it */}
+        {/* Filled portion */}
         <LinearGradient
-          colors={[gradientColors[0], gradientColors[1], gradientColors[2]]}
+          colors={['#4B5563', '#374151', '#1F2937']}
           style={[styles.sliderFill, { width: `${fillWidth}%` }]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -113,8 +113,6 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
             styles.sliderThumb,
             {
               left: `${thumbPosition}%`,
-              borderWidth: 3,
-              borderColor: thumbBorderColor,
             },
           ]}
         />
@@ -174,12 +172,14 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
           {/* Question Section */}
           <View style={styles.questionSection}>
             <LinearGradient
-              colors={['#EDE9FE', '#DDD6FE', '#C4B5FD']}
-              style={styles.iconContainer}
+              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+              style={styles.iconGradientRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="stats-chart" size={24} color="#7C3AED" />
+              <View style={styles.iconInnerCircle}>
+                <Ionicons name="stats-chart" size={24} color="#7C3AED" />
+              </View>
             </LinearGradient>
             <Text style={styles.questionText}>
               Rate your day
@@ -193,8 +193,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
               icon="pizza"
               value={nutrition}
               onValueChange={setNutrition}
-              gradientColors={['#D1FAE5', '#34D399', '#059669']}
-              thumbBorderColor="#059669"
+              themeColor="#059669"
               minLabel="Poor"
               maxLabel="Excellent"
             />
@@ -204,8 +203,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
               icon="flash"
               value={energy}
               onValueChange={setEnergy}
-              gradientColors={['#FEF3C7', '#FBBF24', '#D97706']}
-              thumbBorderColor="#D97706"
+              themeColor="#D97706"
               minLabel="Drained"
               maxLabel="Energized"
             />
@@ -215,8 +213,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
               icon="sparkles"
               value={satisfaction}
               onValueChange={setSatisfaction}
-              gradientColors={['#EDE9FE', '#A78BFA', '#7C3AED']}
-              thumbBorderColor="#7C3AED"
+              themeColor="#7C3AED"
               minLabel="Unfulfilled"
               maxLabel="Fulfilled"
             />
@@ -305,7 +302,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
   },
   progressDotInactive: {
     width: 8,
@@ -319,18 +316,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  iconContainer: {
+  iconGradientRing: {
     width: 64,
     height: 64,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    padding: 3,
+  },
+  iconInnerCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   questionText: {
     fontSize: 22,
@@ -373,7 +374,6 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
     flex: 1,
     letterSpacing: -0.2,
   },
@@ -405,11 +405,11 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginLeft: -14,
-    top: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginLeft: -11,
+    top: 3,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -446,16 +446,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F5F2',
   },
   continueButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },

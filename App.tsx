@@ -26,6 +26,8 @@ import BookVaultScreen from './src/screens/BookVaultScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import LoveDatingScreen from './src/screens/LoveDatingScreen';
 import StoryBankScreen from './src/screens/StoryBankScreen';
+import HigherSelfScreen from './src/screens/HigherSelfScreen';
+import MindsetBeliefsScreen from './src/screens/MindsetBeliefsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -62,6 +64,8 @@ const KnowledgeStack = () => {
     >
       <Stack.Screen name="KnowledgeHubMain" component={KnowledgeHubScreen} />
       <Stack.Screen name="MindsetIdentity" component={MindsetIdentityScreen} />
+      <Stack.Screen name="HigherSelf" component={HigherSelfScreen} />
+      <Stack.Screen name="MindsetBeliefs" component={MindsetBeliefsScreen} />
       <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />

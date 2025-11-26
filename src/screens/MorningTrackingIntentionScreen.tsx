@@ -82,12 +82,14 @@ const MorningTrackingIntentionScreen: React.FC<MorningTrackingIntentionScreenPro
             {/* Question Section */}
             <View style={styles.questionSection}>
               <LinearGradient
-                colors={['#DBEAFE', '#BFDBFE', '#93C5FD']}
-                style={styles.iconContainer}
+                colors={['#FBBF24', '#F59E0B', '#D97706']}
+                style={styles.iconGradientRing}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Ionicons name="flag" size={28} color="#2563EB" />
+                <View style={styles.iconInnerCircle}>
+                  <Ionicons name="flag" size={28} color="#D97706" />
+                </View>
               </LinearGradient>
               <Text style={styles.questionText}>
                 What would make today great?
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
   },
   progressDotInactive: {
     width: 8,
@@ -214,18 +216,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  iconContainer: {
+  iconGradientRing: {
     width: 64,
     height: 64,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    padding: 3,
+  },
+  iconInnerCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   questionText: {
     fontSize: 24,
@@ -281,16 +287,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F5F2',
   },
   continueButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },

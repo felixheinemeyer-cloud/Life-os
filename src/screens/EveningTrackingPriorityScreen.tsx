@@ -62,12 +62,14 @@ const EveningTrackingPriorityScreen: React.FC<EveningTrackingPriorityScreenProps
           {/* Question Section */}
           <View style={styles.questionSection}>
             <LinearGradient
-              colors={['#EDE9FE', '#DDD6FE', '#C4B5FD']}
-              style={styles.iconContainer}
+              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+              style={styles.iconGradientRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="checkmark-circle" size={28} color="#7C3AED" />
+              <View style={styles.iconInnerCircle}>
+                <Ionicons name="checkmark-circle" size={28} color="#7C3AED" />
+              </View>
             </LinearGradient>
             <Text style={styles.questionText}>
               Did you complete your priority?
@@ -80,7 +82,7 @@ const EveningTrackingPriorityScreen: React.FC<EveningTrackingPriorityScreenProps
           {/* Priority Card */}
           <View style={styles.priorityCard}>
             <View style={styles.priorityHeader}>
-              <Ionicons name="flag" size={16} color="#7C3AED" />
+              <Ionicons name="flag" size={16} color="#D97706" />
               <Text style={styles.priorityLabel}>Today's Priority</Text>
             </View>
             <Text style={styles.priorityText}>{morningPriority}</Text>
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
   },
   progressDotInactive: {
     width: 8,
@@ -198,18 +200,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  iconContainer: {
+  iconGradientRing: {
     width: 64,
     height: 64,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    padding: 3,
+  },
+  iconInnerCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   questionText: {
     fontSize: 24,
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
     borderLeftWidth: 4,
-    borderLeftColor: '#7C3AED',
+    borderLeftColor: '#D97706',
   },
   priorityHeader: {
     flexDirection: 'row',
@@ -252,7 +258,7 @@ const styles = StyleSheet.create({
   priorityLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#7C3AED',
+    color: '#D97706',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },

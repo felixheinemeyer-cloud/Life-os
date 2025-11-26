@@ -377,7 +377,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     <Ionicons name="sunny" size={44} color="#D97706" />
                   </View>
                 </LinearGradient>
-                <Text style={styles.lightCardTitle}>Morning{'\n'}Tracking</Text>
+                <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
               </View>
             </TouchableOpacity>
 
@@ -399,7 +399,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     <Ionicons name="moon" size={44} color="#7C3AED" />
                   </View>
                 </LinearGradient>
-                <Text style={styles.lightCardTitle}>Evening{'\n'}Tracking</Text>
+                <Text style={styles.lightCardTitle}>Evening{'\n'}Check-In</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -479,10 +479,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     {
                       transform: [{ scale: activeVariable === 'nutrition' ? 1.05 : 1.0 }],
                       backgroundColor: activeVariable === 'nutrition'
-                        ? 'rgba(5, 150, 105, 0.08)'
+                        ? '#EEF2FF'
                         : 'transparent',
-                      borderBottomWidth: activeVariable === 'nutrition' ? 2 : 0,
-                      borderBottomColor: activeVariable === 'nutrition' ? '#34D399' : 'transparent',
                     },
                   ]}
                 >
@@ -496,7 +494,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     style={[
                       styles.legendLabel,
                       activeVariable === 'nutrition' && styles.legendLabelActive,
-                      activeVariable === 'nutrition' && { color: '#34D399' },
                     ]}
                   >
                     Nutrition
@@ -516,10 +513,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     {
                       transform: [{ scale: activeVariable === 'energy' ? 1.05 : 1.0 }],
                       backgroundColor: activeVariable === 'energy'
-                        ? 'rgba(217, 119, 6, 0.08)'
+                        ? '#EEF2FF'
                         : 'transparent',
-                      borderBottomWidth: activeVariable === 'energy' ? 2 : 0,
-                      borderBottomColor: activeVariable === 'energy' ? '#FBBF24' : 'transparent',
                     },
                   ]}
                 >
@@ -533,7 +528,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     style={[
                       styles.legendLabel,
                       activeVariable === 'energy' && styles.legendLabelActive,
-                      activeVariable === 'energy' && { color: '#FBBF24' },
                     ]}
                   >
                     Energy
@@ -553,10 +547,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     {
                       transform: [{ scale: activeVariable === 'satisfaction' ? 1.05 : 1.0 }],
                       backgroundColor: activeVariable === 'satisfaction'
-                        ? 'rgba(124, 58, 237, 0.08)'
+                        ? '#EEF2FF'
                         : 'transparent',
-                      borderBottomWidth: activeVariable === 'satisfaction' ? 2 : 0,
-                      borderBottomColor: activeVariable === 'satisfaction' ? '#A78BFA' : 'transparent',
                     },
                   ]}
                 >
@@ -570,7 +562,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     style={[
                       styles.legendLabel,
                       activeVariable === 'satisfaction' && styles.legendLabelActive,
-                      activeVariable === 'satisfaction' && { color: '#A78BFA' },
                     ]}
                   >
                     Satisfaction

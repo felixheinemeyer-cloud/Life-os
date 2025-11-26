@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
   },
   progressDotInactive: {
     width: 8,
@@ -742,16 +742,16 @@ const styles = StyleSheet.create({
 
   // Continue Button
   continueButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },

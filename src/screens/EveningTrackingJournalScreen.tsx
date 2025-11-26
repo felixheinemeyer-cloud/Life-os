@@ -172,12 +172,14 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
             {/* Question Section */}
             <View style={styles.questionSection}>
               <LinearGradient
-                colors={['#EDE9FE', '#DDD6FE', '#C4B5FD']}
-                style={styles.iconContainer}
+                colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                style={styles.iconGradientRing}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Ionicons name="book" size={28} color="#7C3AED" />
+                <View style={styles.iconInnerCircle}>
+                  <Ionicons name="book" size={28} color="#7C3AED" />
+                </View>
               </LinearGradient>
               <Text style={styles.questionText}>Journal Entry</Text>
             </View>
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
   },
   progressDotInactive: {
     width: 8,
@@ -316,18 +318,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  iconContainer: {
+  iconGradientRing: {
     width: 64,
     height: 64,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    padding: 3,
+  },
+  iconInnerCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   questionText: {
     fontSize: 22,
@@ -468,16 +474,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F5F2',
   },
   continueButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
   },
