@@ -157,7 +157,7 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
           </View>
           <View style={styles.headerContent}>
             <Text style={styles.title}>Mindset</Text>
-            <Text style={styles.subtitle}>Your guiding beliefs</Text>
+            <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
           </View>
         </View>
 
@@ -504,24 +504,17 @@ const BeliefCard: React.FC<{
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
   },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
   },
   headerTop: {
     flexDirection: 'row',
@@ -533,21 +526,31 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerContent: {
     paddingHorizontal: 4,

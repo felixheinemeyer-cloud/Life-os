@@ -124,7 +124,7 @@ const EveningTrackingPriorityScreen: React.FC<EveningTrackingPriorityScreenProps
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
   },
   container: {
     flex: 1,
@@ -141,26 +141,19 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
     justifyContent: 'center',
@@ -192,7 +185,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: '#E5E7EB',
   },
 
   // Question Section

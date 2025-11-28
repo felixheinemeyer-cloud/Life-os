@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -11,14 +12,12 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
-import MorningTrackingScreen from './src/screens/MorningTrackingScreen';
-import MorningTrackingGratitudeScreen from './src/screens/MorningTrackingGratitudeScreen';
-import MorningTrackingIntentionScreen from './src/screens/MorningTrackingIntentionScreen';
-import EveningTrackingPriorityScreen from './src/screens/EveningTrackingPriorityScreen';
-import EveningTrackingRatingsScreen from './src/screens/EveningTrackingRatingsScreen';
-import EveningTrackingJournalScreen from './src/screens/EveningTrackingJournalScreen';
+import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
+import EveningTrackingContainerScreen from './src/screens/EveningTrackingContainerScreen';
 import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
 import HomeIcon from './src/components/HomeIcon';
+import BrainIcon from './src/components/BrainIcon';
+import CalendarIcon from './src/components/CalendarIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
 import MediaVaultScreen from './src/screens/MediaVaultScreen';
@@ -28,6 +27,9 @@ import LoveDatingScreen from './src/screens/LoveDatingScreen';
 import StoryBankScreen from './src/screens/StoryBankScreen';
 import HigherSelfScreen from './src/screens/HigherSelfScreen';
 import MindsetBeliefsScreen from './src/screens/MindsetBeliefsScreen';
+import PhysicalWealthIntroAnimationScreen from './src/screens/PhysicalWealthIntroAnimationScreen';
+import PhysicalWealthIntroScreen from './src/screens/PhysicalWealthIntroScreen';
+import PhysicalWealthQuestionsContainerScreen from './src/screens/PhysicalWealthQuestionsContainerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -43,12 +45,8 @@ const DashboardStack = () => {
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
       <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
-      <Stack.Screen name="MorningTracking" component={MorningTrackingScreen} />
-      <Stack.Screen name="MorningTrackingGratitude" component={MorningTrackingGratitudeScreen} />
-      <Stack.Screen name="MorningTrackingIntention" component={MorningTrackingIntentionScreen} />
-      <Stack.Screen name="EveningTrackingPriority" component={EveningTrackingPriorityScreen} />
-      <Stack.Screen name="EveningTrackingRatings" component={EveningTrackingRatingsScreen} />
-      <Stack.Screen name="EveningTrackingJournal" component={EveningTrackingJournalScreen} />
+      <Stack.Screen name="MorningTracking" component={MorningTrackingContainerScreen} />
+      <Stack.Screen name="EveningTracking" component={EveningTrackingContainerScreen} />
       <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
     </Stack.Navigator>
   );
@@ -72,6 +70,9 @@ const KnowledgeStack = () => {
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
       <Stack.Screen name="LoveDating" component={LoveDatingScreen} />
       <Stack.Screen name="StoryBank" component={StoryBankScreen} />
+      <Stack.Screen name="PhysicalWealthIntroAnimation" component={PhysicalWealthIntroAnimationScreen} />
+      <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
+      <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />
     </Stack.Navigator>
   );
 };
@@ -84,8 +85,8 @@ const App = (): React.JSX.Element => {
         <Tab.Navigator
           initialRouteName="Dashboard"
           screenOptions={{
-            tabBarActiveTintColor: '#007AFF',
-            tabBarInactiveTintColor: '#8E8E93',
+            tabBarActiveTintColor: '#1F2937',
+            tabBarInactiveTintColor: '#9CA3AF',
             headerShown: false,
           }}
         >
@@ -93,10 +94,10 @@ const App = (): React.JSX.Element => {
             name="KnowledgeHub"
             component={KnowledgeStack}
             options={{
-              title: 'Knowledge Hub',
-              tabBarLabel: 'Knowledge',
+              title: 'Second Brain',
+              tabBarLabel: 'Second Brain',
               tabBarIcon: ({ color, size }) => (
-                <Ionicons name="library-outline" size={size} color={color} />
+                <BrainIcon size={size} color={color} />
               ),
             }}
           />
@@ -108,7 +109,9 @@ const App = (): React.JSX.Element => {
               tabBarLabel: 'Home',
               headerShown: false,
               tabBarIcon: ({ color, size }) => (
-                <HomeIcon size={size} color={color} />
+                <View style={{ marginTop: -2 }}>
+                  <HomeIcon size={size} color={color} />
+                </View>
               ),
             }}
           />
@@ -119,7 +122,7 @@ const App = (): React.JSX.Element => {
               title: 'Calendar',
               tabBarLabel: 'Calendar',
               tabBarIcon: ({ color, size }) => (
-                <Ionicons name="calendar-outline" size={size} color={color} />
+                <CalendarIcon size={size} color={color} />
               ),
             }}
           />

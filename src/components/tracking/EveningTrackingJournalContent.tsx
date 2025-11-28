@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -14,32 +13,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-interface EveningTrackingJournalScreenProps {
-  navigation?: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
-}
-
 type TabType = 'text' | 'voice' | 'video';
 
-const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> = ({
-  navigation,
+interface EveningTrackingJournalContentProps {
+  journalText: string;
+  onJournalChange: (value: string) => void;
+  onContinue: () => void;
+}
+
+const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps> = ({
+  journalText,
+  onJournalChange,
+  onContinue,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('text');
-  const [journalText, setJournalText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-
-  const handleBack = (): void => {
-    navigation?.goBack();
-  };
-
-  const handleContinue = (): void => {
-    console.log('Journal Entry:', { activeTab, journalText });
-    navigation?.navigate('EveningTrackingComplete');
-  };
 
   const handleTabChange = (tab: TabType): void => {
     if (tab !== activeTab) {
@@ -75,7 +65,7 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
         multiline
         numberOfLines={8}
         value={journalText}
-        onChangeText={setJournalText}
+        onChangeText={onJournalChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
         textAlignVertical="top"
@@ -139,112 +129,88 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoid}
-        keyboardVerticalOffset={0}
-      >
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.keyboardAvoid}
+      keyboardVerticalOffset={100}
+    >
+      <View style={styles.container}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
+          {/* Question Section */}
+          <View style={styles.questionSection}>
+            <LinearGradient
+              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+              style={styles.iconGradientRing}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            {/* Progress Indicator */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressDotActive} />
-              <View style={styles.progressDotActive} />
-              <View style={styles.progressDotActive} />
-            </View>
-            <View style={styles.headerSpacer} />
+              <View style={styles.iconInnerCircle}>
+                <Ionicons name="book" size={28} color="#7C3AED" />
+              </View>
+            </LinearGradient>
+            <Text style={styles.questionText}>Journal Entry</Text>
           </View>
 
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          >
-            {/* Question Section */}
-            <View style={styles.questionSection}>
-              <LinearGradient
-                colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-                style={styles.iconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          {/* Segmented Control */}
+          <View style={styles.segmentedControl}>
+            {tabs.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[
+                  styles.segmentButton,
+                  activeTab === tab.key && styles.segmentButtonActive,
+                ]}
+                onPress={() => handleTabChange(tab.key)}
+                activeOpacity={0.7}
               >
-                <View style={styles.iconInnerCircle}>
-                  <Ionicons name="book" size={28} color="#7C3AED" />
-                </View>
-              </LinearGradient>
-              <Text style={styles.questionText}>Journal Entry</Text>
-            </View>
-
-            {/* Segmented Control */}
-            <View style={styles.segmentedControl}>
-              {tabs.map((tab) => (
-                <TouchableOpacity
-                  key={tab.key}
+                <Ionicons
+                  name={tab.icon}
+                  size={18}
+                  color={activeTab === tab.key ? '#6366F1' : '#6B7280'}
+                />
+                <Text
                   style={[
-                    styles.segmentButton,
-                    activeTab === tab.key && styles.segmentButtonActive,
+                    styles.segmentText,
+                    activeTab === tab.key && styles.segmentTextActive,
                   ]}
-                  onPress={() => handleTabChange(tab.key)}
-                  activeOpacity={0.7}
                 >
-                  <Ionicons
-                    name={tab.icon}
-                    size={18}
-                    color={activeTab === tab.key ? '#6366F1' : '#6B7280'}
-                  />
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      activeTab === tab.key && styles.segmentTextActive,
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Content Area */}
-            <View style={styles.contentArea}>
-              {renderContent()}
-            </View>
-          </ScrollView>
-
-          {/* Continue Button */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleContinue}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.continueButtonText}>Finish Check-in</Text>
-              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
+
+          {/* Content Area */}
+          <View style={styles.contentArea}>
+            {renderContent()}
+          </View>
+        </ScrollView>
+
+        {/* Continue Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={onContinue}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.continueButtonText}>Finish Check-in</Text>
+            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   keyboardAvoid: {
     flex: 1,
   },
@@ -259,55 +225,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
-  },
-
-  // Header
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-
-  // Progress Indicator
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  progressDotActive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1F2937',
-  },
-  progressDotInactive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
   },
 
   // Question Section
@@ -421,19 +338,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  placeholderIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
-  },
   placeholderGradientRing: {
     width: 64,
     height: 64,
@@ -510,4 +414,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EveningTrackingJournalScreen;
+export default EveningTrackingJournalContent;

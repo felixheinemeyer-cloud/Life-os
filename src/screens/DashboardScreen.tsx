@@ -182,7 +182,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
   const handleEveningTracking = (): void => {
     if (navigation) {
-      navigation.navigate('EveningTrackingPriority');
+      navigation.navigate('EveningTracking');
     } else {
       console.log('Navigate to Evening Tracking');
     }
@@ -346,12 +346,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             </TouchableOpacity>
           </View>
 
-          {/* Greeting (centered, as in original) */}
+          {/* Greeting (centered) */}
           <View style={styles.greetingContainer}>
             <Text style={styles.greeting} numberOfLines={1}>
               {getGreeting()}!
             </Text>
-            <Text style={styles.date}>{getCurrentDate()}</Text>
           </View>
         </View>
 
@@ -755,7 +754,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
@@ -789,17 +788,10 @@ const styles = StyleSheet.create({
 
   // LAYER 1: Scrollable Header (matches original layout exactly)
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingBottom: 24,
     position: 'relative',
     marginTop: -8,
   },
@@ -813,6 +805,7 @@ const styles = StyleSheet.create({
     top: 12,
     left: 0,
     right: 0,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     pointerEvents: 'none',
@@ -874,19 +867,18 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     paddingHorizontal: 16, // Distance from screen edges to cards (matches Knowledge Hub)
-    marginTop: 16,
   },
   trackingRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   trackingCardTouchable: {
     flex: 1,
   },
   trackingCard: {
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -980,7 +972,7 @@ const styles = StyleSheet.create({
 
   // Today's Insight Section Styles (Redesigned)
   insightSection: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   insightSectionCard: {
     borderRadius: 20,
@@ -999,6 +991,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.3,
+  },
+  insightSectionDate: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 2,
   },
   insightPreview: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -1184,7 +1182,7 @@ const styles = StyleSheet.create({
   // Recap Section - Premium Design
   recapSection: {
     paddingHorizontal: 16, // Distance from screen edges to recap cards (matches Knowledge Hub)
-    marginTop: 16,
+    marginTop: 24,
   },
   recapOuterCard: {
     backgroundColor: '#FFFFFF',
@@ -1300,7 +1298,7 @@ const styles = StyleSheet.create({
   // Messages Section Styles
   messagesSection: {
     paddingHorizontal: 16,
-    marginTop: 32,
+    marginTop: 24,
     marginBottom: 20,
   },
   messagesCard: {

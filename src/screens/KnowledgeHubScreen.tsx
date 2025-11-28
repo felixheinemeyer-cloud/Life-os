@@ -121,8 +121,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       >
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.title}>Knowledge Hub</Text>
-          <Text style={styles.subtitle}>Your second brain in one place</Text>
+          <Text style={styles.title}>Second Brain</Text>
         </View>
 
         {/* Vaults Grid */}
@@ -222,7 +221,7 @@ const VaultCard: React.FC<{
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
   },
   container: {
     flex: 1,
@@ -234,34 +233,28 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingBottom: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '500',
     color: '#6B7280',
+    letterSpacing: -0.2,
   },
 
   // Vaults Grid
   vaultsSection: {
-    marginTop: 16,
+    marginTop: 8,
     paddingHorizontal: 16, // Distance from screen edges to vault cards
   },
   vaultsGrid: {
@@ -278,7 +271,7 @@ const styles = StyleSheet.create({
   },
   vaultCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 16,
     minHeight: 140,

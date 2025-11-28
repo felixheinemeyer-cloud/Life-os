@@ -161,7 +161,6 @@ const CalendarScreen = (): React.JSX.Element => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Calendar</Text>
-          <Text style={styles.headerSubtitle}>Track your daily progress</Text>
         </View>
 
         {/* Calendar Card */}
@@ -244,41 +243,37 @@ const CalendarScreen = (): React.JSX.Element => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '500',
     color: '#6B7280',
+    letterSpacing: -0.2,
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    margin: 16,
+    marginTop: 8,
+    marginHorizontal: 16,
+    marginBottom: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },

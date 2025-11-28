@@ -1,30 +1,43 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   GestureResponderEvent,
+  InteractionManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-interface MorningTrackingScreenProps {
-  navigation?: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
+interface MorningTrackingSleepContentProps {
+  bedtime: { hour: number; minute: number };
+  wakeTime: { hour: number; minute: number };
+  onBedtimeChange: (value: { hour: number; minute: number }) => void;
+  onWakeTimeChange: (value: { hour: number; minute: number }) => void;
+  onContinue: () => void;
 }
 
-const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigation }) => {
-  // Interactive state for sleep times with 5-minute snapping
-  const [bedtime, setBedtime] = useState({ hour: 23, minute: 15 }); // 11:15 PM
-  const [wakeTime, setWakeTime] = useState({ hour: 7, minute: 0 }); // 7:00 AM
+const MorningTrackingSleepContent: React.FC<MorningTrackingSleepContentProps> = ({
+  bedtime,
+  wakeTime,
+  onBedtimeChange,
+  onWakeTimeChange,
+  onContinue,
+}) => {
   const [activeHandle, setActiveHandle] = useState<'bedtime' | 'wakeTime' | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  // Defer heavy SVG rendering until after navigation transition completes
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => {
+      setIsReady(true);
+    });
+    return () => handle.cancel();
+  }, []);
 
   // Track previous values for haptic feedback on change
   const prevBedtimeRef = useRef(bedtime);
@@ -53,12 +66,12 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
 
     // Match the actual slider dimensions
     const size = 340;
-    const strokeWidth = 36; // Updated to match new ring width
+    const strokeWidth = 36;
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = (size - strokeWidth - 40) / 2; // Match CircularSleepSlider calculation
+    const radius = (size - strokeWidth - 40) / 2;
 
-    // Calculate positions of both handles using CURRENT state (before any updates)
+    // Calculate positions of both handles using CURRENT state
     const bedtimeAngle = ((bedtime.hour + bedtime.minute / 60) / 24) * 360 - 90;
     const wakeTimeAngle = ((wakeTime.hour + wakeTime.minute / 60) / 24) * 360 - 90;
 
@@ -74,12 +87,12 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
     const distToBedtime = distance(locationX, locationY, bedtimeX, bedtimeY);
     const distToWakeTime = distance(locationX, locationY, wakeTimeX, wakeTimeY);
 
-    // Define hit box threshold - only move handle if touch is within this distance
-    const hitBoxRadius = 80; // Large hitbox for easy interaction
+    // Define hit box threshold
+    const hitBoxRadius = 80;
 
     // Only proceed if touch is within hit box of at least one handle
     if (distToBedtime > hitBoxRadius && distToWakeTime > hitBoxRadius) {
-      return; // Touch is too far from both handles, ignore it
+      return;
     }
 
     // Convert touch position to time
@@ -90,14 +103,12 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
 
     // Update ONLY the closer handle
     if (distToBedtime < distToWakeTime) {
-      setBedtime(time);
+      onBedtimeChange(time);
       setActiveHandle('bedtime');
-      // Light impact feedback when grabbing handle - more immediate, don't update ref yet
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
-      setWakeTime(time);
+      onWakeTimeChange(time);
       setActiveHandle('wakeTime');
-      // Light impact feedback when grabbing handle - more immediate, don't update ref yet
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
@@ -116,27 +127,17 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
     const time = angleToTime(angle);
 
     if (activeHandle === 'bedtime') {
-      // Check if this is a new interval (5-minute snap point)
       const prevTime = prevBedtimeRef.current;
       const hasChanged = time.hour !== prevTime.hour || time.minute !== prevTime.minute;
-
-      // Update state first for immediate visual feedback
-      setBedtime(time);
-
-      // Trigger haptic and update ref if interval changed
+      onBedtimeChange(time);
       if (hasChanged) {
         prevBedtimeRef.current = time;
         Haptics.selectionAsync();
       }
     } else {
-      // Check if this is a new interval (5-minute snap point)
       const prevTime = prevWakeTimeRef.current;
       const hasChanged = time.hour !== prevTime.hour || time.minute !== prevTime.minute;
-
-      // Update state first for immediate visual feedback
-      setWakeTime(time);
-
-      // Trigger haptic and update ref if interval changed
+      onWakeTimeChange(time);
       if (hasChanged) {
         prevWakeTimeRef.current = time;
         Haptics.selectionAsync();
@@ -150,14 +151,12 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
 
   // Calculate total sleep duration
   const calculateSleepDuration = (): string => {
-    // Convert to minutes since midnight
     const bedtimeMinutes = bedtime.hour * 60 + bedtime.minute;
     const wakeTimeMinutes = wakeTime.hour * 60 + wakeTime.minute;
 
-    // Calculate duration (accounting for overnight sleep)
     let durationMinutes = wakeTimeMinutes - bedtimeMinutes;
     if (durationMinutes < 0) {
-      durationMinutes += 24 * 60; // Add 24 hours if overnight
+      durationMinutes += 24 * 60;
     }
 
     const hours = Math.floor(durationMinutes / 60);
@@ -174,148 +173,116 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
     return `${displayHour}:${displayMinute} ${period}`;
   };
 
-  // Convert hour to angle (0° = 12 o'clock, clockwise)
-  const hourToAngle = (hour: number, minute: number): number => {
-    const totalMinutes = hour * 60 + minute;
-    return (totalMinutes / (24 * 60)) * 360 - 90; // -90 to start at top
-  };
-
-  const handleBack = (): void => {
-    navigation?.goBack();
-  };
-
-  const handleContinue = (): void => {
-    navigation?.navigate('MorningTrackingGratitude');
-  };
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        bounces={false}
-        scrollEnabled={activeHandle === null}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressDotActive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+      bounces={false}
+      scrollEnabled={activeHandle === null}
+    >
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Time Info Cards Row */}
+        <View style={styles.timeCardsRow}>
+          {/* Bedtime Card */}
+          <View style={styles.timeCard}>
+            <LinearGradient
+              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+              style={styles.timeCardIconGradientRing}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.timeCardIconInnerCircle}>
+                <Ionicons name="moon" size={20} color="#7C3AED" />
+              </View>
+            </LinearGradient>
+            <View style={styles.timeCardContent}>
+              <Text style={styles.timeCardLabel}>Bedtime</Text>
+              <Text style={styles.timeCardValue}>
+                {formatTime(bedtime.hour, bedtime.minute)}
+              </Text>
+            </View>
           </View>
-          <View style={styles.headerSpacer} />
+
+          {/* Wake-up Card */}
+          <View style={styles.timeCard}>
+            <LinearGradient
+              colors={['#FBBF24', '#F59E0B', '#D97706']}
+              style={styles.timeCardIconGradientRing}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.timeCardIconInnerCircle}>
+                <Ionicons name="sunny" size={20} color="#D97706" />
+              </View>
+            </LinearGradient>
+            <View style={styles.timeCardContent}>
+              <Text style={styles.timeCardLabel}>Wake up</Text>
+              <Text style={styles.timeCardValue}>
+                {formatTime(wakeTime.hour, wakeTime.minute)}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Content */}
-        <View style={styles.content}>
-          {/* Time Info Cards Row */}
-          <View style={styles.timeCardsRow}>
-            {/* Bedtime Card */}
-            <View style={styles.timeCard}>
-              <LinearGradient
-                colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-                style={styles.timeCardIconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.timeCardIconInnerCircle}>
-                  <Ionicons name="moon" size={20} color="#7C3AED" />
-                </View>
-              </LinearGradient>
-              <View style={styles.timeCardContent}>
-                <Text style={styles.timeCardLabel}>Bedtime</Text>
-                <Text style={styles.timeCardValue}>
-                  {formatTime(bedtime.hour, bedtime.minute)}
-                </Text>
-              </View>
-            </View>
+        {/* Top Spacer for equal spacing */}
+        <View style={{ flex: 1 }} />
 
-            {/* Wake-up Card */}
-            <View style={styles.timeCard}>
-              <LinearGradient
-                colors={['#FBBF24', '#F59E0B', '#D97706']}
-                style={styles.timeCardIconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.timeCardIconInnerCircle}>
-                  <Ionicons name="sunny" size={20} color="#D97706" />
-                </View>
-              </LinearGradient>
-              <View style={styles.timeCardContent}>
-                <Text style={styles.timeCardLabel}>Wake up</Text>
-                <Text style={styles.timeCardValue}>
-                  {formatTime(wakeTime.hour, wakeTime.minute)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Top Spacer for equal spacing */}
-          <View style={{ flex: 1 }} />
-
-          {/* Circular Sleep Slider - Interactive */}
-          <View
-            style={styles.sliderContainer}
-            onStartShouldSetResponder={() => true}
-            onResponderGrant={handleSliderTouch}
-            onResponderMove={handleSliderMove}
-            onResponderRelease={handleSliderRelease}
-          >
+        {/* Circular Sleep Slider - Interactive */}
+        <View
+          style={styles.sliderContainer}
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={handleSliderTouch}
+          onResponderMove={handleSliderMove}
+          onResponderRelease={handleSliderRelease}
+        >
+          {isReady ? (
             <CircularSleepSlider
               bedtime={bedtime}
               wakeTime={wakeTime}
             />
-          </View>
-
-          {/* Bottom Spacer for equal spacing */}
-          <View style={{ flex: 1 }} />
-
-          {/* Total Sleep Summary */}
-          <View style={styles.totalSleepCard}>
-            <Ionicons name="time-outline" size={22} color="#9CA3AF" />
-            <Text style={styles.totalSleepLabel}>TOTAL SLEEP</Text>
-            <Text style={styles.totalSleepValue}>{calculateSleepDuration()}</Text>
-          </View>
-
-          {/* Continue Button */}
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
+          ) : (
+            <View style={styles.sliderPlaceholder} />
+          )}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        {/* Bottom Spacer for equal spacing */}
+        <View style={{ flex: 1 }} />
+
+        {/* Total Sleep Summary */}
+        <View style={styles.totalSleepCard}>
+          <Ionicons name="time-outline" size={22} color="#9CA3AF" />
+          <Text style={styles.totalSleepLabel}>TOTAL SLEEP</Text>
+          <Text style={styles.totalSleepValue}>{calculateSleepDuration()}</Text>
+        </View>
+
+        {/* Continue Button */}
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={onContinue}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 };
 
-// Circular Sleep Slider Component - Rebuilt from scratch
+// Circular Sleep Slider Component
 interface CircularSleepSliderProps {
   bedtime: { hour: number; minute: number };
   wakeTime: { hour: number; minute: number };
 }
 
 const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wakeTime }) => {
-  // Dynamic sizing - use a larger fixed size that will scale properly
   const size = 340;
-  const strokeWidth = 36; // Increased by 100% (was 18)
+  const strokeWidth = 36;
   const center = size / 2;
-  const radius = (size - strokeWidth - 40) / 2; // Leave space for handles and labels
-  const labelRadius = radius * 0.75; // Position labels at 75% of radius (inside)
+  const radius = (size - strokeWidth - 40) / 2;
+  const labelRadius = radius * 0.75;
 
   // Calculate angles (0° = 12 o'clock, clockwise)
   const bedtimeAngle = ((bedtime.hour + bedtime.minute / 60) / 24) * 360;
@@ -336,7 +303,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
     y: center + radius * Math.sin(wakeTimeRad),
   };
 
-  // Calculate positions for hour number labels (2, 4, 8, 10 at various positions)
+  // Calculate positions for hour number labels
   const getHourLabelPosition = (hour: number) => {
     const angle = ((hour / 24) * 360 - 90) * Math.PI / 180;
     return {
@@ -352,7 +319,6 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
     const endX = wakeTimePos.x;
     const endY = wakeTimePos.y;
 
-    // Calculate if we need large arc flag
     let sweep = wakeTimeAngle - bedtimeAngle;
     if (sweep < 0) sweep += 360;
     const largeArcFlag = sweep > 180 ? 1 : 0;
@@ -360,16 +326,16 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
     return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
   };
 
-  // Hour positions for labels (2, 4, 8, 10 in AM and PM)
+  // Hour positions for labels
   const hourLabels = [
-    { hour: 22, label: '10' }, // 10PM - upper left
-    { hour: 2, label: '2' },   // 2AM - upper right
-    { hour: 4, label: '4' },   // 4AM - right upper
-    { hour: 8, label: '8' },   // 8AM - right lower
-    { hour: 14, label: '2' },  // 2PM - lower right
-    { hour: 16, label: '4' },  // 4PM - lower left
-    { hour: 20, label: '8' },  // 8PM - left lower
-    { hour: 10, label: '10' }, // 10AM - left upper
+    { hour: 22, label: '10' },
+    { hour: 2, label: '2' },
+    { hour: 4, label: '4' },
+    { hour: 8, label: '8' },
+    { hour: 14, label: '2' },
+    { hour: 16, label: '4' },
+    { hour: 20, label: '8' },
+    { hour: 10, label: '10' },
   ];
 
   return (
@@ -385,7 +351,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             </SvgLinearGradient>
           </Defs>
 
-          {/* Main track base - slightly darker for depth */}
+          {/* Main track base */}
           <Circle
             cx={center}
             cy={center}
@@ -395,7 +361,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             fill="none"
           />
 
-          {/* Inner shadow - darker inner edge for recessed effect */}
+          {/* Inner shadow */}
           <Circle
             cx={center}
             cy={center}
@@ -406,7 +372,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             opacity={0.06}
           />
 
-          {/* Hour number labels (2, 4, 8, 10) in light gray */}
+          {/* Hour number labels */}
           {hourLabels.map((item, index) => {
             const pos = getHourLabelPosition(item.hour);
             return (
@@ -424,7 +390,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             );
           })}
 
-          {/* Sleep Duration Arc shadow for depth */}
+          {/* Sleep Duration Arc shadow */}
           <Path
             d={createArcPath()}
             stroke="#000000"
@@ -434,7 +400,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             opacity={0.15}
           />
 
-          {/* Sleep Duration Arc with gradient - 80% of ring width */}
+          {/* Sleep Duration Arc with gradient */}
           <Path
             d={createArcPath()}
             stroke="url(#sleepGradient)"
@@ -443,7 +409,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             strokeLinecap="round"
           />
 
-          {/* Inner highlight on sleep arc for 3D elevation */}
+          {/* Inner highlight on sleep arc */}
           <Path
             d={createArcPath()}
             stroke="#FFFFFF"
@@ -454,7 +420,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
           />
         </Svg>
 
-        {/* Bedtime Handle - Gradient ring matching card style */}
+        {/* Bedtime Handle */}
         <View
           style={{
             position: 'absolute',
@@ -491,7 +457,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
           </LinearGradient>
         </View>
 
-        {/* Wake Time Handle - Gradient ring matching card style */}
+        {/* Wake Time Handle */}
         <View
           style={{
             position: 'absolute',
@@ -547,10 +513,6 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
@@ -558,53 +520,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 16,
-  },
-
-  // Header
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  progressDotActive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1F2937',
-  },
-  progressDotInactive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
   },
 
   // Content
@@ -672,6 +587,10 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 16,
   },
+  sliderPlaceholder: {
+    width: 340,
+    height: 340,
+  },
   circularSliderWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -691,16 +610,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-  },
-  centerIcon: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -14 }, { translateY: -14 }],
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // Total Sleep Card
@@ -757,4 +666,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MorningTrackingScreen;
+export default MorningTrackingSleepContent;
