@@ -46,26 +46,26 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
       // Fade in background
       Animated.timing(fadeIn, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
       // Show label
       Animated.timing(labelOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 220,
         useNativeDriver: true,
       }),
       // Show icon with scale
       Animated.parallel([
         Animated.timing(iconOpacity, {
           toValue: 1,
-          duration: 500,
+          duration: 350,
           useNativeDriver: true,
         }),
         Animated.spring(iconScale, {
           toValue: 1,
           friction: 8,
-          tension: 40,
+          tension: 50,
           useNativeDriver: true,
         }),
       ]),
@@ -73,12 +73,12 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
       Animated.parallel([
         Animated.timing(textOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(textTranslateY, {
           toValue: 0,
-          duration: 400,
+          duration: 300,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -90,13 +90,13 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
       Animated.sequence([
         Animated.timing(breatheScale, {
           toValue: 1.08,
-          duration: 1500,
+          duration: 1100,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(breatheScale, {
           toValue: 1,
-          duration: 1500,
+          duration: 1100,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -116,13 +116,13 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
           Animated.parallel([
             Animated.timing(scaleAnim, {
               toValue: 2.2,
-              duration: 2000,
+              duration: 1600,
               easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }),
             Animated.timing(opacityAnim, {
               toValue: 0,
-              duration: 2000,
+              duration: 1600,
               easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }),
@@ -144,17 +144,17 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
     };
 
     const ring1Animation = createRingAnimation(ring1Scale, ring1Opacity, 0);
-    const ring2Animation = createRingAnimation(ring2Scale, ring2Opacity, 600);
-    const ring3Animation = createRingAnimation(ring3Scale, ring3Opacity, 1200);
+    const ring2Animation = createRingAnimation(ring2Scale, ring2Opacity, 500);
+    const ring3Animation = createRingAnimation(ring3Scale, ring3Opacity, 1000);
 
     ring1Animation.start();
     ring2Animation.start();
     ring3Animation.start();
 
-    // Auto-navigate after 3 seconds
+    // Auto-navigate after 2.4 seconds
     const navigationTimer = setTimeout(() => {
       navigation.replace('PhysicalWealthIntro');
-    }, 3000);
+    }, 2400);
 
     return () => {
       clearTimeout(navigationTimer);
@@ -167,12 +167,6 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#ECFDF5', '#D1FAE5', '#A7F3D0']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
         <Animated.View style={[styles.content, { opacity: fadeIn }]}>
           {/* Top Label */}
           <Animated.View style={[styles.labelContainer, { opacity: labelOpacity }]}>
@@ -248,7 +242,6 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
             </Text>
           </Animated.View>
         </Animated.View>
-      </LinearGradient>
     </View>
   );
 };
@@ -256,9 +249,7 @@ const PhysicalWealthIntroAnimationScreen: React.FC<PhysicalWealthIntroAnimationS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
+    backgroundColor: '#F7F5F2',
   },
   content: {
     flex: 1,
@@ -324,7 +315,7 @@ const styles = StyleSheet.create({
   caption: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#065F46',
+    color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.3,
     lineHeight: 26,
