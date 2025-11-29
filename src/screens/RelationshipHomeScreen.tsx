@@ -1,0 +1,1476 @@
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  ScrollView,
+  Image,
+  TextInput,
+  Platform,
+  Dimensions,
+  PanResponder,
+  Modal,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const NOTE_ACTION_WIDTH = 136; // Two 44px buttons + 16px gaps (16 + 44 + 16 + 44 + 16)
+
+// Types
+interface RelationshipHomeScreenProps {
+  navigation: {
+    goBack: () => void;
+    navigate: (screen: string, params?: any) => void;
+  };
+  route: {
+    params?: {
+      partnerName?: string;
+      sinceDate?: string | Date;
+      photoUri?: string | null;
+    };
+  };
+}
+
+interface DurationStats {
+  months: number;
+  weeks: number;
+  days: number;
+}
+
+interface DateIdea {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}
+
+interface RelationshipTool {
+  id: string;
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+interface PartnerNote {
+  id: string;
+  text: string;
+}
+
+// Mock Data
+const DATE_IDEAS: DateIdea[] = [
+  { id: '1', title: 'Sunset walk by the river', subtitle: 'Golden hour magic', icon: 'sunny-outline', color: '#F59E0B' },
+  { id: '2', title: 'Cook together', subtitle: 'Create & connect', icon: 'restaurant-outline', color: '#10B981' },
+  { id: '3', title: 'Movie night', subtitle: 'Cozy at home', icon: 'film-outline', color: '#8B5CF6' },
+];
+
+const RELATIONSHIP_TOOLS: RelationshipTool[] = [
+  {
+    id: '1',
+    title: 'Weekly check-in ritual',
+    description: 'A simple practice to stay connected and aligned',
+    icon: 'calendar-outline',
+  },
+];
+
+// Helper Functions
+const calculateDuration = (sinceDate: Date): DurationStats => {
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - sinceDate.getTime());
+  const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  const months = Math.floor(totalDays / 30);
+  const remainingAfterMonths = totalDays % 30;
+  const weeks = Math.floor(remainingAfterMonths / 7);
+  const days = remainingAfterMonths % 7;
+
+  return { months, weeks, days };
+};
+
+const formatDate = (date: Date): string => {
+  const options: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  };
+  return date.toLocaleDateString('en-US', options);
+};
+
+// Subcomponents
+const HeroSection: React.FC<{
+  photoUri: string | null;
+  partnerName: string;
+  sinceDate: Date;
+  duration: DurationStats;
+  animatedStyle: any;
+}> = ({ photoUri, partnerName, sinceDate, duration, animatedStyle }) => (
+  <Animated.View style={[styles.heroSection, animatedStyle]}>
+    {/* Photo Card */}
+    <View style={styles.photoCard}>
+      {photoUri ? (
+        <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
+      ) : (
+        <LinearGradient
+          colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+          style={styles.heroPhotoPlaceholder}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.heroIconCircle}>
+            <Ionicons name="heart" size={32} color="#E11D48" />
+          </View>
+        </LinearGradient>
+      )}
+    </View>
+
+    {/* Partner Name */}
+    <Text style={styles.partnerName}>{partnerName}</Text>
+
+    {/* Together Since */}
+    <Text style={styles.togetherSince}>
+      Together since {formatDate(sinceDate)}
+    </Text>
+
+    {/* Duration Stats */}
+    <View style={styles.durationContainer}>
+      <View style={styles.durationStat}>
+        <Text style={styles.durationNumber}>{duration.months}</Text>
+        <Text style={styles.durationLabel}>months</Text>
+      </View>
+      <View style={styles.durationDivider} />
+      <View style={styles.durationStat}>
+        <Text style={styles.durationNumber}>{duration.weeks}</Text>
+        <Text style={styles.durationLabel}>weeks</Text>
+      </View>
+      <View style={styles.durationDivider} />
+      <View style={styles.durationStat}>
+        <Text style={styles.durationNumber}>{duration.days}</Text>
+        <Text style={styles.durationLabel}>days</Text>
+      </View>
+    </View>
+  </Animated.View>
+);
+
+const CARD_WIDTH = 180;
+const CARD_HEIGHT = 180;
+const SIDE_CARD_SCALE = 0.8;
+const SIDE_CARD_OFFSET = 112;
+const DRAG_THRESHOLD = 150;
+
+const DateIdeasSection: React.FC<{ animatedStyle: any; navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ animatedStyle, navigation, onSwipeStart, onSwipeEnd }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const animatedIndex = useRef(new Animated.Value(0)).current;
+  const panX = useRef(new Animated.Value(0)).current;
+
+  const handleIdeaPress = (idea: DateIdea) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('Date idea selected:', idea.title);
+  };
+
+  const handleSeeAll = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation?.navigate('DateIdeasList');
+  };
+
+  const goToIndex = useCallback((newIndex: number) => {
+    const clampedIndex = Math.max(0, Math.min(DATE_IDEAS.length - 1, newIndex));
+    setActiveIndex(clampedIndex);
+    Animated.spring(animatedIndex, {
+      toValue: clampedIndex,
+      useNativeDriver: true,
+      friction: 7,
+      tension: 50,
+    }).start();
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, [animatedIndex]);
+
+  const carouselPanResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 15 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+      },
+      onPanResponderGrant: () => {
+        panX.setValue(0);
+        onSwipeStart?.();
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, gestureState) => {
+        panX.setValue(gestureState.dx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        onSwipeEnd?.();
+        const threshold = 50;
+        if (gestureState.dx < -threshold && activeIndex < DATE_IDEAS.length - 1) {
+          goToIndex(activeIndex + 1);
+        } else if (gestureState.dx > threshold && activeIndex > 0) {
+          goToIndex(activeIndex - 1);
+        }
+        Animated.spring(panX, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 7,
+        }).start();
+      },
+      onPanResponderTerminate: () => {
+        onSwipeEnd?.();
+        Animated.spring(panX, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 7,
+        }).start();
+      },
+    }),
+  [activeIndex, goToIndex, panX, onSwipeStart, onSwipeEnd]);
+
+  // Each card's position is determined by: cardIndex - animatedIndex
+  // When animatedIndex = cardIndex, card is at center
+  // When animatedIndex = cardIndex + 1, card is on the left
+  // When animatedIndex = cardIndex - 1, card is on the right
+  const getCardAnimatedStyle = (cardIndex: number) => {
+    // TranslateX based on animated index position
+    const baseTranslateX = animatedIndex.interpolate({
+      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
+      outputRange: [
+        2 * SIDE_CARD_OFFSET,
+        SIDE_CARD_OFFSET,
+        0,
+        -SIDE_CARD_OFFSET,
+        -2 * SIDE_CARD_OFFSET,
+      ],
+      extrapolate: 'clamp',
+    });
+
+    // Drag offset during swipe gesture (follows finger direction)
+    const dragOffset = panX.interpolate({
+      inputRange: [-DRAG_THRESHOLD, 0, DRAG_THRESHOLD],
+      outputRange: [-SIDE_CARD_OFFSET, 0, SIDE_CARD_OFFSET],
+      extrapolate: 'clamp',
+    });
+
+    const translateX = Animated.add(baseTranslateX, dragOffset);
+
+    // Scale based on animated index
+    const baseScale = animatedIndex.interpolate({
+      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
+      outputRange: [0.7, SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE, 0.7],
+      extrapolate: 'clamp',
+    });
+
+    // Scale adjustment during drag
+    const dragScaleAdjust = panX.interpolate({
+      inputRange: [-DRAG_THRESHOLD, 0, DRAG_THRESHOLD],
+      outputRange: [0.1, 0, 0.1],
+      extrapolate: 'clamp',
+    });
+
+    // For center card, scale down during drag; for side cards heading to center, scale up
+    const scale = Animated.subtract(baseScale, Animated.multiply(
+      dragScaleAdjust,
+      animatedIndex.interpolate({
+        inputRange: [cardIndex - 1, cardIndex, cardIndex + 1],
+        outputRange: [-1, 1, -1], // -1 = scale up during drag, 1 = scale down
+        extrapolate: 'clamp',
+      })
+    ));
+
+    // Opacity based on position - center card is full opacity, side cards are faded
+    const opacity = animatedIndex.interpolate({
+      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
+      outputRange: [0.3, 0.5, 1, 0.5, 0.3],
+      extrapolate: 'clamp',
+    });
+
+    return {
+      transform: [{ translateX }, { scale }],
+      opacity,
+    };
+  };
+
+  // Calculate zIndex based on distance from active index
+  const getZIndex = (cardIndex: number) => {
+    const distance = Math.abs(cardIndex - activeIndex);
+    return 10 - distance;
+  };
+
+  // Render cards within range of active index
+  const getVisibleCardIndices = () => {
+    const indices: number[] = [];
+    for (let i = 0; i < DATE_IDEAS.length; i++) {
+      if (Math.abs(i - activeIndex) <= 2) {
+        indices.push(i);
+      }
+    }
+    return indices;
+  };
+
+  return (
+    <Animated.View style={[styles.section, styles.dateIdeasSection, animatedStyle]}>
+      <View style={styles.dateIdeasHeader}>
+        <View>
+          <Text style={styles.sectionTitle}>Date Ideas</Text>
+          <Text style={styles.dateIdeasSubtitle}>Weekly Inspiration</Text>
+        </View>
+        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
+          <Text style={styles.seeAllText}>See All</Text>
+          <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.carouselContainer} {...carouselPanResponder.panHandlers}>
+        {getVisibleCardIndices().map((cardIndex) => {
+          const idea = DATE_IDEAS[cardIndex];
+          const cardAnimatedStyle = getCardAnimatedStyle(cardIndex);
+          return (
+            <Animated.View
+              key={idea.id}
+              style={[
+                styles.carouselCard,
+                {
+                  transform: cardAnimatedStyle.transform,
+                  opacity: cardAnimatedStyle.opacity,
+                  zIndex: getZIndex(cardIndex),
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.dateIdeaCardInner}
+                onPress={() => handleIdeaPress(idea)}
+                activeOpacity={0.9}
+              >
+                <View style={[styles.dateIdeaIcon, { backgroundColor: `${idea.color}15` }]}>
+                  <Ionicons name={idea.icon} size={36} color={idea.color} />
+                </View>
+                <Text style={styles.dateIdeaTitle}>{idea.title}</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+};
+
+// Helper function to calculate days until next Monday
+const calculateDaysUntilMonday = (): number => {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  // If today is Monday (1), return 7 (next Monday)
+  // Otherwise calculate days until Monday
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
+  return daysUntilMonday;
+};
+
+const RelationshipToolsSection: React.FC<{ animatedStyle: any }> = ({ animatedStyle }) => {
+  const daysUntilUpdate = calculateDaysUntilMonday();
+
+  const handleToolPress = (tool: RelationshipTool) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('Tool selected:', tool.title);
+  };
+
+  return (
+    <Animated.View style={[styles.section, animatedStyle]}>
+      <View style={styles.toolsSectionHeader}>
+        <View>
+          <Text style={styles.sectionTitle}>Relationship Tool</Text>
+          <Text style={styles.toolsSectionSubtitle}>Resources to grow together</Text>
+        </View>
+        <View style={styles.toolsTimerPill}>
+          <Ionicons name="hourglass-outline" size={16} color="#1F2937" />
+          <Text style={styles.toolsTimerText}>{daysUntilUpdate}d</Text>
+        </View>
+      </View>
+      {RELATIONSHIP_TOOLS.map((tool) => (
+        <TouchableOpacity
+          key={tool.id}
+          style={styles.toolCard}
+          onPress={() => handleToolPress(tool)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.toolIconCircle}>
+            <Ionicons name={tool.icon} size={22} color="#E11D48" />
+          </View>
+          <View style={styles.toolContent}>
+            <Text style={styles.toolTitle}>{tool.title}</Text>
+            <Text style={styles.toolDescription}>{tool.description}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+      ))}
+    </Animated.View>
+  );
+};
+
+// Swipeable Note Card Component
+const SwipeableNoteCard: React.FC<{
+  note: PartnerNote;
+  onEdit: () => void;
+  onDelete: () => void;
+  onSwipeStart: () => void;
+  onSwipeEnd: () => void;
+}> = ({ note, onEdit, onDelete, onSwipeStart, onSwipeEnd }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentTranslateX = useRef(0);
+
+  useEffect(() => {
+    const listenerId = translateX.addListener(({ value }) => {
+      currentTranslateX.current = value;
+    });
+    return () => {
+      translateX.removeListener(listenerId);
+    };
+  }, [translateX]);
+
+  const closeActions = useCallback(() => {
+    setIsOpen(false);
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  }, [translateX]);
+
+  const isOpenRef = useRef(false);
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  const panResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+        onSwipeStart();
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        let newValue;
+        if (isOpenRef.current) {
+          newValue = -NOTE_ACTION_WIDTH + gestureState.dx;
+        } else {
+          newValue = gestureState.dx;
+        }
+        newValue = Math.max(-NOTE_ACTION_WIDTH, Math.min(0, newValue));
+        translateX.setValue(newValue);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const currentPos = currentTranslateX.current;
+        const velocity = gestureState.vx;
+        onSwipeEnd();
+
+        if (velocity < -0.3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          return;
+        }
+        if (velocity > 0.3) {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          return;
+        }
+
+        if (currentPos < -NOTE_ACTION_WIDTH / 3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        const currentPos = currentTranslateX.current;
+        onSwipeEnd();
+        if (currentPos < -NOTE_ACTION_WIDTH / 2) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  [translateX, onSwipeStart, onSwipeEnd]);
+
+  const handleCardPress = () => {
+    if (isOpen) {
+      closeActions();
+    }
+  };
+
+  const handleEdit = () => {
+    closeActions();
+    setTimeout(() => onEdit(), 200);
+  };
+
+  const handleDelete = () => {
+    closeActions();
+    setTimeout(() => onDelete(), 200);
+  };
+
+  return (
+    <View style={styles.noteCardWrapper}>
+      {/* Action buttons behind the card */}
+      <View style={styles.noteActionsContainer}>
+        <TouchableOpacity
+          style={[styles.noteSwipeAction, styles.noteEditAction]}
+          onPress={handleEdit}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.noteSwipeAction, styles.noteDeleteAction]}
+          onPress={handleDelete}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable card */}
+      <Animated.View
+        style={[styles.noteCardAnimatedWrapper, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity activeOpacity={1} onPress={handleCardPress}>
+          <View style={styles.noteCard}>
+            <View style={styles.noteAccent} />
+            <Text style={styles.noteText}>{note.text}</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
+
+const PartnerNotesSection: React.FC<{
+  partnerName: string;
+  notes: PartnerNote[];
+  onAddNotePress: () => void;
+  onEditNote: (note: PartnerNote) => void;
+  onDeleteNote: (id: string) => void;
+  onSwipeStart: () => void;
+  onSwipeEnd: () => void;
+  animatedStyle: any;
+}> = ({ partnerName, notes, onAddNotePress, onEditNote, onDeleteNote, onSwipeStart, onSwipeEnd, animatedStyle }) => (
+  <Animated.View style={[styles.section, animatedStyle]}>
+    <Text style={styles.sectionTitle}>Notes about {partnerName}</Text>
+    <Text style={styles.sectionSubtitle}>Little things you don't want to forget</Text>
+
+    {/* Add New Note Button */}
+    <TouchableOpacity
+      style={styles.addNoteCard}
+      onPress={onAddNotePress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.addNotePlaceholder}>Add a note...</Text>
+      <View style={styles.addNoteButton}>
+        <Ionicons name="add" size={20} color="#E11D48" />
+      </View>
+    </TouchableOpacity>
+
+    {/* Existing Notes */}
+    {notes.map((note) => (
+      <SwipeableNoteCard
+        key={note.id}
+        note={note}
+        onEdit={() => onEditNote(note)}
+        onDelete={() => onDeleteNote(note.id)}
+        onSwipeStart={onSwipeStart}
+        onSwipeEnd={onSwipeEnd}
+      />
+    ))}
+  </Animated.View>
+);
+
+// Main Component
+const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
+  navigation,
+  route,
+}) => {
+  // Extract params with defaults
+  const partnerName = route.params?.partnerName || 'Your Partner';
+  const photoUri = route.params?.photoUri || null;
+  const sinceDateParam = route.params?.sinceDate;
+
+  // Parse sinceDate
+  const sinceDate = useMemo(() => {
+    if (!sinceDateParam) return new Date();
+    if (sinceDateParam instanceof Date) return sinceDateParam;
+    return new Date(sinceDateParam);
+  }, [sinceDateParam]);
+
+  // Calculate duration
+  const duration = useMemo(() => calculateDuration(sinceDate), [sinceDate]);
+
+  // State
+  const [notes, setNotes] = useState<PartnerNote[]>([]);
+  const [currentPhotoUri, setCurrentPhotoUri] = useState<string | null>(photoUri);
+  const [isSwipingCard, setIsSwipingCard] = useState(false);
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [editingNote, setEditingNote] = useState<PartnerNote | null>(null);
+  const [noteContent, setNoteContent] = useState('');
+
+  // Photo handler
+  const handleEditPhoto = async () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setCurrentPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  // Note handlers
+  const handleAddNotePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setEditingNote(null);
+    setNoteContent('');
+    setNoteModalVisible(true);
+  };
+
+  const handleDeleteNote = (id: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    setNotes((prev) => prev.filter((note) => note.id !== id));
+  };
+
+  const handleEditNote = (note: PartnerNote) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditingNote(note);
+    setNoteContent(note.text);
+    setNoteModalVisible(true);
+  };
+
+  const handleSaveNote = () => {
+    if (!noteContent.trim()) return;
+
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    if (editingNote) {
+      // Editing existing note
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === editingNote.id ? { ...n, text: noteContent.trim() } : n
+        )
+      );
+    } else {
+      // Adding new note
+      const newNote: PartnerNote = {
+        id: Date.now().toString(),
+        text: noteContent.trim(),
+      };
+      setNotes((prev) => [newNote, ...prev]);
+    }
+
+    setNoteModalVisible(false);
+    setNoteContent('');
+    setEditingNote(null);
+  };
+
+  // Animation values
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const heroOpacity = useRef(new Animated.Value(0)).current;
+  const heroScale = useRef(new Animated.Value(0.95)).current;
+  const section1Opacity = useRef(new Animated.Value(0)).current;
+  const section1TranslateY = useRef(new Animated.Value(30)).current;
+  const section2Opacity = useRef(new Animated.Value(0)).current;
+  const section2TranslateY = useRef(new Animated.Value(30)).current;
+  const section3Opacity = useRef(new Animated.Value(0)).current;
+  const section3TranslateY = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      // Header animation
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerTranslateY, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      // Hero animation
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.spring(heroScale, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Sections stagger
+      Animated.stagger(100, [
+        Animated.parallel([
+          Animated.timing(section1Opacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.spring(section1TranslateY, {
+            toValue: 0,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(section2Opacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.spring(section2TranslateY, {
+            toValue: 0,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(section3Opacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.spring(section3TranslateY, {
+            toValue: 0,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ]).start();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              // TODO: Navigate to settings
+              console.log('Settings pressed');
+            }}
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={22} color="#1F2937" />
+          </TouchableOpacity>
+        </Animated.View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          scrollEnabled={!isSwipingCard}
+        >
+          {/* Hero Section */}
+          <HeroSection
+            photoUri={currentPhotoUri}
+            partnerName={partnerName}
+            sinceDate={sinceDate}
+            duration={duration}
+            animatedStyle={{
+              opacity: heroOpacity,
+              transform: [{ scale: heroScale }],
+            }}
+          />
+
+          {/* Date Ideas Section */}
+          <DateIdeasSection
+            navigation={navigation}
+            onSwipeStart={() => setIsSwipingCard(true)}
+            onSwipeEnd={() => setIsSwipingCard(false)}
+            animatedStyle={{
+              opacity: section1Opacity,
+              transform: [{ translateY: section1TranslateY }],
+            }}
+          />
+
+          {/* Relationship Tools Section */}
+          <RelationshipToolsSection
+            animatedStyle={{
+              opacity: section2Opacity,
+              transform: [{ translateY: section2TranslateY }],
+            }}
+          />
+
+          {/* Partner Notes Section */}
+          <PartnerNotesSection
+            partnerName={partnerName}
+            notes={notes}
+            onAddNotePress={handleAddNotePress}
+            onEditNote={handleEditNote}
+            onDeleteNote={handleDeleteNote}
+            onSwipeStart={() => setIsSwipingCard(true)}
+            onSwipeEnd={() => setIsSwipingCard(false)}
+            animatedStyle={{
+              opacity: section3Opacity,
+              transform: [{ translateY: section3TranslateY }],
+            }}
+          />
+        </ScrollView>
+
+        {/* Note Modal (Add/Edit) */}
+        <Modal
+          visible={noteModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setNoteModalVisible(false)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContainer}
+          >
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                onPress={() => setNoteModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Text style={styles.modalCloseText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>
+                {editingNote ? 'Edit Note' : 'New Note'}
+              </Text>
+              <TouchableOpacity
+                onPress={handleSaveNote}
+                style={[styles.modalSaveButton, !noteContent.trim() && styles.modalSaveButtonDisabled]}
+                disabled={!noteContent.trim()}
+              >
+                <Text style={[styles.modalSaveText, !noteContent.trim() && styles.modalSaveTextDisabled]}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalInputContainer}>
+              <TextInput
+                style={styles.modalTextInput}
+                placeholder="Write something you want to remember..."
+                placeholderTextColor="#9CA3AF"
+                value={noteContent}
+                onChangeText={setNoteContent}
+                multiline
+                textAlignVertical="top"
+                autoFocus
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
+  header: {
+    backgroundColor: '#F7F5F2',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+
+  // Hero Section
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  photoCard: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    overflow: 'hidden',
+    marginBottom: 14,
+    shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  heroPhoto: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  heroPhotoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoOverlayGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
+  editPhotoButton: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: '#F7F5F2',
+  },
+  partnerName: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  togetherSince: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  durationStat: {
+    alignItems: 'center',
+    paddingHorizontal: 14,
+  },
+  durationNumber: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#E11D48',
+    letterSpacing: -0.5,
+  },
+  durationLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  durationDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+  },
+
+  // Section Common
+  section: {
+    marginBottom: 28,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+
+  // Date Ideas Section
+  dateIdeasSection: {
+    marginBottom: 40,
+  },
+  dateIdeasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  dateIdeasSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginRight: 3,
+    letterSpacing: -0.1,
+  },
+  carouselContainer: {
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+  },
+  carouselCard: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+  },
+  dateIdeaCardInner: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  dateIdeaIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  dateIdeaTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+
+  // Relationship Tools Section
+  toolsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  toolsSectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+  },
+  toolsTimerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  toolsTimerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  toolCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  toolIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  toolContent: {
+    flex: 1,
+  },
+  toolTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+    marginBottom: 3,
+  },
+  toolDescription: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 18,
+  },
+
+  // Partner Notes Section - Swipeable Cards
+  noteCardWrapper: {
+    marginBottom: 10,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
+  noteCardAnimatedWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  noteActionsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 16,
+    paddingRight: 16,
+    gap: 16,
+  },
+  noteSwipeAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  noteEditAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#6B7280',
+  },
+  noteDeleteAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FECACA',
+    shadowColor: '#EF4444',
+  },
+  noteCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    paddingLeft: 20,
+    shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  noteAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: '#E11D48',
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
+  noteText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#374151',
+    lineHeight: 24,
+  },
+  addNoteCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  addNotePlaceholder: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  addNoteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addNoteButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+  },
+
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+  },
+  modalCloseButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  modalCloseText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  modalSaveButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  modalSaveButtonDisabled: {
+    opacity: 0.5,
+  },
+  modalSaveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  modalSaveTextDisabled: {
+    color: '#9CA3AF',
+  },
+  modalInputContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  modalTextInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+    lineHeight: 24,
+    padding: 0,
+  },
+});
+
+export default RelationshipHomeScreen;

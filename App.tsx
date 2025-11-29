@@ -13,6 +13,9 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
+import MorningTrackingMindsetEntriesScreen from './src/screens/MorningTrackingMindsetEntriesScreen';
+import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigherSelfScreen';
+import MorningTrackingCompleteScreen from './src/screens/MorningTrackingCompleteScreen';
 import EveningTrackingContainerScreen from './src/screens/EveningTrackingContainerScreen';
 import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
 import HomeIcon from './src/components/HomeIcon';
@@ -25,11 +28,21 @@ import BookVaultScreen from './src/screens/BookVaultScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import LoveDatingScreen from './src/screens/LoveDatingScreen';
 import StoryBankScreen from './src/screens/StoryBankScreen';
+import RelationshipModeSelectionScreen from './src/screens/RelationshipModeSelectionScreen';
+import LoveModePlaceholderScreen from './src/screens/LoveModePlaceholderScreen';
+import DatingModePlaceholderScreen from './src/screens/DatingModePlaceholderScreen';
+import RelationshipSetupScreen from './src/screens/RelationshipSetupScreen';
+import RelationshipHomeScreen from './src/screens/RelationshipHomeScreen';
+import DateIdeasListScreen from './src/screens/DateIdeasListScreen';
+import DatingHomeScreen from './src/screens/DatingHomeScreen';
+import DatingCRMScreen from './src/screens/DatingCRMScreen';
+import DatingAdviceDetailScreen from './src/screens/DatingAdviceDetailScreen';
 import HigherSelfScreen from './src/screens/HigherSelfScreen';
 import MindsetBeliefsScreen from './src/screens/MindsetBeliefsScreen';
 import PhysicalWealthIntroAnimationScreen from './src/screens/PhysicalWealthIntroAnimationScreen';
 import PhysicalWealthIntroScreen from './src/screens/PhysicalWealthIntroScreen';
 import PhysicalWealthQuestionsContainerScreen from './src/screens/PhysicalWealthQuestionsContainerScreen';
+import PhysicalWealthOverviewScreen from './src/screens/PhysicalWealthOverviewScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -46,6 +59,9 @@ const DashboardStack = () => {
       <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
       <Stack.Screen name="MorningTracking" component={MorningTrackingContainerScreen} />
+      <Stack.Screen name="MorningTrackingMindsetEntries" component={MorningTrackingMindsetEntriesScreen} />
+      <Stack.Screen name="MorningTrackingHigherSelf" component={MorningTrackingHigherSelfScreen} />
+      <Stack.Screen name="MorningTrackingComplete" component={MorningTrackingCompleteScreen} />
       <Stack.Screen name="EveningTracking" component={EveningTrackingContainerScreen} />
       <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
     </Stack.Navigator>
@@ -68,11 +84,20 @@ const KnowledgeStack = () => {
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
-      <Stack.Screen name="LoveDating" component={LoveDatingScreen} />
+      <Stack.Screen name="LoveDating" component={RelationshipModeSelectionScreen} />
+      <Stack.Screen name="LoveModePlaceholder" component={LoveModePlaceholderScreen} />
+      <Stack.Screen name="DatingModePlaceholder" component={DatingModePlaceholderScreen} />
+      <Stack.Screen name="RelationshipSetup" component={RelationshipSetupScreen} />
+      <Stack.Screen name="RelationshipHome" component={RelationshipHomeScreen} />
+      <Stack.Screen name="DateIdeasList" component={DateIdeasListScreen} />
+      <Stack.Screen name="DatingHome" component={DatingHomeScreen} />
+      <Stack.Screen name="DatingCRM" component={DatingCRMScreen} />
+      <Stack.Screen name="DatingAdviceDetail" component={DatingAdviceDetailScreen} />
       <Stack.Screen name="StoryBank" component={StoryBankScreen} />
       <Stack.Screen name="PhysicalWealthIntroAnimation" component={PhysicalWealthIntroAnimationScreen} />
       <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
       <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />
+      <Stack.Screen name="PhysicalWealthOverview" component={PhysicalWealthOverviewScreen} />
     </Stack.Navigator>
   );
 };

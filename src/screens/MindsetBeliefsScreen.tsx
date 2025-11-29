@@ -448,7 +448,7 @@ const BeliefCard: React.FC<{
           onPress={handleEdit}
           activeOpacity={0.8}
         >
-          <Ionicons name="pencil-outline" size={20} color="#6366F1" />
+          <Ionicons name="pencil-outline" size={20} color="#6B7280" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.swipeAction, styles.deleteAction]}
@@ -643,8 +643,8 @@ const styles = StyleSheet.create({
   },
   editAction: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#C7D2FE',
-    shadowColor: '#6366F1',
+    borderColor: '#E5E7EB',
+    shadowColor: '#6B7280',
   },
   deleteAction: {
     backgroundColor: '#FFFFFF',

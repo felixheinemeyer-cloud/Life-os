@@ -13,17 +13,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-interface MindsetIdentityScreenProps {
+interface RelationshipModeSelectionScreenProps {
   navigation: {
     goBack: () => void;
     navigate: (screen: string) => void;
   };
 }
 
-const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigation }) => {
+const RelationshipModeSelectionScreen: React.FC<RelationshipModeSelectionScreenProps> = ({ navigation }) => {
   // Entrance animations
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const introOpacity = useRef(new Animated.Value(0)).current;
   const card1Opacity = useRef(new Animated.Value(0)).current;
   const card1TranslateY = useRef(new Animated.Value(30)).current;
   const card2Opacity = useRef(new Animated.Value(0)).current;
@@ -50,6 +51,12 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
           useNativeDriver: true,
         }),
       ]),
+      // Intro text fades in
+      Animated.timing(introOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
       // Cards stagger in
       Animated.stagger(120, [
         Animated.parallel([
@@ -80,7 +87,6 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
         ]),
       ]),
     ]).start();
-
   }, []);
 
   const handlePressIn = (scaleAnim: Animated.Value) => {
@@ -128,24 +134,27 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Mindset & Identity</Text>
-            <Text style={styles.subtitle}>Shape who you want to become</Text>
-          </View>
         </Animated.View>
 
-        {/* Feature Cards */}
+        {/* Question Section - positioned at top like Evening Tracking */}
+        <Animated.View style={[styles.questionSection, { opacity: introOpacity }]}>
+          <Text style={styles.questionText}>What's your current situation?</Text>
+        </Animated.View>
+
+        {/* Cards */}
         <View style={styles.cardsContainer}>
-          {/* Higher Self Card */}
+          {/* Love Card - In a Relationship */}
           <TouchableOpacity
             activeOpacity={1}
             onPressIn={() => handlePressIn(scale1)}
             onPressOut={() => handlePressOut(scale1)}
-            onPress={() => handleCardPress('HigherSelf')}
+            onPress={() => handleCardPress('RelationshipSetup')}
+            style={styles.cardTouchable}
           >
             <Animated.View
               style={[
-                styles.featureCardWrapper,
+                styles.cardWrapper,
+                styles.loveCardWrapper,
                 {
                   opacity: card1Opacity,
                   transform: [
@@ -156,50 +165,39 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               ]}
             >
               <LinearGradient
-                colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
-                style={styles.featureCard}
+                colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+                style={styles.card}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 {/* Icon */}
                 <View style={styles.iconContainer}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="star" size={36} color="#6366F1" />
+                  <View style={[styles.iconCircle, styles.loveIconCircle]}>
+                    <Ionicons name="heart" size={32} color="#E11D48" />
                   </View>
                 </View>
 
                 {/* Content */}
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>Your Best Version</Text>
-                  <Text style={styles.cardDescription}>
-                    Define your ideal self, set aspirations, and visualize who you want to become
-                  </Text>
+                  <Text style={[styles.cardTitle, styles.loveCardTitle]}>Love</Text>
+                  <Text style={styles.cardDescription} numberOfLines={2}>In a relationship</Text>
                 </View>
-
-                {/* Arrow indicator */}
-                <View style={styles.arrowContainer}>
-                  <View style={styles.arrowCircle}>
-                    <Ionicons name="chevron-forward" size={20} color="#6366F1" />
-                  </View>
-                </View>
-
-                {/* Decorative elements */}
-                <View style={[styles.decorDot, styles.dot1]} />
-                <View style={[styles.decorDot, styles.dot2]} />
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
 
-          {/* Mindset Card */}
+          {/* Dating Card */}
           <TouchableOpacity
             activeOpacity={1}
             onPressIn={() => handlePressIn(scale2)}
             onPressOut={() => handlePressOut(scale2)}
-            onPress={() => handleCardPress('MindsetBeliefs')}
+            onPress={() => handleCardPress('DatingHome')}
+            style={styles.cardTouchable}
           >
             <Animated.View
               style={[
-                styles.featureCardWrapper,
+                styles.cardWrapper,
+                styles.datingCardWrapper,
                 {
                   opacity: card2Opacity,
                   transform: [
@@ -210,41 +208,35 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               ]}
             >
               <LinearGradient
-                colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
-                style={styles.featureCard}
+                colors={['#FDF4FF', '#FAE8FF', '#F5D0FE']}
+                style={styles.card}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 {/* Icon */}
                 <View style={styles.iconContainer}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="diamond" size={36} color="#6366F1" />
+                  <View style={[styles.iconCircle, styles.datingIconCircle]}>
+                    <Ionicons name="people" size={32} color="#A855F7" />
                   </View>
                 </View>
 
                 {/* Content */}
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>Mindset</Text>
-                  <Text style={styles.cardDescription}>
-                    Track beliefs, affirmations, and mental frameworks that empower your growth
-                  </Text>
+                  <Text style={[styles.cardTitle, styles.datingCardTitle]}>Dating</Text>
+                  <Text style={styles.cardDescription} numberOfLines={2}>Meeting new people</Text>
                 </View>
-
-                {/* Arrow indicator */}
-                <View style={styles.arrowContainer}>
-                  <View style={styles.arrowCircle}>
-                    <Ionicons name="chevron-forward" size={20} color="#6366F1" />
-                  </View>
-                </View>
-
-                {/* Decorative elements */}
-                <View style={[styles.decorDot, styles.dot1]} />
-                <View style={[styles.decorDot, styles.dot2]} />
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
         </View>
 
+        {/* Footer - positioned at bottom */}
+        <View style={styles.footerContainer}>
+          <View style={styles.footerCard}>
+            <Ionicons name="sync-outline" size={18} color="#6B7280" />
+            <Text style={styles.footerText}>You can always change this later</Text>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -259,11 +251,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   header: {
     backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   backButton: {
     width: 40,
@@ -293,123 +289,121 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     color: '#6B7280',
     letterSpacing: -0.2,
+    lineHeight: 22,
+  },
+  questionSection: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 100,
+    marginBottom: 32,
+  },
+  questionText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1F2937',
+    textAlign: 'center',
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   cardsContainer: {
-    flex: 1,
+    flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 16,
+    gap: 12,
   },
-  featureCardWrapper: {
+  cardTouchable: {
+    flex: 1,
+  },
+  cardWrapper: {
     borderRadius: 24,
-    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 8,
   },
-  featureCard: {
+  card: {
     borderRadius: 24,
     padding: 24,
-    minHeight: 220,
-    position: 'relative',
-    overflow: 'hidden',
+    paddingVertical: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 4,
   },
-  iconCircleBlue: {
-    shadowColor: '#4F46E5',
+  loveIconCircle: {
+    shadowColor: '#E11D48',
+  },
+  datingIconCircle: {
+    shadowColor: '#A855F7',
+  },
+  loveCardWrapper: {
+    shadowColor: '#E11D48',
+  },
+  datingCardWrapper: {
+    shadowColor: '#A855F7',
   },
   cardContent: {
-    flex: 1,
-    paddingRight: 60,
+    alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#4338CA',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
+    textAlign: 'center',
   },
-  cardTitleBlue: {
-    color: '#3730A3',
+  loveCardTitle: {
+    color: '#BE123C',
+  },
+  datingCardTitle: {
+    color: '#7C3AED',
   },
   cardDescription: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
-    lineHeight: 20,
+    color: '#6B7280',
+    textAlign: 'center',
     letterSpacing: -0.2,
+    minHeight: 36,
   },
-  arrowContainer: {
+  footerContainer: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: 16,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
   },
-  arrowCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
+  footerCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
   },
-  arrowCircleBlue: {
-    shadowColor: '#4F46E5',
-  },
-  decorDot: {
-    position: 'absolute',
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  dot1: {
-    width: 80,
-    height: 80,
-    top: -20,
-    right: -20,
-  },
-  dot2: {
-    width: 40,
-    height: 40,
-    top: 60,
-    right: 80,
-  },
-  dot1Blue: {
-    width: 80,
-    height: 80,
-    top: -20,
-    right: -20,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  dot2Blue: {
-    width: 40,
-    height: 40,
-    top: 60,
-    right: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  footerText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    letterSpacing: -0.2,
   },
 });
 
-export default MindsetIdentityScreen;
+export default RelationshipModeSelectionScreen;

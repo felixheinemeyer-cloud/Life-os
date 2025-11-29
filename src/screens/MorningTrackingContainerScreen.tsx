@@ -16,9 +16,10 @@ import * as Haptics from 'expo-haptics';
 import MorningTrackingSleepContent from '../components/tracking/MorningTrackingSleepContent';
 import MorningTrackingGratitudeContent from '../components/tracking/MorningTrackingGratitudeContent';
 import MorningTrackingIntentionContent from '../components/tracking/MorningTrackingIntentionContent';
+import MorningTrackingMindsetContent from '../components/tracking/MorningTrackingMindsetContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 interface MorningTrackingContainerScreenProps {
   navigation?: {
@@ -163,6 +164,13 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
                 intentionText={trackingData.intentionText}
                 onIntentionChange={(value) => updateTrackingData('intentionText', value)}
                 onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 4: Mindset */}
+            <View style={styles.page}>
+              <MorningTrackingMindsetContent
+                onNavigate={(screen) => navigation?.navigate(screen)}
               />
             </View>
           </Animated.View>

@@ -1,87 +1,27 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
-  Animated,
-  Easing,
+  ScrollView,
   Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-interface MindsetIdentityScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
+interface MorningTrackingMindsetContentProps {
+  onNavigate?: (screen: string) => void;
 }
 
-const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigation }) => {
-  // Entrance animations
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(30)).current;
-  const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(30)).current;
-
+const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps> = ({
+  onNavigate,
+}) => {
   // Scale animations for press
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Entrance animation sequence
-    Animated.sequence([
-      // Header fades in
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Cards stagger in
-      Animated.stagger(120, [
-        Animated.parallel([
-          Animated.timing(card1Opacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(card1TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card2Opacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(card2TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ]).start();
-
-  }, []);
 
   const handlePressIn = (scaleAnim: Animated.Value) => {
     Animated.spring(scaleAnim, {
@@ -105,34 +45,35 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate(route);
+    onNavigate?.(route);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          <LinearGradient
+            colors={['#FBBF24', '#F59E0B', '#D97706']}
+            style={styles.iconGradientRing}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Mindset & Identity</Text>
-            <Text style={styles.subtitle}>Shape who you want to become</Text>
-          </View>
-        </Animated.View>
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name="diamond" size={28} color="#D97706" />
+            </View>
+          </LinearGradient>
+          <Text style={styles.headerTitle}>
+            Get into the right mindset
+          </Text>
+          <Text style={styles.headerSubtext}>
+            Review your vision and guiding principles
+          </Text>
+        </View>
 
         {/* Feature Cards */}
         <View style={styles.cardsContainer}>
@@ -141,17 +82,13 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
             activeOpacity={1}
             onPressIn={() => handlePressIn(scale1)}
             onPressOut={() => handlePressOut(scale1)}
-            onPress={() => handleCardPress('HigherSelf')}
+            onPress={() => handleCardPress('MorningTrackingHigherSelf')}
           >
             <Animated.View
               style={[
                 styles.featureCardWrapper,
                 {
-                  opacity: card1Opacity,
-                  transform: [
-                    { translateY: card1TranslateY },
-                    { scale: scale1 },
-                  ],
+                  transform: [{ scale: scale1 }],
                 },
               ]}
             >
@@ -163,7 +100,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               >
                 {/* Icon */}
                 <View style={styles.iconContainer}>
-                  <View style={styles.iconCircle}>
+                  <View style={styles.cardIconCircle}>
                     <Ionicons name="star" size={36} color="#6366F1" />
                   </View>
                 </View>
@@ -171,8 +108,8 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
                 {/* Content */}
                 <View style={styles.cardContent}>
                   <Text style={styles.cardTitle}>Your Best Version</Text>
-                  <Text style={styles.cardDescription}>
-                    Define your ideal self, set aspirations, and visualize who you want to become
+                  <Text style={styles.cardDescription} numberOfLines={2}>
+                    Review your ideal self and aspirations
                   </Text>
                 </View>
 
@@ -195,17 +132,13 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
             activeOpacity={1}
             onPressIn={() => handlePressIn(scale2)}
             onPressOut={() => handlePressOut(scale2)}
-            onPress={() => handleCardPress('MindsetBeliefs')}
+            onPress={() => handleCardPress('MorningTrackingMindsetEntries')}
           >
             <Animated.View
               style={[
                 styles.featureCardWrapper,
                 {
-                  opacity: card2Opacity,
-                  transform: [
-                    { translateY: card2TranslateY },
-                    { scale: scale2 },
-                  ],
+                  transform: [{ scale: scale2 }],
                 },
               ]}
             >
@@ -217,7 +150,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               >
                 {/* Icon */}
                 <View style={styles.iconContainer}>
-                  <View style={styles.iconCircle}>
+                  <View style={styles.cardIconCircle}>
                     <Ionicons name="diamond" size={36} color="#6366F1" />
                   </View>
                 </View>
@@ -225,8 +158,8 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
                 {/* Content */}
                 <View style={styles.cardContent}>
                   <Text style={styles.cardTitle}>Mindset</Text>
-                  <Text style={styles.cardDescription}>
-                    Track beliefs, affirmations, and mental frameworks that empower your growth
+                  <Text style={styles.cardDescription} numberOfLines={2}>
+                    Explore your beliefs and mental frameworks
                   </Text>
                 </View>
 
@@ -244,65 +177,71 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
             </Animated.View>
           </TouchableOpacity>
         </View>
-
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 20,
+  scrollView: {
+    flex: 1,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+
+  // Header Section
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  iconGradientRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    padding: 3,
+  },
+  iconInnerCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
   },
-  headerContent: {
-    paddingHorizontal: 4,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
     color: '#1F2937',
+    textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 6,
+    lineHeight: 32,
+    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 15,
-    fontWeight: '500',
+  headerSubtext: {
+    fontSize: 14,
+    fontWeight: '400',
     color: '#6B7280',
+    textAlign: 'center',
     letterSpacing: -0.2,
+    lineHeight: 20,
   },
+
+  // Cards Container
   cardsContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
     gap: 16,
   },
+
+  // Feature Card Styles
   featureCardWrapper: {
     borderRadius: 24,
     shadowColor: '#6366F1',
@@ -321,7 +260,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: 16,
   },
-  iconCircle: {
+  cardIconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -334,9 +273,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  iconCircleBlue: {
-    shadowColor: '#4F46E5',
-  },
   cardContent: {
     flex: 1,
     paddingRight: 60,
@@ -347,9 +283,6 @@ const styles = StyleSheet.create({
     color: '#4338CA',
     letterSpacing: -0.5,
     marginBottom: 8,
-  },
-  cardTitleBlue: {
-    color: '#3730A3',
   },
   cardDescription: {
     fontSize: 14,
@@ -376,9 +309,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  arrowCircleBlue: {
-    shadowColor: '#4F46E5',
-  },
   decorDot: {
     position: 'absolute',
     borderRadius: 50,
@@ -396,20 +326,6 @@ const styles = StyleSheet.create({
     top: 60,
     right: 80,
   },
-  dot1Blue: {
-    width: 80,
-    height: 80,
-    top: -20,
-    right: -20,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  dot2Blue: {
-    width: 40,
-    height: 40,
-    top: 60,
-    right: 80,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
 });
 
-export default MindsetIdentityScreen;
+export default MorningTrackingMindsetContent;

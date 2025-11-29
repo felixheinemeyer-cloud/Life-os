@@ -93,8 +93,8 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
             onPress={onContinue}
             activeOpacity={0.8}
           >
-            <Text style={styles.continueButtonText}>Complete</Text>
-            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+            <Text style={styles.continueButtonText}>Continue</Text>
+            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>

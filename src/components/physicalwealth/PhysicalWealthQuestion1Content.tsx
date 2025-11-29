@@ -65,7 +65,7 @@ const PhysicalWealthQuestion1Content: React.FC<PhysicalWealthQuestion1ContentPro
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="fitness" size={28} color="#059669" />
+                <Ionicons name="body" size={28} color="#059669" />
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>

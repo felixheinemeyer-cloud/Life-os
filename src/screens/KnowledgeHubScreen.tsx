@@ -36,7 +36,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '1',
       title: 'Mindset',
-      subtitle: 'Beliefs, rules & affirmations',
+      subtitle: 'Beliefs, rules &\naffirmations',
       icon: 'diamond',
       gradientColors: ['#F3E8FF', '#E9D5FF', '#D8B4FE'],
       iconColor: '#6366F1',
@@ -46,7 +46,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '2',
       title: 'Knowledge',
-      subtitle: 'Notes, concepts & frameworks',
+      subtitle: 'Notes, concepts &\nframeworks',
       icon: 'bulb',
       gradientColors: ['#E0E7FF', '#C7D2FE', '#A5B4FC'],
       iconColor: '#0D9488',
@@ -56,7 +56,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '3',
       title: 'Media Vault',
-      subtitle: 'Podcasts, videos & articles',
+      subtitle: 'Podcasts, videos &\narticles',
       icon: 'play-circle',
       gradientColors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
       iconColor: '#EC4899',
@@ -66,7 +66,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '4',
       title: 'Book Vault',
-      subtitle: 'Summaries & highlights',
+      subtitle: 'Summaries &\nhighlights',
       icon: 'book',
       gradientColors: ['#FEF3C7', '#FDE68A', '#FCD34D'],
       iconColor: '#F59E0B',
@@ -76,7 +76,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '5',
       title: 'People',
-      subtitle: 'Relationships & network',
+      subtitle: 'Relationships &\nyour network',
       icon: 'people',
       gradientColors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
       iconColor: '#3B82F6',
@@ -86,7 +86,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '6',
       title: 'Love / Dating',
-      subtitle: 'Dates & romantic insights',
+      subtitle: 'Dates & romantic\ninsights',
       icon: 'heart',
       gradientColors: ['#FFE4E6', '#FECDD3', '#FDA4AF'],
       iconColor: '#F43F5E',
@@ -96,7 +96,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     {
       id: '7',
       title: 'Story Bank',
-      subtitle: 'Personal stories & anecdotes',
+      subtitle: 'Personal stories &\nanecdotes',
       icon: 'bookmark',
       gradientColors: ['#ECFCCB', '#D9F99D', '#BEF264'],
       iconColor: '#84CC16',
@@ -207,11 +207,6 @@ const VaultCard: React.FC<{
               {vault.subtitle}
             </Text>
           </View>
-
-          {/* Chevron */}
-          <View style={styles.vaultChevron}>
-            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-          </View>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -264,7 +259,7 @@ const styles = StyleSheet.create({
   },
   vaultCardTouchable: {
     width: '48%',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   vaultCardWrapper: {
     width: '100%',
@@ -301,7 +296,6 @@ const styles = StyleSheet.create({
   },
   vaultContent: {
     flex: 1,
-    paddingRight: 26,
   },
   vaultTitle: {
     fontSize: 16,
@@ -315,24 +309,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#4B5563',
     lineHeight: 16,
-  },
-  vaultChevron: {
-    position: 'absolute',
-    bottom: 14,
-    right: 14,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    height: 32, // Force exactly 2 lines (16 * 2)
   },
 
   // Bottom Spacer

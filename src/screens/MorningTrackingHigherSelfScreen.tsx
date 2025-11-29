@@ -19,12 +19,12 @@ import * as Haptics from 'expo-haptics';
 import { WealthType, WEALTH_CONFIGS } from '../components/WealthButton';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const STAR_SIZE = SCREEN_WIDTH * 0.85;
+const STAR_SIZE = SCREEN_WIDTH * 0.8;
 const CENTER = STAR_SIZE / 2;
 const OUTER_RADIUS = STAR_SIZE * 0.42;
-const BUTTON_SIZE = 64;
+const BUTTON_SIZE = 60;
 
-interface HigherSelfScreenProps {
+interface MorningTrackingHigherSelfScreenProps {
   navigation: {
     goBack: () => void;
     navigate: (screen: string, params?: object) => void;
@@ -56,10 +56,24 @@ const getWealthPosition = (index: number, centerX: number, centerY: number, radi
   };
 };
 
-const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
+// Get filled icons for wealth types
+const getIconName = (type: WealthType): keyof typeof Ionicons.glyphMap => {
+  const filledIcons: Record<WealthType, keyof typeof Ionicons.glyphMap> = {
+    physical: 'fitness',
+    mental: 'bulb',
+    social: 'people',
+    financial: 'bar-chart',
+    time: 'time',
+  };
+  return filledIcons[type];
+};
+
+const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenProps> = ({
+  navigation,
+}) => {
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Track which wealth areas have been defined
+  // Track which wealth areas have been defined (sample data)
   const completedWealth: Record<WealthType, boolean> = {
     physical: true,
     mental: true,
@@ -68,22 +82,9 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
     time: false,
   };
 
-  // Get filled icons for both states (gray when undefined, colored when defined)
-  const getIconName = (type: WealthType): keyof typeof Ionicons.glyphMap => {
-    const filledIcons: Record<WealthType, keyof typeof Ionicons.glyphMap> = {
-      physical: 'fitness',
-      mental: 'bulb',
-      social: 'people',
-      financial: 'bar-chart',
-      time: 'time',
-    };
-    return filledIcons[type];
-  };
-
   // Animation values
   const fadeIn = useRef(new Animated.Value(0)).current;
   const starScale = useRef(new Animated.Value(0.8)).current;
-  const starRotate = useRef(new Animated.Value(0)).current;
   const modalScale = useRef(new Animated.Value(0.9)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
   const buttonAnims = useRef(
@@ -102,20 +103,12 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
     }).start();
 
     // Star animation
-    Animated.parallel([
-      Animated.spring(starScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(starRotate, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.spring(starScale, {
+      toValue: 1,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
 
     // Stagger button animations
     const buttonAnimations = buttonAnims.map((anim, index) =>
@@ -180,24 +173,27 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
     });
   };
 
+  const handleBack = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.goBack();
+  };
+
+  const handleFinishCheckin = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    navigation.navigate('MorningTrackingComplete');
+  };
+
   const handleWealthPress = (type: WealthType) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-
-    const isCompleted = completedWealth[type];
-
-    if (type === 'physical') {
-      if (isCompleted) {
-        // Area is already defined - go to overview screen
-        navigation.navigate('PhysicalWealthOverview');
-      } else {
-        // Area is not defined yet - go to intro/setup flow
-        navigation.navigate('PhysicalWealthIntroAnimation');
-      }
-    } else {
-      console.log(`Navigate to ${type} wealth flow`);
-    }
+    // In morning tracking mode, just show a brief feedback
+    // Could navigate to overview screens if desired
+    console.log(`Tapped ${type} wealth`);
   };
 
   // Count completed areas
@@ -213,7 +209,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         {/* Header */}
         <Animated.View style={[styles.header, { opacity: fadeIn }]}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={handleBack}
             style={styles.backButton}
             activeOpacity={0.7}
           >
@@ -302,7 +298,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
             {/* Wealth Buttons at star points */}
             {wealthOrder.map((type, index) => {
               const config = WEALTH_CONFIGS[type];
-              const position = getWealthPosition(index, CENTER, CENTER, OUTER_RADIUS + 15);
+              const position = getWealthPosition(index, CENTER, CENTER, OUTER_RADIUS + 12);
               const isCompleted = completedWealth[type];
               const anim = buttonAnims[index];
               const displayColor = isCompleted ? config.color : '#9CA3AF';
@@ -337,7 +333,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
                     >
                       <Ionicons
                         name={getIconName(type)}
-                        size={26}
+                        size={24}
                         color={displayColor}
                       />
                     </LinearGradient>
@@ -351,15 +347,17 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
           </Animated.View>
         </View>
 
-        {/* Bottom instruction */}
-        <Animated.View style={[styles.bottomContainer, { opacity: fadeIn }]}>
-          <View style={styles.instructionCard}>
-            <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
-            <Text style={styles.instructionText}>
-              Tap any area to define your best self
-            </Text>
-          </View>
-        </Animated.View>
+        {/* Finish Check-in Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.finishButton}
+            onPress={handleFinishCheckin}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.finishButtonText}>Finish Check-in</Text>
+            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Info Modal */}
@@ -423,18 +421,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
 
                 <View style={styles.modalDivider} />
 
-                <Text style={styles.modalSubtitle}>Why Design It?</Text>
-                <Text style={styles.modalParagraph}>
-                  Without a clear vision of who you want to become, daily decisions lack direction. By defining your Best Self across five key areas of life, you create a compass that guides every choice you make.
-                </Text>
-
-                <View style={styles.modalHighlightCard}>
-                  <Ionicons name="bulb" size={20} color="#F59E0B" style={styles.modalHighlightIcon} />
-                  <Text style={styles.modalHighlightText}>
-                    "The person who knows their destination finds the way. The person who doesn't wanders endlessly."
-                  </Text>
-                </View>
-
                 <Text style={styles.modalSubtitle}>The Five Pillars</Text>
                 <View style={styles.modalPillarList}>
                   {[
@@ -483,7 +469,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   backButton: {
     width: 40,
@@ -573,15 +559,15 @@ const styles = StyleSheet.create({
   // Center Icon
   centerIconTouchable: {
     position: 'absolute',
-    left: CENTER - 28,
-    top: CENTER - 28,
-    width: 56,
-    height: 56,
+    left: CENTER - 26,
+    top: CENTER - 26,
+    width: 52,
+    height: 52,
   },
   centerIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -589,9 +575,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   centerGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -622,31 +608,38 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   wealthLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginTop: 6,
+    marginTop: 5,
     letterSpacing: -0.2,
   },
 
-  // Bottom
-  bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  // Button Container
+  buttonContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+    backgroundColor: '#F7F5F2',
   },
-  instructionCard: {
+  finishButton: {
+    backgroundColor: '#1F2937',
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  instructionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+  finishButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginRight: 8,
     letterSpacing: -0.2,
   },
 
@@ -662,7 +655,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: SCREEN_WIDTH - 40,
-    maxHeight: SCREEN_HEIGHT * 0.8,
+    maxHeight: SCREEN_HEIGHT * 0.7,
     borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
@@ -707,7 +700,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalScrollView: {
-    maxHeight: SCREEN_HEIGHT * 0.45,
+    maxHeight: SCREEN_HEIGHT * 0.4,
   },
   modalParagraph: {
     fontSize: 15,
@@ -728,28 +721,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.3,
     marginBottom: 10,
-  },
-  modalHighlightCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginVertical: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: '#F59E0B',
-  },
-  modalHighlightIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  modalHighlightText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    fontStyle: 'italic',
-    color: '#92400E',
-    lineHeight: 21,
   },
   modalPillarList: {
     gap: 10,
@@ -789,4 +760,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HigherSelfScreen;
+export default MorningTrackingHigherSelfScreen;
