@@ -751,11 +751,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               <Text style={styles.streakNumber}>{streakCount}</Text>
             </TouchableOpacity>
 
-            {/* Center: Greeting */}
-            <Text style={styles.greeting} numberOfLines={1}>
-              {getGreeting()}!
-            </Text>
-
             {/* Right: Profile Button */}
             <TouchableOpacity
               style={styles.profileButton}
@@ -765,6 +760,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
+
+          {/* Center: Greeting - Absolutely positioned for true center */}
+          <Text style={styles.greeting} numberOfLines={1}>
+            {getGreeting()}!
+          </Text>
         </View>
       </View>
     </View>
@@ -804,6 +804,8 @@ const styles = StyleSheet.create({
   headerInner: {
     paddingHorizontal: 16,
     paddingTop: 8,
+    position: 'relative',
+    height: 40,
   },
   headerRow: {
     flexDirection: 'row',
@@ -837,7 +839,11 @@ const styles = StyleSheet.create({
   },
 
   greeting: {
-    fontSize: 17,
+    position: 'absolute',
+    top: 16,
+    left: 0,
+    right: 0,
+    fontSize: 19,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',

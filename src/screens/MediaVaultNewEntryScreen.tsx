@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useMedia, MediaEntry } from '../context/MediaContext';
 
 // Types
 interface MediaVaultNewEntryScreenProps {
@@ -83,9 +84,13 @@ const CATEGORY_COLORS = [
 
 // Main Component
 const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ navigation }) => {
+  // Get addEntry from context
+  const { addEntry } = useMedia();
+
   // Form state
   const [link, setLink] = useState('');
   const [title, setTitle] = useState('');
+  const [isWatchLater, setIsWatchLater] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
@@ -111,6 +116,8 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
   const card2TranslateY = useRef(new Animated.Value(30)).current;
   const card3Opacity = useRef(new Animated.Value(0)).current;
   const card3TranslateY = useRef(new Animated.Value(30)).current;
+  const card4Opacity = useRef(new Animated.Value(0)).current;
+  const card4TranslateY = useRef(new Animated.Value(30)).current;
 
   // Refs
   const titleInputRef = useRef<TextInput>(null);
@@ -156,6 +163,10 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
           Animated.timing(card3Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
           Animated.spring(card3TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
         ]),
+        Animated.parallel([
+          Animated.timing(card4Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.spring(card4TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
+        ]),
       ]),
     ]).start();
   }, []);
@@ -167,16 +178,16 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    const newEntry = {
+    const newEntry: MediaEntry = {
       id: Date.now().toString(),
-      link: link.trim(),
       title: title.trim(),
-      category: selectedCategory,
-      format: selectedFormat,
-      createdAt: new Date().toISOString(),
+      sourceUrl: link.trim(),
+      isWatchLater,
+      category: selectedCategory || 'uncategorized',
+      format: (selectedFormat as MediaEntry['format']) || 'video',
     };
 
-    console.log('New media entry:', newEntry);
+    addEntry(newEntry);
     navigation.goBack();
   };
 
@@ -199,6 +210,13 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedFormat(formatId === selectedFormat ? null : formatId);
+  };
+
+  const handleWatchLaterToggle = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsWatchLater(!isWatchLater);
   };
 
   const toggleCategoriesExpand = () => {
@@ -420,6 +438,7 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                 onSubmitEditing={() => Keyboard.dismiss()}
               />
             </View>
+
           </Animated.View>
 
           {/* Category Card */}
@@ -534,6 +553,47 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                 );
               })}
             </View>
+          </Animated.View>
+
+          {/* Watch Later Section */}
+          <Animated.View
+            style={[
+              styles.card,
+              { opacity: card4Opacity, transform: [{ translateY: card4TranslateY }] },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.watchLaterRow}
+              onPress={handleWatchLaterToggle}
+              activeOpacity={0.7}
+            >
+              <View style={styles.watchLaterLeft}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="time-outline" size={20} color="#EC4899" />
+                </View>
+                <Text style={styles.cardLabel}>Watchlist</Text>
+              </View>
+              <View
+                style={[
+                  styles.watchLaterToggle,
+                  isWatchLater && styles.watchLaterToggleActive,
+                ]}
+              >
+                <Ionicons
+                  name={isWatchLater ? 'checkmark' : 'add'}
+                  size={14}
+                  color={isWatchLater ? '#FFFFFF' : '#6B7280'}
+                />
+                <Text
+                  style={[
+                    styles.watchLaterToggleText,
+                    isWatchLater && styles.watchLaterToggleTextActive,
+                  ]}
+                >
+                  {isWatchLater ? 'Queued' : 'Add to Queue'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </Animated.View>
 
         </ScrollView>
@@ -778,6 +838,39 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 0,
     paddingHorizontal: 0,
+  },
+
+  // Watch Later Toggle
+  watchLaterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  watchLaterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  watchLaterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 5,
+  },
+  watchLaterToggleActive: {
+    backgroundColor: '#EC4899',
+  },
+  watchLaterToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  watchLaterToggleTextActive: {
+    color: '#FFFFFF',
   },
 
   // Chips Container
