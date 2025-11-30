@@ -11,6 +11,9 @@ import {
   Platform,
   TextInput,
   Keyboard,
+  Modal,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -35,8 +38,8 @@ interface MediaFormat {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-// Categories (same as MediaVaultScreen for consistency)
-const MEDIA_CATEGORIES: MediaCategory[] = [
+// Default Categories (initial set)
+const DEFAULT_CATEGORIES: MediaCategory[] = [
   { id: 'health', name: 'Health', color: '#10B981' },
   { id: 'finance', name: 'Finance', color: '#F59E0B' },
   { id: 'love', name: 'Love', color: '#EC4899' },
@@ -75,6 +78,14 @@ const MEDIA_FORMATS: MediaFormat[] = [
 // Initial categories to show
 const INITIAL_CATEGORIES_SHOWN = 8;
 
+// Colors for new categories
+const CATEGORY_COLORS = [
+  '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#3B82F6',
+  '#6366F1', '#F97316', '#64748B', '#0EA5E9', '#DC2626',
+  '#EA580C', '#059669', '#14B8A6', '#7C3AED', '#2563EB',
+  '#DB2777', '#4B5563', '#0891B2', '#92400E', '#4F46E5',
+];
+
 // Main Component
 const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ navigation }) => {
   // Form state
@@ -83,6 +94,14 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
+  const [categories, setCategories] = useState<MediaCategory[]>(DEFAULT_CATEGORIES);
+
+  // Modal state
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryName, setCategoryName] = useState('');
+  const [previewColor, setPreviewColor] = useState(CATEGORY_COLORS[0]);
 
   // Focus states
   const [isLinkFocused, setIsLinkFocused] = useState(false);
@@ -103,13 +122,13 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Check if form is valid
-  const isFormValid = link.trim().length > 0 && title.trim().length > 0 && selectedCategory !== null;
+  const isFormValid = link.trim().length > 0 && title.trim().length > 0;
 
   // Displayed categories
   const displayedCategories = isCategoriesExpanded
-    ? MEDIA_CATEGORIES
-    : MEDIA_CATEGORIES.slice(0, INITIAL_CATEGORIES_SHOWN);
-  const hiddenCategoriesCount = MEDIA_CATEGORIES.length - INITIAL_CATEGORIES_SHOWN;
+    ? categories
+    : categories.slice(0, INITIAL_CATEGORIES_SHOWN);
+  const hiddenCategoriesCount = categories.length - INITIAL_CATEGORIES_SHOWN;
 
   useEffect(() => {
     // Staggered card animations
@@ -192,6 +211,120 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setIsCategoriesExpanded(!isCategoriesExpanded);
+  };
+
+  const handleAddCategory = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setCategoryName('');
+    setIsEditMode(false);
+    setEditingCategoryId(null);
+    // Set a random preview color
+    setPreviewColor(CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)]);
+    setIsCategoryModalVisible(true);
+  };
+
+  const handleEditCategory = (category: MediaCategory) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setCategoryName(category.name);
+    setPreviewColor(category.color);
+    setIsEditMode(true);
+    setEditingCategoryId(category.id);
+    setIsCategoryModalVisible(true);
+  };
+
+  const handleSaveCategory = () => {
+    const trimmedName = categoryName.trim();
+    if (trimmedName.length === 0) return;
+
+    if (isEditMode && editingCategoryId) {
+      // Update existing category
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat.id === editingCategoryId
+            ? { ...cat, name: trimmedName, color: previewColor }
+            : cat
+        )
+      );
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } else {
+      // Check if category already exists
+      const exists = categories.some(
+        (cat) => cat.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (exists) {
+        setIsCategoryModalVisible(false);
+        return;
+      }
+
+      // Create new category with the preview color
+      const newCategory: MediaCategory = {
+        id: `custom-${Date.now()}`,
+        name: trimmedName,
+        color: previewColor,
+      };
+
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      // Add to categories and select it
+      setCategories((prev) => [...prev, newCategory]);
+      setSelectedCategory(newCategory.id);
+
+      // Expand categories to show the new one
+      setIsCategoriesExpanded(true);
+    }
+
+    setIsCategoryModalVisible(false);
+    setCategoryName('');
+    setIsEditMode(false);
+    setEditingCategoryId(null);
+  };
+
+  const handleDeleteCategory = () => {
+    if (!editingCategoryId) return;
+
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+
+    // Remove category
+    setCategories((prev) => prev.filter((cat) => cat.id !== editingCategoryId));
+
+    // Deselect if this category was selected
+    if (selectedCategory === editingCategoryId) {
+      setSelectedCategory(null);
+    }
+
+    setIsCategoryModalVisible(false);
+    setCategoryName('');
+    setIsEditMode(false);
+    setEditingCategoryId(null);
+  };
+
+  const handleCloseCategoryModal = () => {
+    setIsCategoryModalVisible(false);
+    setCategoryName('');
+    setIsEditMode(false);
+    setEditingCategoryId(null);
+  };
+
+  const handleChangePreviewColor = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Pick a random different color
+    let newColor = previewColor;
+    while (newColor === previewColor) {
+      newColor = CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)];
+    }
+    setPreviewColor(newColor);
   };
 
   return (
@@ -306,6 +439,7 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                 <Ionicons name="folder-outline" size={20} color="#EC4899" />
               </View>
               <Text style={styles.cardLabel}>Category</Text>
+              <Text style={styles.optionalLabel}>optional</Text>
             </View>
             <View style={styles.chipsContainer}>
               {displayedCategories.map((category) => {
@@ -318,6 +452,8 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                       isSelected && styles.categoryChipSelected,
                     ]}
                     onPress={() => handleCategorySelect(category.id)}
+                    onLongPress={() => handleEditCategory(category)}
+                    delayLongPress={400}
                     activeOpacity={0.7}
                   >
                     <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
@@ -332,7 +468,7 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                   </TouchableOpacity>
                 );
               })}
-              {MEDIA_CATEGORIES.length > INITIAL_CATEGORIES_SHOWN && (
+              {categories.length > INITIAL_CATEGORIES_SHOWN && (
                 <TouchableOpacity
                   style={styles.expandChip}
                   onPress={toggleCategoriesExpand}
@@ -348,6 +484,14 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                   </Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                style={styles.addCategoryChip}
+                onPress={handleAddCategory}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={16} color="#9CA3AF" />
+                <Text style={styles.addCategoryChipText}>New</Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
 
@@ -399,6 +543,112 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
 
         </ScrollView>
       </View>
+
+      {/* Category Modal (Add/Edit) */}
+      <Modal
+        visible={isCategoryModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseCategoryModal}
+      >
+        <TouchableWithoutFeedback onPress={handleCloseCategoryModal}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={16}
+              style={styles.modalKeyboardAvoid}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.modalContent}>
+                  {/* Header with icon */}
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalHeaderRow}>
+                      <View style={styles.modalIconCircle}>
+                        <Ionicons name="folder-outline" size={22} color="#EC4899" />
+                      </View>
+                      <Text style={styles.modalTitle}>
+                        {isEditMode ? 'Edit Category' : 'New Category'}
+                      </Text>
+                      {isEditMode && (
+                        <TouchableOpacity
+                          style={styles.modalDeleteButton}
+                          onPress={handleDeleteCategory}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <Text style={styles.modalSubtitle}>
+                      {isEditMode
+                        ? 'Update the category name or color'
+                        : 'Create a custom category to organize your media'}
+                    </Text>
+                  </View>
+
+                  {/* Input with color preview */}
+                  <View style={styles.modalInputContainer}>
+                    <TouchableOpacity
+                      onPress={handleChangePreviewColor}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      style={styles.modalColorDotTouchable}
+                    >
+                      <View style={[styles.modalColorDot, { backgroundColor: previewColor }]} />
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="Enter category name"
+                      placeholderTextColor="#9CA3AF"
+                      value={categoryName}
+                      onChangeText={setCategoryName}
+                      autoFocus
+                      autoCapitalize="words"
+                      returnKeyType="done"
+                      onSubmitEditing={handleSaveCategory}
+                    />
+                  </View>
+
+                  {/* Buttons */}
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={styles.modalButtonCancel}
+                      onPress={handleCloseCategoryModal}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.modalButtonSave,
+                        categoryName.trim().length === 0 && styles.modalButtonSaveDisabled,
+                      ]}
+                      onPress={handleSaveCategory}
+                      activeOpacity={0.7}
+                      disabled={categoryName.trim().length === 0}
+                    >
+                      <Ionicons
+                        name={isEditMode ? 'checkmark' : 'add'}
+                        size={18}
+                        color={categoryName.trim().length === 0 ? '#9CA3AF' : '#FFFFFF'}
+                        style={styles.modalButtonIcon}
+                      />
+                      <Text
+                        style={[
+                          styles.modalButtonSaveText,
+                          categoryName.trim().length === 0 && styles.modalButtonSaveTextDisabled,
+                        ]}
+                      >
+                        {isEditMode ? 'Save' : 'Create'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -419,6 +669,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -528,7 +780,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    paddingVertical: 4,
+    paddingTop: 4,
+    paddingBottom: 0,
     paddingHorizontal: 0,
   },
 
@@ -584,6 +837,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
   },
+  addCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: 20,
+    gap: 4,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  addCategoryChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
 
   // Format Chips
   formatChip: {
@@ -608,6 +878,150 @@ const styles = StyleSheet.create({
   },
   formatChipTextSelected: {
     color: '#FFFFFF',
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalKeyboardAvoid: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    width: '88%',
+    maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalHeader: {
+    marginBottom: 20,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  modalDeleteButton: {
+    marginLeft: 'auto',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 20,
+  },
+  modalInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalColorDotTouchable: {
+    padding: 6,
+    marginLeft: -6,
+    marginRight: 4,
+  },
+  modalColorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  modalInput: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 4,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalButtonDelete: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  modalButtonCancel: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  modalButtonSave: {
+    flex: 1,
+    flexBasis: 0,
+    flexDirection: 'row',
+    backgroundColor: '#1F2937',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonSaveDisabled: {
+    backgroundColor: '#E5E7EB',
+  },
+  modalButtonIcon: {
+    marginRight: 4,
+  },
+  modalButtonSaveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  modalButtonSaveTextDisabled: {
+    color: '#9CA3AF',
   },
 });
 
