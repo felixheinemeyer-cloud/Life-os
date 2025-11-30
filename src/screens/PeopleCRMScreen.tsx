@@ -1,73 +1,434 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
   TouchableOpacity,
+  Animated,
+  Easing,
+  ScrollView,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
+// Types
 interface PeopleCRMScreenProps {
   navigation: {
     goBack: () => void;
+    navigate: (screen: string, params?: any) => void;
   };
 }
 
+interface Contact {
+  id: string;
+  name: string;
+  initials: string;
+  category: string;
+  location?: string;
+  reminderStatus?: 'none' | 'future' | 'soon' | 'overdue';
+}
+
+// Mock Data
+const CONTACTS_DATA: Contact[] = [
+  { id: '1', name: 'Alex Thompson', initials: 'AT', category: 'Close Friend', location: 'San Francisco', reminderStatus: 'future' },
+  { id: '2', name: 'Maria Garcia', initials: 'MG', category: 'Family', reminderStatus: 'overdue' },
+  { id: '3', name: 'James Wilson', initials: 'JW', category: 'Work', location: 'London' },
+  { id: '4', name: 'Sophie Chen', initials: 'SC', category: 'Close Friend', reminderStatus: 'soon' },
+  { id: '5', name: 'David Kim', initials: 'DK', category: 'Acquaintance', location: 'Seoul', reminderStatus: 'overdue' },
+  { id: '6', name: 'Emma Brown', initials: 'EB', category: 'Family', location: 'Chicago', reminderStatus: 'future' },
+  { id: '7', name: 'Lucas Martinez', initials: 'LM', category: 'Work', reminderStatus: 'soon' },
+  { id: '8', name: 'Olivia Johnson', initials: 'OJ', category: 'Close Friend', location: 'Toronto' },
+];
+
+// Avatar colors based on category
+const getAvatarColors = (category: string): [string, string, string] => {
+  switch (category.toLowerCase()) {
+    case 'close friend':
+      return ['#DBEAFE', '#BFDBFE', '#93C5FD'];
+    case 'family':
+      return ['#FCE7F3', '#FBCFE8', '#F9A8D4'];
+    case 'work':
+      return ['#D1FAE5', '#A7F3D0', '#6EE7B7'];
+    case 'acquaintance':
+      return ['#F3F4F6', '#E5E7EB', '#D1D5DB'];
+    default:
+      return ['#DBEAFE', '#BFDBFE', '#93C5FD'];
+  }
+};
+
+const getInitialsColor = (category: string): string => {
+  switch (category.toLowerCase()) {
+    case 'close friend':
+      return '#1D4ED8';
+    case 'family':
+      return '#BE185D';
+    case 'work':
+      return '#047857';
+    case 'acquaintance':
+      return '#6B7280';
+    default:
+      return '#1D4ED8';
+  }
+};
+
+// Reminder bell colors based on status
+const getReminderStyle = (status?: string): { iconColor: string; bgColor: string } | null => {
+  switch (status) {
+    case 'future':
+      return { iconColor: '#9CA3AF', bgColor: '#F3F4F6' };
+    case 'soon':
+      return { iconColor: '#F59E0B', bgColor: '#FEF3C7' };
+    case 'overdue':
+      return { iconColor: '#EF4444', bgColor: '#FEE2E2' };
+    default:
+      return null;
+  }
+};
+
+const CATEGORIES = ['All', 'Close Friend', 'Family', 'Work', 'Acquaintance'];
+
+const getCategoryFilterStyle = (category: string, isSelected: boolean): { bg: string; text: string; border: string } => {
+  if (!isSelected) {
+    return { bg: '#FFFFFF', text: '#6B7280', border: 'rgba(0, 0, 0, 0.08)' };
+  }
+  switch (category.toLowerCase()) {
+    case 'all':
+      return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
+    case 'close friend':
+      return { bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' };
+    case 'family':
+      return { bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' };
+    case 'work':
+      return { bg: '#D1FAE5', text: '#047857', border: '#A7F3D0' };
+    case 'acquaintance':
+      return { bg: '#F3F4F6', text: '#4B5563', border: '#E5E7EB' };
+    default:
+      return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
+  }
+};
+
 const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showNeedsAttention, setShowNeedsAttention] = useState(false);
+
+  // Count contacts needing attention
+  const overdueCount = CONTACTS_DATA.filter(c => c.reminderStatus === 'overdue').length;
+  const soonCount = CONTACTS_DATA.filter(c => c.reminderStatus === 'soon').length;
+  const needsAttentionCount = overdueCount + soonCount;
+
+  // Animation values
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      // Header animation
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerTranslateY, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      // Content animation
+      Animated.parallel([
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(contentTranslateY, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  const handleContactPress = (contact: Contact) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('Contact selected:', contact.name);
+    // TODO: Navigate to contact detail screen
+  };
+
+  const handleAddContact = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    console.log('Add contact pressed');
+    // TODO: Navigate to add contact screen
+  };
+
+  const handleCategorySelect = (categoryName: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedCategory(categoryName);
+    setShowNeedsAttention(false);
+  };
+
+  const handleNeedsAttentionToggle = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowNeedsAttention(!showNeedsAttention);
+  };
+
+  // Filter and sort contacts
+  const filteredContacts = CONTACTS_DATA
+    .filter(contact => {
+      const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        contact.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || contact.category === selectedCategory;
+      const matchesAttention = !showNeedsAttention ||
+        contact.reminderStatus === 'overdue' ||
+        contact.reminderStatus === 'soon';
+      return matchesSearch && matchesCategory && matchesAttention;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={28} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>People CRM</Text>
-            <Text style={styles.subtitle}>Relationships & network</Text>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAddContact}
+              style={styles.addButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={24} color="#1F2937" />
+            </TouchableOpacity>
           </View>
-        </View>
+          <View style={styles.headerContent}>
+            <Text style={styles.title}>People</Text>
+          </View>
+        </Animated.View>
 
-        {/* Content */}
+        {/* Sticky Search Bar */}
+        <Animated.View
+          style={[
+            styles.stickyHeader,
+            {
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Empty State */}
-          <View style={styles.emptyStateContainer}>
-            <LinearGradient
-              colors={['#DBEAFE', '#BFDBFE', '#93C5FD']}
-              style={styles.emptyStateCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          {/* Category Filters */}
+          <Animated.View
+            style={[
+              styles.filtersContainer,
+              {
+                opacity: contentOpacity,
+                transform: [{ translateY: contentTranslateY }],
+              },
+            ]}
+          >
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filtersContent}
             >
-              <View style={styles.iconCircle}>
-                <Ionicons name="people" size={48} color="#3B82F6" />
-              </View>
-              <Text style={styles.emptyStateTitle}>No entries yet</Text>
-              <Text style={styles.emptyStateText}>
-                Your relationships and network will appear here
-              </Text>
-            </LinearGradient>
+              {CATEGORIES.map((category) => {
+                const isSelected = selectedCategory === category;
+                const filterStyle = getCategoryFilterStyle(category, isSelected);
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.filterChip,
+                      {
+                        backgroundColor: filterStyle.bg,
+                        borderColor: filterStyle.border,
+                      },
+                    ]}
+                    onPress={() => handleCategorySelect(category)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.filterChipText, { color: filterStyle.text }]}>
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
 
-            {/* Placeholder Add Button */}
-            <TouchableOpacity
-              style={styles.addButton}
-              activeOpacity={0.7}
-              disabled
+          {/* Needs Attention Banner */}
+          {needsAttentionCount > 0 && (
+            <Animated.View
+              style={[
+                styles.attentionBannerContainer,
+                {
+                  opacity: contentOpacity,
+                  transform: [{ translateY: contentTranslateY }],
+                },
+              ]}
             >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>Add Entry</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.attentionBanner,
+                  showNeedsAttention && styles.attentionBannerActive,
+                ]}
+                onPress={handleNeedsAttentionToggle}
+                activeOpacity={0.7}
+              >
+                <View style={styles.attentionContent}>
+                  <Ionicons
+                    name="notifications"
+                    size={16}
+                    color={showNeedsAttention ? '#FFFFFF' : '#6B7280'}
+                  />
+                  <Text style={[
+                    styles.attentionText,
+                    showNeedsAttention && styles.attentionTextActive,
+                  ]}>
+                    {overdueCount > 0 && (
+                      <Text style={[styles.attentionCount, showNeedsAttention && styles.attentionCountActive, { color: showNeedsAttention ? '#FFFFFF' : '#EF4444' }]}>
+                        {overdueCount} overdue
+                      </Text>
+                    )}
+                    {overdueCount > 0 && soonCount > 0 && (
+                      <Text style={[styles.attentionSeparator, showNeedsAttention && styles.attentionTextActive]}> · </Text>
+                    )}
+                    {soonCount > 0 && (
+                      <Text style={[styles.attentionCount, showNeedsAttention && styles.attentionCountActive, { color: showNeedsAttention ? '#FFFFFF' : '#F59E0B' }]}>
+                        {soonCount} due soon
+                      </Text>
+                    )}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={showNeedsAttention ? 'close' : 'chevron-forward'}
+                  size={16}
+                  color={showNeedsAttention ? '#FFFFFF' : '#9CA3AF'}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Contact List */}
+          <Animated.View
+            style={[
+              styles.listContainer,
+              {
+                opacity: contentOpacity,
+                transform: [{ translateY: contentTranslateY }],
+              },
+            ]}
+          >
+            {filteredContacts.length > 0 ? (
+              filteredContacts.map((contact) => (
+                  <TouchableOpacity
+                    key={contact.id}
+                    style={styles.contactCard}
+                    onPress={() => handleContactPress(contact)}
+                    activeOpacity={0.7}
+                  >
+                    {/* Avatar */}
+                    <LinearGradient
+                      colors={getAvatarColors(contact.category)}
+                      style={styles.contactAvatar}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={[styles.contactInitials, { color: getInitialsColor(contact.category) }]}>
+                        {contact.initials}
+                      </Text>
+                    </LinearGradient>
+
+                    {/* Content */}
+                    <View style={styles.contactCardContent}>
+                      <Text style={styles.contactName}>{contact.name}</Text>
+                    </View>
+
+                    {/* Reminder Indicator */}
+                    {contact.reminderStatus && contact.reminderStatus !== 'none' && (
+                      <View style={[
+                        styles.reminderIndicator,
+                        { backgroundColor: getReminderStyle(contact.reminderStatus)?.bgColor }
+                      ]}>
+                        <Ionicons
+                          name="notifications"
+                          size={14}
+                          color={getReminderStyle(contact.reminderStatus)?.iconColor}
+                        />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptySearchContainer}>
+                <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptySearchTitle}>No contacts found</Text>
+                <Text style={styles.emptySearchText}>
+                  Try adjusting your search query
+                </Text>
+              </View>
+            )}
+          </Animated.View>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -77,121 +438,228 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F1EEE0',
+    backgroundColor: '#F7F5F2',
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    marginBottom: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerContent: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+  // Sticky Search Bar
+  stickyHeader: {
+    backgroundColor: '#F7F5F2',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 100,
   },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 400,
+
+  // Attention Banner
+  attentionBannerContainer: {
+    marginBottom: 20,
   },
-  emptyStateCard: {
-    width: '100%',
-    borderRadius: 24,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
-  },
-  addButton: {
+  attentionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 32,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    opacity: 0.5,
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  attentionBannerActive: {
+    backgroundColor: '#1F2937',
+  },
+  attentionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  attentionText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  attentionTextActive: {
     color: '#FFFFFF',
-    marginLeft: 8,
+  },
+  attentionCount: {
+    fontWeight: '600',
+  },
+  attentionCountActive: {
+    color: '#FFFFFF',
+  },
+  attentionSeparator: {
+    color: '#9CA3AF',
+  },
+
+  // Search Bar
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
+  },
+
+  // Category Filters
+  filtersContainer: {
+    marginHorizontal: -16,
+    marginBottom: 20,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+  },
+
+  // Contact List
+  listContainer: {
+    gap: 10,
+  },
+  contactCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  contactAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  contactInitials: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  contactCardContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  contactName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  reminderIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Empty Search State
+  emptySearchContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptySearchTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  emptySearchText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });
 
