@@ -709,20 +709,25 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
+    minWidth: 60,
   },
   modalCloseText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#1F2937',
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1F2937',
+    flex: 1,
+    textAlign: 'center',
   },
   modalSaveButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
+    minWidth: 60,
+    alignItems: 'flex-end',
   },
   modalSaveButtonDisabled: {
     opacity: 0.5,
@@ -730,7 +735,7 @@ const styles = StyleSheet.create({
   modalSaveText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6366F1',
+    color: '#1F2937',
   },
   modalSaveTextDisabled: {
     color: '#9CA3AF',
