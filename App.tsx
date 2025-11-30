@@ -24,6 +24,7 @@ import CalendarIcon from './src/components/CalendarIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
 import MediaVaultScreen from './src/screens/MediaVaultScreen';
+import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import BookVaultScreen from './src/screens/BookVaultScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import LoveDatingScreen from './src/screens/LoveDatingScreen';
@@ -82,6 +83,11 @@ const KnowledgeStack = () => {
       <Stack.Screen name="MindsetBeliefs" component={MindsetBeliefsScreen} />
       <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
+      <Stack.Screen
+        name="MediaVaultNewEntry"
+        component={MediaVaultNewEntryScreen}
+        options={{ presentation: 'modal' }}
+      />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
       <Stack.Screen name="LoveDating" component={RelationshipModeSelectionScreen} />
