@@ -28,10 +28,27 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 // Types
+interface Contact {
+  id: string;
+  name: string;
+  initials: string;
+  category: string;
+  phoneNumber?: string;
+  email?: string;
+  instagram?: string;
+  location?: string;
+  dateOfBirth?: string;
+}
+
 interface PeopleEntryScreenProps {
   navigation: {
     goBack: () => void;
     navigate: (screen: string, params?: any) => void;
+  };
+  route?: {
+    params?: {
+      contact?: Contact;
+    };
   };
 }
 
@@ -109,20 +126,43 @@ const layoutAnimConfig = {
   },
 };
 
+// Helper to get category ID from category name
+const getCategoryIdFromName = (categoryName: string): string | null => {
+  const category = CATEGORIES.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+  return category?.id || null;
+};
+
 // Main Component
-const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation }) => {
-  // Form state
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [instagram, setInstagram] = useState('');
-  const [location, setLocation] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route }) => {
+  // Get existing contact if editing
+  const existingContact = route?.params?.contact;
+  const isEditMode = !!existingContact;
+
+  // Form state - initialize with existing data if editing
+  const [name, setName] = useState(existingContact?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(existingContact?.phoneNumber || '');
+  const [email, setEmail] = useState(existingContact?.email || '');
+  const [instagram, setInstagram] = useState(existingContact?.instagram || '');
+  const [location, setLocation] = useState(existingContact?.location || '');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(
+    existingContact?.dateOfBirth ? new Date(existingContact.dateOfBirth) : null
+  );
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    existingContact?.category ? getCategoryIdFromName(existingContact.category) : null
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Expanded states for optional fields
-  const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
+  // Expanded states for optional fields - expand fields that have data
+  const getInitialExpandedFields = (): Set<string> => {
+    const fields = new Set<string>();
+    if (existingContact?.phoneNumber) fields.add('phone');
+    if (existingContact?.email) fields.add('email');
+    if (existingContact?.instagram) fields.add('instagram');
+    if (existingContact?.location) fields.add('location');
+    if (existingContact?.dateOfBirth) fields.add('birthday');
+    return fields;
+  };
+  const [expandedFields, setExpandedFields] = useState<Set<string>>(getInitialExpandedFields());
 
   // Focus states
   const [isNameFocused, setIsNameFocused] = useState(false);
@@ -258,8 +298,8 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation }) => 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    const newContact = {
-      id: Date.now().toString(),
+    const contactData = {
+      id: isEditMode ? existingContact.id : Date.now().toString(),
       name: name.trim(),
       initials: generateInitials(name),
       phoneNumber: phoneNumber.trim() || undefined,
@@ -268,10 +308,10 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation }) => 
       location: location.trim() || undefined,
       dateOfBirth: dateOfBirth?.toISOString() || undefined,
       category: selectedCategoryData?.name || '',
-      createdAt: new Date().toISOString(),
+      ...(isEditMode ? { updatedAt: new Date().toISOString() } : { createdAt: new Date().toISOString() }),
     };
 
-    console.log('New contact:', newContact);
+    console.log(isEditMode ? 'Updated contact:' : 'New contact:', contactData);
     navigation.goBack();
   };
 
@@ -551,7 +591,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation }) => 
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>New Contact</Text>
+              <Text style={styles.headerTitle}>{isEditMode ? 'Edit Contact' : 'New Contact'}</Text>
               <TouchableOpacity
                 onPress={handleSave}
                 style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
@@ -859,6 +899,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   headerTop: {
     flexDirection: 'row',

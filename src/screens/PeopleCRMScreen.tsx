@@ -28,20 +28,103 @@ interface Contact {
   name: string;
   initials: string;
   category: string;
+  phoneNumber?: string;
+  email?: string;
+  instagram?: string;
   location?: string;
+  dateOfBirth?: string;
+  contactAgainDate?: string;
   reminderStatus?: 'none' | 'future' | 'soon' | 'overdue';
+  notes?: { id: string; text: string; createdAt: string }[];
 }
 
 // Mock Data
 const CONTACTS_DATA: Contact[] = [
-  { id: '1', name: 'Alex Thompson', initials: 'AT', category: 'Close Friend', location: 'San Francisco', reminderStatus: 'future' },
-  { id: '2', name: 'Maria Garcia', initials: 'MG', category: 'Family', reminderStatus: 'overdue' },
-  { id: '3', name: 'James Wilson', initials: 'JW', category: 'Work', location: 'London' },
-  { id: '4', name: 'Sophie Chen', initials: 'SC', category: 'Close Friend', reminderStatus: 'soon' },
-  { id: '5', name: 'David Kim', initials: 'DK', category: 'Acquaintance', location: 'Seoul', reminderStatus: 'overdue' },
-  { id: '6', name: 'Emma Brown', initials: 'EB', category: 'Family', location: 'Chicago', reminderStatus: 'future' },
-  { id: '7', name: 'Lucas Martinez', initials: 'LM', category: 'Work', reminderStatus: 'soon' },
-  { id: '8', name: 'Olivia Johnson', initials: 'OJ', category: 'Close Friend', location: 'Toronto' },
+  {
+    id: '1',
+    name: 'Alex Thompson',
+    initials: 'AT',
+    category: 'Close Friend',
+    phoneNumber: '+1 (555) 123-4567',
+    email: 'alex.thompson@email.com',
+    instagram: 'alexthompson',
+    location: 'San Francisco',
+    dateOfBirth: '1995-03-15',
+    contactAgainDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'future',
+    notes: [
+      { id: '1', text: 'Loves hiking and outdoor activities', createdAt: new Date().toISOString() },
+      { id: '2', text: 'Works at a tech startup as a designer', createdAt: new Date().toISOString() },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Maria Garcia',
+    initials: 'MG',
+    category: 'Family',
+    phoneNumber: '+1 (555) 234-5678',
+    email: 'maria.garcia@email.com',
+    contactAgainDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'overdue',
+  },
+  {
+    id: '3',
+    name: 'James Wilson',
+    initials: 'JW',
+    category: 'Work',
+    email: 'james.wilson@company.com',
+    location: 'London',
+  },
+  {
+    id: '4',
+    name: 'Sophie Chen',
+    initials: 'SC',
+    category: 'Close Friend',
+    phoneNumber: '+1 (555) 345-6789',
+    instagram: 'sophiechen',
+    contactAgainDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'soon',
+  },
+  {
+    id: '5',
+    name: 'David Kim',
+    initials: 'DK',
+    category: 'Acquaintance',
+    email: 'david.kim@email.com',
+    location: 'Seoul',
+    contactAgainDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'overdue',
+  },
+  {
+    id: '6',
+    name: 'Emma Brown',
+    initials: 'EB',
+    category: 'Family',
+    phoneNumber: '+1 (555) 456-7890',
+    location: 'Chicago',
+    dateOfBirth: '1992-07-22',
+    contactAgainDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'future',
+  },
+  {
+    id: '7',
+    name: 'Lucas Martinez',
+    initials: 'LM',
+    category: 'Work',
+    email: 'lucas.martinez@work.com',
+    contactAgainDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+    reminderStatus: 'soon',
+  },
+  {
+    id: '8',
+    name: 'Olivia Johnson',
+    initials: 'OJ',
+    category: 'Close Friend',
+    phoneNumber: '+1 (555) 567-8901',
+    instagram: 'oliviaj',
+    location: 'Toronto',
+    dateOfBirth: '1997-11-08',
+  },
 ];
 
 // Avatar colors based on category
@@ -94,6 +177,13 @@ const getReminderStyle = (status?: string): { iconColor: string; bgColor: string
 };
 
 const CATEGORIES = ['All', 'Family', 'Close Friend', 'Friend', 'Work', 'Acquaintance'];
+
+// Check if today is the person's birthday
+const isBirthdayToday = (dateOfBirth: string): boolean => {
+  const today = new Date();
+  const birthday = new Date(dateOfBirth);
+  return today.getMonth() === birthday.getMonth() && today.getDate() === birthday.getDate();
+};
 
 const getCategoryFilterStyle = (category: string, isSelected: boolean): { bg: string; text: string; border: string } => {
   if (!isSelected) {
@@ -170,8 +260,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Contact selected:', contact.name);
-    // TODO: Navigate to contact detail screen
+    navigation.navigate('ContactDetail', { contact });
   };
 
   const handleAddContact = () => {
@@ -409,19 +498,29 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                       <Text style={styles.contactName}>{contact.name}</Text>
                     </View>
 
-                    {/* Reminder Indicator */}
-                    {contact.reminderStatus && contact.reminderStatus !== 'none' && (
-                      <View style={[
-                        styles.reminderIndicator,
-                        { backgroundColor: getReminderStyle(contact.reminderStatus)?.bgColor }
-                      ]}>
-                        <Ionicons
-                          name="notifications"
-                          size={14}
-                          color={getReminderStyle(contact.reminderStatus)?.iconColor}
-                        />
-                      </View>
-                    )}
+                    {/* Indicators */}
+                    <View style={styles.indicatorsContainer}>
+                      {/* Birthday Indicator - only show if today is their birthday */}
+                      {contact.dateOfBirth && isBirthdayToday(contact.dateOfBirth) && (
+                        <View style={styles.birthdayIndicator}>
+                          <Ionicons name="gift" size={14} color="#1D4ED8" />
+                        </View>
+                      )}
+
+                      {/* Reminder Indicator */}
+                      {contact.reminderStatus && contact.reminderStatus !== 'none' && (
+                        <View style={[
+                          styles.reminderIndicator,
+                          { backgroundColor: getReminderStyle(contact.reminderStatus)?.bgColor }
+                        ]}>
+                          <Ionicons
+                            name="notifications"
+                            size={14}
+                            color={getReminderStyle(contact.reminderStatus)?.iconColor}
+                          />
+                        </View>
+                      )}
+                    </View>
                   </TouchableOpacity>
               ))
             ) : (
@@ -638,6 +737,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1F2937',
     letterSpacing: -0.2,
+  },
+  indicatorsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  birthdayIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reminderIndicator: {
     width: 28,
