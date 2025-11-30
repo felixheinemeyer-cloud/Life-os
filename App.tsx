@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { MediaProvider } from './src/context/MediaContext';
 
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -25,6 +26,7 @@ import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
 import MediaVaultScreen from './src/screens/MediaVaultScreen';
 import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
+import MediaVaultEntryScreen from './src/screens/MediaVaultEntryScreen';
 import BookVaultScreen from './src/screens/BookVaultScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import PeopleEntryScreen from './src/screens/PeopleEntryScreen';
@@ -90,6 +92,7 @@ const KnowledgeStack = () => {
         component={MediaVaultNewEntryScreen}
         options={{ presentation: 'modal' }}
       />
+      <Stack.Screen name="MediaVaultEntry" component={MediaVaultEntryScreen} />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
       <Stack.Screen
@@ -119,9 +122,10 @@ const KnowledgeStack = () => {
 const App = (): React.JSX.Element => {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style="auto" />
-        <Tab.Navigator
+      <MediaProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <Tab.Navigator
           initialRouteName="Dashboard"
           screenOptions={{
             tabBarActiveTintColor: '#1F2937',
@@ -165,8 +169,9 @@ const App = (): React.JSX.Element => {
               ),
             }}
           />
-        </Tab.Navigator>
-      </NavigationContainer>
+          </Tab.Navigator>
+        </NavigationContainer>
+      </MediaProvider>
     </SafeAreaProvider>
   );
 };

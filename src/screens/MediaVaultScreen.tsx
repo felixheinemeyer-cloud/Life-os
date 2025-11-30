@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useMedia, MediaEntry } from '../context/MediaContext';
 
 // Types
 interface MediaVaultScreenProps {
@@ -30,14 +31,7 @@ interface MediaVaultScreenProps {
   };
 }
 
-interface MediaEntry {
-  id: string;
-  title: string;
-  thumbnail?: string;
-  format: 'video' | 'short-video' | 'audio' | 'article' | 'thread' | 'website';
-  category: string;
-  duration?: string;
-}
+// MediaEntry is imported from context
 
 interface MediaCategory {
   id: string;
@@ -86,65 +80,7 @@ const UNCATEGORIZED_CATEGORY: MediaCategory = {
   lightColor: '#F3F4F6',
 };
 
-// Mock Data - Newest entries first (appear at top of "All Videos")
-const MOCK_MEDIA_ENTRIES: MediaEntry[] = [
-  // Recent additions (mixed wildly)
-  { id: '1', title: '5 Morning Habits for Energy', thumbnail: undefined, format: 'video', category: 'health', duration: '8:21' },
-  { id: '2', title: 'Compound Interest Explained', thumbnail: undefined, format: 'short-video', category: 'finance', duration: '0:58' },
-  { id: '3', title: 'Miyazaki on Creativity', thumbnail: undefined, format: 'audio', category: 'design', duration: '42:15' },
-  { id: '4', title: 'Why You Self-Sabotage', thumbnail: undefined, format: 'thread', category: 'psychology' },
-  { id: '5', title: 'Pierogi Recipe from Krakow', thumbnail: undefined, format: 'article', category: 'cooking' },
-  { id: '6', title: 'The Art of Saying No', thumbnail: undefined, format: 'short-video', category: 'work', duration: '1:12' },
-  { id: '7', title: 'Chopin Nocturne Tutorial', thumbnail: undefined, format: 'video', category: 'piano', duration: '24:30' },
-  { id: '8', title: 'Huberman on Sleep', thumbnail: undefined, format: 'audio', category: 'health', duration: '2:15:00' },
-  { id: '9', title: 'How NATO Actually Works', thumbnail: undefined, format: 'video', category: 'politics', duration: '18:44' },
-  { id: '10', title: 'Japanese Travel Guide 2024', thumbnail: undefined, format: 'website', category: 'travel' },
-  { id: '11', title: 'Anxious Attachment Deep Dive', thumbnail: undefined, format: 'video', category: 'love', duration: '32:10' },
-  { id: '12', title: 'Polish Cases Simplified', thumbnail: undefined, format: 'article', category: 'polish' },
-  { id: '13', title: 'Reframe Your Inner Critic', thumbnail: undefined, format: 'short-video', category: 'mindset', duration: '0:45' },
-  { id: '14', title: 'Home Workout No Equipment', thumbnail: undefined, format: 'video', category: 'fitness', duration: '28:00' },
-  { id: '15', title: 'Claude vs GPT-4 Comparison', thumbnail: undefined, format: 'thread', category: 'tech' },
-  { id: '16', title: 'Viral Hook Frameworks', thumbnail: undefined, format: 'short-video', category: 'marketing', duration: '0:32' },
-  { id: '17', title: 'Breath of Fire Technique', thumbnail: undefined, format: 'video', category: 'meditation', duration: '8:15' },
-  { id: '18', title: 'How to Read a Contract', thumbnail: undefined, format: 'article', category: 'common-knowledge' },
-  { id: '19', title: 'Second Brain with Notion', thumbnail: undefined, format: 'video', category: 'productivity', duration: '45:22' },
-  { id: '20', title: 'Dzień dobry! Basic Greetings', thumbnail: undefined, format: 'short-video', category: 'polish', duration: '2:10' },
-  { id: '21', title: 'Stock Market for Beginners', thumbnail: undefined, format: 'video', category: 'finance', duration: '22:15' },
-  { id: '22', title: 'Alex Hormozi on Offers', thumbnail: undefined, format: 'audio', category: 'marketing', duration: '1:32:00' },
-  { id: '23', title: 'Secure Attachment Habits', thumbnail: undefined, format: 'thread', category: 'love' },
-  { id: '24', title: 'Cold Plunge Protocol', thumbnail: undefined, format: 'short-video', category: 'health', duration: '1:45' },
-  { id: '25', title: 'Left Hand Independence Piano', thumbnail: undefined, format: 'video', category: 'piano', duration: '15:30' },
-  { id: '26', title: 'Cognitive Biases Cheat Sheet', thumbnail: undefined, format: 'website', category: 'psychology' },
-  { id: '27', title: 'One Pan Salmon Recipe', thumbnail: undefined, format: 'short-video', category: 'cooking', duration: '0:55' },
-  { id: '28', title: 'Remote Work Best Practices', thumbnail: undefined, format: 'article', category: 'work' },
-  { id: '29', title: 'Figma Auto Layout Mastery', thumbnail: undefined, format: 'video', category: 'design', duration: '34:18' },
-  { id: '30', title: 'EU Elections Explained', thumbnail: undefined, format: 'video', category: 'politics', duration: '12:33' },
-  { id: '31', title: 'Dopamine Detox Guide', thumbnail: undefined, format: 'thread', category: 'mindset' },
-  { id: '32', title: 'HIIT vs Steady State Cardio', thumbnail: undefined, format: 'video', category: 'fitness', duration: '11:20' },
-  { id: '33', title: 'Backpacking Southeast Asia', thumbnail: undefined, format: 'video', category: 'travel', duration: '25:44' },
-  { id: '34', title: 'Body Scan Meditation', thumbnail: undefined, format: 'audio', category: 'meditation', duration: '15:00' },
-  { id: '35', title: 'Tax Basics Everyone Needs', thumbnail: undefined, format: 'video', category: 'common-knowledge', duration: '19:08' },
-  { id: '36', title: 'React vs Vue in 2024', thumbnail: undefined, format: 'article', category: 'tech' },
-  { id: '37', title: 'Deep Work Summary', thumbnail: undefined, format: 'short-video', category: 'productivity', duration: '3:22' },
-  { id: '38', title: 'Pasta Aglio e Olio', thumbnail: undefined, format: 'video', category: 'cooking', duration: '7:45' },
-  { id: '39', title: 'Money Psychology Explained', thumbnail: undefined, format: 'video', category: 'finance', duration: '16:40' },
-  { id: '40', title: 'Setting Healthy Boundaries', thumbnail: undefined, format: 'audio', category: 'love', duration: '28:15' },
-  { id: '41', title: 'Typography Fundamentals', thumbnail: undefined, format: 'website', category: 'design' },
-  { id: '42', title: 'Pull-Up Progression Guide', thumbnail: undefined, format: 'video', category: 'fitness', duration: '9:33' },
-  { id: '43', title: 'Imposter Syndrome Thread', thumbnail: undefined, format: 'thread', category: 'psychology' },
-  { id: '44', title: 'Polish Verb Conjugation', thumbnail: undefined, format: 'video', category: 'polish', duration: '18:22' },
-  { id: '45', title: 'Salary Negotiation Script', thumbnail: undefined, format: 'article', category: 'work' },
-  { id: '46', title: 'Jazz Piano Voicings', thumbnail: undefined, format: 'video', category: 'piano', duration: '21:10' },
-  { id: '47', title: 'Loving Kindness Meditation', thumbnail: undefined, format: 'audio', category: 'meditation', duration: '12:00' },
-  { id: '48', title: 'Content Repurposing Strategy', thumbnail: undefined, format: 'short-video', category: 'marketing', duration: '1:58' },
-  { id: '49', title: 'Atomic Habits Key Takeaways', thumbnail: undefined, format: 'thread', category: 'mindset' },
-  { id: '50', title: 'Budget Travel Europe Tips', thumbnail: undefined, format: 'website', category: 'travel' },
-  { id: '51', title: 'Zone 2 Cardio Explained', thumbnail: undefined, format: 'video', category: 'health', duration: '14:12' },
-  { id: '52', title: 'First Principles Thinking', thumbnail: undefined, format: 'article', category: 'productivity' },
-  { id: '53', title: 'German Politics Overview', thumbnail: undefined, format: 'video', category: 'politics', duration: '22:05' },
-  { id: '54', title: 'ETF Portfolio Strategy', thumbnail: undefined, format: 'video', category: 'finance', duration: '28:30' },
-  { id: '55', title: 'Wrist Pain Prevention', thumbnail: undefined, format: 'short-video', category: 'common-knowledge', duration: '2:15' },
-];
+// Media entries are now managed via MediaContext
 
 // Helper to get format info
 const getFormatInfo = (format: MediaEntry['format']): { icon: keyof typeof Ionicons.glyphMap; label: string; color: string; bgColor: string } => {
@@ -169,9 +105,57 @@ const getFormatInfo = (format: MediaEntry['format']): { icon: keyof typeof Ionic
   }
 };
 
-// Helper to get thumbnail icon based on format
-// Play = media to watch/listen, Glasses = content to read
-const getThumbnailIcon = (format: MediaEntry['format']): keyof typeof Ionicons.glyphMap => {
+// Platform detection from URL - returns platform icon or null if unknown
+const getPlatformIcon = (sourceUrl?: string): keyof typeof Ionicons.glyphMap | null => {
+  if (!sourceUrl) return null;
+
+  const url = sourceUrl.toLowerCase();
+
+  // Video platforms
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'logo-youtube';
+  if (url.includes('tiktok.com')) return 'logo-tiktok';
+  if (url.includes('vimeo.com')) return 'logo-vimeo';
+  if (url.includes('twitch.tv') || url.includes('twitch.com')) return 'logo-twitch';
+
+  // Social platforms
+  if (url.includes('reddit.com') || url.includes('redd.it')) return 'logo-reddit';
+  if (url.includes('twitter.com') || url.includes('x.com')) return 'logo-twitter';
+  if (url.includes('instagram.com')) return 'logo-instagram';
+  if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) return 'logo-facebook';
+  if (url.includes('linkedin.com')) return 'logo-linkedin';
+  if (url.includes('threads.net')) return 'at-outline'; // Meta Threads
+
+  // Audio platforms
+  if (url.includes('spotify.com') || url.includes('open.spotify.com')) return 'musical-notes';
+  if (url.includes('soundcloud.com')) return 'logo-soundcloud';
+  if (url.includes('podcasts.apple.com') || url.includes('music.apple.com')) return 'logo-apple';
+
+  // Content platforms
+  if (url.includes('medium.com')) return 'logo-medium';
+  if (url.includes('substack.com')) return 'mail-outline';
+  if (url.includes('notion.so') || url.includes('notion.site')) return 'document-text-outline';
+
+  // Dev/Design platforms
+  if (url.includes('github.com')) return 'logo-github';
+  if (url.includes('dribbble.com')) return 'logo-dribbble';
+  if (url.includes('behance.net')) return 'logo-behance';
+  if (url.includes('figma.com')) return 'color-palette-outline';
+
+  // Other platforms
+  if (url.includes('discord.com') || url.includes('discord.gg')) return 'logo-discord';
+  if (url.includes('pinterest.com') || url.includes('pin.it')) return 'logo-pinterest';
+  if (url.includes('snapchat.com')) return 'logo-snapchat';
+  if (url.includes('whatsapp.com')) return 'logo-whatsapp';
+  if (url.includes('telegram.org') || url.includes('t.me')) return 'paper-plane-outline';
+
+  // News/Media
+  if (url.includes('nytimes.com') || url.includes('washingtonpost.com') || url.includes('theguardian.com')) return 'newspaper-outline';
+
+  return null; // Unknown platform
+};
+
+// Helper to get thumbnail icon based on format (fallback when no platform detected)
+const getFormatIcon = (format: MediaEntry['format']): keyof typeof Ionicons.glyphMap => {
   switch (format) {
     case 'video':
     case 'short-video':
@@ -180,10 +164,17 @@ const getThumbnailIcon = (format: MediaEntry['format']): keyof typeof Ionicons.g
     case 'article':
     case 'thread':
     case 'website':
-      return 'glasses-outline';
+      return 'reader-outline';
     default:
       return 'play';
   }
+};
+
+// Get thumbnail icon - prioritizes platform icon, falls back to format icon
+const getThumbnailIcon = (format: MediaEntry['format'], sourceUrl?: string): keyof typeof Ionicons.glyphMap => {
+  const platformIcon = getPlatformIcon(sourceUrl);
+  if (platformIcon) return platformIcon;
+  return getFormatIcon(format);
 };
 
 // Media Card Component - Horizontal card style like CRM cards
@@ -194,7 +185,7 @@ const MediaCard: React.FC<{
   showCategoryBadge?: boolean;
 }> = ({ entry, category, onPress, showCategoryBadge = true }) => {
   const formatInfo = getFormatInfo(entry.format);
-  const thumbnailIcon = getThumbnailIcon(entry.format);
+  const thumbnailIcon = getThumbnailIcon(entry.format, entry.sourceUrl);
 
   return (
     <TouchableOpacity style={styles.mediaCard} onPress={onPress} activeOpacity={0.8}>
@@ -203,14 +194,9 @@ const MediaCard: React.FC<{
         {entry.thumbnail ? (
           <Image source={{ uri: entry.thumbnail }} style={styles.thumbnail} />
         ) : (
-          <LinearGradient
-            colors={[category.lightColor, category.color + '20']}
-            style={styles.thumbnailPlaceholder}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={[styles.thumbnailPlaceholder, { backgroundColor: category.lightColor }]}>
             <Ionicons name={thumbnailIcon} size={20} color={category.color} />
-          </LinearGradient>
+          </View>
         )}
       </View>
 
@@ -415,11 +401,15 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
   // Safe area insets for proper positioning
   const insets = useSafeAreaInsets();
 
+  // Get media entries from context
+  const { entries: mediaEntries } = useMedia();
+
   // State
   const [categories, setCategories] = useState<MediaCategory[]>(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isWatchlistFilter, setIsWatchlistFilter] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
 
   // Category Modal state
@@ -437,7 +427,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
 
   // Group entries by category
   const entriesByCategory = categories.reduce((acc, cat) => {
-    acc[cat.id] = MOCK_MEDIA_ENTRIES.filter((entry) => entry.category === cat.id);
+    acc[cat.id] = mediaEntries.filter((entry) => entry.category === cat.id);
     return acc;
   }, {} as Record<string, MediaEntry[]>);
 
@@ -448,15 +438,19 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
   }, {} as Record<string, number>);
 
   // Check if there are any entries
-  const hasEntries = MOCK_MEDIA_ENTRIES.length > 0;
+  const hasEntries = mediaEntries.length > 0;
 
   // Categories with entries (for rendering)
   const categoriesWithEntries = categories.filter(
     (cat) => entriesByCategory[cat.id].length > 0
   );
 
-  // Filtered entries based on selected category and search query
-  const filteredEntries = MOCK_MEDIA_ENTRIES.filter((entry) => {
+  // Filtered entries based on selected category, search query, and watchlist filter
+  const filteredEntries = mediaEntries.filter((entry) => {
+    // Filter by watchlist if active
+    if (isWatchlistFilter && !entry.isWatchLater) {
+      return false;
+    }
     // Filter by search query if searching
     if (searchQuery.trim()) {
       return entry.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -469,12 +463,23 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
     return true;
   });
 
+  // Count of watchlist items
+  const watchlistCount = mediaEntries.filter(entry => entry.isWatchLater).length;
+
   // Handler for category selection
   const handleSelectCategory = (categoryId: string | null) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedCategory(categoryId);
+  };
+
+  // Handler for watchlist filter toggle
+  const handleWatchlistToggle = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsWatchlistFilter(!isWatchlistFilter);
   };
 
   // Category edit handlers
@@ -644,7 +649,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Entry pressed:', entry.title);
+    navigation.navigate('MediaVaultEntry', { entry });
   };
 
   return (
@@ -681,16 +686,42 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
             {/* Videos List */}
             <View style={styles.videosSection}>
               <View style={styles.videosSectionHeader}>
-                <Text style={styles.videosSectionTitle}>
-                  {searchQuery.trim()
-                    ? `Results for "${searchQuery}"`
-                    : selectedCategory
-                      ? categories.find(c => c.id === selectedCategory)?.name
-                      : 'All Videos'}
-                </Text>
-                <Text style={styles.videosSectionCount}>
-                  {filteredEntries.length} {filteredEntries.length === 1 ? 'video' : 'videos'}
-                </Text>
+                <View style={styles.videosSectionTitleRow}>
+                  <Text style={styles.videosSectionTitle}>
+                    {searchQuery.trim()
+                      ? `Results for "${searchQuery}"`
+                      : selectedCategory
+                        ? categories.find(c => c.id === selectedCategory)?.name
+                        : isWatchlistFilter
+                          ? 'Watchlist'
+                          : 'All Videos'}
+                  </Text>
+                </View>
+                {/* Watchlist Button */}
+                {!searchQuery.trim() && (
+                  <TouchableOpacity
+                    style={[
+                      styles.watchlistButton,
+                      isWatchlistFilter && styles.watchlistButtonActive,
+                    ]}
+                    onPress={handleWatchlistToggle}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={isWatchlistFilter ? 'time' : 'time-outline'}
+                      size={15}
+                      color={isWatchlistFilter ? '#FFFFFF' : '#1F2937'}
+                    />
+                    <Text
+                      style={[
+                        styles.watchlistButtonText,
+                        isWatchlistFilter && styles.watchlistButtonTextActive,
+                      ]}
+                    >
+                      Watchlist
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               {filteredEntries.length > 0 ? (
                 <View style={styles.cardsContainer}>
@@ -1186,6 +1217,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#9CA3AF',
+  },
+  videosSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  watchlistButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    gap: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  watchlistButtonActive: {
+    backgroundColor: '#1F2937',
+  },
+  watchlistButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  watchlistButtonTextActive: {
+    color: '#FFFFFF',
   },
 
   // Section
