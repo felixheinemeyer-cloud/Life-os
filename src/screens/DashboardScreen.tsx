@@ -311,10 +311,14 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
       {/* LAYER 1: Scrollable Content */}
       <Animated.ScrollView
-        style={styles.container}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 72 }, // Safe area + header height + 24px gap
+        ]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={Animated.event(
@@ -322,38 +326,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
           { useNativeDriver: false }
         )}
       >
-        {/* Header Section (SCROLLABLE) */}
-        <View style={styles.header}>
-          {/* Button row */}
-          <View style={styles.headerContent}>
-            {/* Left: Streak Button */}
-            <TouchableOpacity
-              style={styles.streakButton}
-              onPress={handleStreak}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="flame" size={18} color="#F59E0B" />
-              <Text style={styles.streakNumber}>{streakCount}</Text>
-            </TouchableOpacity>
-
-            {/* Right: Profile Button */}
-            <TouchableOpacity
-              style={styles.profileButton}
-              onPress={handleProfile}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Greeting (centered) */}
-          <View style={styles.greetingContainer}>
-            <Text style={styles.greeting} numberOfLines={1}>
-              {getGreeting()}!
-            </Text>
-          </View>
-        </View>
-
         {/* Main Actions Section */}
         <View style={styles.actionsSection}>
           {/* Tracking Cards Row */}
@@ -747,18 +719,96 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </Animated.ScrollView>
-    </SafeAreaView>
+
+      {/* Fixed Header with Blur Gradient */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background - light veil effect */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.85)',
+              'rgba(240, 238, 232, 0.6)',
+              'rgba(240, 238, 232, 0.3)',
+              'rgba(240, 238, 232, 0.1)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content - Single row with greeting centered between buttons */}
+        <View style={styles.headerInner}>
+          <View style={styles.headerRow}>
+            {/* Left: Streak Button */}
+            <TouchableOpacity
+              style={styles.streakButton}
+              onPress={handleStreak}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="flame" size={18} color="#F59E0B" />
+              <Text style={styles.streakNumber}>{streakCount}</Text>
+            </TouchableOpacity>
+
+            {/* Center: Greeting */}
+            <Text style={styles.greeting} numberOfLines={1}>
+              {getGreeting()}!
+            </Text>
+
+            {/* Right: Profile Button */}
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={handleProfile}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F0EEE8',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 0,
+  },
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 65,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
+  headerInner: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
   // LAYER 2: Fixed Button HUD Styles
@@ -786,37 +836,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, // 16px from screen edges (matches Dashboard cards and Knowledge Hub)
   },
 
-  // LAYER 1: Scrollable Header (matches original layout exactly)
-  header: {
-    backgroundColor: '#F0EEE8',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    position: 'relative',
-    marginTop: -8,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  greetingContainer: {
-    position: 'absolute',
-    top: 12,
-    left: 0,
-    right: 0,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-  },
   greeting: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.3,
-    lineHeight: 24,
   },
   date: {
     fontSize: 12,
