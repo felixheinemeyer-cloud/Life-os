@@ -127,39 +127,13 @@ const CONTACTS_DATA: Contact[] = [
   },
 ];
 
-// Avatar colors based on category
-const getAvatarColors = (category: string): [string, string, string] => {
-  switch (category.toLowerCase()) {
-    case 'close friend':
-      return ['#DBEAFE', '#BFDBFE', '#93C5FD'];
-    case 'friend':
-      return ['#EDE9FE', '#DDD6FE', '#C4B5FD'];
-    case 'family':
-      return ['#FCE7F3', '#FBCFE8', '#F9A8D4'];
-    case 'work':
-      return ['#D1FAE5', '#A7F3D0', '#6EE7B7'];
-    case 'acquaintance':
-      return ['#F3F4F6', '#E5E7EB', '#D1D5DB'];
-    default:
-      return ['#DBEAFE', '#BFDBFE', '#93C5FD'];
-  }
+// Unified avatar colors - matching the attention section background (rgba(0,0,0,0.03) on #F7F5F2)
+const getAvatarColors = (): [string, string, string] => {
+  return ['#F0EEEB', '#F0EEEB', '#F0EEEB'];
 };
 
-const getInitialsColor = (category: string): string => {
-  switch (category.toLowerCase()) {
-    case 'close friend':
-      return '#1D4ED8';
-    case 'friend':
-      return '#7C3AED';
-    case 'family':
-      return '#BE185D';
-    case 'work':
-      return '#047857';
-    case 'acquaintance':
-      return '#6B7280';
-    default:
-      return '#1D4ED8';
-  }
+const getInitialsColor = (): string => {
+  return '#1F2937'; // Same as contact name
 };
 
 // Reminder bell colors based on status
@@ -483,12 +457,12 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                   >
                     {/* Avatar */}
                     <LinearGradient
-                      colors={getAvatarColors(contact.category)}
+                      colors={getAvatarColors()}
                       style={styles.contactAvatar}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={[styles.contactInitials, { color: getInitialsColor(contact.category) }]}>
+                      <Text style={[styles.contactInitials, { color: getInitialsColor() }]}>
                         {contact.initials}
                       </Text>
                     </LinearGradient>

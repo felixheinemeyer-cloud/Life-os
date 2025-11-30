@@ -159,39 +159,36 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
+        {/* Fixed Header Row */}
         <Animated.View
           style={[
-            styles.header,
+            styles.headerRow,
             {
               opacity: headerOpacity,
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
         >
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                // TODO: Navigate to settings
-                console.log('Settings pressed');
-              }}
-              style={styles.settingsButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="settings-outline" size={22} color="#1F2937" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.title}>Dating</Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              // TODO: Navigate to settings
+              console.log('Settings pressed');
+            }}
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={22} color="#1F2937" />
+          </TouchableOpacity>
         </Animated.View>
 
         <ScrollView
@@ -200,6 +197,18 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Scrollable Title */}
+          <Animated.View
+            style={[
+              styles.titleContainer,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <Text style={styles.title}>Dating</Text>
+          </Animated.View>
           {/* People Section */}
           <Animated.View
             style={[
@@ -336,17 +345,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: '#F7F5F2',
+  },
+  titleContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   backButton: {
     width: 40,
