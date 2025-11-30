@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 // Types
@@ -64,24 +66,7 @@ const DEFAULT_CATEGORIES: MediaCategory[] = [
   { id: 'productivity', name: 'Productivity', icon: 'rocket-outline', color: '#7C3AED', lightColor: '#DDD6FE' },
   { id: 'tech', name: 'Tech', icon: 'hardware-chip-outline', color: '#2563EB', lightColor: '#BFDBFE' },
   { id: 'design', name: 'Design', icon: 'color-palette-outline', color: '#DB2777', lightColor: '#FBCFE8' },
-  { id: 'photography', name: 'Photography', icon: 'camera-outline', color: '#4B5563', lightColor: '#E5E7EB' },
   { id: 'travel', name: 'Travel', icon: 'airplane-outline', color: '#0891B2', lightColor: '#CFFAFE' },
-  { id: 'history', name: 'History', icon: 'time-outline', color: '#92400E', lightColor: '#FDE68A' },
-  { id: 'science', name: 'Science', icon: 'flask-outline', color: '#4F46E5', lightColor: '#C7D2FE' },
-  { id: 'philosophy', name: 'Philosophy', icon: 'school-outline', color: '#7C2D12', lightColor: '#FFEDD5' },
-  { id: 'art', name: 'Art', icon: 'brush-outline', color: '#BE185D', lightColor: '#FCE7F3' },
-  { id: 'music', name: 'Music', icon: 'musical-notes-outline', color: '#9333EA', lightColor: '#F3E8FF' },
-  { id: 'sports', name: 'Sports', icon: 'football-outline', color: '#16A34A', lightColor: '#BBF7D0' },
-  { id: 'gaming', name: 'Gaming', icon: 'game-controller-outline', color: '#7C3AED', lightColor: '#EDE9FE' },
-  { id: 'crypto', name: 'Crypto', icon: 'logo-bitcoin', color: '#F59E0B', lightColor: '#FEF3C7' },
-  { id: 'real-estate', name: 'Real Estate', icon: 'home-outline', color: '#0D9488', lightColor: '#CCFBF1' },
-  { id: 'parenting', name: 'Parenting', icon: 'people-outline', color: '#EC4899', lightColor: '#FCE7F3' },
-  { id: 'spirituality', name: 'Spirituality', icon: 'sparkles-outline', color: '#8B5CF6', lightColor: '#EDE9FE' },
-  { id: 'languages', name: 'Languages', icon: 'chatbubbles-outline', color: '#0EA5E9', lightColor: '#E0F2FE' },
-  { id: 'writing', name: 'Writing', icon: 'pencil-outline', color: '#64748B', lightColor: '#F1F5F9' },
-  { id: 'podcasts', name: 'Podcasts', icon: 'mic-outline', color: '#DC2626', lightColor: '#FEE2E2' },
-  { id: 'interviews', name: 'Interviews', icon: 'people-circle-outline', color: '#2563EB', lightColor: '#DBEAFE' },
-  { id: 'documentaries', name: 'Documentaries', icon: 'film-outline', color: '#1F2937', lightColor: '#F3F4F6' },
 ];
 
 // Colors for categories
@@ -101,98 +86,64 @@ const UNCATEGORIZED_CATEGORY: MediaCategory = {
   lightColor: '#F3F4F6',
 };
 
-// Mock Data
+// Mock Data - Newest entries first (appear at top of "All Videos")
 const MOCK_MEDIA_ENTRIES: MediaEntry[] = [
-  // Health
+  // Recent additions (mixed wildly)
   { id: '1', title: '5 Morning Habits for Energy', thumbnail: undefined, format: 'video', category: 'health', duration: '8:21' },
-  { id: '2', title: 'Meal Prep for Busy People', thumbnail: undefined, format: 'short-video', category: 'health', duration: '5:30' },
-  { id: '3', title: 'Zone 2 Cardio Explained', thumbnail: undefined, format: 'video', category: 'health', duration: '14:12' },
-  { id: '50', title: 'Sleep Optimization Guide', thumbnail: undefined, format: 'video', category: 'health', duration: '18:45' },
-  { id: '51', title: 'Cold Plunge Benefits', thumbnail: undefined, format: 'short-video', category: 'health', duration: '3:22' },
-  { id: '52', title: 'Intermittent Fasting 101', thumbnail: undefined, format: 'video', category: 'health', duration: '21:08' },
-  { id: '53', title: 'Stretching Routine for Desk Workers', thumbnail: undefined, format: 'short-video', category: 'health', duration: '7:15' },
-  { id: '54', title: 'Gut Health Explained', thumbnail: undefined, format: 'video', category: 'health', duration: '16:33' },
-  { id: '55', title: 'Breathwork for Stress Relief', thumbnail: undefined, format: 'short-video', category: 'health', duration: '4:50' },
-  // Finance
-  { id: '4', title: 'How to Build Wealth in Your 20s', thumbnail: undefined, format: 'video', category: 'finance', duration: '12:34' },
-  { id: '5', title: 'Investing 101', thumbnail: undefined, format: 'video', category: 'finance', duration: '22:15' },
-  { id: '6', title: 'ETF vs Index Funds', thumbnail: undefined, format: 'short-video', category: 'finance', duration: '2:45' },
-  // Love
-  { id: '7', title: 'Attachment Styles Explained', thumbnail: undefined, format: 'short-video', category: 'love', duration: '3:45' },
-  { id: '8', title: 'Setting Boundaries in Relationships', thumbnail: undefined, format: 'video', category: 'love', duration: '11:48' },
-  // Mindset
-  { id: '9', title: 'Stoic Mindset for Success', thumbnail: undefined, format: 'video', category: 'mindset', duration: '15:02' },
-  { id: '10', title: 'How to Stay Disciplined', thumbnail: undefined, format: 'video', category: 'mindset', duration: '9:33' },
-  // Work
-  { id: '11', title: 'Networking Tips That Actually Work', thumbnail: undefined, format: 'short-video', category: 'work', duration: '4:12' },
-  { id: '12', title: 'How to Negotiate Your Salary', thumbnail: undefined, format: 'video', category: 'work', duration: '18:45' },
-  // Psychology
-  { id: '13', title: 'Understanding Cognitive Biases', thumbnail: undefined, format: 'video', category: 'psychology', duration: '21:30' },
-  { id: '14', title: 'The Psychology of Habits', thumbnail: undefined, format: 'video', category: 'psychology', duration: '16:22' },
-  { id: '15', title: 'Dark Psychology Tactics to Avoid', thumbnail: undefined, format: 'short-video', category: 'psychology', duration: '4:55' },
-  // Marketing
-  { id: '16', title: 'Copywriting Fundamentals', thumbnail: undefined, format: 'video', category: 'marketing', duration: '25:10' },
-  { id: '17', title: 'Hook Your Audience in 3 Seconds', thumbnail: undefined, format: 'short-video', category: 'marketing', duration: '1:30' },
-  // Politics
-  { id: '18', title: 'How the EU Actually Works', thumbnail: undefined, format: 'video', category: 'politics', duration: '32:15' },
-  { id: '19', title: 'Geopolitics of Energy Explained', thumbnail: undefined, format: 'video', category: 'politics', duration: '28:44' },
-  // Common Knowledge
-  { id: '20', title: 'How Credit Scores Work', thumbnail: undefined, format: 'video', category: 'common-knowledge', duration: '10:22' },
-  { id: '21', title: 'Basic Car Maintenance Everyone Should Know', thumbnail: undefined, format: 'video', category: 'common-knowledge', duration: '15:30' },
-  // Piano
-  { id: '22', title: 'Piano Chord Progressions for Beginners', thumbnail: undefined, format: 'video', category: 'piano', duration: '12:45' },
-  { id: '23', title: 'How to Play River Flows in You', thumbnail: undefined, format: 'video', category: 'piano', duration: '18:20' },
-  // Polish
-  { id: '24', title: 'Polish Pronunciation Guide', thumbnail: undefined, format: 'video', category: 'polish', duration: '14:33' },
-  { id: '25', title: '50 Most Common Polish Phrases', thumbnail: undefined, format: 'video', category: 'polish', duration: '22:10' },
-  // Cooking
-  { id: '26', title: 'Gordon Ramsay Knife Skills', thumbnail: undefined, format: 'video', category: 'cooking', duration: '8:45' },
-  // Fitness
-  { id: '27', title: 'Perfect Push-Up Form', thumbnail: undefined, format: 'video', category: 'fitness', duration: '6:12' },
-  // Meditation
-  { id: '28', title: '10-Minute Morning Meditation', thumbnail: undefined, format: 'video', category: 'meditation', duration: '10:00' },
-  // Productivity
-  { id: '29', title: 'Time Blocking Method', thumbnail: undefined, format: 'video', category: 'productivity', duration: '11:23' },
-  // Tech
-  { id: '30', title: 'AI Tools You Need to Know', thumbnail: undefined, format: 'video', category: 'tech', duration: '15:44' },
-  // Design
-  { id: '31', title: 'UI Design Principles', thumbnail: undefined, format: 'video', category: 'design', duration: '18:30' },
-  // Photography
-  { id: '32', title: 'iPhone Photography Tips', thumbnail: undefined, format: 'short-video', category: 'photography', duration: '2:15' },
-  // Travel
-  { id: '33', title: 'How to Travel Hack', thumbnail: undefined, format: 'video', category: 'travel', duration: '20:10' },
-  // History
-  { id: '34', title: 'Rise and Fall of Rome', thumbnail: undefined, format: 'video', category: 'history', duration: '45:22' },
-  // Science
-  { id: '35', title: 'Quantum Physics Explained Simply', thumbnail: undefined, format: 'video', category: 'science', duration: '12:08' },
-  // Philosophy
-  { id: '36', title: 'Intro to Stoicism', thumbnail: undefined, format: 'video', category: 'philosophy', duration: '16:45' },
-  // Art
-  { id: '37', title: 'Art History in 10 Minutes', thumbnail: undefined, format: 'video', category: 'art', duration: '10:33' },
-  // Music
-  { id: '38', title: 'Music Theory Basics', thumbnail: undefined, format: 'video', category: 'music', duration: '14:20' },
-  // Sports
-  { id: '39', title: 'Basketball Fundamentals', thumbnail: undefined, format: 'video', category: 'sports', duration: '9:15' },
-  // Gaming
-  { id: '40', title: 'Pro Gaming Setup Guide', thumbnail: undefined, format: 'video', category: 'gaming', duration: '13:40' },
-  // Crypto
-  { id: '41', title: 'Bitcoin Explained', thumbnail: undefined, format: 'video', category: 'crypto', duration: '18:55' },
-  // Real Estate
-  { id: '42', title: 'First Home Buying Guide', thumbnail: undefined, format: 'video', category: 'real-estate', duration: '22:30' },
-  // Parenting
-  { id: '43', title: 'Positive Parenting Tips', thumbnail: undefined, format: 'video', category: 'parenting', duration: '11:15' },
-  // Spirituality
-  { id: '44', title: 'Finding Inner Peace', thumbnail: undefined, format: 'video', category: 'spirituality', duration: '19:00' },
-  // Languages
-  { id: '45', title: 'Learn Spanish Fast', thumbnail: undefined, format: 'video', category: 'languages', duration: '25:10' },
-  // Writing
-  { id: '46', title: 'Copywriting That Converts', thumbnail: undefined, format: 'video', category: 'writing', duration: '17:22' },
-  // Podcasts
-  { id: '47', title: 'Best Podcasts of 2024', thumbnail: undefined, format: 'video', category: 'podcasts', duration: '8:45' },
-  // Interviews
-  { id: '48', title: 'Elon Musk Interview Highlights', thumbnail: undefined, format: 'video', category: 'interviews', duration: '32:00' },
-  // Documentaries
-  { id: '49', title: 'The Social Dilemma Summary', thumbnail: undefined, format: 'video', category: 'documentaries', duration: '15:30' },
+  { id: '2', title: 'Compound Interest Explained', thumbnail: undefined, format: 'short-video', category: 'finance', duration: '0:58' },
+  { id: '3', title: 'Miyazaki on Creativity', thumbnail: undefined, format: 'audio', category: 'design', duration: '42:15' },
+  { id: '4', title: 'Why You Self-Sabotage', thumbnail: undefined, format: 'thread', category: 'psychology' },
+  { id: '5', title: 'Pierogi Recipe from Krakow', thumbnail: undefined, format: 'article', category: 'cooking' },
+  { id: '6', title: 'The Art of Saying No', thumbnail: undefined, format: 'short-video', category: 'work', duration: '1:12' },
+  { id: '7', title: 'Chopin Nocturne Tutorial', thumbnail: undefined, format: 'video', category: 'piano', duration: '24:30' },
+  { id: '8', title: 'Huberman on Sleep', thumbnail: undefined, format: 'audio', category: 'health', duration: '2:15:00' },
+  { id: '9', title: 'How NATO Actually Works', thumbnail: undefined, format: 'video', category: 'politics', duration: '18:44' },
+  { id: '10', title: 'Japanese Travel Guide 2024', thumbnail: undefined, format: 'website', category: 'travel' },
+  { id: '11', title: 'Anxious Attachment Deep Dive', thumbnail: undefined, format: 'video', category: 'love', duration: '32:10' },
+  { id: '12', title: 'Polish Cases Simplified', thumbnail: undefined, format: 'article', category: 'polish' },
+  { id: '13', title: 'Reframe Your Inner Critic', thumbnail: undefined, format: 'short-video', category: 'mindset', duration: '0:45' },
+  { id: '14', title: 'Home Workout No Equipment', thumbnail: undefined, format: 'video', category: 'fitness', duration: '28:00' },
+  { id: '15', title: 'Claude vs GPT-4 Comparison', thumbnail: undefined, format: 'thread', category: 'tech' },
+  { id: '16', title: 'Viral Hook Frameworks', thumbnail: undefined, format: 'short-video', category: 'marketing', duration: '0:32' },
+  { id: '17', title: 'Breath of Fire Technique', thumbnail: undefined, format: 'video', category: 'meditation', duration: '8:15' },
+  { id: '18', title: 'How to Read a Contract', thumbnail: undefined, format: 'article', category: 'common-knowledge' },
+  { id: '19', title: 'Second Brain with Notion', thumbnail: undefined, format: 'video', category: 'productivity', duration: '45:22' },
+  { id: '20', title: 'Dzień dobry! Basic Greetings', thumbnail: undefined, format: 'short-video', category: 'polish', duration: '2:10' },
+  { id: '21', title: 'Stock Market for Beginners', thumbnail: undefined, format: 'video', category: 'finance', duration: '22:15' },
+  { id: '22', title: 'Alex Hormozi on Offers', thumbnail: undefined, format: 'audio', category: 'marketing', duration: '1:32:00' },
+  { id: '23', title: 'Secure Attachment Habits', thumbnail: undefined, format: 'thread', category: 'love' },
+  { id: '24', title: 'Cold Plunge Protocol', thumbnail: undefined, format: 'short-video', category: 'health', duration: '1:45' },
+  { id: '25', title: 'Left Hand Independence Piano', thumbnail: undefined, format: 'video', category: 'piano', duration: '15:30' },
+  { id: '26', title: 'Cognitive Biases Cheat Sheet', thumbnail: undefined, format: 'website', category: 'psychology' },
+  { id: '27', title: 'One Pan Salmon Recipe', thumbnail: undefined, format: 'short-video', category: 'cooking', duration: '0:55' },
+  { id: '28', title: 'Remote Work Best Practices', thumbnail: undefined, format: 'article', category: 'work' },
+  { id: '29', title: 'Figma Auto Layout Mastery', thumbnail: undefined, format: 'video', category: 'design', duration: '34:18' },
+  { id: '30', title: 'EU Elections Explained', thumbnail: undefined, format: 'video', category: 'politics', duration: '12:33' },
+  { id: '31', title: 'Dopamine Detox Guide', thumbnail: undefined, format: 'thread', category: 'mindset' },
+  { id: '32', title: 'HIIT vs Steady State Cardio', thumbnail: undefined, format: 'video', category: 'fitness', duration: '11:20' },
+  { id: '33', title: 'Backpacking Southeast Asia', thumbnail: undefined, format: 'video', category: 'travel', duration: '25:44' },
+  { id: '34', title: 'Body Scan Meditation', thumbnail: undefined, format: 'audio', category: 'meditation', duration: '15:00' },
+  { id: '35', title: 'Tax Basics Everyone Needs', thumbnail: undefined, format: 'video', category: 'common-knowledge', duration: '19:08' },
+  { id: '36', title: 'React vs Vue in 2024', thumbnail: undefined, format: 'article', category: 'tech' },
+  { id: '37', title: 'Deep Work Summary', thumbnail: undefined, format: 'short-video', category: 'productivity', duration: '3:22' },
+  { id: '38', title: 'Pasta Aglio e Olio', thumbnail: undefined, format: 'video', category: 'cooking', duration: '7:45' },
+  { id: '39', title: 'Money Psychology Explained', thumbnail: undefined, format: 'video', category: 'finance', duration: '16:40' },
+  { id: '40', title: 'Setting Healthy Boundaries', thumbnail: undefined, format: 'audio', category: 'love', duration: '28:15' },
+  { id: '41', title: 'Typography Fundamentals', thumbnail: undefined, format: 'website', category: 'design' },
+  { id: '42', title: 'Pull-Up Progression Guide', thumbnail: undefined, format: 'video', category: 'fitness', duration: '9:33' },
+  { id: '43', title: 'Imposter Syndrome Thread', thumbnail: undefined, format: 'thread', category: 'psychology' },
+  { id: '44', title: 'Polish Verb Conjugation', thumbnail: undefined, format: 'video', category: 'polish', duration: '18:22' },
+  { id: '45', title: 'Salary Negotiation Script', thumbnail: undefined, format: 'article', category: 'work' },
+  { id: '46', title: 'Jazz Piano Voicings', thumbnail: undefined, format: 'video', category: 'piano', duration: '21:10' },
+  { id: '47', title: 'Loving Kindness Meditation', thumbnail: undefined, format: 'audio', category: 'meditation', duration: '12:00' },
+  { id: '48', title: 'Content Repurposing Strategy', thumbnail: undefined, format: 'short-video', category: 'marketing', duration: '1:58' },
+  { id: '49', title: 'Atomic Habits Key Takeaways', thumbnail: undefined, format: 'thread', category: 'mindset' },
+  { id: '50', title: 'Budget Travel Europe Tips', thumbnail: undefined, format: 'website', category: 'travel' },
+  { id: '51', title: 'Zone 2 Cardio Explained', thumbnail: undefined, format: 'video', category: 'health', duration: '14:12' },
+  { id: '52', title: 'First Principles Thinking', thumbnail: undefined, format: 'article', category: 'productivity' },
+  { id: '53', title: 'German Politics Overview', thumbnail: undefined, format: 'video', category: 'politics', duration: '22:05' },
+  { id: '54', title: 'ETF Portfolio Strategy', thumbnail: undefined, format: 'video', category: 'finance', duration: '28:30' },
+  { id: '55', title: 'Wrist Pain Prevention', thumbnail: undefined, format: 'short-video', category: 'common-knowledge', duration: '2:15' },
 ];
 
 // Helper to get format info
@@ -218,6 +169,23 @@ const getFormatInfo = (format: MediaEntry['format']): { icon: keyof typeof Ionic
   }
 };
 
+// Helper to get thumbnail icon based on format
+// Play = media to watch/listen, Glasses = content to read
+const getThumbnailIcon = (format: MediaEntry['format']): keyof typeof Ionicons.glyphMap => {
+  switch (format) {
+    case 'video':
+    case 'short-video':
+    case 'audio':
+      return 'play';
+    case 'article':
+    case 'thread':
+    case 'website':
+      return 'glasses-outline';
+    default:
+      return 'play';
+  }
+};
+
 // Media Card Component - Horizontal card style like CRM cards
 const MediaCard: React.FC<{
   entry: MediaEntry;
@@ -226,6 +194,7 @@ const MediaCard: React.FC<{
   showCategoryBadge?: boolean;
 }> = ({ entry, category, onPress, showCategoryBadge = true }) => {
   const formatInfo = getFormatInfo(entry.format);
+  const thumbnailIcon = getThumbnailIcon(entry.format);
 
   return (
     <TouchableOpacity style={styles.mediaCard} onPress={onPress} activeOpacity={0.8}>
@@ -240,14 +209,8 @@ const MediaCard: React.FC<{
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="play" size={20} color={category.color} />
+            <Ionicons name={thumbnailIcon} size={20} color={category.color} />
           </LinearGradient>
-        )}
-        {/* Duration badge */}
-        {entry.duration && (
-          <View style={styles.durationBadge}>
-            <Text style={styles.durationText}>{entry.duration}</Text>
-          </View>
         )}
       </View>
 
@@ -409,7 +372,7 @@ const CategoryOverview: React.FC<{
         {/* Show More / Show Less Button */}
         {showExpandButton && (
           <TouchableOpacity
-            style={styles.showMoreChip}
+            style={styles.showMoreButton}
             onPress={handleToggleExpand}
             activeOpacity={0.7}
           >
@@ -449,6 +412,9 @@ const EmptyState: React.FC<{ onAddPress: () => void }> = ({ onAddPress }) => {
 
 // Main Component
 const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
+  // Safe area insets for proper positioning
+  const insets = useSafeAreaInsets();
+
   // State
   const [categories, setCategories] = useState<MediaCategory[]>(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -682,9 +648,99 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 72 }, // Safe area + header height + spacing
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Scrollable Title */}
+        {!isSearching && (
+          <View style={styles.scrollableTitle}>
+            <Text style={styles.title}>Media Vault</Text>
+          </View>
+        )}
+
+        {hasEntries ? (
+          <>
+            {/* Category Overview - hidden during search */}
+            {!isSearching && (
+              <CategoryOverview
+                categories={categories}
+                entryCounts={entryCounts}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleSelectCategory}
+                onEditCategory={handleEditCategory}
+              />
+            )}
+
+            {/* Videos List */}
+            <View style={styles.videosSection}>
+              <View style={styles.videosSectionHeader}>
+                <Text style={styles.videosSectionTitle}>
+                  {searchQuery.trim()
+                    ? `Results for "${searchQuery}"`
+                    : selectedCategory
+                      ? categories.find(c => c.id === selectedCategory)?.name
+                      : 'All Videos'}
+                </Text>
+                <Text style={styles.videosSectionCount}>
+                  {filteredEntries.length} {filteredEntries.length === 1 ? 'video' : 'videos'}
+                </Text>
+              </View>
+              {filteredEntries.length > 0 ? (
+                <View style={styles.cardsContainer}>
+                  {filteredEntries.map((entry) => {
+                    const category = categories.find(cat => cat.id === entry.category);
+                    const displayCategory = category || UNCATEGORIZED_CATEGORY;
+                    const showCategoryBadge = category && (!selectedCategory || searchQuery.trim().length > 0);
+                    return (
+                      <MediaCard
+                        key={entry.id}
+                        entry={entry}
+                        category={displayCategory}
+                        onPress={() => handleEntryPress(entry)}
+                        showCategoryBadge={showCategoryBadge}
+                      />
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={styles.noResults}>
+                  <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+                  <Text style={styles.noResultsText}>No videos found</Text>
+                </View>
+              )}
+            </View>
+          </>
+        ) : (
+          <EmptyState onAddPress={handleAddEntry} />
+        )}
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background - light veil effect */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.95)',
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0.1)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
         <Animated.View
           style={[
             styles.header,
@@ -693,6 +749,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
+          pointerEvents="box-none"
         >
           {isSearching ? (
             /* Search Mode Header */
@@ -725,108 +782,39 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
             </View>
           ) : (
             /* Normal Header */
-            <>
-              <View style={styles.headerTop}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              </TouchableOpacity>
+              <View style={styles.headerButtons}>
                 <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={styles.backButton}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
+                  onPress={handleSearchPress}
+                  onPressIn={handleSearchPressIn}
+                  onPressOut={handleSearchPressOut}
                 >
-                  <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
+                    <Ionicons name="search" size={22} color="#1F2937" />
+                  </Animated.View>
                 </TouchableOpacity>
-                <View style={styles.headerButtons}>
-                  <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={handleSearchPress}
-                    onPressIn={handleSearchPressIn}
-                    onPressOut={handleSearchPressOut}
-                  >
-                    <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                      <Ionicons name="search" size={22} color="#1F2937" />
-                    </Animated.View>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={handleAddEntry}
-                    onPressIn={handleAddPressIn}
-                    onPressOut={handleAddPressOut}
-                  >
-                    <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
-                      <Ionicons name="add" size={24} color="#1F2937" />
-                    </Animated.View>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={handleAddEntry}
+                  onPressIn={handleAddPressIn}
+                  onPressOut={handleAddPressOut}
+                >
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
+                    <Ionicons name="add" size={24} color="#1F2937" />
+                  </Animated.View>
+                </TouchableOpacity>
               </View>
-              <View style={styles.headerContent}>
-                <Text style={styles.title}>Media Vault</Text>
-              </View>
-            </>
+            </View>
           )}
         </Animated.View>
-
-        {/* Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {hasEntries ? (
-            <>
-              {/* Category Overview - hidden during search */}
-              {!isSearching && (
-                <CategoryOverview
-                  categories={categories}
-                  entryCounts={entryCounts}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={handleSelectCategory}
-                  onEditCategory={handleEditCategory}
-                />
-              )}
-
-              {/* Videos List */}
-              <View style={styles.videosSection}>
-                <View style={styles.videosSectionHeader}>
-                  <Text style={styles.videosSectionTitle}>
-                    {searchQuery.trim()
-                      ? `Results for "${searchQuery}"`
-                      : selectedCategory
-                        ? categories.find(c => c.id === selectedCategory)?.name
-                        : 'All Videos'}
-                  </Text>
-                  <Text style={styles.videosSectionCount}>
-                    {filteredEntries.length} {filteredEntries.length === 1 ? 'video' : 'videos'}
-                  </Text>
-                </View>
-                {filteredEntries.length > 0 ? (
-                  <View style={styles.cardsContainer}>
-                    {filteredEntries.map((entry) => {
-                      const category = categories.find(cat => cat.id === entry.category);
-                      const displayCategory = category || UNCATEGORIZED_CATEGORY;
-                      // Show category badge only when viewing all videos or searching, and category exists
-                      const showCategoryBadge = category && (!selectedCategory || searchQuery.trim().length > 0);
-                      return (
-                        <MediaCard
-                          key={entry.id}
-                          entry={entry}
-                          category={displayCategory}
-                          onPress={() => handleEntryPress(entry)}
-                          showCategoryBadge={showCategoryBadge}
-                        />
-                      );
-                    })}
-                  </View>
-                ) : (
-                  <View style={styles.noResults}>
-                    <Ionicons name="search-outline" size={40} color="#D1D5DB" />
-                    <Text style={styles.noResultsText}>No videos found</Text>
-                  </View>
-                )}
-              </View>
-            </>
-          ) : (
-            <EmptyState onAddPress={handleAddEntry} />
-          )}
-        </ScrollView>
       </View>
 
       {/* Category Edit Modal */}
@@ -926,30 +914,44 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 65,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   backButton: {
     width: 40,
@@ -1067,6 +1069,9 @@ const styles = StyleSheet.create({
   headerContent: {
     paddingHorizontal: 4,
   },
+  scrollableTitle: {
+    marginBottom: 16,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -1133,13 +1138,11 @@ const styles = StyleSheet.create({
   categoryChipNameSelected: {
     color: '#FFFFFF',
   },
-  showMoreChip: {
+  showMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingHorizontal: 4,
     gap: 4,
   },
   showMoreText: {
@@ -1259,20 +1262,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  durationBadge: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  durationText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   mediaCardContent: {
     flex: 1,

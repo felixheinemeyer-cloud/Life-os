@@ -57,12 +57,7 @@ const DEFAULT_CATEGORIES: MediaCategory[] = [
   { id: 'productivity', name: 'Productivity', color: '#7C3AED' },
   { id: 'tech', name: 'Tech', color: '#2563EB' },
   { id: 'design', name: 'Design', color: '#DB2777' },
-  { id: 'photography', name: 'Photography', color: '#4B5563' },
   { id: 'travel', name: 'Travel', color: '#0891B2' },
-  { id: 'history', name: 'History', color: '#92400E' },
-  { id: 'science', name: 'Science', color: '#4F46E5' },
-  { id: 'philosophy', name: 'Philosophy', color: '#7C2D12' },
-  { id: 'spirituality', name: 'Spirituality', color: '#8B5CF6' },
 ];
 
 // Media Formats - Based on consumption method (mutually exclusive)
