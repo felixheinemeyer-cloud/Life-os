@@ -49,6 +49,8 @@ const getAvatarColors = (category: string): [string, string, string] => {
   switch (category.toLowerCase()) {
     case 'close friend':
       return ['#DBEAFE', '#BFDBFE', '#93C5FD'];
+    case 'friend':
+      return ['#EDE9FE', '#DDD6FE', '#C4B5FD'];
     case 'family':
       return ['#FCE7F3', '#FBCFE8', '#F9A8D4'];
     case 'work':
@@ -64,6 +66,8 @@ const getInitialsColor = (category: string): string => {
   switch (category.toLowerCase()) {
     case 'close friend':
       return '#1D4ED8';
+    case 'friend':
+      return '#7C3AED';
     case 'family':
       return '#BE185D';
     case 'work':
@@ -89,7 +93,7 @@ const getReminderStyle = (status?: string): { iconColor: string; bgColor: string
   }
 };
 
-const CATEGORIES = ['All', 'Close Friend', 'Family', 'Work', 'Acquaintance'];
+const CATEGORIES = ['All', 'Family', 'Close Friend', 'Friend', 'Work', 'Acquaintance'];
 
 const getCategoryFilterStyle = (category: string, isSelected: boolean): { bg: string; text: string; border: string } => {
   if (!isSelected) {
@@ -100,6 +104,8 @@ const getCategoryFilterStyle = (category: string, isSelected: boolean): { bg: st
       return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
     case 'close friend':
       return { bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' };
+    case 'friend':
+      return { bg: '#EDE9FE', text: '#7C3AED', border: '#DDD6FE' };
     case 'family':
       return { bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' };
     case 'work':
@@ -172,8 +178,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('Add contact pressed');
-    // TODO: Navigate to add contact screen
+    navigation.navigate('PeopleEntry');
   };
 
   const handleCategorySelect = (categoryName: string) => {

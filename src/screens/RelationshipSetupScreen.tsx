@@ -14,6 +14,8 @@ import {
   Alert,
   Modal,
   Keyboard,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -50,6 +52,68 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
   const dateCardOpacity = useRef(new Animated.Value(0)).current;
   const dateCardTranslateY = useRef(new Animated.Value(30)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
+
+  // Date picker modal animation
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
+  const datePickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const SWIPE_THRESHOLD = 100;
+
+  // Animate date picker modal in when it opens
+  useEffect(() => {
+    if (showDatePicker) {
+      datePickerTranslateY.setValue(SCREEN_HEIGHT);
+      Animated.timing(datePickerTranslateY, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showDatePicker]);
+
+  const datePickerPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 10;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          datePickerTranslateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > SWIPE_THRESHOLD) {
+          Animated.timing(datePickerTranslateY, {
+            toValue: SCREEN_HEIGHT,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowDatePicker(false);
+          });
+        } else {
+          Animated.spring(datePickerTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 8,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  const handleDatePickerDone = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    Animated.timing(datePickerTranslateY, {
+      toValue: SCREEN_HEIGHT,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowDatePicker(false);
+    });
+  };
 
   useEffect(() => {
     Animated.sequence([
@@ -380,36 +444,53 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
           <Modal
             visible={showDatePicker}
             transparent={true}
-            animationType="slide"
+            animationType="none"
+            onRequestClose={handleDatePickerDone}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Together since</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowDatePicker(false)}
-                    style={styles.modalCloseButton}
-                  >
-                    <Ionicons name="close" size={24} color="#6B7280" />
-                  </TouchableOpacity>
+            <View style={styles.datePickerOverlay}>
+              <TouchableOpacity
+                style={styles.datePickerBackdrop}
+                activeOpacity={1}
+                onPress={handleDatePickerDone}
+              />
+              <Animated.View
+                style={[
+                  styles.datePickerContainer,
+                  { transform: [{ translateY: datePickerTranslateY }] },
+                ]}
+                {...datePickerPanResponder.panHandlers}
+              >
+                {/* Drag Handle */}
+                <View style={styles.datePickerHandle}>
+                  <View style={styles.datePickerHandleBar} />
                 </View>
+
+                {/* Title */}
+                <Text style={styles.datePickerTitle}>Together since</Text>
+
+                {/* Date Picker */}
                 <View style={styles.datePickerWrapper}>
                   <DateTimePicker
                     value={togetherSince || new Date()}
                     mode="date"
                     display="spinner"
                     onChange={handleDateChange}
-                    textColor="#1F2937"
+                    maximumDate={new Date()}
                     style={styles.datePicker}
                   />
                 </View>
-                <TouchableOpacity
-                  style={styles.modalDoneButton}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <Text style={styles.modalDoneButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
+
+                {/* Action Button */}
+                <View style={styles.datePickerActions}>
+                  <TouchableOpacity
+                    onPress={handleDatePickerDone}
+                    style={styles.datePickerDoneButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.datePickerDoneText}>Confirm</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
             </View>
           </Modal>
 
@@ -431,8 +512,8 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
               Continue
             </Text>
             <Ionicons
-              name="arrow-forward"
-              size={20}
+              name="chevron-forward"
+              size={18}
               color={isFormValid ? '#FFFFFF' : '#9CA3AF'}
             />
           </TouchableOpacity>
@@ -624,83 +705,90 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   textInput: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '400',
     color: '#1F2937',
-    paddingVertical: 12,
+    paddingVertical: 0,
     paddingHorizontal: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   datePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingVertical: 0,
   },
   datePickerText: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '400',
     color: '#1F2937',
   },
   datePickerPlaceholder: {
     color: '#9CA3AF',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  // Date Picker Modal Styles
+  datePickerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
     justifyContent: 'flex-end',
   },
-  modalContent: {
+  datePickerBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  datePickerContainer: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingBottom: 40,
   },
-  modalHeader: {
-    flexDirection: 'row',
+  datePickerHandle: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
     paddingBottom: 8,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-  },
-  modalCloseButton: {
+  datePickerHandleBar: {
     width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E5E7EB',
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.3,
   },
   datePickerWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    marginHorizontal: -10,
   },
   datePicker: {
-    height: 216,
     width: '100%',
+    height: 200,
   },
-  modalDoneButton: {
+  datePickerActions: {
     marginHorizontal: 20,
-    marginTop: 8,
-    backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
+    marginTop: 12,
   },
-  modalDoneButtonText: {
-    fontSize: 16,
+  datePickerDoneButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#1F2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerDoneText: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
   },
