@@ -27,6 +27,7 @@ import MediaVaultScreen from './src/screens/MediaVaultScreen';
 import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import BookVaultScreen from './src/screens/BookVaultScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
+import PeopleEntryScreen from './src/screens/PeopleEntryScreen';
 import LoveDatingScreen from './src/screens/LoveDatingScreen';
 import StoryBankScreen from './src/screens/StoryBankScreen';
 import RelationshipModeSelectionScreen from './src/screens/RelationshipModeSelectionScreen';
@@ -90,6 +91,11 @@ const KnowledgeStack = () => {
       />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
+      <Stack.Screen
+        name="PeopleEntry"
+        component={PeopleEntryScreen}
+        options={{ presentation: 'modal' }}
+      />
       <Stack.Screen name="LoveDating" component={RelationshipModeSelectionScreen} />
       <Stack.Screen name="LoveModePlaceholder" component={LoveModePlaceholderScreen} />
       <Stack.Screen name="DatingModePlaceholder" component={DatingModePlaceholderScreen} />
