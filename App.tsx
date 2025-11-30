@@ -39,6 +39,8 @@ import RelationshipHomeScreen from './src/screens/RelationshipHomeScreen';
 import DateIdeasListScreen from './src/screens/DateIdeasListScreen';
 import DatingHomeScreen from './src/screens/DatingHomeScreen';
 import DatingCRMScreen from './src/screens/DatingCRMScreen';
+import DatingEntryScreen from './src/screens/DatingEntryScreen';
+import DatingDetailScreen from './src/screens/DatingDetailScreen';
 import DatingAdviceDetailScreen from './src/screens/DatingAdviceDetailScreen';
 import HigherSelfScreen from './src/screens/HigherSelfScreen';
 import MindsetBeliefsScreen from './src/screens/MindsetBeliefsScreen';
@@ -106,6 +108,12 @@ const KnowledgeStack = () => {
       <Stack.Screen name="DateIdeasList" component={DateIdeasListScreen} />
       <Stack.Screen name="DatingHome" component={DatingHomeScreen} />
       <Stack.Screen name="DatingCRM" component={DatingCRMScreen} />
+      <Stack.Screen
+        name="DatingEntry"
+        component={DatingEntryScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen name="DatingDetail" component={DatingDetailScreen} />
       <Stack.Screen name="DatingAdviceDetail" component={DatingAdviceDetailScreen} />
       <Stack.Screen name="StoryBank" component={StoryBankScreen} />
       <Stack.Screen name="PhysicalWealthIntroAnimation" component={PhysicalWealthIntroAnimationScreen} />

@@ -28,70 +28,37 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 // Types
-interface Contact {
+interface DatingPerson {
   id: string;
   name: string;
   initials: string;
-  category: string;
+  source?: string;
   phoneNumber?: string;
-  email?: string;
   instagram?: string;
   location?: string;
   dateOfBirth?: string;
+  rating?: number;
+  createdAt: string;
 }
 
-interface PeopleEntryScreenProps {
+// Rating values constant
+const RATING_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+interface DatingEntryScreenProps {
   navigation: {
     goBack: () => void;
     navigate: (screen: string, params?: any) => void;
   };
   route?: {
     params?: {
-      contact?: Contact;
+      person?: DatingPerson;
     };
   };
 }
 
-interface Category {
-  id: string;
-  name: string;
-  colors: [string, string, string];
-  textColor: string;
-}
-
-// Categories matching PeopleCRMScreen
-const CATEGORIES: Category[] = [
-  {
-    id: 'family',
-    name: 'Family',
-    colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-    textColor: '#BE185D',
-  },
-  {
-    id: 'close-friend',
-    name: 'Close Friend',
-    colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-    textColor: '#1D4ED8',
-  },
-  {
-    id: 'friend',
-    name: 'Friend',
-    colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
-    textColor: '#7C3AED',
-  },
-  {
-    id: 'work',
-    name: 'Work',
-    colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
-    textColor: '#047857',
-  },
-  {
-    id: 'acquaintance',
-    name: 'Acquaintance',
-    colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
-    textColor: '#6B7280',
-  },
-];
+// Avatar colors - consistent dating theme
+const AVATAR_GRADIENT: [string, string, string] = ['#FFF1F2', '#FFE4E6', '#FECDD3'];
+const AVATAR_INITIALS_COLOR = '#BE123C';
 
 // Helper function to generate initials from name
 const generateInitials = (name: string): string => {
@@ -126,40 +93,30 @@ const layoutAnimConfig = {
   },
 };
 
-// Helper to get category ID from category name
-const getCategoryIdFromName = (categoryName: string): string | null => {
-  const category = CATEGORIES.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-  return category?.id || null;
-};
-
 // Main Component
-const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route }) => {
-  // Get existing contact if editing
-  const existingContact = route?.params?.contact;
-  const isEditMode = !!existingContact;
+const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route }) => {
+  // Get existing person if editing
+  const existingPerson = route?.params?.person;
+  const isEditMode = !!existingPerson;
 
   // Form state - initialize with existing data if editing
-  const [name, setName] = useState(existingContact?.name || '');
-  const [phoneNumber, setPhoneNumber] = useState(existingContact?.phoneNumber || '');
-  const [email, setEmail] = useState(existingContact?.email || '');
-  const [instagram, setInstagram] = useState(existingContact?.instagram || '');
-  const [location, setLocation] = useState(existingContact?.location || '');
+  const [name, setName] = useState(existingPerson?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(existingPerson?.phoneNumber || '');
+  const [instagram, setInstagram] = useState(existingPerson?.instagram || '');
+  const [location, setLocation] = useState(existingPerson?.location || '');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(
-    existingContact?.dateOfBirth ? new Date(existingContact.dateOfBirth) : null
+    existingPerson?.dateOfBirth ? new Date(existingPerson.dateOfBirth) : null
   );
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    existingContact?.category ? getCategoryIdFromName(existingContact.category) : null
-  );
+  const [rating, setRating] = useState<number | null>(existingPerson?.rating || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Expanded states for optional fields - expand fields that have data
   const getInitialExpandedFields = (): Set<string> => {
     const fields = new Set<string>();
-    if (existingContact?.phoneNumber) fields.add('phone');
-    if (existingContact?.email) fields.add('email');
-    if (existingContact?.instagram) fields.add('instagram');
-    if (existingContact?.location) fields.add('location');
-    if (existingContact?.dateOfBirth) fields.add('birthday');
+    if (existingPerson?.phoneNumber) fields.add('phone');
+    if (existingPerson?.instagram) fields.add('instagram');
+    if (existingPerson?.location) fields.add('location');
+    if (existingPerson?.dateOfBirth) fields.add('birthday');
     return fields;
   };
   const [expandedFields, setExpandedFields] = useState<Set<string>>(getInitialExpandedFields());
@@ -174,12 +131,9 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
   const card1TranslateY = useRef(new Animated.Value(30)).current;
   const card2Opacity = useRef(new Animated.Value(0)).current;
   const card2TranslateY = useRef(new Animated.Value(30)).current;
-  const card3Opacity = useRef(new Animated.Value(0)).current;
-  const card3TranslateY = useRef(new Animated.Value(30)).current;
 
   // Refs
   const phoneInputRef = useRef<TextInput>(null);
-  const emailInputRef = useRef<TextInput>(null);
   const instagramInputRef = useRef<TextInput>(null);
   const locationInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -233,17 +187,13 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     })
   ).current;
 
-  // Check if form is valid (only name and category required)
-  const isFormValid = name.trim().length > 0 && selectedCategory !== null;
-
-  // Get selected category data
-  const selectedCategoryData = CATEGORIES.find(c => c.id === selectedCategory);
+  // Check if form is valid (only name required)
+  const isFormValid = name.trim().length > 0;
 
   // Check if a field has data
   const hasFieldData = (field: string): boolean => {
     switch (field) {
       case 'phone': return phoneNumber.trim().length > 0;
-      case 'email': return email.trim().length > 0;
       case 'instagram': return instagram.trim().length > 0;
       case 'location': return location.trim().length > 0;
       case 'birthday': return dateOfBirth !== null;
@@ -283,10 +233,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
           Animated.timing(card2Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
           Animated.spring(card2TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
         ]),
-        Animated.parallel([
-          Animated.timing(card3Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card3TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
       ]),
     ]).start();
   }, []);
@@ -298,20 +244,21 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
-    const contactData = {
-      id: isEditMode ? existingContact.id : Date.now().toString(),
+    const personData = {
+      id: isEditMode ? existingPerson.id : Date.now().toString(),
       name: name.trim(),
       initials: generateInitials(name),
+      source: existingPerson?.source || 'Added manually',
       phoneNumber: phoneNumber.trim() || undefined,
-      email: email.trim() || undefined,
       instagram: instagram.trim() || undefined,
       location: location.trim() || undefined,
       dateOfBirth: dateOfBirth?.toISOString() || undefined,
-      category: selectedCategoryData?.name || '',
-      ...(isEditMode ? { updatedAt: new Date().toISOString() } : { createdAt: new Date().toISOString() }),
+      rating: rating || undefined,
+      createdAt: isEditMode ? existingPerson.createdAt : new Date().toISOString(),
+      ...(isEditMode ? { updatedAt: new Date().toISOString() } : {}),
     };
 
-    console.log(isEditMode ? 'Updated contact:' : 'New contact:', contactData);
+    console.log(isEditMode ? 'Updated person:' : 'New person:', personData);
     navigation.goBack();
   };
 
@@ -320,13 +267,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     navigation.goBack();
-  };
-
-  const handleCategorySelect = (categoryId: string) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
   };
 
   const toggleFieldExpanded = (field: string, inputRef?: React.RefObject<TextInput>) => {
@@ -420,9 +360,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       case 'phone':
         setPhoneNumber('');
         break;
-      case 'email':
-        setEmail('');
-        break;
       case 'instagram':
         setInstagram('');
         break;
@@ -443,7 +380,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     field: string,
     label: string,
     icon: keyof typeof Ionicons.glyphMap,
-    iconColor: string,
     isLast: boolean = false
   ) => {
     return (
@@ -456,7 +392,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
             } else {
               const refs: { [key: string]: React.RefObject<TextInput> } = {
                 phone: phoneInputRef,
-                email: emailInputRef,
                 instagram: instagramInputRef,
                 location: locationInputRef,
               };
@@ -465,8 +400,8 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
           }}
           activeOpacity={0.6}
         >
-          <View style={[styles.addRowIconCircle, { backgroundColor: `${iconColor}12` }]}>
-            <Ionicons name={icon} size={18} color={iconColor} />
+          <View style={styles.addRowIconCircle}>
+            <Ionicons name={icon} size={18} color="#BE123C" />
           </View>
           <Text style={styles.addRowText}>{label}</Text>
           <View style={styles.addRowRight}>
@@ -483,7 +418,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     field: string,
     label: string,
     icon: keyof typeof Ionicons.glyphMap,
-    iconColor: string,
     value: string,
     setValue: (val: string) => void,
     inputRef: React.RefObject<TextInput>,
@@ -496,8 +430,8 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       <View key={field}>
         <View style={styles.expandedFieldContainer}>
           <View style={styles.expandedFieldHeader}>
-            <View style={[styles.fieldIconCircle, { backgroundColor: `${iconColor}15` }]}>
-              <Ionicons name={icon} size={18} color={iconColor} />
+            <View style={styles.fieldIconCircle}>
+              <Ionicons name={icon} size={18} color="#BE123C" />
             </View>
             <Text style={styles.expandedFieldLabel}>{label}</Text>
             <TouchableOpacity
@@ -535,15 +469,15 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     const expanded = isFieldExpanded('birthday');
 
     if (!expanded) {
-      return renderAddRow('birthday', 'Birthday', 'calendar-outline', '#1D4ED8', isLast);
+      return renderAddRow('birthday', 'Birthday', 'calendar-outline', isLast);
     }
 
     return (
       <View key="birthday">
         <View style={styles.expandedFieldContainer}>
           <View style={styles.expandedFieldHeader}>
-            <View style={[styles.fieldIconCircle, { backgroundColor: '#1D4ED815' }]}>
-              <Ionicons name="calendar-outline" size={18} color="#1D4ED8" />
+            <View style={styles.fieldIconCircle}>
+              <Ionicons name="calendar-outline" size={18} color="#BE123C" />
             </View>
             <Text style={styles.expandedFieldLabel}>Birthday</Text>
             <TouchableOpacity
@@ -573,312 +507,296 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-          {/* Header */}
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.cancelButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{isEditMode ? 'Edit' : 'New Person'}</Text>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Text style={[styles.saveButtonText, !isFormValid && styles.saveButtonTextDisabled]}>
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* Content */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
+        >
+          {/* Avatar Preview */}
           <Animated.View
             style={[
-              styles.header,
-              {
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }],
-              },
+              styles.avatarPreviewContainer,
+              { opacity: card1Opacity },
             ]}
           >
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                onPress={handleBack}
-                style={styles.cancelButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>{isEditMode ? 'Edit Contact' : 'New Contact'}</Text>
-              <TouchableOpacity
-                onPress={handleSave}
-                style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
-                activeOpacity={0.7}
-                disabled={!isFormValid}
-              >
-                <Text style={[styles.saveButtonText, !isFormValid && styles.saveButtonTextDisabled]}>
-                  Save
+            <LinearGradient
+              colors={AVATAR_GRADIENT}
+              style={styles.avatarPreview}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {name.trim().length > 0 ? (
+                <Text style={[styles.avatarInitials, { color: AVATAR_INITIALS_COLOR }]}>
+                  {generateInitials(name)}
                 </Text>
-              </TouchableOpacity>
+              ) : (
+                <Ionicons name="heart" size={32} color={AVATAR_INITIALS_COLOR} />
+              )}
+            </LinearGradient>
+            <Text style={styles.avatarPreviewName}>
+              {name.trim().length > 0 ? name.trim() : 'New Person'}
+            </Text>
+          </Animated.View>
+
+          {/* Name Card */}
+          <Animated.View
+            style={[
+              styles.card,
+              isNameFocused && styles.cardFocused,
+              { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
+            ]}
+          >
+            {/* Name Input */}
+            <View style={styles.inputSection}>
+              <View style={styles.cardLabelRow}>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="person-outline" size={20} color="#BE123C" />
+                </View>
+                <Text style={styles.cardLabel}>Name</Text>
+                <Text style={styles.requiredLabel}>required</Text>
+              </View>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter name..."
+                placeholderTextColor="#9CA3AF"
+                value={name}
+                onChangeText={setName}
+                onFocus={() => setIsNameFocused(true)}
+                onBlur={() => setIsNameFocused(false)}
+                autoCapitalize="words"
+                returnKeyType="done"
+              />
             </View>
           </Animated.View>
 
-          {/* Content */}
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets={true}
+          {/* Rating Card */}
+          <Animated.View
+            style={[
+              styles.card,
+              { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
+            ]}
           >
-            {/* Avatar Preview */}
-            <Animated.View
-              style={[
-                styles.avatarPreviewContainer,
-                { opacity: card1Opacity },
-              ]}
-            >
-              <LinearGradient
-                colors={selectedCategoryData?.colors || ['#F3F4F6', '#E5E7EB', '#D1D5DB']}
-                style={styles.avatarPreview}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {name.trim().length > 0 ? (
-                  <Text style={[styles.avatarInitials, { color: selectedCategoryData?.textColor || '#6B7280' }]}>
-                    {generateInitials(name)}
-                  </Text>
-                ) : (
-                  <Ionicons name="person" size={32} color={selectedCategoryData?.textColor || '#9CA3AF'} />
-                )}
-              </LinearGradient>
-              <Text style={styles.avatarPreviewName}>
-                {name.trim().length > 0 ? name.trim() : 'New Contact'}
-              </Text>
-            </Animated.View>
-
-            {/* Name & Category Card */}
-            <Animated.View
-              style={[
-                styles.card,
-                isNameFocused && styles.cardFocused,
-                { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
-              ]}
-            >
-              {/* Name Input */}
-              <View style={styles.inputSection}>
-                <View style={styles.cardLabelRow}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="person-outline" size={20} color="#1D4ED8" />
-                  </View>
-                  <Text style={styles.cardLabel}>Name</Text>
-                  <Text style={styles.requiredLabel}>required</Text>
-                </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter full name..."
-                  placeholderTextColor="#9CA3AF"
-                  value={name}
-                  onChangeText={setName}
-                  onFocus={() => setIsNameFocused(true)}
-                  onBlur={() => setIsNameFocused(false)}
-                  autoCapitalize="words"
-                  returnKeyType="done"
-                />
-              </View>
-            </Animated.View>
-
-            {/* Category Card */}
-            <Animated.View
-              style={[
-                styles.card,
-                { opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] },
-              ]}
-            >
+            <View style={styles.ratingHeader}>
               <View style={styles.cardLabelRow}>
                 <View style={styles.iconCircle}>
-                  <Ionicons name="people-outline" size={20} color="#1D4ED8" />
+                  <Ionicons name="star-outline" size={20} color="#BE123C" />
                 </View>
-                <Text style={styles.cardLabel}>Category</Text>
-                <Text style={styles.requiredLabel}>required</Text>
+                <Text style={styles.cardLabel}>Rating</Text>
               </View>
-              <View style={styles.categoriesContainer}>
-                {CATEGORIES.map((category) => {
-                  const isSelected = selectedCategory === category.id;
-                  return (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryChip,
-                        isSelected && {
-                          backgroundColor: category.colors[0],
-                          borderColor: category.colors[1],
-                        },
-                      ]}
-                      onPress={() => handleCategorySelect(category.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          isSelected && { color: category.textColor },
-                        ]}
-                      >
-                        {category.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </Animated.View>
+              {rating && (
+                <View style={styles.currentRatingBadge}>
+                  <Text style={styles.currentRatingText}>{rating}/10</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.ratingSelector}>
+              {RATING_VALUES.map((value) => (
+                <TouchableOpacity
+                  key={value}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setRating(rating === value ? null : value);
+                  }}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.ratingPill,
+                    rating === value && styles.ratingPillSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.ratingPillText,
+                      rating === value && styles.ratingPillTextSelected,
+                    ]}
+                  >
+                    {value}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Animated.View>
 
-            {/* Optional Details Card */}
+          {/* Optional Details Card */}
+          <Animated.View
+            style={[
+              styles.optionalCard,
+              { opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] },
+            ]}
+          >
+            <View style={styles.optionalFieldsContainer}>
+              {/* Phone */}
+              {isFieldExpanded('phone') ? (
+                renderExpandedField(
+                  'phone',
+                  'Phone',
+                  'call-outline',
+                  phoneNumber,
+                  setPhoneNumber,
+                  phoneInputRef,
+                  'Enter phone number...',
+                  'phone-pad',
+                  false
+                )
+              ) : (
+                renderAddRow('phone', 'Phone', 'call-outline', false)
+              )}
+
+              {/* Instagram */}
+              {isFieldExpanded('instagram') ? (
+                renderExpandedField(
+                  'instagram',
+                  'Instagram',
+                  'logo-instagram',
+                  instagram,
+                  setInstagram,
+                  instagramInputRef,
+                  'username',
+                  'default',
+                  false,
+                  '@'
+                )
+              ) : (
+                renderAddRow('instagram', 'Instagram', 'logo-instagram', false)
+              )}
+
+              {/* Location */}
+              {isFieldExpanded('location') ? (
+                renderExpandedField(
+                  'location',
+                  'Location',
+                  'location-outline',
+                  location,
+                  setLocation,
+                  locationInputRef,
+                  'City, Country...',
+                  'default',
+                  false
+                )
+              ) : (
+                renderAddRow('location', 'Location', 'location-outline', false)
+              )}
+
+              {/* Birthday */}
+              {renderBirthdayField(true)}
+            </View>
+          </Animated.View>
+
+          {/* Spacer for bottom padding */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+
+        {/* iOS Date Picker Modal */}
+        <Modal
+          visible={showDatePicker && Platform.OS === 'ios'}
+          transparent={true}
+          animationType="none"
+          onRequestClose={handleDatePickerDone}
+        >
+          <View style={styles.datePickerOverlay}>
+            <TouchableOpacity
+              style={styles.datePickerBackdrop}
+              activeOpacity={1}
+              onPress={handleDatePickerDone}
+            />
             <Animated.View
               style={[
-                styles.optionalCard,
-                { opacity: card3Opacity, transform: [{ translateY: card3TranslateY }] },
+                styles.datePickerContainer,
+                { transform: [{ translateY: datePickerTranslateY }] },
               ]}
+              {...datePickerPanResponder.panHandlers}
             >
-              <View style={styles.optionalFieldsContainer}>
-                {/* Phone */}
-                {isFieldExpanded('phone') ? (
-                  renderExpandedField(
-                    'phone',
-                    'Phone',
-                    'call-outline',
-                    '#1D4ED8',
-                    phoneNumber,
-                    setPhoneNumber,
-                    phoneInputRef,
-                    'Enter phone number...',
-                    'phone-pad',
-                    false
-                  )
-                ) : (
-                  renderAddRow('phone', 'Phone', 'call-outline', '#1D4ED8', false)
-                )}
+              {/* Drag Handle */}
+              <View style={styles.datePickerHandle}>
+                <View style={styles.datePickerHandleBar} />
+              </View>
 
-                {/* Email */}
-                {isFieldExpanded('email') ? (
-                  renderExpandedField(
-                    'email',
-                    'Email',
-                    'mail-outline',
-                    '#1D4ED8',
-                    email,
-                    setEmail,
-                    emailInputRef,
-                    'Enter email address...',
-                    'email-address',
-                    false
-                  )
-                ) : (
-                  renderAddRow('email', 'Email', 'mail-outline', '#1D4ED8', false)
-                )}
+              {/* Title */}
+              <Text style={styles.datePickerTitle}>Select Birthday</Text>
 
-                {/* Instagram */}
-                {isFieldExpanded('instagram') ? (
-                  renderExpandedField(
-                    'instagram',
-                    'Instagram',
-                    'logo-instagram',
-                    '#1D4ED8',
-                    instagram,
-                    setInstagram,
-                    instagramInputRef,
-                    'username',
-                    'default',
-                    false,
-                    '@'
-                  )
-                ) : (
-                  renderAddRow('instagram', 'Instagram', 'logo-instagram', '#1D4ED8', false)
-                )}
+              {/* Date Picker */}
+              <View style={styles.datePickerWrapper}>
+                <DateTimePicker
+                  value={dateOfBirth || new Date(2000, 0, 1)}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  minimumDate={new Date(1900, 0, 1)}
+                  style={styles.datePicker}
+                />
+              </View>
 
-                {/* Location */}
-                {isFieldExpanded('location') ? (
-                  renderExpandedField(
-                    'location',
-                    'Location',
-                    'location-outline',
-                    '#1D4ED8',
-                    location,
-                    setLocation,
-                    locationInputRef,
-                    'City, Country...',
-                    'default',
-                    false
-                  )
-                ) : (
-                  renderAddRow('location', 'Location', 'location-outline', '#1D4ED8', false)
-                )}
-
-                {/* Birthday */}
-                {renderBirthdayField(true)}
+              {/* Action Buttons */}
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity
+                  onPress={handleClearDate}
+                  style={styles.datePickerClearButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.datePickerClearText}>Clear</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleDatePickerDone}
+                  style={styles.datePickerDoneButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.datePickerDoneText}>Confirm</Text>
+                </TouchableOpacity>
               </View>
             </Animated.View>
+          </View>
+        </Modal>
 
-            {/* Spacer for bottom padding */}
-            <View style={styles.bottomSpacer} />
-          </ScrollView>
-
-          {/* iOS Date Picker Modal */}
-          <Modal
-            visible={showDatePicker && Platform.OS === 'ios'}
-            transparent={true}
-            animationType="none"
-            onRequestClose={handleDatePickerDone}
-          >
-            <View style={styles.datePickerOverlay}>
-              <TouchableOpacity
-                style={styles.datePickerBackdrop}
-                activeOpacity={1}
-                onPress={handleDatePickerDone}
-              />
-              <Animated.View
-                style={[
-                  styles.datePickerContainer,
-                  { transform: [{ translateY: datePickerTranslateY }] },
-                ]}
-                {...datePickerPanResponder.panHandlers}
-              >
-                {/* Drag Handle */}
-                <View style={styles.datePickerHandle}>
-                  <View style={styles.datePickerHandleBar} />
-                </View>
-
-                {/* Title */}
-                <Text style={styles.datePickerTitle}>Select Birthday</Text>
-
-                {/* Date Picker */}
-                <View style={styles.datePickerWrapper}>
-                  <DateTimePicker
-                    value={dateOfBirth || new Date(2000, 0, 1)}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleDateChange}
-                    maximumDate={new Date()}
-                    minimumDate={new Date(1900, 0, 1)}
-                    style={styles.datePicker}
-                  />
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.datePickerActions}>
-                  <TouchableOpacity
-                    onPress={handleClearDate}
-                    style={styles.datePickerClearButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerClearText}>Clear</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleDatePickerDone}
-                    style={styles.datePickerDoneButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerDoneText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
-            </View>
-          </Modal>
-
-          {/* Android Date Picker */}
-          {showDatePicker && Platform.OS === 'android' && (
-            <DateTimePicker
-              value={dateOfBirth || new Date(2000, 0, 1)}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              minimumDate={new Date(1900, 0, 1)}
-            />
-          )}
-        </View>
+        {/* Android Date Picker */}
+        {showDatePicker && Platform.OS === 'android' && (
+          <DateTimePicker
+            value={dateOfBirth || new Date(2000, 0, 1)}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+            minimumDate={new Date(1900, 0, 1)}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -936,7 +854,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1D4ED8',
+    color: '#BE123C',
   },
   saveButtonTextDisabled: {
     color: '#9CA3AF',
@@ -994,7 +912,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   cardFocused: {
-    borderColor: '#E5E7EB',
+    borderColor: '#FECDD3',
     shadowOpacity: 0.1,
   },
   cardLabelRow: {
@@ -1007,7 +925,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1017,21 +935,59 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  optionalLabel: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    marginLeft: 'auto',
-  },
   requiredLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: '#BE123C',
     marginLeft: 'auto',
   },
 
   // Input Section
   inputSection: {},
+
+  // Rating Section
+  ratingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  currentRatingBadge: {
+    backgroundColor: '#FFF1F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  currentRatingText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#BE123C',
+    letterSpacing: -0.2,
+  },
+  ratingSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+  },
+  ratingPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  ratingPillSelected: {
+    backgroundColor: '#BE123C',
+  },
+  ratingPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    color: '#6B7280',
+  },
+  ratingPillTextSelected: {
+    color: '#FFFFFF',
+  },
 
   // Text Input
   textInput: {
@@ -1040,27 +996,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 0,
     paddingHorizontal: 0,
-  },
-
-  // Categories
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryChip: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  categoryChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    letterSpacing: -0.1,
   },
 
   // Optional Card (no header)
@@ -1091,6 +1026,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1127,6 +1063,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1274,4 +1211,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PeopleEntryScreen;
+export default DatingEntryScreen;
