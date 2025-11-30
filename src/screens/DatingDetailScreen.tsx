@@ -13,42 +13,39 @@ import {
   Linking,
   Modal,
   KeyboardAvoidingView,
-  Dimensions,
   PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Types
-interface ContactDetailScreenProps {
+interface DatingDetailScreenProps {
   navigation: {
     goBack: () => void;
     navigate: (screen: string, params?: any) => void;
   };
   route: {
     params?: {
-      contact?: Contact;
+      person?: DatingPerson;
     };
   };
 }
 
-interface Contact {
+interface DatingPerson {
   id: string;
   name: string;
   initials: string;
-  category: string;
   phoneNumber?: string;
-  email?: string;
   instagram?: string;
   location?: string;
   dateOfBirth?: string;
-  contactAgainDate?: string;
-  notes?: ContactNote[];
+  rating?: number;
+  createdAt: string;
+  notes?: DatingNote[];
 }
 
-interface ContactNote {
+interface DatingNote {
   id: string;
   text: string;
   createdAt: string;
@@ -56,56 +53,14 @@ interface ContactNote {
 
 // Constants
 const NOTE_ACTION_WIDTH = 136;
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_THRESHOLD = 100;
 
-// Category styling
-const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string } => {
-  switch (category.toLowerCase()) {
-    case 'family':
-      return {
-        colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-        textColor: '#BE185D',
-        badgeColor: '#FCE7F3',
-      };
-    case 'close friend':
-      return {
-        colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-        textColor: '#1D4ED8',
-        badgeColor: '#DBEAFE',
-      };
-    case 'friend':
-      return {
-        colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
-        textColor: '#7C3AED',
-        badgeColor: '#EDE9FE',
-      };
-    case 'work':
-      return {
-        colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
-        textColor: '#047857',
-        badgeColor: '#D1FAE5',
-      };
-    case 'acquaintance':
-    default:
-      return {
-        colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
-        textColor: '#6B7280',
-        badgeColor: '#F3F4F6',
-      };
-  }
-};
+// Avatar colors - consistent dating theme
+const AVATAR_GRADIENT: [string, string, string] = ['#FFF1F2', '#FFE4E6', '#FECDD3'];
+const AVATAR_INITIALS_COLOR = '#BE123C';
+const ACCENT_COLOR = '#BE123C';
+const RATING_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 // Helper functions
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-};
-
 const formatBirthday = (dateString: string): string => {
   const date = new Date(dateString);
   const months = [
@@ -115,63 +70,90 @@ const formatBirthday = (dateString: string): string => {
   return `${months[date.getMonth()]} ${date.getDate()}`;
 };
 
-const getRelativeDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-
-  const diffTime = date.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Tomorrow';
-  if (diffDays === -1) return 'Yesterday';
-  if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days`;
-  if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`;
-
-  return formatDate(dateString);
-};
-
-const isOverdue = (dateString: string): boolean => {
-  const date = new Date(dateString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  return date < today;
-};
-
-const isDueSoon = (dateString: string): boolean => {
-  const date = new Date(dateString);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  date.setHours(0, 0, 0, 0);
-  const diffTime = date.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays >= 0 && diffDays <= 3;
-};
-
-// Mock contact data (replace with actual data passing)
-const MOCK_CONTACT: Contact = {
+// Mock person data
+const MOCK_PERSON: DatingPerson = {
   id: '1',
-  name: 'Alex Thompson',
-  initials: 'AT',
-  category: 'Close Friend',
+  name: 'Sophie',
+  initials: 'S',
   phoneNumber: '+1 (555) 123-4567',
-  email: 'alex.thompson@email.com',
-  instagram: 'alexthompson',
-  location: 'San Francisco, CA',
-  dateOfBirth: '1995-03-15',
-  contactAgainDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+  instagram: 'sophie_h',
+  location: 'Brooklyn, NY',
+  dateOfBirth: '1998-06-15',
+  rating: 9,
+  createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   notes: [
-    { id: '1', text: 'Loves hiking and outdoor activities', createdAt: new Date().toISOString() },
-    { id: '2', text: 'Works at a tech startup as a designer', createdAt: new Date().toISOString() },
+    { id: '1', text: 'Loves Italian food and wine', createdAt: new Date().toISOString() },
+    { id: '2', text: 'Works in marketing at a startup', createdAt: new Date().toISOString() },
   ],
+};
+
+// Rating Pill Component with animation
+const RatingPill: React.FC<{
+  value: number;
+  isSelected: boolean;
+  onPress: () => void;
+}> = ({ value, isSelected, onPress }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const bgAnim = useRef(new Animated.Value(isSelected ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(bgAnim, {
+      toValue: isSelected ? 1 : 0,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [isSelected, bgAnim]);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      friction: 8,
+      tension: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const backgroundColor = bgAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#F3F4F6', ACCENT_COLOR],
+  });
+
+  const textColor = bgAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#6B7280', '#FFFFFF'],
+  });
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <Animated.View style={[styles.ratingPill, { backgroundColor }]}>
+          <Animated.Text style={[styles.ratingPillText, { color: textColor }]}>
+            {value}
+          </Animated.Text>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
 };
 
 // Swipeable Note Card Component
 const SwipeableNoteCard: React.FC<{
-  note: ContactNote;
+  note: DatingNote;
   onEdit: () => void;
   onDelete: () => void;
   onSwipeStart: () => void;
@@ -355,8 +337,8 @@ const SwipeableNoteCard: React.FC<{
   );
 };
 
-// Contact Info Row Component
-const ContactInfoRow: React.FC<{
+// Info Row Component
+const InfoRow: React.FC<{
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   label: string;
@@ -381,21 +363,17 @@ const ContactInfoRow: React.FC<{
 );
 
 // Main Component
-const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, route }) => {
-  // Get contact from params or use mock
-  const contact = route.params?.contact || MOCK_CONTACT;
-  const categoryStyle = getCategoryStyle(contact.category);
+const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, route }) => {
+  // Get person from params or use mock
+  const person = route.params?.person || MOCK_PERSON;
 
   // State
-  const [notes, setNotes] = useState<ContactNote[]>(contact.notes || []);
-  const [contactAgainDate, setContactAgainDate] = useState<Date | null>(
-    contact.contactAgainDate ? new Date(contact.contactAgainDate) : null
-  );
+  const [notes, setNotes] = useState<DatingNote[]>(person.notes || []);
+  const [rating, setRating] = useState<number | null>(person.rating || null);
   const [isSwipingCard, setIsSwipingCard] = useState(false);
   const [noteModalVisible, setNoteModalVisible] = useState(false);
-  const [editingNote, setEditingNote] = useState<ContactNote | null>(null);
+  const [editingNote, setEditingNote] = useState<DatingNote | null>(null);
   const [noteContent, setNoteContent] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -408,52 +386,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
   const card2TranslateY = useRef(new Animated.Value(30)).current;
   const card3Opacity = useRef(new Animated.Value(0)).current;
   const card3TranslateY = useRef(new Animated.Value(30)).current;
-
-  // Date picker modal animation
-  const datePickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-
-  useEffect(() => {
-    if (showDatePicker) {
-      datePickerTranslateY.setValue(SCREEN_HEIGHT);
-      Animated.timing(datePickerTranslateY, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [showDatePicker, datePickerTranslateY]);
-
-  const datePickerPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return gestureState.dy > 10;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          datePickerTranslateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > SWIPE_THRESHOLD) {
-          Animated.timing(datePickerTranslateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setShowDatePicker(false);
-          });
-        } else {
-          Animated.spring(datePickerTranslateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            friction: 8,
-          }).start();
-        }
-      },
-    })
-  ).current;
 
   // Entry animations
   useEffect(() => {
@@ -513,99 +445,52 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate('PeopleEntry', { contact });
+    navigation.navigate('DatingEntry', { person: { ...person, rating } });
   };
 
   const handleCall = () => {
-    if (contact.phoneNumber) {
+    if (person.phoneNumber) {
       if (Platform.OS === 'ios') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      Linking.openURL(`tel:${contact.phoneNumber.replace(/[^0-9+]/g, '')}`);
-    }
-  };
-
-  const handleEmail = () => {
-    if (contact.email) {
-      if (Platform.OS === 'ios') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      Linking.openURL(`mailto:${contact.email}`);
+      Linking.openURL(`tel:${person.phoneNumber.replace(/[^0-9+]/g, '')}`);
     }
   };
 
   const handleInstagram = () => {
-    if (contact.instagram) {
+    if (person.instagram) {
       if (Platform.OS === 'ios') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      Linking.openURL(`instagram://user?username=${contact.instagram}`).catch(() => {
-        Linking.openURL(`https://instagram.com/${contact.instagram}`);
+      Linking.openURL(`instagram://user?username=${person.instagram}`).catch(() => {
+        Linking.openURL(`https://instagram.com/${person.instagram}`);
       });
     }
   };
 
   const handleOpenMaps = () => {
-    if (contact.location) {
+    if (person.location) {
       if (Platform.OS === 'ios') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-      const encodedLocation = encodeURIComponent(contact.location);
+      const encodedLocation = encodeURIComponent(person.location);
       Linking.openURL(`https://maps.apple.com/?q=${encodedLocation}`).catch(() => {
         Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodedLocation}`);
       });
     }
   };
 
-  // Date picker handlers
-  const handleDatePress = () => {
+  // Rating handler
+  const handleRatingPress = (value: number) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setShowDatePicker(true);
-  };
-
-  const handleDateChange = (_event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
+    // Toggle off if same rating is pressed
+    if (rating === value) {
+      setRating(null);
+    } else {
+      setRating(value);
     }
-    if (selectedDate) {
-      setContactAgainDate(selectedDate);
-    }
-  };
-
-  const handleDatePickerDone = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.timing(datePickerTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowDatePicker(false);
-    });
-  };
-
-  const handleClearDate = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.timing(datePickerTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setContactAgainDate(null);
-      setShowDatePicker(false);
-    });
-  };
-
-  const handleMarkContacted = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setContactAgainDate(null);
   };
 
   // Note handlers
@@ -618,7 +503,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
     setNoteModalVisible(true);
   };
 
-  const handleEditNote = (note: ContactNote) => {
+  const handleEditNote = (note: DatingNote) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -648,7 +533,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
         )
       );
     } else {
-      const newNote: ContactNote = {
+      const newNote: DatingNote = {
         id: Date.now().toString(),
         text: noteContent.trim(),
         createdAt: new Date().toISOString(),
@@ -661,19 +546,8 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
     setEditingNote(null);
   };
 
-  // Check if there's any contact info to display
-  const hasContactInfo = contact.phoneNumber || contact.email || contact.instagram || contact.location || contact.dateOfBirth;
-
-  // Get reminder status styling
-  const getReminderStatus = () => {
-    if (!contactAgainDate) return null;
-    const dateStr = contactAgainDate.toISOString();
-    if (isOverdue(dateStr)) return { color: '#EF4444', bgColor: '#FEE2E2', label: 'Overdue' };
-    if (isDueSoon(dateStr)) return { color: '#F59E0B', bgColor: '#FEF3C7', label: 'Due soon' };
-    return { color: '#10B981', bgColor: '#D1FAE5', label: 'Scheduled' };
-  };
-
-  const reminderStatus = getReminderStatus();
+  // Check if there's any info to display
+  const hasInfo = person.phoneNumber || person.instagram || person.location || person.dateOfBirth;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -723,60 +597,41 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
           >
             {/* Avatar */}
             <LinearGradient
-              colors={categoryStyle.colors}
+              colors={AVATAR_GRADIENT}
               style={styles.avatar}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={[styles.avatarInitials, { color: categoryStyle.textColor }]}>
-                {contact.initials}
+              <Text style={[styles.avatarInitials, { color: AVATAR_INITIALS_COLOR }]}>
+                {person.initials}
               </Text>
             </LinearGradient>
 
             {/* Name */}
-            <Text style={styles.contactName}>{contact.name}</Text>
-
-            {/* Category Badge */}
-            <View style={[styles.categoryBadge, { backgroundColor: categoryStyle.badgeColor }]}>
-              <Text style={[styles.categoryBadgeText, { color: categoryStyle.textColor }]}>
-                {contact.category}
-              </Text>
-            </View>
+            <Text style={styles.personName}>{person.name}</Text>
 
             {/* Quick Actions */}
             <View style={styles.quickActions}>
-              {contact.phoneNumber && (
+              {person.phoneNumber && (
                 <TouchableOpacity
                   style={styles.quickActionButton}
                   onPress={handleCall}
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="call-outline" size={20} color="#1D4ED8" />
+                    <Ionicons name="call-outline" size={20} color={ACCENT_COLOR} />
                   </View>
                   <Text style={styles.quickActionLabel}>Call</Text>
                 </TouchableOpacity>
               )}
-              {contact.email && (
-                <TouchableOpacity
-                  style={styles.quickActionButton}
-                  onPress={handleEmail}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.quickActionIcon}>
-                    <Ionicons name="mail" size={20} color="#1D4ED8" />
-                  </View>
-                  <Text style={styles.quickActionLabel}>Email</Text>
-                </TouchableOpacity>
-              )}
-              {contact.instagram && (
+              {person.instagram && (
                 <TouchableOpacity
                   style={styles.quickActionButton}
                   onPress={handleInstagram}
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="logo-instagram" size={20} color="#1D4ED8" />
+                    <Ionicons name="logo-instagram" size={20} color={ACCENT_COLOR} />
                   </View>
                   <Text style={styles.quickActionLabel}>Instagram</Text>
                 </TouchableOpacity>
@@ -784,125 +639,35 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             </View>
           </Animated.View>
 
-          {/* Contact Reminder Card */}
+          {/* Rating Card */}
           <Animated.View
             style={[
               styles.card,
               { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
             ]}
           >
-            {contactAgainDate ? (
-              <View style={styles.activeReminderContainer}>
-                {/* Header Row */}
-                <View style={styles.activeReminderHeader}>
-                  <View style={[
-                    styles.activeReminderIconSmall,
-                    { backgroundColor: reminderStatus?.bgColor || '#F3F4F6' }
-                  ]}>
-                    <Ionicons
-                      name="notifications"
-                      size={16}
-                      color={reminderStatus?.color || '#9CA3AF'}
-                    />
-                  </View>
-                  <View style={styles.activeReminderTextContainer}>
-                    <Text style={styles.activeReminderRelative}>
-                      {getRelativeDate(contactAgainDate.toISOString())}
-                    </Text>
-                    <Text style={styles.activeReminderFullDate}>
-                      {formatDate(contactAgainDate.toISOString())}
-                    </Text>
-                  </View>
-                  {reminderStatus && (
-                    <View style={[styles.activeReminderBadge, { backgroundColor: reminderStatus.bgColor }]}>
-                      <View style={[styles.activeReminderBadgeDot, { backgroundColor: reminderStatus.color }]} />
-                      <Text style={[styles.activeReminderBadgeText, { color: reminderStatus.color }]}>
-                        {reminderStatus.label}
-                      </Text>
-                    </View>
-                  )}
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTitleRow}>
+                <View style={styles.cardIconCircle}>
+                  <Ionicons name="star-outline" size={18} color={ACCENT_COLOR} />
                 </View>
-
-                {/* Action Buttons Row */}
-                <View style={styles.activeReminderActions}>
-                  <TouchableOpacity
-                    style={styles.activeReminderDoneButton}
-                    onPress={handleMarkContacted}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                    <Text style={styles.activeReminderDoneText}>Done</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.activeReminderChangeButton}
-                    onPress={handleDatePress}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="calendar-outline" size={14} color="#4B5563" />
-                    <Text style={styles.activeReminderChangeText}>Change date</Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={styles.cardTitle}>Rating</Text>
               </View>
-            ) : (
-              <View style={styles.emptyReminderContainer}>
-                {/* Header Row with Icon and Text */}
-                <View style={styles.emptyReminderHeader}>
-                  <View style={styles.emptyReminderIconSmall}>
-                    <Ionicons name="notifications" size={16} color="#1D4ED8" />
-                  </View>
-                  <View style={styles.emptyReminderTextContainer}>
-                    <Text style={styles.emptyReminderTitle}>Stay in touch</Text>
-                    <Text style={styles.emptyReminderSubtitle}>
-                      Remind me to reach out to {contact.name.split(' ')[0]}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Quick Options Row */}
-                <View style={styles.quickReminderOptions}>
-                  <TouchableOpacity
-                    style={styles.quickReminderChip}
-                    onPress={() => {
-                      const nextWeek = new Date();
-                      nextWeek.setDate(nextWeek.getDate() + 7);
-                      setContactAgainDate(nextWeek);
-                      if (Platform.OS === 'ios') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.quickReminderChipText}>1 week</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.quickReminderChip}
-                    onPress={() => {
-                      const nextMonth = new Date();
-                      nextMonth.setMonth(nextMonth.getMonth() + 1);
-                      setContactAgainDate(nextMonth);
-                      if (Platform.OS === 'ios') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.quickReminderChipText}>1 month</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.quickReminderChipCustom}
-                    onPress={handleDatePress}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="calendar-outline" size={14} color="#4B5563" />
-                    <Text style={styles.quickReminderChipText}>Custom</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
+            </View>
+            <View style={styles.ratingSelector}>
+              {RATING_VALUES.map((value) => (
+                <RatingPill
+                  key={value}
+                  value={value}
+                  isSelected={rating === value}
+                  onPress={() => handleRatingPress(value)}
+                />
+              ))}
+            </View>
           </Animated.View>
 
-          {/* Contact Info Card */}
-          {hasContactInfo && (
+          {/* Details Card */}
+          {hasInfo && (
             <Animated.View
               style={[
                 styles.card,
@@ -912,15 +677,14 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleRow}>
                   <View style={styles.cardIconCircle}>
-                    <Ionicons name="person" size={18} color="#1D4ED8" />
+                    <Ionicons name="person" size={18} color={ACCENT_COLOR} />
                   </View>
-                  <Text style={styles.cardTitle}>Contact Info</Text>
+                  <Text style={styles.cardTitle}>Details</Text>
                 </View>
               </View>
 
               <View style={styles.infoList}>
                 {(() => {
-                  // Build array of contact info items
                   const infoItems: Array<{
                     key: string;
                     icon: keyof typeof Ionicons.glyphMap;
@@ -930,58 +694,48 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                     onPress?: () => void;
                   }> = [];
 
-                  if (contact.phoneNumber) {
+                  if (person.phoneNumber) {
                     infoItems.push({
                       key: 'phone',
                       icon: 'call-outline',
-                      iconColor: '#1D4ED8',
+                      iconColor: ACCENT_COLOR,
                       label: 'Phone',
-                      value: contact.phoneNumber,
+                      value: person.phoneNumber,
                       onPress: handleCall,
                     });
                   }
-                  if (contact.email) {
-                    infoItems.push({
-                      key: 'email',
-                      icon: 'mail-outline',
-                      iconColor: '#1D4ED8',
-                      label: 'Email',
-                      value: contact.email,
-                      onPress: handleEmail,
-                    });
-                  }
-                  if (contact.instagram) {
+                  if (person.instagram) {
                     infoItems.push({
                       key: 'instagram',
                       icon: 'logo-instagram',
-                      iconColor: '#1D4ED8',
+                      iconColor: ACCENT_COLOR,
                       label: 'Instagram',
-                      value: `@${contact.instagram}`,
+                      value: `@${person.instagram}`,
                       onPress: handleInstagram,
                     });
                   }
-                  if (contact.location) {
+                  if (person.location) {
                     infoItems.push({
                       key: 'location',
                       icon: 'location-outline',
-                      iconColor: '#1D4ED8',
+                      iconColor: ACCENT_COLOR,
                       label: 'Location',
-                      value: contact.location,
+                      value: person.location,
                       onPress: handleOpenMaps,
                     });
                   }
-                  if (contact.dateOfBirth) {
+                  if (person.dateOfBirth) {
                     infoItems.push({
                       key: 'birthday',
                       icon: 'gift-outline',
-                      iconColor: '#1D4ED8',
+                      iconColor: ACCENT_COLOR,
                       label: 'Birthday',
-                      value: formatBirthday(contact.dateOfBirth),
+                      value: formatBirthday(person.dateOfBirth),
                     });
                   }
 
                   return infoItems.map((item, index) => (
-                    <ContactInfoRow
+                    <InfoRow
                       key={item.key}
                       icon={item.icon}
                       iconColor={item.iconColor}
@@ -1006,7 +760,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             <View style={styles.notesSectionHeader}>
               <View>
                 <Text style={styles.sectionTitle}>Notes</Text>
-                <Text style={styles.sectionSubtitle}>Things you want to remember</Text>
+                <Text style={styles.sectionSubtitle}>Things to remember about {person.name}</Text>
               </View>
             </View>
 
@@ -1018,7 +772,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             >
               <Text style={styles.addNotePlaceholder}>Add a note...</Text>
               <View style={styles.addNoteButton}>
-                <Ionicons name="add" size={20} color="#1D4ED8" />
+                <Ionicons name="add" size={20} color={ACCENT_COLOR} />
               </View>
             </TouchableOpacity>
 
@@ -1041,7 +795,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 </View>
                 <Text style={styles.emptyNotesText}>No notes yet</Text>
                 <Text style={styles.emptyNotesSubtext}>
-                  Add notes about {contact.name.split(' ')[0]} to remember important details
+                  Add notes about {person.name} to remember important details
                 </Text>
               </View>
             )}
@@ -1085,7 +839,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             <View style={styles.modalInputContainer}>
               <TextInput
                 style={styles.modalTextInput}
-                placeholder={`Write something about ${contact.name.split(' ')[0]}...`}
+                placeholder={`Write something about ${person.name}...`}
                 placeholderTextColor="#9CA3AF"
                 value={noteContent}
                 onChangeText={setNoteContent}
@@ -1096,110 +850,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             </View>
           </KeyboardAvoidingView>
         </Modal>
-
-        {/* iOS Date Picker Modal */}
-        <Modal
-          visible={showDatePicker && Platform.OS === 'ios'}
-          transparent={true}
-          animationType="none"
-          onRequestClose={handleDatePickerDone}
-        >
-          <View style={styles.datePickerOverlay}>
-            <TouchableOpacity
-              style={styles.datePickerBackdrop}
-              activeOpacity={1}
-              onPress={handleDatePickerDone}
-            />
-            <Animated.View
-              style={[
-                styles.datePickerContainer,
-                { transform: [{ translateY: datePickerTranslateY }] },
-              ]}
-              {...datePickerPanResponder.panHandlers}
-            >
-              <View style={styles.datePickerHandle}>
-                <View style={styles.datePickerHandleBar} />
-              </View>
-
-              <Text style={styles.datePickerTitle}>Contact Again Date</Text>
-
-              <View style={styles.datePickerWrapper}>
-                <DateTimePicker
-                  value={contactAgainDate || new Date()}
-                  mode="date"
-                  display="spinner"
-                  onChange={handleDateChange}
-                  minimumDate={new Date()}
-                  style={styles.datePicker}
-                />
-              </View>
-
-              <View style={styles.datePickerQuickOptions}>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    setContactAgainDate(tomorrow);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>Tomorrow</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const nextWeek = new Date();
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    setContactAgainDate(nextWeek);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>In a week</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const nextMonth = new Date();
-                    nextMonth.setMonth(nextMonth.getMonth() + 1);
-                    setContactAgainDate(nextMonth);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>In a month</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.datePickerActions}>
-                <TouchableOpacity
-                  onPress={handleClearDate}
-                  style={styles.datePickerClearButton}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.datePickerClearText}>Clear</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleDatePickerDone}
-                  style={styles.datePickerDoneButton}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.datePickerDoneText}>Confirm</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </View>
-        </Modal>
-
-        {/* Android Date Picker */}
-        {showDatePicker && Platform.OS === 'android' && (
-          <DateTimePicker
-            value={contactAgainDate || new Date()}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-            minimumDate={new Date()}
-          />
-        )}
       </View>
     </SafeAreaView>
   );
@@ -1284,23 +934,12 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
   },
-  contactName: {
+  personName: {
     fontSize: 26,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  categoryBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
     marginBottom: 20,
-  },
-  categoryBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.1,
   },
   quickActions: {
     flexDirection: 'row',
@@ -1313,7 +952,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
@@ -1356,7 +995,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1366,200 +1005,26 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
 
-  // Reminder Content
-  reminderContent: {},
-  reminderDateRow: {
-    marginBottom: 14,
-  },
-  reminderDate: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  reminderFullDate: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-  },
-  reminderActions: {
+  // Rating Selector
+  ratingSelector: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  reminderActionButton: {
-    flexDirection: 'row',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  // Active Reminder State - Compact Design
-  activeReminderContainer: {
-    paddingVertical: 4,
-  },
-  activeReminderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  activeReminderIconSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  ratingPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  activeReminderTextContainer: {
-    flex: 1,
-  },
-  activeReminderRelative: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.2,
-  },
-  activeReminderFullDate: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    marginTop: 1,
-  },
-  activeReminderBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 5,
-  },
-  activeReminderBadgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  activeReminderBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  activeReminderActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  activeReminderDoneButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 10,
-    backgroundColor: '#1F2937',
-    borderRadius: 12,
-  },
-  activeReminderDoneText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  activeReminderChangeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  activeReminderChangeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-
-  // Empty Reminder State - Compact Design
-  emptyReminderContainer: {
-    paddingVertical: 4,
-  },
-  emptyReminderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  emptyReminderIconSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  emptyReminderTextContainer: {
-    flex: 1,
-  },
-  emptyReminderTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.2,
-  },
-  emptyReminderSubtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    marginTop: 1,
-  },
-  quickReminderOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  quickReminderChip: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-  },
-  quickReminderChipText: {
+  ratingPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B5563',
-  },
-  quickReminderChipCustom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
 
-  // Contact Info
+  // Info List
   infoList: {},
   infoRow: {
     flexDirection: 'row',
@@ -1576,7 +1041,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -1596,9 +1061,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: '#1F2937',
-  },
-  infoValueTappable: {
-    color: '#1D4ED8',
   },
   infoRowTappable: {},
 
@@ -1649,7 +1111,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1732,7 +1194,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     paddingLeft: 20,
-    shadowColor: '#1D4ED8',
+    shadowColor: ACCENT_COLOR,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -1745,7 +1207,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#1D4ED8',
+    backgroundColor: ACCENT_COLOR,
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
@@ -1800,7 +1262,7 @@ const styles = StyleSheet.create({
   modalSaveText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1D4ED8',
+    color: ACCENT_COLOR,
   },
   modalSaveTextDisabled: {
     color: '#9CA3AF',
@@ -1818,111 +1280,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     padding: 0,
   },
-
-  // Date Picker Modal
-  datePickerOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    top: 0,
-    justifyContent: 'flex-end',
-  },
-  datePickerBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  datePickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-  },
-  datePickerHandle: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  datePickerHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E5E7EB',
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  datePickerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: -10,
-  },
-  datePicker: {
-    width: '100%',
-    height: 200,
-  },
-  datePickerQuickOptions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 20,
-    marginBottom: 16,
-  },
-  quickDateOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  quickDateText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  datePickerActions: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    gap: 10,
-  },
-  datePickerClearButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePickerClearText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  datePickerDoneButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#1F2937',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePickerDoneText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
 });
 
-export default ContactDetailScreen;
+export default DatingDetailScreen;

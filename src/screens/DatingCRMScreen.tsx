@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Easing,
   ScrollView,
   Platform,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,41 +27,87 @@ interface DatingPerson {
   id: string;
   name: string;
   initials: string;
-  stage: string;
-  source: string;
-  lastActivity: string;
+  createdAt: string;
+  phoneNumber?: string;
+  instagram?: string;
+  location?: string;
+  dateOfBirth?: string;
+  rating?: number;
+  notes?: { id: string; text: string; createdAt: string }[];
 }
 
-// Mock Data - Full list
+// Mock Data (ordered by createdAt - newest entries have most recent dates)
 const DATING_CRM_DATA: DatingPerson[] = [
-  { id: '1', name: 'Sophie', initials: 'S', stage: 'Texting', source: 'Met on Hinge', lastActivity: '2 days ago' },
-  { id: '2', name: 'Emma', initials: 'E', stage: 'First date', source: 'Met at a party', lastActivity: 'Yesterday' },
-  { id: '3', name: 'Mia', initials: 'M', stage: 'Matched', source: 'Bumble', lastActivity: '5 hours ago' },
-  { id: '4', name: 'Olivia', initials: 'O', stage: 'Texting', source: 'Coffee shop', lastActivity: '1 week ago' },
-  { id: '5', name: 'Ava', initials: 'A', stage: 'Second date', source: 'Tinder', lastActivity: '3 days ago' },
-  { id: '6', name: 'Isabella', initials: 'I', stage: 'Matched', source: 'Hinge', lastActivity: '1 hour ago' },
-  { id: '7', name: 'Charlotte', initials: 'C', stage: 'Not interested', source: 'Friend intro', lastActivity: '2 weeks ago' },
+  {
+    id: '1',
+    name: 'Sophie',
+    initials: 'S',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    instagram: 'sophie_h',
+    rating: 9,
+  },
+  {
+    id: '2',
+    name: 'Emma',
+    initials: 'E',
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    phoneNumber: '+1 (555) 234-5678',
+    rating: 7,
+  },
+  {
+    id: '3',
+    name: 'Mia',
+    initials: 'M',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    rating: 8,
+  },
+  {
+    id: '4',
+    name: 'Olivia',
+    initials: 'O',
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    phoneNumber: '+1 (555) 345-6789',
+    rating: 6,
+  },
+  {
+    id: '5',
+    name: 'Ava',
+    initials: 'A',
+    createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+    instagram: 'ava.rose',
+  },
+  {
+    id: '6',
+    name: 'Isabella',
+    initials: 'I',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    rating: 10,
+  },
+  {
+    id: '7',
+    name: 'Charlotte',
+    initials: 'C',
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    rating: 5,
+  },
+  {
+    id: '8',
+    name: 'Luna',
+    initials: 'L',
+    createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(),
+    phoneNumber: '+1 (555) 456-7890',
+    instagram: 'luna.m',
+    rating: 8,
+  },
 ];
 
-// Stage badge colors
-const getStageColor = (stage: string): { bg: string; text: string } => {
-  switch (stage.toLowerCase()) {
-    case 'matched':
-      return { bg: '#DBEAFE', text: '#1D4ED8' };
-    case 'texting':
-      return { bg: '#FEF3C7', text: '#B45309' };
-    case 'first date':
-      return { bg: '#D1FAE5', text: '#047857' };
-    case 'second date':
-      return { bg: '#EDE9FE', text: '#6D28D9' };
-    case 'not interested':
-      return { bg: '#F3F4F6', text: '#6B7280' };
-    default:
-      return { bg: '#F3F4F6', text: '#4B5563' };
-  }
-};
+// Avatar colors - consistent dating theme
+const AVATAR_GRADIENT: [string, string, string] = ['#FFF1F2', '#FFE4E6', '#FECDD3'];
+const AVATAR_INITIALS_COLOR = '#BE123C';
 
 const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
@@ -104,17 +151,22 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Person selected:', person.name);
-    // TODO: Navigate to person detail screen
+    navigation.navigate('DatingDetail', { person });
   };
 
   const handleAddPerson = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('Add person pressed');
-    // TODO: Navigate to add person screen
+    navigation.navigate('DatingEntry');
   };
+
+  // Filter and sort people
+  const filteredPeople = DATING_CRM_DATA
+    .filter(person => {
+      return person.name.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -129,16 +181,56 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
             },
           ]}
         >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAddPerson}
+              style={styles.addButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={24} color="#1F2937" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.headerContent}>
-            <Text style={styles.title}>Dating CRM</Text>
-            <Text style={styles.subtitle}>Everyone you're talking to</Text>
+            <Text style={styles.title}>Dating</Text>
+          </View>
+        </Animated.View>
+
+        {/* Sticky Search Bar */}
+        <Animated.View
+          style={[
+            styles.stickyHeader,
+            {
+              opacity: contentOpacity,
+              transform: [{ translateY: contentTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
 
@@ -146,30 +238,9 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Add New Person Button */}
-          <Animated.View
-            style={[
-              styles.addCardWrapper,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.addCard}
-              onPress={handleAddPerson}
-              activeOpacity={0.7}
-            >
-              <View style={styles.addIconCircle}>
-                <Ionicons name="add" size={24} color="#E11D48" />
-              </View>
-              <Text style={styles.addCardText}>Add someone new</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* CRM List */}
+          {/* Dating List */}
           <Animated.View
             style={[
               styles.listContainer,
@@ -179,44 +250,41 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
               },
             ]}
           >
-            {DATING_CRM_DATA.map((person, index) => {
-              const stageColors = getStageColor(person.stage);
-              return (
+            {filteredPeople.length > 0 ? (
+              filteredPeople.map((person) => (
                 <TouchableOpacity
                   key={person.id}
-                  style={styles.crmCard}
+                  style={styles.personCard}
                   onPress={() => handlePersonPress(person)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.7}
                 >
                   {/* Avatar */}
                   <LinearGradient
-                    colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-                    style={styles.crmAvatar}
+                    colors={AVATAR_GRADIENT}
+                    style={styles.personAvatar}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Text style={styles.crmInitials}>{person.initials}</Text>
+                    <Text style={[styles.personInitials, { color: AVATAR_INITIALS_COLOR }]}>
+                      {person.initials}
+                    </Text>
                   </LinearGradient>
 
                   {/* Content */}
-                  <View style={styles.crmCardContent}>
-                    <View style={styles.crmCardHeader}>
-                      <Text style={styles.crmName}>{person.name}</Text>
-                      <View style={[styles.stageBadge, { backgroundColor: stageColors.bg }]}>
-                        <Text style={[styles.stageBadgeText, { color: stageColors.text }]}>
-                          {person.stage}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={styles.crmSource}>{person.source}</Text>
-                    <Text style={styles.crmLastActivity}>Active {person.lastActivity}</Text>
+                  <View style={styles.personCardContent}>
+                    <Text style={styles.personName}>{person.name}</Text>
                   </View>
-
-                  {/* Chevron */}
-                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
                 </TouchableOpacity>
-              );
-            })}
+              ))
+            ) : (
+              <View style={styles.emptySearchContainer}>
+                <Ionicons name="heart-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.emptySearchTitle}>No one found</Text>
+                <Text style={styles.emptySearchText}>
+                  Try adjusting your search
+                </Text>
+              </View>
+            )}
           </Animated.View>
         </ScrollView>
       </View>
@@ -237,7 +305,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   backButton: {
     width: 40,
@@ -246,7 +320,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
@@ -263,115 +351,103 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#6B7280',
-    letterSpacing: -0.2,
+  // Sticky Search Bar
+  stickyHeader: {
+    backgroundColor: '#F7F5F2',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 100,
   },
-
-  // Add Card
-  addCardWrapper: {
-    marginBottom: 20,
-  },
-  addCard: {
+  // Search Bar
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    borderStyle: 'dashed',
-  },
-  addIconCircle: {
-    width: 44,
+    borderRadius: 12,
+    paddingHorizontal: 14,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF1F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  addCardText: {
+  searchInput: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
   },
-
-  // CRM List
+  clearButton: {
+    padding: 4,
+  },
+  // Person List
   listContainer: {
     gap: 10,
   },
-  crmCard: {
+  personCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  crmAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  personAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
-  crmInitials: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#BE123C',
-  },
-  crmCardContent: {
-    flex: 1,
-  },
-  crmCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 3,
-  },
-  crmName: {
-    fontSize: 17,
+  personInitials: {
+    fontSize: 15,
     fontWeight: '600',
+  },
+  personCardContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  personName: {
+    fontSize: 16,
+    fontWeight: '500',
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  stageBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+  // Empty Search State
+  emptySearchContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
   },
-  stageBadgeText: {
-    fontSize: 11,
+  emptySearchTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    letterSpacing: -0.1,
+    color: '#4B5563',
+    marginTop: 16,
+    marginBottom: 6,
   },
-  crmSource: {
+  emptySearchText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#4B5563',
-    marginBottom: 2,
-  },
-  crmLastActivity: {
-    fontSize: 12,
-    fontWeight: '400',
     color: '#9CA3AF',
+    textAlign: 'center',
   },
 });
 
