@@ -659,7 +659,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 72 }, // Safe area + header height + spacing
+          { paddingTop: insets.top + 64 }, // Safe area + header height + 16px spacing
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -670,10 +670,36 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
           </View>
         )}
 
+        {/* Search Bar - People Vault Style */}
+        {!isSearching && (
+          <View style={styles.searchBarContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                style={styles.searchBarInput}
+                placeholder="Search"
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={handleSearchChange}
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
         {hasEntries ? (
           <>
             {/* Category Overview - hidden during search */}
-            {!isSearching && (
+            {!isSearching && !searchQuery.trim() && (
               <CategoryOverview
                 categories={categories}
                 entryCounts={entryCounts}
@@ -821,28 +847,16 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
               >
                 <Ionicons name="chevron-back" size={24} color="#1F2937" />
               </TouchableOpacity>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleSearchPress}
-                  onPressIn={handleSearchPressIn}
-                  onPressOut={handleSearchPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                    <Ionicons name="search" size={22} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleAddEntry}
-                  onPressIn={handleAddPressIn}
-                  onPressOut={handleAddPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
-                    <Ionicons name="add" size={24} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={handleAddEntry}
+                onPressIn={handleAddPressIn}
+                onPressOut={handleAddPressOut}
+              >
+                <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
+                  <Ionicons name="add" size={24} color="#1F2937" />
+                </Animated.View>
+              </TouchableOpacity>
             </View>
           )}
         </Animated.View>
@@ -999,11 +1013,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -1108,6 +1117,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
+  },
+  // Search Bar - People Vault Style
+  searchBarContainer: {
+    marginBottom: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
   },
   scrollView: {
     flex: 1,
