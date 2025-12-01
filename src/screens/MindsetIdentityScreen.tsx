@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Animated,
-  Easing,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,67 +20,9 @@ interface MindsetIdentityScreenProps {
 }
 
 const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigation }) => {
-  // Entrance animations
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(30)).current;
-  const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(30)).current;
-
-  // Scale animations for press
+  // Scale animations for press (no entrance animations - content shows immediately)
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Entrance animation sequence
-    Animated.sequence([
-      // Header fades in
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Cards stagger in
-      Animated.stagger(120, [
-        Animated.parallel([
-          Animated.timing(card1Opacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(card1TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card2Opacity, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(card2TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ]).start();
-
-  }, []);
 
   const handlePressIn = (scaleAnim: Animated.Value) => {
     Animated.spring(scaleAnim, {
@@ -112,15 +53,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -132,7 +65,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
             <Text style={styles.title}>Mindset & Identity</Text>
             <Text style={styles.subtitle}>Shape who you want to become</Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Feature Cards */}
         <View style={styles.cardsContainer}>
@@ -147,11 +80,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               style={[
                 styles.featureCardWrapper,
                 {
-                  opacity: card1Opacity,
-                  transform: [
-                    { translateY: card1TranslateY },
-                    { scale: scale1 },
-                  ],
+                  transform: [{ scale: scale1 }],
                 },
               ]}
             >
@@ -201,11 +130,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
               style={[
                 styles.featureCardWrapper,
                 {
-                  opacity: card2Opacity,
-                  transform: [
-                    { translateY: card2TranslateY },
-                    { scale: scale2 },
-                  ],
+                  transform: [{ scale: scale2 }],
                 },
               ]}
             >

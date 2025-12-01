@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Animated,
-  Easing,
   ScrollView,
   Platform,
   TextInput,
@@ -191,45 +189,6 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
   const soonCount = CONTACTS_DATA.filter(c => c.reminderStatus === 'soon').length;
   const needsAttentionCount = overdueCount + soonCount;
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslateY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      // Header animation
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Content animation
-      Animated.parallel([
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(contentTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
-
   const handleContactPress = (contact: Contact) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -276,15 +235,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerRow}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -304,18 +255,10 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
           <View style={styles.headerContent}>
             <Text style={styles.title}>People</Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Sticky Search Bar */}
-        <Animated.View
-          style={[
-            styles.stickyHeader,
-            {
-              opacity: contentOpacity,
-              transform: [{ translateY: contentTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.stickyHeader}>
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={20} color="#9CA3AF" />
             <TextInput
@@ -336,7 +279,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             )}
           </View>
-        </Animated.View>
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -345,15 +288,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Category Filters */}
-          <Animated.View
-            style={[
-              styles.filtersContainer,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.filtersContainer}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -382,19 +317,11 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                 );
               })}
             </ScrollView>
-          </Animated.View>
+          </View>
 
           {/* Needs Attention Banner */}
           {needsAttentionCount > 0 && (
-            <Animated.View
-              style={[
-                styles.attentionBannerContainer,
-                {
-                  opacity: contentOpacity,
-                  transform: [{ translateY: contentTranslateY }],
-                },
-              ]}
-            >
+            <View style={styles.attentionBannerContainer}>
               <TouchableOpacity
                 style={[
                   styles.attentionBanner,
@@ -434,19 +361,11 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                   color={showNeedsAttention ? '#FFFFFF' : '#9CA3AF'}
                 />
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           )}
 
           {/* Contact List */}
-          <Animated.View
-            style={[
-              styles.listContainer,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.listContainer}>
             {filteredContacts.length > 0 ? (
               filteredContacts.map((contact) => (
                   <TouchableOpacity
@@ -506,7 +425,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                 </Text>
               </View>
             )}
-          </Animated.View>
+          </View>
         </ScrollView>
       </View>
     </SafeAreaView>

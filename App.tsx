@@ -25,6 +25,7 @@ import BrainIcon from './src/components/BrainIcon';
 import CalendarIcon from './src/components/CalendarIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
+import KnowledgeTopicScreen from './src/screens/KnowledgeTopicScreen';
 import MediaVaultScreen from './src/screens/MediaVaultScreen';
 import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import MediaVaultEntryScreen from './src/screens/MediaVaultEntryScreen';
@@ -90,6 +91,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="HigherSelf" component={HigherSelfScreen} />
       <Stack.Screen name="MindsetBeliefs" component={MindsetBeliefsScreen} />
       <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
+      <Stack.Screen name="KnowledgeTopic" component={KnowledgeTopicScreen} />
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
       <Stack.Screen
         name="MediaVaultNewEntry"

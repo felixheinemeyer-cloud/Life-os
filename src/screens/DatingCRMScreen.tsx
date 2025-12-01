@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Animated,
-  Easing,
   ScrollView,
   Platform,
   TextInput,
@@ -108,45 +106,6 @@ const AVATAR_INITIALS_COLOR = '#BE123C';
 const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslateY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      // Header animation
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Content animation
-      Animated.parallel([
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(contentTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
-
   const handlePersonPress = (person: DatingPerson) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -172,15 +131,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerRow}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -200,18 +151,10 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
           <View style={styles.headerContent}>
             <Text style={styles.title}>Dating</Text>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Sticky Search Bar */}
-        <Animated.View
-          style={[
-            styles.stickyHeader,
-            {
-              opacity: contentOpacity,
-              transform: [{ translateY: contentTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.stickyHeader}>
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={20} color="#9CA3AF" />
             <TextInput
@@ -232,7 +175,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             )}
           </View>
-        </Animated.View>
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -241,15 +184,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Dating List */}
-          <Animated.View
-            style={[
-              styles.listContainer,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.listContainer}>
             {filteredPeople.length > 0 ? (
               filteredPeople.map((person) => (
                 <TouchableOpacity
@@ -285,7 +220,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
                 </Text>
               </View>
             )}
-          </Animated.View>
+          </View>
         </ScrollView>
       </View>
     </SafeAreaView>
