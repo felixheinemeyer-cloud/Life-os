@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MediaProvider } from './src/context/MediaContext';
+import { BookProvider } from './src/context/BookContext';
 
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -28,6 +29,7 @@ import MediaVaultScreen from './src/screens/MediaVaultScreen';
 import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import MediaVaultEntryScreen from './src/screens/MediaVaultEntryScreen';
 import BookVaultScreen from './src/screens/BookVaultScreen';
+import BookVaultNewEntryScreen from './src/screens/BookVaultNewEntryScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import PeopleEntryScreen from './src/screens/PeopleEntryScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
@@ -96,6 +98,11 @@ const KnowledgeStack = () => {
       />
       <Stack.Screen name="MediaVaultEntry" component={MediaVaultEntryScreen} />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
+      <Stack.Screen
+        name="BookVaultNewEntry"
+        component={BookVaultNewEntryScreen}
+        options={{ presentation: 'modal' }}
+      />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
       <Stack.Screen
         name="PeopleEntry"
@@ -131,7 +138,8 @@ const App = (): React.JSX.Element => {
   return (
     <SafeAreaProvider>
       <MediaProvider>
-        <NavigationContainer>
+        <BookProvider>
+          <NavigationContainer>
           <StatusBar style="auto" />
           <Tab.Navigator
           initialRouteName="Dashboard"
@@ -178,7 +186,8 @@ const App = (): React.JSX.Element => {
             }}
           />
           </Tab.Navigator>
-        </NavigationContainer>
+          </NavigationContainer>
+        </BookProvider>
       </MediaProvider>
     </SafeAreaProvider>
   );
