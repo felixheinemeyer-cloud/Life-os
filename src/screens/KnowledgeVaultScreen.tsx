@@ -1,136 +1,998 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Platform,
+  TextInput,
+  Keyboard,
+  Dimensions,
+  Pressable,
 } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_GAP = 12;
+const HORIZONTAL_PADDING = 16;
+const CARD_WIDTH = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - CARD_GAP) / 2;
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
+// Types
 interface KnowledgeVaultScreenProps {
   navigation: {
     goBack: () => void;
+    navigate: (screen: string, params?: any) => void;
   };
 }
 
-const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation }) => {
+interface KnowledgeTopic {
+  id: string;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  lightColor: string;
+  createdAt: string;
+}
+
+interface KnowledgeEntry {
+  id: string;
+  topicId: string;
+  title: string;
+  content: string;
+  tags?: string[];
+  sourceUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Mock Topics
+const MOCK_TOPICS: KnowledgeTopic[] = [
+  { id: '1', name: 'Finance', icon: 'wallet-outline', color: '#10B981', lightColor: '#D1FAE5', createdAt: '2024-01-01' },
+  { id: '2', name: 'Psychology', icon: 'body-outline', color: '#6366F1', lightColor: '#E0E7FF', createdAt: '2024-01-05' },
+  { id: '3', name: 'Health', icon: 'heart-outline', color: '#EC4899', lightColor: '#FCE7F3', createdAt: '2024-01-10' },
+  { id: '4', name: 'Productivity', icon: 'rocket-outline', color: '#8B5CF6', lightColor: '#EDE9FE', createdAt: '2024-01-15' },
+  { id: '5', name: 'Technology', icon: 'hardware-chip-outline', color: '#3B82F6', lightColor: '#DBEAFE', createdAt: '2024-01-20' },
+  { id: '6', name: 'Philosophy', icon: 'bulb-outline', color: '#F59E0B', lightColor: '#FEF3C7', createdAt: '2024-01-25' },
+  { id: '7', name: 'Relationships', icon: 'people-outline', color: '#F43F5E', lightColor: '#FFE4E6', createdAt: '2024-02-01' },
+  { id: '8', name: 'Business', icon: 'briefcase-outline', color: '#0EA5E9', lightColor: '#E0F2FE', createdAt: '2024-02-05' },
+  { id: '9', name: 'Cooking', icon: 'restaurant-outline', color: '#F97316', lightColor: '#FFEDD5', createdAt: '2024-02-10' },
+  { id: '10', name: 'Fitness', icon: 'fitness-outline', color: '#059669', lightColor: '#A7F3D0', createdAt: '2024-02-15' },
+];
+
+// Mock Entries
+const MOCK_ENTRIES: KnowledgeEntry[] = [
+  { id: '1', topicId: '1', title: 'Rule of 72', content: 'Divide 72 by interest rate to estimate doubling time.', createdAt: '2024-01-15', updatedAt: '2024-01-15' },
+  { id: '2', topicId: '1', title: 'Dollar Cost Averaging', content: 'Invest fixed amounts regularly regardless of price.', createdAt: '2024-01-16', updatedAt: '2024-01-16' },
+  { id: '3', topicId: '1', title: 'Emergency Fund', content: '3-6 months of expenses in liquid savings.', createdAt: '2024-01-17', updatedAt: '2024-01-17' },
+  { id: '4', topicId: '2', title: 'Confirmation Bias', content: 'Tendency to seek info confirming existing beliefs.', createdAt: '2024-01-20', updatedAt: '2024-01-20' },
+  { id: '5', topicId: '2', title: 'Dunning-Kruger Effect', content: 'Incompetent overestimate, experts underestimate ability.', createdAt: '2024-01-21', updatedAt: '2024-01-21' },
+  { id: '6', topicId: '3', title: 'Sleep Hygiene', content: 'No screens 1hr before bed, consistent schedule.', createdAt: '2024-01-25', updatedAt: '2024-01-25' },
+  { id: '7', topicId: '3', title: 'Hydration', content: '8 glasses of water daily, more with exercise.', createdAt: '2024-01-26', updatedAt: '2024-01-26' },
+  { id: '8', topicId: '4', title: '80/20 Rule', content: '80% of results come from 20% of efforts.', createdAt: '2024-02-01', updatedAt: '2024-02-01' },
+  { id: '9', topicId: '4', title: 'Time Blocking', content: 'Schedule specific tasks in dedicated time slots.', createdAt: '2024-02-02', updatedAt: '2024-02-02' },
+  { id: '10', topicId: '5', title: 'API Design', content: 'REST principles: stateless, resource-based URLs.', createdAt: '2024-02-05', updatedAt: '2024-02-05' },
+  { id: '11', topicId: '6', title: 'Stoic Dichotomy', content: 'Focus only on what you can control.', createdAt: '2024-02-10', updatedAt: '2024-02-10' },
+  { id: '12', topicId: '7', title: 'Active Listening', content: 'Full attention, no interrupting, reflect back.', createdAt: '2024-02-15', updatedAt: '2024-02-15' },
+  { id: '13', topicId: '8', title: 'Value Proposition', content: 'Clear statement of benefit to customer.', createdAt: '2024-02-20', updatedAt: '2024-02-20' },
+  { id: '14', topicId: '9', title: 'Mise en Place', content: 'Prepare all ingredients before cooking starts.', createdAt: '2024-02-25', updatedAt: '2024-02-25' },
+  { id: '15', topicId: '10', title: 'Progressive Overload', content: 'Gradually increase weight/reps over time.', createdAt: '2024-03-01', updatedAt: '2024-03-01' },
+];
+
+// Topic Card Component
+const TopicCard: React.FC<{
+  topic: KnowledgeTopic;
+  entryCount: number;
+  onPress: () => void;
+}> = ({ topic, entryCount, onPress }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={28} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Knowledge Vault</Text>
-            <Text style={styles.subtitle}>Notes, concepts & frameworks</Text>
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[styles.topicCard, { transform: [{ scale: scaleAnim }] }]}>
+        <View style={[styles.topicIconCircle, { backgroundColor: topic.lightColor }]}>
+          <Ionicons name={topic.icon} size={24} color={topic.color} />
+        </View>
+        <Text style={styles.topicName} numberOfLines={2}>{topic.name}</Text>
+        <Text style={styles.topicEntryCount}>
+          {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+        </Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+// Quick Capture Card Component
+const QuickCaptureCard: React.FC<{
+  topics: KnowledgeTopic[];
+  onSave: (content: string, topicId: string) => void;
+  onCollapseRef?: React.MutableRefObject<(() => void) | null>;
+}> = ({ topics, onSave, onCollapseRef }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [content, setContent] = useState('');
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [showTopicPicker, setShowTopicPicker] = useState(false);
+  const expandAnim = useRef(new Animated.Value(0)).current;
+  const inputRef = useRef<TextInput>(null);
+
+  // Collapse function that can be called from parent
+  const collapse = () => {
+    if (isExpanded && !content.trim()) {
+      inputRef.current?.blur();
+      setIsExpanded(false);
+      setShowTopicPicker(false);
+      setSelectedTopicId(null);
+      Keyboard.dismiss();
+      Animated.timing(expandAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  // Expose collapse function to parent via ref
+  useEffect(() => {
+    if (onCollapseRef) {
+      onCollapseRef.current = collapse;
+    }
+    return () => {
+      if (onCollapseRef) {
+        onCollapseRef.current = null;
+      }
+    };
+  }, [isExpanded, content]);
+
+  const handleFocus = () => {
+    setIsExpanded(true);
+    Animated.timing(expandAnim, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleBlur = () => {
+    if (!content.trim()) {
+      setIsExpanded(false);
+      setShowTopicPicker(false);
+      Animated.timing(expandAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  const handleSave = () => {
+    if (content.trim() && selectedTopicId) {
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      onSave(content.trim(), selectedTopicId);
+      setContent('');
+      setSelectedTopicId(null);
+      setIsExpanded(false);
+      setShowTopicPicker(false);
+      Keyboard.dismiss();
+      Animated.timing(expandAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  const handleTopicSelect = (topicId: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedTopicId(topicId);
+    setShowTopicPicker(false);
+  };
+
+  const selectedTopic = topics.find(t => t.id === selectedTopicId);
+
+  const expandedHeight = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, showTopicPicker ? 200 : 56],
+  });
+
+  return (
+    <View style={styles.quickCaptureContainer}>
+      <View style={styles.quickCaptureCard}>
+        <View style={styles.quickCaptureInputRow}>
+          <View style={styles.quickCaptureBulb}>
+            <Ionicons name="bulb-outline" size={20} color="#6366F1" />
           </View>
+          <TextInput
+            ref={inputRef}
+            style={styles.quickCaptureInput}
+            placeholder="What did you learn?"
+            placeholderTextColor="#9CA3AF"
+            value={content}
+            onChangeText={setContent}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            multiline={false}
+          />
         </View>
 
-        {/* Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Empty State */}
-          <View style={styles.emptyStateContainer}>
-            <LinearGradient
-              colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
-              style={styles.emptyStateCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.iconCircle}>
-                <Ionicons name="bulb" size={48} color="#6366F1" />
-              </View>
-              <Text style={styles.emptyStateTitle}>No entries yet</Text>
-              <Text style={styles.emptyStateText}>
-                Your notes, concepts, and frameworks will appear here
-              </Text>
-            </LinearGradient>
+        <Animated.View style={[styles.quickCaptureExpanded, { height: expandedHeight, opacity: expandAnim }]}>
+          {isExpanded && (
+            <View style={styles.quickCaptureActions}>
+              {/* Topic Selector */}
+              <TouchableOpacity
+                style={styles.topicSelector}
+                onPress={() => setShowTopicPicker(!showTopicPicker)}
+                activeOpacity={0.7}
+              >
+                {selectedTopic ? (
+                  <>
+                    <View style={[styles.topicSelectorDot, { backgroundColor: selectedTopic.color }]} />
+                    <Text style={styles.topicSelectorText}>{selectedTopic.name}</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="folder-outline" size={16} color="#6B7280" />
+                    <Text style={styles.topicSelectorPlaceholder}>Select topic</Text>
+                  </>
+                )}
+                <Ionicons name="chevron-down" size={16} color="#6B7280" />
+              </TouchableOpacity>
 
-            {/* Placeholder Add Button */}
-            <TouchableOpacity
-              style={styles.addButton}
-              activeOpacity={0.7}
-              disabled
+              {/* Save Button */}
+              <TouchableOpacity
+                style={[
+                  styles.quickCaptureSaveButton,
+                  (!content.trim() || !selectedTopicId) && styles.quickCaptureSaveButtonDisabled,
+                ]}
+                onPress={handleSave}
+                disabled={!content.trim() || !selectedTopicId}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.quickCaptureSaveText,
+                  (!content.trim() || !selectedTopicId) && styles.quickCaptureSaveTextDisabled,
+                ]}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Topic Picker Dropdown */}
+          {showTopicPicker && (
+            <ScrollView
+              style={styles.topicPickerDropdown}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
             >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>Add Entry</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+              {topics.map((topic) => (
+                <TouchableOpacity
+                  key={topic.id}
+                  style={styles.topicPickerItem}
+                  onPress={() => handleTopicSelect(topic.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.topicPickerDot, { backgroundColor: topic.color }]} />
+                  <Text style={styles.topicPickerName}>{topic.name}</Text>
+                  {selectedTopicId === topic.id && (
+                    <Ionicons name="checkmark" size={18} color="#6366F1" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </Animated.View>
       </View>
-    </SafeAreaView>
+    </View>
+  );
+};
+
+// Empty State Component
+const EmptyState: React.FC<{ onAddPress: () => void }> = ({ onAddPress }) => {
+  return (
+    <View style={styles.emptyStateContainer}>
+      <LinearGradient
+        colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
+        style={styles.emptyStateCard}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.emptyIconCircle}>
+          <Ionicons name="bulb" size={48} color="#6366F1" />
+        </View>
+        <Text style={styles.emptyStateTitle}>No topics yet</Text>
+        <Text style={styles.emptyStateText}>
+          Create your first topic to start organizing your knowledge
+        </Text>
+      </LinearGradient>
+
+      <TouchableOpacity
+        style={styles.emptyAddButton}
+        onPress={onAddPress}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={20} color="#FFFFFF" />
+        <Text style={styles.emptyAddButtonText}>Create Topic</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Main Component
+const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
+  // State
+  const [topics, setTopics] = useState<KnowledgeTopic[]>(MOCK_TOPICS);
+  const [entries, setEntries] = useState<KnowledgeEntry[]>(MOCK_ENTRIES);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
+  const quickCaptureCollapseRef = useRef<(() => void) | null>(null);
+
+  // Handler for tapping outside Quick Capture
+  const handleOutsideTap = () => {
+    if (quickCaptureCollapseRef.current) {
+      quickCaptureCollapseRef.current();
+    }
+  };
+
+  // Animation values
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const addButtonScale = useRef(new Animated.Value(1)).current;
+  const searchButtonScale = useRef(new Animated.Value(1)).current;
+
+  // Computed values
+  const entryCounts = topics.reduce((acc, topic) => {
+    acc[topic.id] = entries.filter(e => e.topicId === topic.id).length;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalEntries = entries.length;
+
+  // Sort topics alphabetically A-Z
+  const sortedTopics = [...topics].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Filtered topics based on search
+  const filteredTopics = searchQuery.trim()
+    ? sortedTopics.filter(topic =>
+        topic.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : sortedTopics;
+
+  // Animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerTranslateY, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Handlers
+  const handleSearchPress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsSearching(true);
+    setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  const handleCloseSearch = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsSearching(false);
+    setSearchQuery('');
+    Keyboard.dismiss();
+  };
+
+  const handleAddTopic = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // TODO: Navigate to add topic modal
+    console.log('Add topic pressed');
+  };
+
+  const handleTopicPress = (topic: KnowledgeTopic) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const topicEntries = entries.filter(e => e.topicId === topic.id);
+    navigation.navigate('KnowledgeTopic', {
+      topic,
+      entries: topicEntries,
+    });
+  };
+
+  const handleQuickCaptureSave = (content: string, topicId: string) => {
+    const newEntry: KnowledgeEntry = {
+      id: Date.now().toString(),
+      topicId,
+      title: content.slice(0, 50),
+      content,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setEntries(prev => [newEntry, ...prev]);
+  };
+
+  const handleSearchPressIn = () => {
+    Animated.spring(searchButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleSearchPressOut = () => {
+    Animated.spring(searchButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleAddPressIn = () => {
+    Animated.spring(addButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleAddPressOut = () => {
+    Animated.spring(addButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* ScrollView */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 72 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Scrollable Title */}
+        {!isSearching && (
+          <Pressable onPress={handleOutsideTap} style={styles.titleSection}>
+            <Text style={styles.title}>Knowledge Vault</Text>
+            <Text style={styles.subtitle}>Your personal knowledge base</Text>
+          </Pressable>
+        )}
+
+        {topics.length > 0 ? (
+          <>
+            {/* Quick Capture */}
+            {!isSearching && (
+              <QuickCaptureCard
+                topics={sortedTopics}
+                onSave={handleQuickCaptureSave}
+                onCollapseRef={quickCaptureCollapseRef}
+              />
+            )}
+
+            {/* Topics Section */}
+            <Pressable onPress={handleOutsideTap} style={styles.topicsSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {isSearching && searchQuery.trim()
+                    ? `Results for "${searchQuery}"`
+                    : 'Your Topics'}
+                </Text>
+              </View>
+
+              {filteredTopics.length > 0 ? (
+                <View style={styles.topicsGrid}>
+                  {filteredTopics.map((topic) => (
+                    <TopicCard
+                      key={topic.id}
+                      topic={topic}
+                      entryCount={entryCounts[topic.id] || 0}
+                      onPress={() => handleTopicPress(topic)}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.noResults}>
+                  <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+                  <Text style={styles.noResultsText}>No topics found</Text>
+                </View>
+              )}
+            </Pressable>
+          </>
+        ) : (
+          <EmptyState onAddPress={handleAddTopic} />
+        )}
+      </ScrollView>
+
+      {/* Fixed Header */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.95)',
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0.1)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          {isSearching ? (
+            /* Search Mode Header */
+            <View style={styles.searchHeader}>
+              <View style={styles.searchInputContainer}>
+                <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
+                <TextInput
+                  ref={searchInputRef}
+                  style={styles.searchInput}
+                  placeholder="Search topics"
+                  placeholderTextColor="#9CA3AF"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={handleCloseSearch}
+                style={styles.cancelButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            /* Normal Header */
+            <View style={styles.headerTop}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              </TouchableOpacity>
+              <View style={styles.headerButtons}>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={handleSearchPress}
+                  onPressIn={handleSearchPressIn}
+                  onPressOut={handleSearchPressOut}
+                >
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
+                    <Ionicons name="search" size={22} color="#1F2937" />
+                  </Animated.View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={handleAddTopic}
+                  onPressIn={handleAddPressIn}
+                  onPressOut={handleAddPressOut}
+                >
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
+                    <Ionicons name="add" size={24} color="#1F2937" />
+                  </Animated.View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Animated.View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F1EEE0',
+    backgroundColor: '#F7F5F2',
+  },
+
+  // Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 65,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
   },
   header: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingTop: 8,
+    paddingBottom: 0,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    marginBottom: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  headerContent: {
-    paddingHorizontal: 8,
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+
+  // Search Header
+  searchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  cancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
+  // Scroll Content
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+
+  // Title Section
+  titleSection: {
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
   },
-  scrollView: {
-    flex: 1,
+
+  // Quick Capture
+  quickCaptureContainer: {
+    marginBottom: 24,
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 40,
+  quickCaptureCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  emptyStateContainer: {
-    flex: 1,
+  quickCaptureInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickCaptureBulb: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E0E7FF',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 400,
+    marginRight: 12,
+  },
+  quickCaptureInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2937',
+    paddingVertical: 8,
+  },
+  quickCaptureExpanded: {
+    overflow: 'hidden',
+  },
+  quickCaptureActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  topicSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  topicSelectorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  topicSelectorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  topicSelectorPlaceholder: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  quickCaptureSaveButton: {
+    backgroundColor: '#6366F1',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  quickCaptureSaveButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+  },
+  quickCaptureSaveText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  quickCaptureSaveTextDisabled: {
+    color: '#9CA3AF',
+  },
+  topicPickerDropdown: {
+    marginTop: 12,
+    maxHeight: 150,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 4,
+  },
+  topicPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  topicPickerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
+  },
+  topicPickerName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+
+  // Topics Section
+  topicsSection: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+  },
+  topicCountBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  topicCountText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
+  // Topics Grid
+  topicsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
+  topicCard: {
+    width: CARD_WIDTH,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  topicIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  topicName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+    letterSpacing: -0.2,
+  },
+  topicEntryCount: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+
+  // No Results
+  noResults: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  noResultsText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+
+  // Empty State
+  emptyStateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 24,
   },
   emptyStateCard: {
     width: '100%',
@@ -143,7 +1005,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  iconCircle: {
+  emptyIconCircle: {
     width: 96,
     height: 96,
     borderRadius: 48,
@@ -172,7 +1034,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     maxWidth: 280,
   },
-  addButton: {
+  emptyAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#6366F1',
@@ -185,9 +1047,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
-    opacity: 0.5,
   },
-  addButtonText: {
+  emptyAddButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',

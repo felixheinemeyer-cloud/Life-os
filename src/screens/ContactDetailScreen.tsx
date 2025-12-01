@@ -397,18 +397,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
   const [noteContent, setNoteContent] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const heroOpacity = useRef(new Animated.Value(0)).current;
-  const heroScale = useRef(new Animated.Value(0.95)).current;
-  const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(30)).current;
-  const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(30)).current;
-  const card3Opacity = useRef(new Animated.Value(0)).current;
-  const card3TranslateY = useRef(new Animated.Value(30)).current;
-
   // Date picker modal animation
   const datePickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
@@ -454,52 +442,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
       },
     })
   ).current;
-
-  // Entry animations
-  useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(heroOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(heroScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.stagger(80, [
-        Animated.parallel([
-          Animated.timing(card1Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card1TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card2Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card2TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card3Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card3TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-      ]),
-    ]).start();
-  }, []);
 
   // Handlers
   const handleBack = () => {
@@ -679,15 +621,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={handleBack}
             style={styles.backButton}
@@ -702,7 +636,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
           >
             <Ionicons name="pencil" size={20} color="#1F2937" />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -712,15 +646,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
           scrollEnabled={!isSwipingCard}
         >
           {/* Hero Section */}
-          <Animated.View
-            style={[
-              styles.heroSection,
-              {
-                opacity: heroOpacity,
-                transform: [{ scale: heroScale }],
-              },
-            ]}
-          >
+          <View style={styles.heroSection}>
             {/* Avatar */}
             <LinearGradient
               colors={categoryStyle.colors}
@@ -782,15 +708,10 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 </TouchableOpacity>
               )}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Contact Reminder Card */}
-          <Animated.View
-            style={[
-              styles.card,
-              { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
-            ]}
-          >
+          <View style={styles.card}>
             {contactAgainDate ? (
               <View style={styles.activeReminderContainer}>
                 {/* Header Row */}
@@ -899,16 +820,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 </View>
               </View>
             )}
-          </Animated.View>
+          </View>
 
           {/* Contact Info Card */}
           {hasContactInfo && (
-            <Animated.View
-              style={[
-                styles.card,
-                { opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] },
-              ]}
-            >
+            <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleRow}>
                   <View style={styles.cardIconCircle}>
@@ -993,16 +909,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   ));
                 })()}
               </View>
-            </Animated.View>
+            </View>
           )}
 
           {/* Notes Section */}
-          <Animated.View
-            style={[
-              styles.notesSection,
-              { opacity: card3Opacity, transform: [{ translateY: card3TranslateY }] },
-            ]}
-          >
+          <View style={styles.notesSection}>
             <View style={styles.notesSectionHeader}>
               <View>
                 <Text style={styles.sectionTitle}>Notes</Text>
@@ -1045,7 +956,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 </Text>
               </View>
             )}
-          </Animated.View>
+          </View>
 
           <View style={styles.bottomSpacer} />
         </ScrollView>

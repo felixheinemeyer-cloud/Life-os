@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Animated,
-  Easing,
   ScrollView,
   Platform,
 } from 'react-native';
@@ -79,48 +77,6 @@ const DATING_ADVICE_DATA: DatingAdvice[] = [
 
 // Main Component
 const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const section1Opacity = useRef(new Animated.Value(0)).current;
-  const section1TranslateY = useRef(new Animated.Value(30)).current;
-  const section2Opacity = useRef(new Animated.Value(0)).current;
-  const section2TranslateY = useRef(new Animated.Value(30)).current;
-  const section3Opacity = useRef(new Animated.Value(0)).current;
-  const section3TranslateY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.stagger(80, [
-        Animated.parallel([
-          Animated.timing(section1Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(section1TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(section2Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(section2TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(section3Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(section3TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-      ]),
-    ]).start();
-  }, []);
-
   const handlePersonPress = (person: DatingPerson) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -160,15 +116,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Fixed Header Row */}
-        <Animated.View
-          style={[
-            styles.headerRow,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -189,7 +137,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           >
             <Ionicons name="settings-outline" size={22} color="#1F2937" />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -198,27 +146,11 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           {/* Scrollable Title */}
-          <Animated.View
-            style={[
-              styles.titleContainer,
-              {
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.titleContainer}>
             <Text style={styles.title}>Dating</Text>
-          </Animated.View>
+          </View>
           {/* People Section */}
-          <Animated.View
-            style={[
-              styles.section,
-              {
-                opacity: section1Opacity,
-                transform: [{ translateY: section1TranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>People</Text>
               <TouchableOpacity
@@ -251,18 +183,10 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Date Ideas Section */}
-          <Animated.View
-            style={[
-              styles.section,
-              {
-                opacity: section2Opacity,
-                transform: [{ translateY: section2TranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Date Ideas</Text>
               <TouchableOpacity
@@ -294,18 +218,10 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </Animated.View>
+          </View>
 
           {/* Dating Advice Section */}
-          <Animated.View
-            style={[
-              styles.section,
-              {
-                opacity: section3Opacity,
-                transform: [{ translateY: section3TranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Advice</Text>
             </View>
@@ -329,7 +245,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </View>
         </ScrollView>
       </View>
     </SafeAreaView>

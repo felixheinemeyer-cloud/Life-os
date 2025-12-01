@@ -167,16 +167,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
   // Focus states
   const [isNameFocused, setIsNameFocused] = useState(false);
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(30)).current;
-  const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(30)).current;
-  const card3Opacity = useRef(new Animated.Value(0)).current;
-  const card3TranslateY = useRef(new Animated.Value(30)).current;
-
   // Refs
   const phoneInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
@@ -255,41 +245,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
   const isFieldExpanded = (field: string): boolean => {
     return expandedFields.has(field) || hasFieldData(field);
   };
-
-  useEffect(() => {
-    // Staggered card animations
-    Animated.sequence([
-      // Header
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Cards staggered
-      Animated.stagger(80, [
-        Animated.parallel([
-          Animated.timing(card1Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card1TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card2Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card2TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card3Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card3TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-      ]),
-    ]).start();
-  }, []);
 
   const handleSave = () => {
     if (!isFormValid) return;
@@ -574,15 +529,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
           {/* Header */}
-          <Animated.View
-            style={[
-              styles.header,
-              {
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }],
-              },
-            ]}
-          >
+          <View style={styles.header}>
             <View style={styles.headerTop}>
               <TouchableOpacity
                 onPress={handleBack}
@@ -603,7 +550,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                 </Text>
               </TouchableOpacity>
             </View>
-          </Animated.View>
+          </View>
 
           {/* Content */}
           <ScrollView
@@ -615,12 +562,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
             automaticallyAdjustKeyboardInsets={true}
           >
             {/* Avatar Preview */}
-            <Animated.View
-              style={[
-                styles.avatarPreviewContainer,
-                { opacity: card1Opacity },
-              ]}
-            >
+            <View style={styles.avatarPreviewContainer}>
               <LinearGradient
                 colors={selectedCategoryData?.colors || ['#F3F4F6', '#E5E7EB', '#D1D5DB']}
                 style={styles.avatarPreview}
@@ -638,16 +580,10 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
               <Text style={styles.avatarPreviewName}>
                 {name.trim().length > 0 ? name.trim() : 'New Contact'}
               </Text>
-            </Animated.View>
+            </View>
 
             {/* Name & Category Card */}
-            <Animated.View
-              style={[
-                styles.card,
-                isNameFocused && styles.cardFocused,
-                { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
-              ]}
-            >
+            <View style={[styles.card, isNameFocused && styles.cardFocused]}>
               {/* Name Input */}
               <View style={styles.inputSection}>
                 <View style={styles.cardLabelRow}>
@@ -669,15 +605,10 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                   returnKeyType="done"
                 />
               </View>
-            </Animated.View>
+            </View>
 
             {/* Category Card */}
-            <Animated.View
-              style={[
-                styles.card,
-                { opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] },
-              ]}
-            >
+            <View style={styles.card}>
               <View style={styles.cardLabelRow}>
                 <View style={styles.iconCircle}>
                   <Ionicons name="people-outline" size={20} color="#1D4ED8" />
@@ -713,15 +644,10 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                   );
                 })}
               </View>
-            </Animated.View>
+            </View>
 
             {/* Optional Details Card */}
-            <Animated.View
-              style={[
-                styles.optionalCard,
-                { opacity: card3Opacity, transform: [{ translateY: card3TranslateY }] },
-              ]}
-            >
+            <View style={styles.optionalCard}>
               <View style={styles.optionalFieldsContainer}>
                 {/* Phone */}
                 {isFieldExpanded('phone') ? (
@@ -799,7 +725,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                 {/* Birthday */}
                 {renderBirthdayField(true)}
               </View>
-            </Animated.View>
+            </View>
 
             {/* Spacer for bottom padding */}
             <View style={styles.bottomSpacer} />

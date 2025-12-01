@@ -22,95 +22,86 @@ import * as Haptics from 'expo-haptics';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Types
-interface StoryBankScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: any) => void;
-  };
+interface KnowledgeTopic {
+  id: string;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  lightColor: string;
+  createdAt: string;
 }
 
-interface Story {
+interface KnowledgeEntry {
   id: string;
+  topicId: string;
   title: string;
   content: string;
-  moodId: string;
-  tags: string[];
-  whenItHappened?: string;
+  tags?: string[];
+  sourceUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Mock Stories
-const MOCK_STORIES: Story[] = [
-  {
-    id: '1',
-    title: 'The Time I Got Lost in Tokyo',
-    content: 'I wandered into a tiny alley and found the best ramen shop run by a 90-year-old woman who spoke no English. We communicated through gestures and she gave me extra noodles for free.',
-    moodId: 'adventure',
-    tags: ['Travel', 'Japan', 'Food'],
-    whenItHappened: '2023',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    title: 'Meeting My Mentor',
-    content: 'I was nervous walking into that coffee shop. Little did I know that one conversation would change the trajectory of my career entirely. She saw potential in me that I couldn\'t see myself.',
-    moodId: 'inspiring',
-    tags: ['Career', 'Mentorship'],
-    whenItHappened: '2022',
-    createdAt: '2024-01-20',
-    updatedAt: '2024-01-20',
-  },
-  {
-    id: '3',
-    title: 'The Wedding Speech Disaster',
-    content: 'I practiced for weeks. But when I got up there, I completely blanked and accidentally called the bride by my ex\'s name. The room went silent... then my buddy burst out laughing and saved the moment.',
-    moodId: 'awkward',
-    tags: ['Wedding', 'Friends', 'Public Speaking'],
-    whenItHappened: '2021',
-    createdAt: '2024-02-01',
-    updatedAt: '2024-02-01',
-  },
-  {
-    id: '4',
-    title: 'Dad\'s Surprise Visit',
-    content: 'I hadn\'t seen my dad in two years. One morning, I opened the door to get my delivery and there he was, suitcase in hand, tears in his eyes. We hugged for what felt like an hour.',
-    moodId: 'heartwarming',
-    tags: ['Family', 'Dad', 'Surprise'],
-    whenItHappened: '2023',
-    createdAt: '2024-02-10',
-    updatedAt: '2024-02-10',
-  },
-  {
-    id: '5',
-    title: 'The Interview That Changed Everything',
-    content: 'I bombed the technical questions. But instead of giving up, I asked the interviewer what I should learn. He spent 30 minutes teaching me. A month later, I aced the re-interview.',
-    moodId: 'growth',
-    tags: ['Career', 'Learning', 'Persistence'],
-    whenItHappened: '2020',
-    createdAt: '2024-02-15',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: '6',
-    title: 'First Date at the Wrong Restaurant',
-    content: 'I showed up to the fancy Italian place she suggested. She showed up to a completely different restaurant with the same name across town. We ended up meeting at a hot dog stand in the middle.',
-    moodId: 'funny',
-    tags: ['Dating', 'First Date'],
-    whenItHappened: '2019',
-    createdAt: '2024-02-20',
-    updatedAt: '2024-02-20',
-  },
-];
+interface KnowledgeTopicScreenProps {
+  navigation: {
+    goBack: () => void;
+    navigate: (screen: string, params?: any) => void;
+  };
+  route: {
+    params: {
+      topic: KnowledgeTopic;
+      entries: KnowledgeEntry[];
+    };
+  };
+}
 
-// Story Card Component
-const StoryCard: React.FC<{
-  story: Story;
+// Add Entry Card Component (simple button that opens modal)
+const AddEntryCard: React.FC<{
+  topicColor: string;
+  onPress: () => void;
+}> = ({ topicColor, onPress }) => {
+  return (
+    <TouchableOpacity
+      style={styles.addEntryCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.addEntryPlaceholder}>Add a new insight...</Text>
+      <View style={[styles.addEntryButton, { backgroundColor: topicColor + '15' }]}>
+        <Ionicons name="add" size={20} color={topicColor} />
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// Entry Card Component
+const EntryCard: React.FC<{
+  entry: KnowledgeEntry;
+  topicColor: string;
   onPress: () => void;
   index: number;
-}> = ({ story, onPress, index }) => {
+}> = ({ entry, topicColor, onPress, index }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        delay: index * 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 300,
+        delay: index * 50,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -130,6 +121,11 @@ const StoryCard: React.FC<{
     }).start();
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={1}
@@ -139,102 +135,65 @@ const StoryCard: React.FC<{
     >
       <Animated.View
         style={[
-          styles.storyCard,
-          { transform: [{ scale: scaleAnim }] },
+          styles.entryCard,
+          {
+            transform: [{ scale: scaleAnim }, { translateY }],
+            opacity: fadeAnim,
+          },
         ]}
       >
-        {/* Time */}
-        {story.whenItHappened && (
-          <Text style={styles.storyTime}>{story.whenItHappened}</Text>
-        )}
-
-        {/* Title */}
-        <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
-
-        {/* Content Preview */}
-        <Text style={styles.storySnippet} numberOfLines={2}>{story.content}</Text>
-
-        {/* Tags */}
-        {story.tags.length > 0 && (
-          <View style={styles.tagsRow}>
-            {story.tags.slice(0, 3).map((tag, i) => (
-              <View key={i} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-            {story.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{story.tags.length - 3}</Text>
-            )}
-          </View>
-        )}
+        <View style={[styles.entryAccentBar, { backgroundColor: topicColor }]} />
+        <View style={styles.entryContent}>
+          <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
+          <Text style={styles.entrySnippet} numberOfLines={2}>{entry.content}</Text>
+          <Text style={styles.entryTimestamp}>{formatDate(entry.createdAt)}</Text>
+        </View>
       </Animated.View>
-    </TouchableOpacity>
-  );
-};
-
-// Add Story Card Component
-const AddStoryCard: React.FC<{
-  onPress: () => void;
-}> = ({ onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.addStoryCard}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.addStoryPlaceholder}>Add a new story...</Text>
-      <View style={styles.addStoryButton}>
-        <Ionicons name="add" size={20} color="#84CC16" />
-      </View>
     </TouchableOpacity>
   );
 };
 
 // Empty State Component
 const EmptyState: React.FC<{
+  topicName: string;
+  topicColor: string;
+  topicLightColor: string;
+  topicIcon: keyof typeof Ionicons.glyphMap;
   onAddPress: () => void;
-}> = ({ onAddPress }) => {
+}> = ({ topicName, topicColor, topicLightColor, topicIcon, onAddPress }) => {
   return (
     <View style={styles.emptyStateContainer}>
-      <LinearGradient
-        colors={['#ECFCCB', '#D9F99D', '#BEF264']}
-        style={styles.emptyStateCard}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.emptyIconCircle}>
-          <Text style={styles.emptyIconEmoji}>📖</Text>
-        </View>
-        <Text style={styles.emptyStateTitle}>No stories yet</Text>
-        <Text style={styles.emptyStateText}>
-          Start capturing your best life stories
-        </Text>
-      </LinearGradient>
-
+      <View style={[styles.emptyIconCircle, { backgroundColor: topicLightColor }]}>
+        <Ionicons name={topicIcon} size={48} color={topicColor} />
+      </View>
+      <Text style={styles.emptyStateTitle}>No entries yet</Text>
+      <Text style={styles.emptyStateText}>
+        Add your first insight about {topicName}
+      </Text>
       <TouchableOpacity
-        style={styles.emptyAddButton}
+        style={[styles.emptyAddButton, { backgroundColor: topicColor }]}
         onPress={onAddPress}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.emptyAddButtonText}>Add Your First Story</Text>
+        <Text style={styles.emptyAddButtonText}>Add Entry</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 // Main Component
-const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
+const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation, route }) => {
+  const { topic, entries: initialEntries } = route.params;
   const insets = useSafeAreaInsets();
 
   // State
-  const [stories, setStories] = useState<Story[]>(MOCK_STORIES);
+  const [entries, setEntries] = useState<KnowledgeEntry[]>(initialEntries);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [storyTitle, setStoryTitle] = useState('');
-  const [storyContent, setStoryContent] = useState('');
-  const [storyWhen, setStoryWhen] = useState('');
+  const [entryTitle, setEntryTitle] = useState('');
+  const [entryContent, setEntryContent] = useState('');
   const searchInputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
 
@@ -242,18 +201,20 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
   const searchButtonScale = useRef(new Animated.Value(1)).current;
-  const addButtonScale = useRef(new Animated.Value(1)).current;
 
-  // Filtered stories
-  const filteredStories = stories.filter(story => {
-    const matchesSearch = !searchQuery.trim() ||
-      story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      story.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  // Show search only when 5+ entries
+  const showSearch = entries.length >= 5;
+
+  // Filtered entries based on search
+  const filteredEntries = searchQuery.trim()
+    ? entries.filter(entry =>
+        entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : entries;
 
   // Sort by newest first
-  const sortedStories = [...filteredStories].sort(
+  const sortedEntries = [...filteredEntries].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
@@ -302,39 +263,37 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
 
   const handleCloseModal = () => {
     setModalVisible(false);
-    setStoryTitle('');
-    setStoryContent('');
-    setStoryWhen('');
+    setEntryTitle('');
+    setEntryContent('');
     Keyboard.dismiss();
   };
 
-  const handleSaveStory = () => {
-    if (storyContent.trim()) {
+  const handleSaveEntry = () => {
+    if (entryContent.trim()) {
       if (Platform.OS === 'ios') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      const autoTitle = storyTitle.trim() || storyContent.trim().split('\n')[0].slice(0, 50);
-      const newStory: Story = {
+      // Use title if provided, otherwise use first line or truncated content
+      const autoTitle = entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50);
+      const newEntry: KnowledgeEntry = {
         id: Date.now().toString(),
+        topicId: topic.id,
         title: autoTitle,
-        content: storyContent.trim(),
-        moodId: '',
-        tags: [],
-        whenItHappened: storyWhen.trim() || undefined,
+        content: entryContent.trim(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setStories(prev => [newStory, ...prev]);
+      setEntries(prev => [newEntry, ...prev]);
       handleCloseModal();
     }
   };
 
-  const handleStoryPress = (story: Story) => {
+  const handleEntryPress = (entry: KnowledgeEntry) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // TODO: Navigate to story detail
-    console.log('Story pressed:', story.title);
+    // TODO: Navigate to entry detail screen
+    console.log('Entry pressed:', entry.title);
   };
 
   const handleSearchPressIn = () => {
@@ -355,26 +314,6 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
     }).start();
   };
 
-  const handleAddPressIn = () => {
-    Animated.spring(addButtonScale, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const handleAddPressOut = () => {
-    Animated.spring(addButtonScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const canSave = storyContent.trim();
-
   return (
     <View style={styles.container}>
       {/* ScrollView */}
@@ -390,43 +329,50 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         {/* Scrollable Title */}
         {!isSearching && (
           <View style={styles.titleSection}>
-            <Text style={styles.title}>Story Bank</Text>
-            <Text style={styles.subtitle}>Your best life stories, ready to share</Text>
+            <View style={styles.titleRow}>
+              <View style={[styles.titleIcon, { backgroundColor: topic.lightColor }]}>
+                <Ionicons name={topic.icon} size={24} color={topic.color} />
+              </View>
+              <Text style={styles.title}>{topic.name}</Text>
+            </View>
           </View>
         )}
 
-
-        {stories.length > 0 ? (
+        {entries.length > 0 ? (
           <>
-            {/* Add Story Card */}
+            {/* Add Entry Card */}
             {!isSearching && (
-              <AddStoryCard onPress={handleOpenModal} />
+              <AddEntryCard
+                topicColor={topic.color}
+                onPress={handleOpenModal}
+              />
             )}
 
-            {/* Story Count */}
+            {/* Entry Count */}
             {!isSearching && (
-              <Text style={styles.storyCount}>
-                {filteredStories.length} {filteredStories.length === 1 ? 'story' : 'stories'}
+              <Text style={styles.entryCount}>
+                {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
               </Text>
             )}
 
             {/* Search Results Label */}
             {isSearching && searchQuery.trim() && (
               <Text style={styles.searchResultsLabel}>
-                {filteredStories.length === 0
-                  ? 'No stories found'
-                  : `${filteredStories.length} ${filteredStories.length === 1 ? 'result' : 'results'}`}
+                {filteredEntries.length === 0
+                  ? 'No results'
+                  : `${filteredEntries.length} ${filteredEntries.length === 1 ? 'result' : 'results'}`}
               </Text>
             )}
 
-            {/* Story Cards */}
-            {sortedStories.length > 0 ? (
-              <View style={styles.storiesContainer}>
-                {sortedStories.map((story, index) => (
-                  <StoryCard
-                    key={story.id}
-                    story={story}
-                    onPress={() => handleStoryPress(story)}
+            {/* Entry Cards */}
+            {sortedEntries.length > 0 ? (
+              <View style={styles.entriesContainer}>
+                {sortedEntries.map((entry, index) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    topicColor={topic.color}
+                    onPress={() => handleEntryPress(entry)}
                     index={index}
                   />
                 ))}
@@ -434,17 +380,26 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
             ) : isSearching && searchQuery.trim() ? (
               <View style={styles.noResults}>
                 <Ionicons name="search-outline" size={40} color="#D1D5DB" />
-                <Text style={styles.noResultsText}>No stories found</Text>
+                <Text style={styles.noResultsText}>No entries found</Text>
               </View>
             ) : null}
           </>
         ) : (
-          <EmptyState onAddPress={handleOpenModal} />
+          <EmptyState
+            topicName={topic.name}
+            topicColor={topic.color}
+            topicLightColor={topic.lightColor}
+            topicIcon={topic.icon}
+            onAddPress={() => {
+              // Focus on quick capture input
+            }}
+          />
         )}
       </ScrollView>
 
       {/* Fixed Header */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
@@ -460,6 +415,7 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
           />
         </View>
 
+        {/* Header Content */}
         <Animated.View
           style={[
             styles.header,
@@ -471,13 +427,14 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
           pointerEvents="box-none"
         >
           {isSearching ? (
+            /* Search Mode Header */
             <View style={styles.searchHeader}>
               <View style={styles.searchInputContainer}>
                 <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
                 <TextInput
                   ref={searchInputRef}
                   style={styles.searchInput}
-                  placeholder="Search stories..."
+                  placeholder="Search entries..."
                   placeholderTextColor="#9CA3AF"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -492,13 +449,14 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
               </View>
               <TouchableOpacity
                 onPress={handleCloseSearch}
-                style={styles.cancelButton}
+                style={styles.searchCancelButton}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.searchCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           ) : (
+            /* Normal Header */
             <View style={styles.headerTop}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -507,7 +465,7 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
               >
                 <Ionicons name="chevron-back" size={24} color="#1F2937" />
               </TouchableOpacity>
-              <View style={styles.headerButtons}>
+              {showSearch && (
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={handleSearchPress}
@@ -518,23 +476,13 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
                     <Ionicons name="search" size={22} color="#1F2937" />
                   </Animated.View>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleOpenModal}
-                  onPressIn={handleAddPressIn}
-                  onPressOut={handleAddPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
-                    <Ionicons name="add" size={24} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </View>
+              )}
             </View>
           )}
         </Animated.View>
       </View>
 
-      {/* Add Story Modal */}
+      {/* Add Entry Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -552,52 +500,38 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
             >
               <Text style={styles.modalCloseText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>New Story</Text>
+            <Text style={styles.modalTitle}>New Insight</Text>
             <TouchableOpacity
-              onPress={handleSaveStory}
-              style={[styles.modalSaveButton, !canSave && styles.modalSaveButtonDisabled]}
-              disabled={!canSave}
+              onPress={handleSaveEntry}
+              style={[styles.modalSaveButton, !entryContent.trim() && styles.modalSaveButtonDisabled]}
+              disabled={!entryContent.trim()}
             >
-              <Text style={[styles.modalSaveText, !canSave && styles.modalSaveTextDisabled]}>
+              <Text style={[styles.modalSaveText, { color: topic.color }, !entryContent.trim() && styles.modalSaveTextDisabled]}>
                 Save
               </Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
-            {/* Title Input */}
+          <View style={styles.modalContent}>
             <TextInput
               ref={titleInputRef}
               style={styles.modalTitleInput}
-              placeholder="Story title (optional)"
+              placeholder="Title (optional)"
               placeholderTextColor="#9CA3AF"
-              value={storyTitle}
-              onChangeText={setStoryTitle}
+              value={entryTitle}
+              onChangeText={setEntryTitle}
+              autoFocus
             />
-
-            {/* Content Input */}
             <TextInput
               style={styles.modalContentInput}
-              placeholder="Tell your story..."
+              placeholder="What did you learn?"
               placeholderTextColor="#9CA3AF"
-              value={storyContent}
-              onChangeText={setStoryContent}
+              value={entryContent}
+              onChangeText={setEntryContent}
               multiline
               textAlignVertical="top"
             />
-
-            {/* When It Happened */}
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>When did this happen?</Text>
-              <TextInput
-                style={styles.modalSmallInput}
-                placeholder="e.g., 2023, College, Last summer"
-                placeholderTextColor="#9CA3AF"
-                value={storyWhen}
-                onChangeText={setStoryWhen}
-              />
-            </View>
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -655,11 +589,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -705,11 +634,11 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 0,
   },
-  cancelButton: {
+  searchCancelButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
-  cancelButtonText: {
+  searchCancelButtonText: {
     fontSize: 16,
     fontWeight: '500',
     color: '#6B7280',
@@ -728,53 +657,27 @@ const styles = StyleSheet.create({
   titleSection: {
     marginBottom: 20,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  titleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
   },
 
-  // Mood Filters
-  moodFilters: {
-    marginBottom: 20,
-    marginHorizontal: -16,
-  },
-  moodFiltersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  moodChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    gap: 6,
-  },
-  moodChipSelected: {
-    borderColor: 'transparent',
-  },
-  moodChipEmoji: {
-    fontSize: 14,
-  },
-  moodChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-
-  // Add Story Card
-  addStoryCard: {
+  // Add Entry Card
+  addEntryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -789,23 +692,22 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  addStoryPlaceholder: {
+  addEntryPlaceholder: {
     flex: 1,
     fontSize: 15,
     fontWeight: '400',
     color: '#9CA3AF',
   },
-  addStoryButton: {
+  addEntryButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#ECFCCB',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // Story Count
-  storyCount: {
+  // Entry Count
+  entryCount: {
     fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
@@ -818,63 +720,46 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
     marginBottom: 16,
-    marginTop: 20,
   },
 
-  // Stories Container
-  storiesContainer: {
-    gap: 16,
+  // Entries Container
+  entriesContainer: {
+    gap: 12,
   },
 
-  // Story Card
-  storyCard: {
+  // Entry Card
+  entryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
+    flexDirection: 'row',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  storyTime: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginBottom: 6,
+  entryAccentBar: {
+    width: 4,
   },
-  storyTitle: {
-    fontSize: 17,
+  entryContent: {
+    flex: 1,
+    padding: 16,
+  },
+  entryTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 6,
-    lineHeight: 22,
+    marginBottom: 4,
   },
-  storySnippet: {
+  entrySnippet: {
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  tagsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tag: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  moreTagsText: {
+  entryTimestamp: {
     fontSize: 12,
     fontWeight: '500',
     color: '#9CA3AF',
@@ -896,25 +781,13 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 8,
-  },
-  emptyStateCard: {
-    width: '100%',
-    borderRadius: 24,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingTop: 80,
+    paddingHorizontal: 24,
   },
   emptyIconCircle: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -923,9 +796,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-  },
-  emptyIconEmoji: {
-    fontSize: 48,
   },
   emptyStateTitle: {
     fontSize: 20,
@@ -937,22 +807,20 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
+    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
-    maxWidth: 280,
   },
   emptyAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#84CC16',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 32,
-    shadowColor: '#84CC16',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
@@ -1001,7 +869,6 @@ const styles = StyleSheet.create({
   modalSaveText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#84CC16',
   },
   modalSaveTextDisabled: {
     color: '#9CA3AF',
@@ -1025,52 +892,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#1F2937',
     lineHeight: 24,
-    minHeight: 120,
+    flex: 1,
     padding: 0,
-    marginBottom: 24,
-  },
-  modalSection: {
-    marginBottom: 24,
-  },
-  modalSectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  modalSmallInput: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#1F2937',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-  },
-  moodGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  moodOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    gap: 6,
-  },
-  moodOptionEmoji: {
-    fontSize: 16,
-  },
-  moodOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
   },
 });
 
-export default StoryBankScreen;
+export default KnowledgeTopicScreen;
