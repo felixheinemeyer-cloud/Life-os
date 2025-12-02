@@ -110,9 +110,8 @@ const HeroSection: React.FC<{
   partnerName: string;
   sinceDate: Date;
   duration: DurationStats;
-  animatedStyle: any;
-}> = ({ photoUri, partnerName, sinceDate, duration, animatedStyle }) => (
-  <Animated.View style={[styles.heroSection, animatedStyle]}>
+}> = ({ photoUri, partnerName, sinceDate, duration }) => (
+  <View style={styles.heroSection}>
     {/* Photo Card */}
     <View style={styles.photoCard}>
       {photoUri ? (
@@ -156,7 +155,7 @@ const HeroSection: React.FC<{
         <Text style={styles.durationLabel}>days</Text>
       </View>
     </View>
-  </Animated.View>
+  </View>
 );
 
 const CARD_WIDTH = 180;
@@ -165,7 +164,7 @@ const SIDE_CARD_SCALE = 0.8;
 const SIDE_CARD_OFFSET = 112;
 const DRAG_THRESHOLD = 150;
 
-const DateIdeasSection: React.FC<{ animatedStyle: any; navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ animatedStyle, navigation, onSwipeStart, onSwipeEnd }) => {
+const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ navigation, onSwipeStart, onSwipeEnd }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const animatedIndex = useRef(new Animated.Value(0)).current;
   const panX = useRef(new Animated.Value(0)).current;
@@ -322,15 +321,15 @@ const DateIdeasSection: React.FC<{ animatedStyle: any; navigation?: any; onSwipe
   };
 
   return (
-    <Animated.View style={[styles.section, styles.dateIdeasSection, animatedStyle]}>
+    <View style={[styles.section, styles.dateIdeasSection]}>
       <View style={styles.dateIdeasHeader}>
         <View>
           <Text style={styles.sectionTitle}>Date Ideas</Text>
           <Text style={styles.dateIdeasSubtitle}>Weekly Inspiration</Text>
         </View>
-        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>See All</Text>
-          <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.6}>
+          <Text style={styles.seeAllText}>See all</Text>
+          <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
         </TouchableOpacity>
       </View>
       <View style={styles.carouselContainer} {...carouselPanResponder.panHandlers}>
@@ -363,7 +362,7 @@ const DateIdeasSection: React.FC<{ animatedStyle: any; navigation?: any; onSwipe
           );
         })}
       </View>
-    </Animated.View>
+    </View>
   );
 };
 
@@ -377,7 +376,7 @@ const calculateDaysUntilMonday = (): number => {
   return daysUntilMonday;
 };
 
-const RelationshipToolsSection: React.FC<{ animatedStyle: any }> = ({ animatedStyle }) => {
+const RelationshipToolsSection: React.FC = () => {
   const daysUntilUpdate = calculateDaysUntilMonday();
 
   const handleToolPress = (tool: RelationshipTool) => {
@@ -388,7 +387,7 @@ const RelationshipToolsSection: React.FC<{ animatedStyle: any }> = ({ animatedSt
   };
 
   return (
-    <Animated.View style={[styles.section, animatedStyle]}>
+    <View style={styles.section}>
       <View style={styles.toolsSectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>Relationship Tool</Text>
@@ -416,7 +415,7 @@ const RelationshipToolsSection: React.FC<{ animatedStyle: any }> = ({ animatedSt
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
         </TouchableOpacity>
       ))}
-    </Animated.View>
+    </View>
   );
 };
 
@@ -616,9 +615,8 @@ const PartnerNotesSection: React.FC<{
   onDeleteNote: (id: string) => void;
   onSwipeStart: () => void;
   onSwipeEnd: () => void;
-  animatedStyle: any;
-}> = ({ partnerName, notes, onAddNotePress, onEditNote, onDeleteNote, onSwipeStart, onSwipeEnd, animatedStyle }) => (
-  <Animated.View style={[styles.section, animatedStyle]}>
+}> = ({ partnerName, notes, onAddNotePress, onEditNote, onDeleteNote, onSwipeStart, onSwipeEnd }) => (
+  <View style={styles.section}>
     <Text style={styles.sectionTitle}>Notes about {partnerName}</Text>
     <Text style={styles.sectionSubtitle}>Little things you don't want to forget</Text>
 
@@ -645,7 +643,7 @@ const PartnerNotesSection: React.FC<{
         onSwipeEnd={onSwipeEnd}
       />
     ))}
-  </Animated.View>
+  </View>
 );
 
 // Main Component
@@ -748,106 +746,12 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
     setEditingNote(null);
   };
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const heroOpacity = useRef(new Animated.Value(0)).current;
-  const heroScale = useRef(new Animated.Value(0.95)).current;
-  const section1Opacity = useRef(new Animated.Value(0)).current;
-  const section1TranslateY = useRef(new Animated.Value(30)).current;
-  const section2Opacity = useRef(new Animated.Value(0)).current;
-  const section2TranslateY = useRef(new Animated.Value(30)).current;
-  const section3Opacity = useRef(new Animated.Value(0)).current;
-  const section3TranslateY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      // Header animation
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Hero animation
-      Animated.parallel([
-        Animated.timing(heroOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(heroScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Sections stagger
-      Animated.stagger(100, [
-        Animated.parallel([
-          Animated.timing(section1Opacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(section1TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(section2Opacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(section2TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(section3Opacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(section3TranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ]).start();
-  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -868,7 +772,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
           >
             <Ionicons name="settings-outline" size={22} color="#1F2937" />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -883,10 +787,6 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
             partnerName={partnerName}
             sinceDate={sinceDate}
             duration={duration}
-            animatedStyle={{
-              opacity: heroOpacity,
-              transform: [{ scale: heroScale }],
-            }}
           />
 
           {/* Date Ideas Section */}
@@ -894,19 +794,10 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
             navigation={navigation}
             onSwipeStart={() => setIsSwipingCard(true)}
             onSwipeEnd={() => setIsSwipingCard(false)}
-            animatedStyle={{
-              opacity: section1Opacity,
-              transform: [{ translateY: section1TranslateY }],
-            }}
           />
 
           {/* Relationship Tools Section */}
-          <RelationshipToolsSection
-            animatedStyle={{
-              opacity: section2Opacity,
-              transform: [{ translateY: section2TranslateY }],
-            }}
-          />
+          <RelationshipToolsSection />
 
           {/* Partner Notes Section */}
           <PartnerNotesSection
@@ -917,10 +808,6 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
             onDeleteNote={handleDeleteNote}
             onSwipeStart={() => setIsSwipingCard(true)}
             onSwipeEnd={() => setIsSwipingCard(false)}
-            animatedStyle={{
-              opacity: section3Opacity,
-              transform: [{ translateY: section3TranslateY }],
-            }}
           />
         </ScrollView>
 
@@ -1176,24 +1063,12 @@ const styles = StyleSheet.create({
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    gap: 2,
   },
   seeAllText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginRight: 3,
-    letterSpacing: -0.1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
   },
   carouselContainer: {
     height: 200,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Easing,
   Platform,
   TextInput,
   Keyboard,
-  Dimensions,
   Modal,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Types
 interface StoryBankScreenProps {
@@ -33,8 +30,6 @@ interface Story {
   id: string;
   title: string;
   content: string;
-  moodId: string;
-  tags: string[];
   whenItHappened?: string;
   createdAt: string;
   updatedAt: string;
@@ -46,8 +41,6 @@ const MOCK_STORIES: Story[] = [
     id: '1',
     title: 'The Time I Got Lost in Tokyo',
     content: 'I wandered into a tiny alley and found the best ramen shop run by a 90-year-old woman who spoke no English. We communicated through gestures and she gave me extra noodles for free.',
-    moodId: 'adventure',
-    tags: ['Travel', 'Japan', 'Food'],
     whenItHappened: '2023',
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15',
@@ -56,8 +49,6 @@ const MOCK_STORIES: Story[] = [
     id: '2',
     title: 'Meeting My Mentor',
     content: 'I was nervous walking into that coffee shop. Little did I know that one conversation would change the trajectory of my career entirely. She saw potential in me that I couldn\'t see myself.',
-    moodId: 'inspiring',
-    tags: ['Career', 'Mentorship'],
     whenItHappened: '2022',
     createdAt: '2024-01-20',
     updatedAt: '2024-01-20',
@@ -66,8 +57,6 @@ const MOCK_STORIES: Story[] = [
     id: '3',
     title: 'The Wedding Speech Disaster',
     content: 'I practiced for weeks. But when I got up there, I completely blanked and accidentally called the bride by my ex\'s name. The room went silent... then my buddy burst out laughing and saved the moment.',
-    moodId: 'awkward',
-    tags: ['Wedding', 'Friends', 'Public Speaking'],
     whenItHappened: '2021',
     createdAt: '2024-02-01',
     updatedAt: '2024-02-01',
@@ -76,8 +65,6 @@ const MOCK_STORIES: Story[] = [
     id: '4',
     title: 'Dad\'s Surprise Visit',
     content: 'I hadn\'t seen my dad in two years. One morning, I opened the door to get my delivery and there he was, suitcase in hand, tears in his eyes. We hugged for what felt like an hour.',
-    moodId: 'heartwarming',
-    tags: ['Family', 'Dad', 'Surprise'],
     whenItHappened: '2023',
     createdAt: '2024-02-10',
     updatedAt: '2024-02-10',
@@ -86,8 +73,6 @@ const MOCK_STORIES: Story[] = [
     id: '5',
     title: 'The Interview That Changed Everything',
     content: 'I bombed the technical questions. But instead of giving up, I asked the interviewer what I should learn. He spent 30 minutes teaching me. A month later, I aced the re-interview.',
-    moodId: 'growth',
-    tags: ['Career', 'Learning', 'Persistence'],
     whenItHappened: '2020',
     createdAt: '2024-02-15',
     updatedAt: '2024-02-15',
@@ -96,20 +81,35 @@ const MOCK_STORIES: Story[] = [
     id: '6',
     title: 'First Date at the Wrong Restaurant',
     content: 'I showed up to the fancy Italian place she suggested. She showed up to a completely different restaurant with the same name across town. We ended up meeting at a hot dog stand in the middle.',
-    moodId: 'funny',
-    tags: ['Dating', 'First Date'],
     whenItHappened: '2019',
     createdAt: '2024-02-20',
     updatedAt: '2024-02-20',
   },
 ];
 
+// Add Story Card Component
+const AddStoryCard: React.FC<{
+  onPress: () => void;
+}> = ({ onPress }) => {
+  return (
+    <TouchableOpacity
+      style={styles.addStoryCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.addStoryPlaceholder}>Add a new story...</Text>
+      <View style={styles.addStoryButton}>
+        <Ionicons name="add" size={20} color="#84CC16" />
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 // Story Card Component
 const StoryCard: React.FC<{
   story: Story;
   onPress: () => void;
-  index: number;
-}> = ({ story, onPress, index }) => {
+}> = ({ story, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -143,49 +143,32 @@ const StoryCard: React.FC<{
           { transform: [{ scale: scaleAnim }] },
         ]}
       >
-        {/* Time */}
-        {story.whenItHappened && (
-          <Text style={styles.storyTime}>{story.whenItHappened}</Text>
-        )}
+        {/* Subtle left accent bar */}
+        <View style={styles.storyAccentBar} />
 
-        {/* Title */}
-        <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
-
-        {/* Content Preview */}
-        <Text style={styles.storySnippet} numberOfLines={2}>{story.content}</Text>
-
-        {/* Tags */}
-        {story.tags.length > 0 && (
-          <View style={styles.tagsRow}>
-            {story.tags.slice(0, 3).map((tag, i) => (
-              <View key={i} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+        {/* Card content */}
+        <View style={styles.storyCardContent}>
+          {/* Header row with year and chevron */}
+          <View style={styles.storyCardHeader}>
+            {story.whenItHappened && (
+              <View style={styles.yearBadge}>
+                <Ionicons name="time-outline" size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
+                <Text style={styles.yearText}>{story.whenItHappened}</Text>
               </View>
-            ))}
-            {story.tags.length > 3 && (
-              <Text style={styles.moreTagsText}>+{story.tags.length - 3}</Text>
             )}
+            <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
           </View>
-        )}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
 
-// Add Story Card Component
-const AddStoryCard: React.FC<{
-  onPress: () => void;
-}> = ({ onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.addStoryCard}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.addStoryPlaceholder}>Add a new story...</Text>
-      <View style={styles.addStoryButton}>
-        <Ionicons name="add" size={20} color="#84CC16" />
-      </View>
+          {/* Title */}
+          <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
+
+          {/* Content Preview with quote styling */}
+          <View style={styles.storySnippetContainer}>
+            <Text style={styles.quoteSymbol}>"</Text>
+            <Text style={styles.storySnippet} numberOfLines={2}>{story.content}</Text>
+          </View>
+        </View>
+      </Animated.View>
     </TouchableOpacity>
   );
 };
@@ -203,11 +186,11 @@ const EmptyState: React.FC<{
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.emptyIconCircle}>
-          <Text style={styles.emptyIconEmoji}>📖</Text>
+          <Ionicons name="bookmark" size={40} color="#84CC16" />
         </View>
-        <Text style={styles.emptyStateTitle}>No stories yet</Text>
+        <Text style={styles.emptyStateTitle}>Your Story Bank is Empty</Text>
         <Text style={styles.emptyStateText}>
-          Start capturing your best life stories
+          Every life is full of stories worth remembering.{'\n'}Start capturing yours.
         </Text>
       </LinearGradient>
 
@@ -217,7 +200,7 @@ const EmptyState: React.FC<{
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.emptyAddButtonText}>Add Your First Story</Text>
+        <Text style={styles.emptyAddButtonText}>Write Your First Story</Text>
       </TouchableOpacity>
     </View>
   );
@@ -229,7 +212,6 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
 
   // State
   const [stories, setStories] = useState<Story[]>(MOCK_STORIES);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
@@ -237,12 +219,6 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
   const [storyWhen, setStoryWhen] = useState('');
   const searchInputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
-
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const searchButtonScale = useRef(new Animated.Value(1)).current;
-  const addButtonScale = useRef(new Animated.Value(1)).current;
 
   // Filtered stories
   const filteredStories = stories.filter(story => {
@@ -252,46 +228,15 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
     return matchesSearch;
   });
 
-  // Sort by newest first
-  const sortedStories = [...filteredStories].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  // Animations
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(headerOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(headerTranslateY, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  // Sort by year (newest first), then by createdAt
+  const sortedStories = [...filteredStories].sort((a, b) => {
+    const yearA = parseInt(a.whenItHappened || '0');
+    const yearB = parseInt(b.whenItHappened || '0');
+    if (yearB !== yearA) return yearB - yearA;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   // Handlers
-  const handleSearchPress = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setIsSearching(true);
-    setTimeout(() => searchInputRef.current?.focus(), 100);
-  };
-
-  const handleCloseSearch = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setIsSearching(false);
-    setSearchQuery('');
-    Keyboard.dismiss();
-  };
-
   const handleOpenModal = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -318,8 +263,6 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         id: Date.now().toString(),
         title: autoTitle,
         content: storyContent.trim(),
-        moodId: '',
-        tags: [],
         whenItHappened: storyWhen.trim() || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -329,48 +272,23 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleStoryUpdate = (updatedStory: Story) => {
+    setStories(prev => prev.map(s => s.id === updatedStory.id ? updatedStory : s));
+  };
+
+  const handleStoryDelete = (storyId: string) => {
+    setStories(prev => prev.filter(s => s.id !== storyId));
+  };
+
   const handleStoryPress = (story: Story) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // TODO: Navigate to story detail
-    console.log('Story pressed:', story.title);
-  };
-
-  const handleSearchPressIn = () => {
-    Animated.spring(searchButtonScale, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const handleSearchPressOut = () => {
-    Animated.spring(searchButtonScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const handleAddPressIn = () => {
-    Animated.spring(addButtonScale, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const handleAddPressOut = () => {
-    Animated.spring(addButtonScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
+    navigation.navigate('StoryDetail', {
+      story,
+      onUpdate: handleStoryUpdate,
+      onDelete: handleStoryDelete,
+    });
   };
 
   const canSave = storyContent.trim();
@@ -386,61 +304,78 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        {/* Scrollable Title */}
-        {!isSearching && (
+        <Pressable onPress={() => Keyboard.dismiss()}>
+          {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.title}>Story Bank</Text>
-            <Text style={styles.subtitle}>Your best life stories, ready to share</Text>
+          <View style={styles.titleRow}>
+            <LinearGradient
+              colors={['#F7FEE7', '#ECFCCB', '#D9F99D']}
+              style={styles.titleIconCircle}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="bookmark-outline" size={26} color="#65A30D" />
+            </LinearGradient>
+            <View>
+              <Text style={styles.title}>Story Bank</Text>
+              <Text style={styles.subtitle}>Your life stories, ready to share</Text>
+            </View>
           </View>
-        )}
+        </View>
 
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            ref={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Search"
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={styles.clearButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {stories.length > 0 ? (
           <>
             {/* Add Story Card */}
-            {!isSearching && (
-              <AddStoryCard onPress={handleOpenModal} />
-            )}
-
-            {/* Story Count */}
-            {!isSearching && (
-              <Text style={styles.storyCount}>
-                {filteredStories.length} {filteredStories.length === 1 ? 'story' : 'stories'}
-              </Text>
-            )}
-
-            {/* Search Results Label */}
-            {isSearching && searchQuery.trim() && (
-              <Text style={styles.searchResultsLabel}>
-                {filteredStories.length === 0
-                  ? 'No stories found'
-                  : `${filteredStories.length} ${filteredStories.length === 1 ? 'result' : 'results'}`}
-              </Text>
-            )}
+            <AddStoryCard onPress={handleOpenModal} />
 
             {/* Story Cards */}
             {sortedStories.length > 0 ? (
               <View style={styles.storiesContainer}>
-                {sortedStories.map((story, index) => (
+                {sortedStories.map((story) => (
                   <StoryCard
                     key={story.id}
                     story={story}
                     onPress={() => handleStoryPress(story)}
-                    index={index}
                   />
                 ))}
               </View>
-            ) : isSearching && searchQuery.trim() ? (
+            ) : searchQuery.trim() ? (
               <View style={styles.noResults}>
-                <Ionicons name="search-outline" size={40} color="#D1D5DB" />
-                <Text style={styles.noResultsText}>No stories found</Text>
+                <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.noResultsTitle}>No stories found</Text>
+                <Text style={styles.noResultsText}>Try a different search term</Text>
               </View>
             ) : null}
           </>
         ) : (
           <EmptyState onAddPress={handleOpenModal} />
         )}
+        </Pressable>
       </ScrollView>
 
       {/* Fixed Header */}
@@ -448,90 +383,28 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0.1)',
+              'rgba(247, 245, 242, 0.98)',
+              'rgba(247, 245, 242, 0.9)',
+              'rgba(247, 245, 242, 0.7)',
+              'rgba(247, 245, 242, 0.4)',
               'rgba(247, 245, 242, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.3, 0.6, 0.8, 1]}
             style={styles.headerGradient}
           />
         </View>
 
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-          pointerEvents="box-none"
-        >
-          {isSearching ? (
-            <View style={styles.searchHeader}>
-              <View style={styles.searchInputContainer}>
-                <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
-                <TextInput
-                  ref={searchInputRef}
-                  style={styles.searchInput}
-                  placeholder="Search stories..."
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity
-                onPress={handleCloseSearch}
-                style={styles.cancelButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="chevron-back" size={24} color="#1F2937" />
-              </TouchableOpacity>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleSearchPress}
-                  onPressIn={handleSearchPressIn}
-                  onPressOut={handleSearchPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                    <Ionicons name="search" size={22} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleOpenModal}
-                  onPressIn={handleAddPressIn}
-                  onPressOut={handleAddPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
-                    <Ionicons name="add" size={24} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </Animated.View>
+        <View style={styles.header} pointerEvents="box-none">
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       {/* Add Story Modal */}
@@ -564,37 +437,48 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
-            {/* Title Input */}
-            <TextInput
-              ref={titleInputRef}
-              style={styles.modalTitleInput}
-              placeholder="Story title (optional)"
-              placeholderTextColor="#9CA3AF"
-              value={storyTitle}
-              onChangeText={setStoryTitle}
-            />
-
-            {/* Content Input */}
-            <TextInput
-              style={styles.modalContentInput}
-              placeholder="Tell your story..."
-              placeholderTextColor="#9CA3AF"
-              value={storyContent}
-              onChangeText={setStoryContent}
-              multiline
-              textAlignVertical="top"
-            />
-
-            {/* When It Happened */}
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>When did this happen?</Text>
+          <ScrollView
+            style={styles.modalContent}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Story Details Card */}
+            <View style={styles.storyDetailsCard}>
+              {/* Title Input */}
               <TextInput
-                style={styles.modalSmallInput}
-                placeholder="e.g., 2023, College, Last summer"
+                ref={titleInputRef}
+                style={styles.modalTitleInput}
+                placeholder="Story title"
                 placeholderTextColor="#9CA3AF"
-                value={storyWhen}
-                onChangeText={setStoryWhen}
+                value={storyTitle}
+                onChangeText={setStoryTitle}
+              />
+
+              {/* When Input - inline with icon */}
+              <View style={styles.whenInputRow}>
+                <Ionicons name="time-outline" size={18} color="#9CA3AF" />
+                <TextInput
+                  style={styles.whenInput}
+                  placeholder="When? (e.g., Summer 2023, May 2021)"
+                  placeholderTextColor="#9CA3AF"
+                  value={storyWhen}
+                  onChangeText={setStoryWhen}
+                />
+              </View>
+            </View>
+
+            {/* Story Content Area */}
+            <View style={styles.storyContentCard}>
+              <Text style={styles.storyContentLabel}>Your story</Text>
+              <TextInput
+                style={styles.modalContentInput}
+                placeholder="What happened? Share the moment, the feelings, the details that made it memorable..."
+                placeholderTextColor="#B5B5B5"
+                value={storyContent}
+                onChangeText={setStoryContent}
+                multiline
+                textAlignVertical="top"
               />
             </View>
           </ScrollView>
@@ -616,7 +500,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
+    paddingBottom: 40,
     zIndex: 100,
   },
   headerBlur: {
@@ -655,11 +539,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -676,45 +555,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
 
-  // Search Header
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    paddingVertical: 0,
-  },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-
   // Scroll Content
   scrollView: {
     flex: 1,
@@ -726,14 +566,31 @@ const styles = StyleSheet.create({
 
   // Title Section
   titleSection: {
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  titleIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#84CC16',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
     fontSize: 14,
@@ -741,36 +598,32 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  // Mood Filters
-  moodFilters: {
-    marginBottom: 20,
-    marginHorizontal: -16,
-  },
-  moodFiltersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  moodChip: {
+  // Search Bar
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    gap: 6,
+    height: 44,
+    gap: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  moodChipSelected: {
-    borderColor: 'transparent',
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+    height: 44,
   },
-  moodChipEmoji: {
-    fontSize: 14,
-  },
-  moodChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+  clearButton: {
+    padding: 4,
   },
 
   // Add Story Card
@@ -804,91 +657,91 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Story Count
-  storyCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 16,
-  },
-
-  // Search Results Label
-  searchResultsLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 16,
-    marginTop: 20,
-  },
-
   // Stories Container
   storiesContainer: {
-    gap: 16,
+    gap: 14,
   },
 
   // Story Card
   storyCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    flexDirection: 'row',
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  storyTime: {
+  storyAccentBar: {
+    width: 4,
+    backgroundColor: '#65A30D',
+  },
+  storyCardContent: {
+    flex: 1,
+    padding: 16,
+    paddingLeft: 14,
+  },
+  storyCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  yearBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  yearText: {
     fontSize: 13,
     fontWeight: '500',
     color: '#9CA3AF',
-    marginBottom: 6,
+    letterSpacing: 0.2,
   },
   storyTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 6,
-    lineHeight: 22,
+    marginBottom: 8,
+    lineHeight: 24,
+    letterSpacing: -0.3,
+  },
+  storySnippetContainer: {
+    flexDirection: 'row',
+  },
+  quoteSymbol: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#D1D5DB',
+    lineHeight: 20,
+    marginRight: 4,
+    marginTop: -2,
   },
   storySnippet: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tag: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  moreTagsText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
+    lineHeight: 21,
+    fontStyle: 'italic',
   },
 
   // No Results
   noResults: {
     paddingVertical: 60,
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+  },
+  noResultsTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 8,
   },
   noResultsText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '400',
     color: '#9CA3AF',
   },
 
@@ -896,7 +749,7 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 20,
     paddingHorizontal: 8,
   },
   emptyStateCard: {
@@ -904,69 +757,68 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 40,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: '#84CC16',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 6,
   },
   emptyIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyIconEmoji: {
-    fontSize: 48,
+    fontSize: 42,
   },
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: '#3F6212',
     marginBottom: 8,
     letterSpacing: -0.3,
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#4B5563',
+    color: '#4D7C0F',
     textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
+    lineHeight: 22,
   },
   emptyAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#84CC16',
     paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 32,
+    paddingVertical: 16,
+    borderRadius: 14,
+    marginTop: 28,
     shadowColor: '#84CC16',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+    gap: 8,
   },
   emptyAddButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginLeft: 8,
   },
 
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -974,12 +826,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
   modalCloseButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
+    minWidth: 60,
   },
   modalCloseText: {
     fontSize: 16,
@@ -994,6 +848,8 @@ const styles = StyleSheet.create({
   modalSaveButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
+    minWidth: 60,
+    alignItems: 'flex-end',
   },
   modalSaveButtonDisabled: {
     opacity: 0.5,
@@ -1008,68 +864,75 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
+  },
+  modalScrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  storyDetailsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   modalTitleInput: {
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    marginBottom: 12,
+  },
+  whenInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  whenInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#1F2937',
+    padding: 0,
+  },
+  storyContentCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    minHeight: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  storyContentLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 12,
   },
   modalContentInput: {
     fontSize: 16,
     fontWeight: '400',
     color: '#1F2937',
-    lineHeight: 24,
-    minHeight: 120,
+    lineHeight: 26,
+    minHeight: 200,
     padding: 0,
-    marginBottom: 24,
-  },
-  modalSection: {
-    marginBottom: 24,
-  },
-  modalSectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  modalSmallInput: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#1F2937',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-  },
-  moodGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  moodOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    gap: 6,
-  },
-  moodOptionEmoji: {
-    fontSize: 16,
-  },
-  moodOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
   },
 });
 

@@ -620,7 +620,7 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
             </View>
           ) : (
             /* Normal Header */
-            <View style={styles.headerTop}>
+            <Pressable onPress={handleOutsideTap} style={styles.headerTop}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
                 style={styles.backButton}
@@ -650,7 +650,7 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
                   </Animated.View>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Pressable>
           )}
         </Animated.View>
       </View>
@@ -826,7 +826,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#1F2937',
-    paddingVertical: 8,
+    height: 36,
+    paddingVertical: 0,
   },
   quickCaptureExpanded: {
     overflow: 'hidden',

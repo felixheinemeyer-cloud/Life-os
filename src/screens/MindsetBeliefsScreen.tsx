@@ -12,6 +12,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   PanResponder,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -58,8 +60,49 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
   const [editingEntry, setEditingEntry] = useState<BeliefEntry | null>(null);
   const [newContent, setNewContent] = useState('');
   const [isSwipingCard, setIsSwipingCard] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fabScale = useRef(new Animated.Value(1)).current;
+  const searchButtonScale = useRef(new Animated.Value(1)).current;
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Filter entries based on search query
+  const filteredEntries = entries.filter(entry =>
+    entry.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSearchPress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsSearching(true);
+    setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  const handleCloseSearch = () => {
+    setIsSearching(false);
+    setSearchQuery('');
+    Keyboard.dismiss();
+  };
+
+  const handleSearchPressIn = () => {
+    Animated.spring(searchButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleSearchPressOut = () => {
+    Animated.spring(searchButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
 
   const handleAddPress = () => {
     if (Platform.OS === 'ios') {
@@ -136,29 +179,75 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleAddPress}
-              onPressIn={handleFabPressIn}
-              onPressOut={handleFabPressOut}
-            >
-              <Animated.View style={[styles.addButton, { transform: [{ scale: fabScale }] }]}>
-                <Ionicons name="add" size={24} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Mindset</Text>
-            <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
-          </View>
+          {isSearching ? (
+            /* Search Mode Header */
+            <View style={styles.searchHeader}>
+              <View style={styles.searchInputContainer}>
+                <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
+                <TextInput
+                  ref={searchInputRef}
+                  style={styles.searchInput}
+                  placeholder="Search entries"
+                  placeholderTextColor="#9CA3AF"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={handleCloseSearch}
+                style={styles.cancelButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            /* Normal Header */
+            <>
+              <Pressable onPress={() => Keyboard.dismiss()} style={styles.headerTop}>
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={styles.backButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                </TouchableOpacity>
+                <View style={styles.headerButtons}>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={handleSearchPress}
+                    onPressIn={handleSearchPressIn}
+                    onPressOut={handleSearchPressOut}
+                  >
+                    <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
+                      <Ionicons name="search" size={22} color="#1F2937" />
+                    </Animated.View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={handleAddPress}
+                    onPressIn={handleFabPressIn}
+                    onPressOut={handleFabPressOut}
+                  >
+                    <Animated.View style={[styles.headerButton, { transform: [{ scale: fabScale }] }]}>
+                      <Ionicons name="add" size={24} color="#1F2937" />
+                    </Animated.View>
+                  </TouchableOpacity>
+                </View>
+              </Pressable>
+              <View style={styles.headerContent}>
+                <Text style={styles.title}>Mindset</Text>
+                <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Entries List */}
@@ -178,8 +267,14 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
                 Add your first belief to get started
               </Text>
             </View>
+          ) : filteredEntries.length === 0 ? (
+            <View style={styles.noResults}>
+              <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+              <Text style={styles.noResultsTitle}>No entries found</Text>
+              <Text style={styles.noResultsText}>Try a different search term</Text>
+            </View>
           ) : (
-            entries.map((entry) => (
+            filteredEntries.map((entry) => (
               <BeliefCard
                 key={entry.id}
                 entry={entry}
@@ -537,6 +632,26 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
   addButton: {
     width: 40,
     height: 40,
@@ -552,6 +667,47 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+
+  // Search Header
+  searchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 0,
+    height: 44,
+  },
+  cancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
   headerContent: {
     paddingHorizontal: 4,
   },
@@ -606,6 +762,24 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  // No Results
+  noResults: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    gap: 8,
+  },
+  noResultsTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  noResultsText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
 
   // Card Styles

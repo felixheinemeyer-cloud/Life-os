@@ -38,6 +38,7 @@ import PeopleEntryScreen from './src/screens/PeopleEntryScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
 import LoveDatingScreen from './src/screens/LoveDatingScreen';
 import StoryBankScreen from './src/screens/StoryBankScreen';
+import StoryDetailScreen from './src/screens/StoryDetailScreen';
 import RelationshipModeSelectionScreen from './src/screens/RelationshipModeSelectionScreen';
 import LoveModePlaceholderScreen from './src/screens/LoveModePlaceholderScreen';
 import DatingModePlaceholderScreen from './src/screens/DatingModePlaceholderScreen';
@@ -136,6 +137,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="DatingDetail" component={DatingDetailScreen} />
       <Stack.Screen name="DatingAdviceDetail" component={DatingAdviceDetailScreen} />
       <Stack.Screen name="StoryBank" component={StoryBankScreen} />
+      <Stack.Screen name="StoryDetail" component={StoryDetailScreen} />
       <Stack.Screen name="PhysicalWealthIntroAnimation" component={PhysicalWealthIntroAnimationScreen} />
       <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
       <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />

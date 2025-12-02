@@ -42,16 +42,6 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
   const scrollViewRef = useRef<ScrollView>(null);
   const nameInputCardRef = useRef<View>(null);
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const photoCardOpacity = useRef(new Animated.Value(0)).current;
-  const photoCardTranslateY = useRef(new Animated.Value(30)).current;
-  const nameCardOpacity = useRef(new Animated.Value(0)).current;
-  const nameCardTranslateY = useRef(new Animated.Value(30)).current;
-  const dateCardOpacity = useRef(new Animated.Value(0)).current;
-  const dateCardTranslateY = useRef(new Animated.Value(30)).current;
-  const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   // Date picker modal animation
   const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -115,69 +105,6 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
     });
   };
 
-  useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.stagger(100, [
-        Animated.parallel([
-          Animated.timing(photoCardOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(photoCardTranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(nameCardOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(nameCardTranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(dateCardOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(dateCardTranslateY, {
-            toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.timing(buttonOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
 
   const pickImage = async () => {
     if (Platform.OS === 'ios') {
@@ -289,15 +216,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -309,7 +228,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
             <Text style={styles.title}>Your Relationship</Text>
             <Text style={styles.subtitle}>Let's make this space feel like the two of you</Text>
           </View>
-        </Animated.View>
+        </View>
 
         <ScrollView
           ref={scrollViewRef}
@@ -319,15 +238,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
           keyboardShouldPersistTaps="handled"
         >
             {/* Photo Card */}
-            <Animated.View
-              style={[
-                styles.sectionCard,
-                {
-                  opacity: photoCardOpacity,
-                  transform: [{ translateY: photoCardTranslateY }],
-                },
-              ]}
-            >
+            <View style={styles.sectionCard}>
               <TouchableOpacity
                 style={styles.photoCardTouchable}
                 onPress={pickImage}
@@ -367,19 +278,15 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                   </LinearGradient>
                 )}
               </TouchableOpacity>
-            </Animated.View>
+            </View>
 
             {/* Partner Name Card */}
-            <Animated.View
+            <View
               ref={nameInputCardRef}
               style={[
                 styles.sectionCard,
                 styles.inputCard,
                 isNameFocused && styles.inputCardFocused,
-                {
-                  opacity: nameCardOpacity,
-                  transform: [{ translateY: nameCardTranslateY }],
-                },
               ]}
             >
               <View style={styles.inputLabelRow}>
@@ -399,19 +306,10 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                 autoCapitalize="words"
                 autoCorrect={false}
               />
-            </Animated.View>
+            </View>
 
             {/* Together Since Card */}
-            <Animated.View
-              style={[
-                styles.sectionCard,
-                styles.inputCard,
-                {
-                  opacity: dateCardOpacity,
-                  transform: [{ translateY: dateCardTranslateY }],
-                },
-              ]}
-            >
+            <View style={[styles.sectionCard, styles.inputCard]}>
               <View style={styles.inputLabelRow}>
                 <View style={styles.inputIconCircle}>
                   <Ionicons name="calendar-outline" size={20} color="#E11D48" />
@@ -437,7 +335,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </ScrollView>
 
           {/* Date Picker Modal */}
@@ -495,7 +393,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
           </Modal>
 
         {/* Continue Button */}
-        <Animated.View style={[styles.buttonContainer, { opacity: buttonOpacity }]}>
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[
               styles.continueButton,
@@ -517,7 +415,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
               color={isFormValid ? '#FFFFFF' : '#9CA3AF'}
             />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
