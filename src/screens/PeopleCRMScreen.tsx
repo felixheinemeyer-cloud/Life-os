@@ -8,6 +8,8 @@ import {
   ScrollView,
   Platform,
   TextInput,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -235,27 +237,29 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleAddContact}
-              style={styles.addButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add" size={24} color="#1F2937" />
-            </TouchableOpacity>
+        <Pressable onPress={() => Keyboard.dismiss()}>
+          <View style={styles.header}>
+            <View style={styles.headerRow}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddContact}
+                style={styles.addButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.headerContent}>
+              <Text style={styles.title}>People</Text>
+            </View>
           </View>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>People</Text>
-          </View>
-        </View>
+        </Pressable>
 
         {/* Sticky Search Bar */}
         <View style={styles.stickyHeader}>
@@ -286,7 +290,9 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
+          <Pressable onPress={() => Keyboard.dismiss()}>
           {/* Category Filters */}
           <View style={styles.filtersContainer}>
             <ScrollView
@@ -426,6 +432,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
               </View>
             )}
           </View>
+          </Pressable>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -566,6 +573,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#1F2937',
     paddingVertical: 0,
+    height: 44,
   },
   clearButton: {
     padding: 4,

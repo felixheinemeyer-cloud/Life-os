@@ -124,13 +124,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
   // Focus states
   const [isNameFocused, setIsNameFocused] = useState(false);
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(30)).current;
-  const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(30)).current;
 
   // Refs
   const phoneInputRef = useRef<TextInput>(null);
@@ -206,36 +199,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     return expandedFields.has(field) || hasFieldData(field);
   };
 
-  useEffect(() => {
-    // Staggered card animations
-    Animated.sequence([
-      // Header
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Cards staggered
-      Animated.stagger(80, [
-        Animated.parallel([
-          Animated.timing(card1Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card1TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(card2Opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.spring(card2TranslateY, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
-        ]),
-      ]),
-    ]).start();
-  }, []);
 
   const handleSave = () => {
     if (!isFormValid) return;
@@ -508,15 +471,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={handleBack}
@@ -537,7 +492,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
               </Text>
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
 
         {/* Content */}
         <ScrollView
@@ -549,12 +504,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
           automaticallyAdjustKeyboardInsets={true}
         >
           {/* Avatar Preview */}
-          <Animated.View
-            style={[
-              styles.avatarPreviewContainer,
-              { opacity: card1Opacity },
-            ]}
-          >
+          <View style={styles.avatarPreviewContainer}>
             <LinearGradient
               colors={AVATAR_GRADIENT}
               style={styles.avatarPreview}
@@ -572,16 +522,10 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
             <Text style={styles.avatarPreviewName}>
               {name.trim().length > 0 ? name.trim() : 'New Person'}
             </Text>
-          </Animated.View>
+          </View>
 
           {/* Name Card */}
-          <Animated.View
-            style={[
-              styles.card,
-              isNameFocused && styles.cardFocused,
-              { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
-            ]}
-          >
+          <View style={[styles.card, isNameFocused && styles.cardFocused]}>
             {/* Name Input */}
             <View style={styles.inputSection}>
               <View style={styles.cardLabelRow}>
@@ -603,15 +547,10 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
                 returnKeyType="done"
               />
             </View>
-          </Animated.View>
+          </View>
 
           {/* Rating Card */}
-          <Animated.View
-            style={[
-              styles.card,
-              { opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] },
-            ]}
-          >
+          <View style={styles.card}>
             <View style={styles.ratingHeader}>
               <View style={styles.cardLabelRow}>
                 <View style={styles.iconCircle}>
@@ -652,15 +591,10 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Optional Details Card */}
-          <Animated.View
-            style={[
-              styles.optionalCard,
-              { opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] },
-            ]}
-          >
+          <View style={styles.optionalCard}>
             <View style={styles.optionalFieldsContainer}>
               {/* Phone */}
               {isFieldExpanded('phone') ? (
@@ -717,7 +651,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
               {/* Birthday */}
               {renderBirthdayField(true)}
             </View>
-          </Animated.View>
+          </View>
 
           {/* Spacer for bottom padding */}
           <View style={styles.bottomSpacer} />

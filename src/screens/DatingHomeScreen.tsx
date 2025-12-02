@@ -24,6 +24,13 @@ interface DatingPerson {
   id: string;
   name: string;
   initials: string;
+  createdAt: string;
+  phoneNumber?: string;
+  instagram?: string;
+  location?: string;
+  dateOfBirth?: string;
+  rating?: number;
+  notes?: { id: string; text: string; createdAt: string }[];
 }
 
 interface DateIdea {
@@ -42,9 +49,9 @@ interface DatingAdvice {
 
 // Mock Data
 const DATING_CRM_DATA: DatingPerson[] = [
-  { id: '1', name: 'Sophie', initials: 'S' },
-  { id: '2', name: 'Emma', initials: 'E' },
-  { id: '3', name: 'Mia', initials: 'M' },
+  { id: '1', name: 'Sophie', initials: 'S', createdAt: '2024-03-01' },
+  { id: '2', name: 'Emma', initials: 'E', createdAt: '2024-02-28' },
+  { id: '3', name: 'Mia', initials: 'M', createdAt: '2024-02-25' },
 ];
 
 const DATE_IDEAS: DateIdea[] = [
@@ -81,7 +88,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Person selected:', person.name);
+    navigation.navigate('DatingDetail', { person });
   };
 
   const handleSeeAllCRM = () => {
