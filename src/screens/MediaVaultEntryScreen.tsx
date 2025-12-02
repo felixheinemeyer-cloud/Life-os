@@ -387,40 +387,6 @@ const MediaVaultEntryScreen: React.FC<MediaVaultEntryScreenProps> = ({ navigatio
             </TouchableOpacity>
           )}
 
-          {/* Secondary Actions Row */}
-          <View style={styles.secondaryActionsRow}>
-            <TouchableOpacity
-              style={[
-                styles.secondaryButton,
-                isCompleted && styles.completedButton,
-              ]}
-              onPress={handleToggleComplete}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name={isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                size={18}
-                color={isCompleted ? '#10B981' : '#6B7280'}
-              />
-              <Text
-                style={[
-                  styles.secondaryButtonText,
-                  isCompleted && styles.completedButtonText,
-                ]}
-              >
-                {isCompleted ? 'Completed' : 'Mark Done'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleAddInsight}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="bulb-outline" size={18} color="#6B7280" />
-              <Text style={styles.secondaryButtonText}>Add Insight</Text>
-            </TouchableOpacity>
-          </View>
         </Animated.View>
 
         {/* Notes Section */}
@@ -466,52 +432,6 @@ const MediaVaultEntryScreen: React.FC<MediaVaultEntryScreenProps> = ({ navigatio
           )}
         </Animated.View>
 
-        {/* Insights Section */}
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardTitleRow}>
-              <Ionicons name="sparkles-outline" size={18} color="#374151" />
-              <Text style={styles.cardTitle}>Key Insights</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.addInsightButton, { backgroundColor: category.lightColor }]}
-              onPress={handleAddInsight}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add" size={18} color={category.color} />
-            </TouchableOpacity>
-          </View>
-
-          {insights.length > 0 ? (
-            <View style={styles.insightsList}>
-              {insights.map((insight, index) => (
-                <View key={index} style={styles.insightItem}>
-                  <View style={[styles.insightBullet, { backgroundColor: category.lightColor }]}>
-                    <Text style={[styles.insightNumber, { color: category.color }]}>
-                      {index + 1}
-                    </Text>
-                  </View>
-                  <Text style={styles.insightText}>{insight}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.emptyInsights}>
-              <Ionicons name="bulb-outline" size={32} color="#D1D5DB" />
-              <Text style={styles.emptyInsightsText}>
-                Capture key takeaways as you consume this content
-              </Text>
-            </View>
-          )}
-        </Animated.View>
 
         {/* Meta Info Card */}
         <Animated.View
@@ -550,13 +470,12 @@ const MediaVaultEntryScreen: React.FC<MediaVaultEntryScreenProps> = ({ navigatio
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.98)',
-              'rgba(247, 245, 242, 0.92)',
-              'rgba(247, 245, 242, 0.7)',
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
               'rgba(247, 245, 242, 0.3)',
               'rgba(247, 245, 242, 0)',
             ]}
-            locations={[0, 0.3, 0.6, 0.85, 1]}
+            locations={[0, 0.3, 0.7, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -602,7 +521,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 100,
-    paddingBottom: 50,
+    paddingBottom: 16,
   },
   headerBlur: {
     position: 'absolute',

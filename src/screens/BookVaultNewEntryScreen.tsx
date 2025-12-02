@@ -38,6 +38,7 @@ interface BookSearchResult {
   author: string;
   coverId?: number;
   coverUrl?: string;
+  numberOfPages?: number;
 }
 
 // Book Formats
@@ -53,7 +54,7 @@ const searchBooks = async (query: string): Promise<BookSearchResult[]> => {
 
   try {
     const response = await fetch(
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=key,title,author_name,cover_i`
+      `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=key,title,author_name,cover_i,number_of_pages_median`
     );
     const data = await response.json();
 
@@ -65,6 +66,7 @@ const searchBooks = async (query: string): Promise<BookSearchResult[]> => {
       coverUrl: doc.cover_i
         ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
         : undefined,
+      numberOfPages: doc.number_of_pages_median || undefined,
     }));
   } catch (error) {
     console.error('Book search error:', error);
@@ -81,6 +83,7 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined);
+  const [totalPages, setTotalPages] = useState<number | undefined>(undefined);
   const [selectedFormat, setSelectedFormat] = useState<BookEntry['format'] | null>(null);
   const [isReadingList, setIsReadingList] = useState(false);
 
@@ -148,6 +151,7 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
     setTitle(book.title);
     setAuthor(book.author);
     setCoverUrl(book.coverUrl);
+    setTotalPages(book.numberOfPages);
     setShowResults(false);
     setSearchResults([]);
     Keyboard.dismiss();
@@ -201,6 +205,7 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
       author: author.trim(),
       ...(selectedFormat && { format: selectedFormat }),
       ...(coverUrl && { coverUrl }),
+      ...(totalPages && { totalPages }),
       isWatchlist: isReadingList,
       dateAdded: new Date().toISOString().split('T')[0],
     };
@@ -299,10 +304,11 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
                 value={title}
                 onChangeText={(text) => {
                   setTitle(text);
-                  // Clear cover and author if user is typing new title
+                  // Clear cover, author, and page count if user is typing new title
                   if (coverUrl) {
                     setCoverUrl(undefined);
                     setAuthor('');
+                    setTotalPages(undefined);
                   }
                 }}
                 onFocus={() => {
@@ -426,7 +432,7 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
             </View>
           </Animated.View>
 
-          {/* Reading List Toggle Card */}
+          {/* Wishlist Toggle Card */}
           <Animated.View
             style={[
               styles.card,
@@ -442,7 +448,7 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
                 <View style={styles.iconCircle}>
                   <Ionicons name="bookmark-outline" size={20} color="#F59E0B" />
                 </View>
-                <Text style={styles.cardLabel}>Reading List</Text>
+                <Text style={styles.cardLabel}>To Read</Text>
               </View>
               <View
                 style={[
