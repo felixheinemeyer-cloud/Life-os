@@ -31,6 +31,8 @@ import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import MediaVaultEntryScreen from './src/screens/MediaVaultEntryScreen';
 import BookVaultScreen from './src/screens/BookVaultScreen';
 import BookVaultNewEntryScreen from './src/screens/BookVaultNewEntryScreen';
+import BookVaultEntryScreen from './src/screens/BookVaultEntryScreen';
+import BookVaultNotesScreen from './src/screens/BookVaultNotesScreen';
 import PeopleCRMScreen from './src/screens/PeopleCRMScreen';
 import PeopleEntryScreen from './src/screens/PeopleEntryScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
@@ -103,6 +105,12 @@ const KnowledgeStack = () => {
       <Stack.Screen
         name="BookVaultNewEntry"
         component={BookVaultNewEntryScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen name="BookVaultEntry" component={BookVaultEntryScreen} />
+      <Stack.Screen
+        name="BookVaultNotes"
+        component={BookVaultNotesScreen}
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />

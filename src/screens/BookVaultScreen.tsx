@@ -71,13 +71,21 @@ const BookCard: React.FC<{
         <Text style={styles.bookAuthor} numberOfLines={1}>
           {entry.author}
         </Text>
-        {/* Format Badge - only show if format is set */}
-        {formatInfo && (
+        {/* Badges Row */}
+        {(entry.isWatchlist || formatInfo) && (
           <View style={styles.badgesRow}>
-            <View style={styles.formatBadge}>
-              <Ionicons name={formatInfo.icon} size={12} color="#6B7280" />
-              <Text style={styles.formatBadgeText}>{formatInfo.label}</Text>
-            </View>
+            {entry.isWatchlist && (
+              <View style={styles.toReadBadge}>
+                <Ionicons name="bookmark" size={12} color="#F59E0B" />
+                <Text style={styles.toReadBadgeText}>To Read</Text>
+              </View>
+            )}
+            {formatInfo && (
+              <View style={styles.formatBadge}>
+                <Ionicons name={formatInfo.icon} size={12} color="#6B7280" />
+                <Text style={styles.formatBadgeText}>{formatInfo.label}</Text>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -200,8 +208,7 @@ const BookVaultScreen: React.FC<BookVaultScreenProps> = ({ navigation }) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // TODO: Navigate to BookVaultEntry screen when created
-    console.log('Book pressed:', entry.title);
+    navigation.navigate('BookVaultEntry', { entry });
   };
 
   return (
@@ -255,11 +262,11 @@ const BookVaultScreen: React.FC<BookVaultScreenProps> = ({ navigation }) => {
                     {searchQuery.trim()
                       ? `Results for "${searchQuery}"`
                       : isReadingListFilter
-                        ? 'Reading List'
+                        ? 'To Read'
                         : 'All Books'}
                   </Text>
                 </View>
-                {/* Reading List Button */}
+                {/* Wishlist Button */}
                 {!searchQuery.trim() && (
                   <TouchableOpacity
                     style={[
@@ -280,7 +287,7 @@ const BookVaultScreen: React.FC<BookVaultScreenProps> = ({ navigation }) => {
                         isReadingListFilter && styles.readingListButtonTextActive,
                       ]}
                     >
-                      Reading List
+                      To Read
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -314,14 +321,12 @@ const BookVaultScreen: React.FC<BookVaultScreenProps> = ({ navigation }) => {
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
               'rgba(247, 245, 242, 0.85)',
               'rgba(247, 245, 242, 0.6)',
               'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0.1)',
               'rgba(247, 245, 242, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.3, 0.7, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -372,7 +377,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
+    paddingBottom: 16,
     zIndex: 100,
   },
   headerBlur: {
@@ -588,6 +593,20 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   formatBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  toReadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  toReadBadgeText: {
     fontSize: 11,
     fontWeight: '600',
     color: '#6B7280',

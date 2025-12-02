@@ -785,14 +785,12 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
               'rgba(247, 245, 242, 0.85)',
               'rgba(247, 245, 242, 0.6)',
               'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0.1)',
               'rgba(247, 245, 242, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.3, 0.7, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -973,7 +971,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
+    paddingBottom: 16,
     zIndex: 100,
   },
   headerBlur: {

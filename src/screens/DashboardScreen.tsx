@@ -726,14 +726,12 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
         <View style={styles.headerBlur}>
           <LinearGradient
             colors={[
-              'rgba(240, 238, 232, 0.95)',
               'rgba(240, 238, 232, 0.85)',
               'rgba(240, 238, 232, 0.6)',
               'rgba(240, 238, 232, 0.3)',
-              'rgba(240, 238, 232, 0.1)',
               'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.3, 0.7, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -787,7 +785,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
+    paddingBottom: 16,
     zIndex: 100,
   },
   headerBlur: {
