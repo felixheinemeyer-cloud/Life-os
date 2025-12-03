@@ -496,19 +496,17 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
           <View style={styles.modalHeader}>
             <TouchableOpacity
               onPress={handleCloseModal}
-              style={styles.modalCloseButton}
+              style={styles.roundButton}
             >
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>New Insight</Text>
             <TouchableOpacity
               onPress={handleSaveEntry}
-              style={[styles.modalSaveButton, !entryContent.trim() && styles.modalSaveButtonDisabled]}
+              style={[styles.roundButton, !entryContent.trim() && styles.roundButtonDisabled]}
               disabled={!entryContent.trim()}
             >
-              <Text style={[styles.modalSaveText, { color: topic.color }, !entryContent.trim() && styles.modalSaveTextDisabled]}>
-                Save
-              </Text>
+              <Ionicons name="checkmark" size={20} color={entryContent.trim() ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
 
@@ -845,33 +843,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  modalCloseButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  modalCloseText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
+  roundButtonDisabled: {
+    opacity: 0.5,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',
     color: '#1F2937',
-  },
-  modalSaveButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  modalSaveButtonDisabled: {
-    opacity: 0.5,
-  },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalSaveTextDisabled: {
-    color: '#9CA3AF',
   },
   modalContent: {
     flex: 1,

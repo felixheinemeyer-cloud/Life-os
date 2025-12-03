@@ -302,21 +302,19 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
             <View style={styles.modalHeader}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={styles.modalCloseButton}
+                style={styles.roundButton}
               >
-                <Text style={styles.modalCloseText}>Cancel</Text>
+                <Ionicons name="close" size={20} color="#1F2937" />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
                 {editingEntry ? 'Edit Entry' : 'New Entry'}
               </Text>
               <TouchableOpacity
                 onPress={handleSave}
-                style={[styles.modalSaveButton, !newContent.trim() && styles.modalSaveButtonDisabled]}
+                style={[styles.roundButton, !newContent.trim() && styles.roundButtonDisabled]}
                 disabled={!newContent.trim()}
               >
-                <Text style={[styles.modalSaveText, !newContent.trim() && styles.modalSaveTextDisabled]}>
-                  Save
-                </Text>
+                <Ionicons name="checkmark" size={20} color={newContent.trim() ? "#1F2937" : "#9CA3AF"} />
               </TouchableOpacity>
             </View>
 
@@ -880,15 +878,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
   },
-  modalCloseButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  modalCloseText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
+  roundButtonDisabled: {
+    opacity: 0.5,
   },
   modalTitle: {
     fontSize: 17,
@@ -896,23 +902,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     flex: 1,
     textAlign: 'center',
-  },
-  modalSaveButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
-    alignItems: 'flex-end',
-  },
-  modalSaveButtonDisabled: {
-    opacity: 0.5,
-  },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  modalSaveTextDisabled: {
-    color: '#9CA3AF',
   },
   inputContainer: {
     flex: 1,
