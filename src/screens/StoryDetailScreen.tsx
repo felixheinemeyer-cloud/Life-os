@@ -123,15 +123,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
     );
   };
 
-  const handleShare = () => {
-    setShowMoreMenu(false);
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    // Share functionality would go here
-    Alert.alert('Share', 'Share functionality coming soon!');
-  };
-
   const handleMorePress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -275,17 +266,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
           onPress={() => setShowMoreMenu(false)}
         >
           <View style={[styles.menuContainer, { top: insets.top + 60 }]}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={handleShare}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="share-outline" size={20} color="#1F2937" />
-              <Text style={styles.menuItemText}>Share Story</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
             <TouchableOpacity
               style={styles.menuItem}
               onPress={handleDelete}
@@ -528,11 +508,6 @@ const styles = StyleSheet.create({
   },
   menuItemTextDanger: {
     color: '#DC2626',
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginHorizontal: 16,
   },
 
   // Edit Modal

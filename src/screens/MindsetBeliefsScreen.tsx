@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   TextInput,
@@ -14,8 +13,11 @@ import {
   PanResponder,
   Keyboard,
   Pressable,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps + padding)
@@ -33,6 +35,12 @@ interface BeliefEntry {
 }
 
 const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
+  // Header animation values
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+
   const [entries, setEntries] = useState<BeliefEntry[]>([
     {
       id: '1',
@@ -66,6 +74,23 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
   const fabScale = useRef(new Animated.Value(1)).current;
   const searchButtonScale = useRef(new Animated.Value(1)).current;
   const searchInputRef = useRef<TextInput>(null);
+
+  // Header animation on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerTranslateY, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // Filter entries based on search query
   const filteredEntries = entries.filter(entry =>
@@ -175,10 +200,95 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isSwipingCard}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        <Pressable onPress={() => Keyboard.dismiss()}>
+          {/* Scrollable Title - hidden during search */}
+          {!isSearching && (
+            <View style={styles.scrollableTitle}>
+              <Text style={styles.title}>Mindset</Text>
+              <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
+            </View>
+          )}
+
+          {/* Search Results Label */}
+          {isSearching && searchQuery.trim() && (
+            <Text style={styles.searchResultsLabel}>
+              {filteredEntries.length === 0
+                ? 'No results'
+                : `${filteredEntries.length} ${filteredEntries.length === 1 ? 'result' : 'results'}`}
+            </Text>
+          )}
+          {entries.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="diamond-outline" size={48} color="#C7D2FE" />
+              </View>
+              <Text style={styles.emptyTitle}>No entries yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Add your first belief to get started
+              </Text>
+            </View>
+          ) : filteredEntries.length === 0 ? (
+            <View style={styles.noResults}>
+              <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+              <Text style={styles.noResultsTitle}>No entries found</Text>
+              <Text style={styles.noResultsText}>Try a different search term</Text>
+            </View>
+          ) : (
+            filteredEntries.map((entry) => (
+              <BeliefCard
+                key={entry.id}
+                entry={entry}
+                onEdit={() => handleEditPress(entry)}
+                onDelete={() => handleDeletePress(entry.id)}
+                onSwipeStart={() => setIsSwipingCard(true)}
+                onSwipeEnd={() => setIsSwipingCard(false)}
+              />
+            ))
+          )}
+          <View style={styles.bottomSpacer} />
+        </Pressable>
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+          pointerEvents="box-none"
+        >
           {isSearching ? (
             /* Search Mode Header */
             <View style={styles.searchHeader}>
@@ -210,85 +320,42 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
             </View>
           ) : (
             /* Normal Header */
-            <>
-              <Pressable onPress={() => Keyboard.dismiss()} style={styles.headerTop}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              </TouchableOpacity>
+              <View style={styles.headerButtons}>
                 <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={styles.backButton}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
+                  onPress={handleSearchPress}
+                  onPressIn={handleSearchPressIn}
+                  onPressOut={handleSearchPressOut}
                 >
-                  <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
+                    <Ionicons name="search" size={22} color="#1F2937" />
+                  </Animated.View>
                 </TouchableOpacity>
-                <View style={styles.headerButtons}>
-                  <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={handleSearchPress}
-                    onPressIn={handleSearchPressIn}
-                    onPressOut={handleSearchPressOut}
-                  >
-                    <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                      <Ionicons name="search" size={22} color="#1F2937" />
-                    </Animated.View>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={handleAddPress}
-                    onPressIn={handleFabPressIn}
-                    onPressOut={handleFabPressOut}
-                  >
-                    <Animated.View style={[styles.headerButton, { transform: [{ scale: fabScale }] }]}>
-                      <Ionicons name="add" size={24} color="#1F2937" />
-                    </Animated.View>
-                  </TouchableOpacity>
-                </View>
-              </Pressable>
-              <View style={styles.headerContent}>
-                <Text style={styles.title}>Mindset</Text>
-                <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={handleAddPress}
+                  onPressIn={handleFabPressIn}
+                  onPressOut={handleFabPressOut}
+                >
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: fabScale }] }]}>
+                    <Ionicons name="add" size={24} color="#1F2937" />
+                  </Animated.View>
+                </TouchableOpacity>
               </View>
-            </>
-          )}
-        </View>
-
-        {/* Entries List */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={!isSwipingCard}
-        >
-          {entries.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="diamond-outline" size={48} color="#C7D2FE" />
-              </View>
-              <Text style={styles.emptyTitle}>No entries yet</Text>
-              <Text style={styles.emptySubtitle}>
-                Add your first belief to get started
-              </Text>
             </View>
-          ) : filteredEntries.length === 0 ? (
-            <View style={styles.noResults}>
-              <Ionicons name="search-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.noResultsTitle}>No entries found</Text>
-              <Text style={styles.noResultsText}>Try a different search term</Text>
-            </View>
-          ) : (
-            filteredEntries.map((entry) => (
-              <BeliefCard
-                key={entry.id}
-                entry={entry}
-                onEdit={() => handleEditPress(entry)}
-                onDelete={() => handleDeletePress(entry.id)}
-                onSwipeStart={() => setIsSwipingCard(true)}
-                onSwipeEnd={() => setIsSwipingCard(false)}
-              />
-            ))
           )}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
+        </Animated.View>
+      </View>
 
-        {/* Add/Edit Modal */}
+      {/* Add/Edit Modal */}
         <Modal
           visible={modalVisible}
           animationType="slide"
@@ -333,8 +400,7 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
             </View>
           </KeyboardAvoidingView>
         </Modal>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -595,25 +661,39 @@ const BeliefCard: React.FC<{
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  // Fixed Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   backButton: {
     width: 40,
@@ -706,8 +786,16 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
 
-  headerContent: {
-    paddingHorizontal: 4,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  // Scrollable Title
+  scrollableTitle: {
+    marginBottom: 24,
   },
   title: {
     fontSize: 28,
@@ -722,12 +810,11 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     letterSpacing: -0.2,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
+  searchResultsLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 16,
   },
   bottomSpacer: {
     height: 100,
