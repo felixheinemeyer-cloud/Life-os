@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
   Easing,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { WealthType, WEALTH_CONFIGS } from '../components/WealthButton';
@@ -57,6 +57,7 @@ const getWealthPosition = (index: number, centerX: number, centerY: number, radi
 };
 
 const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
 
   // Track which wealth areas have been defined
@@ -208,39 +209,16 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
   const starPath = createStarPath(CENTER, CENTER, OUTER_RADIUS * 0.75, OUTER_RADIUS * 0.35, 5);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.title}>Your Best Self</Text>
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarTrack}>
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.progressBarSegment,
-                      index < completedCount && styles.progressBarSegmentFilled,
-                      index === 0 && styles.progressBarSegmentFirst,
-                      index === 4 && styles.progressBarSegmentLast,
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-            <Text style={styles.progressText}>{completedCount}/5 areas defined</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </Animated.View>
-
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Star Visualization */}
         <View style={styles.starContainer}>
           <Animated.View
@@ -360,6 +338,62 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
             </Text>
           </View>
         </Animated.View>
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: fadeIn,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.title}>Your Best Self</Text>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarTrack}>
+                {[0, 1, 2, 3, 4].map((index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.progressBarSegment,
+                      index < completedCount && styles.progressBarSegmentFilled,
+                      index === 0 && styles.progressBarSegmentFirst,
+                      index === 4 && styles.progressBarSegmentLast,
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+            <Text style={styles.progressText}>{completedCount}/5 areas defined</Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </Animated.View>
       </View>
 
       {/* Info Modal */}
@@ -462,21 +496,42 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
           </Animated.View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
 
   // Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

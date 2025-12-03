@@ -3,10 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
+  ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DateIdeasListScreenProps {
   navigation?: {
@@ -15,14 +17,52 @@ interface DateIdeasListScreenProps {
 }
 
 const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
   const handleBack = (): void => {
     navigation?.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Placeholder Content */}
+        <View style={styles.content}>
+          <View style={styles.placeholderIcon}>
+            <Ionicons name="heart-outline" size={64} color="#E11D48" />
+          </View>
+          <Text style={styles.placeholderTitle}>Coming Soon</Text>
+          <Text style={styles.placeholderSubtitle}>
+            Browse all date ideas and find inspiration for your next adventure together.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -34,30 +74,41 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
           <Text style={styles.headerTitle}>All Date Ideas</Text>
           <View style={styles.headerSpacer} />
         </View>
-
-        {/* Placeholder Content */}
-        <View style={styles.content}>
-          <View style={styles.placeholderIcon}>
-            <Ionicons name="heart-outline" size={64} color="#E11D48" />
-          </View>
-          <Text style={styles.placeholderTitle}>Coming Soon</Text>
-          <Text style={styles.placeholderSubtitle}>
-            Browse all date ideas and find inspiration for your next adventure together.
-          </Text>
-        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -65,7 +116,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 0,
   },
   backButton: {
     width: 40,

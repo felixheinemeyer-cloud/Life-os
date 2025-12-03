@@ -160,45 +160,10 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.headerButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={handleEdit}
-            onPressIn={() => handleButtonPressIn(editButtonScale)}
-            onPressOut={() => handleButtonPressOut(editButtonScale)}
-          >
-            <Animated.View style={[styles.headerButton, { transform: [{ scale: editButtonScale }] }]}>
-              <Ionicons name="pencil" size={20} color="#1F2937" />
-            </Animated.View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={handleMorePress}
-            onPressIn={() => handleButtonPressIn(moreButtonScale)}
-            onPressOut={() => handleButtonPressOut(moreButtonScale)}
-          >
-            <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64, paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
@@ -252,6 +217,55 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
           )}
         </View>
       </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.header} pointerEvents="box-none">
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleEdit}
+              onPressIn={() => handleButtonPressIn(editButtonScale)}
+              onPressOut={() => handleButtonPressOut(editButtonScale)}
+            >
+              <Animated.View style={[styles.headerButton, { transform: [{ scale: editButtonScale }] }]}>
+                <Ionicons name="pencil" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={() => handleButtonPressIn(moreButtonScale)}
+              onPressOut={() => handleButtonPressOut(moreButtonScale)}
+            >
+              <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       {/* More Menu Modal */}
       <Modal
@@ -361,13 +375,31 @@ const styles = StyleSheet.create({
   },
 
   // Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: '#F7F5F2',
   },
   headerButton: {
     width: 40,

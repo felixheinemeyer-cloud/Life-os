@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface PhysicalWealthOverviewScreenProps {
@@ -62,6 +62,7 @@ const SAMPLE_QA_DATA: QuestionAnswer[] = [
 const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> = ({
   navigation,
 }) => {
+  const insets = useSafeAreaInsets();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
@@ -108,10 +109,118 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Scrollable Title */}
+        <View style={styles.scrollableTitle}>
+          <View style={styles.titleRow}>
+            <LinearGradient
+              colors={['#34D399', '#10B981', '#059669']}
+              style={styles.titleIconGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.titleIconInner}>
+                <Ionicons name="fitness" size={20} color="#059669" />
+              </View>
+            </LinearGradient>
+            <Text style={styles.title}>Physical Wealth</Text>
+          </View>
+          <Text style={styles.subtitle}>
+            Your vision for your best physical self
+          </Text>
+        </View>
+
+        {/* Q&A Cards */}
+        {SAMPLE_QA_DATA.map((item) => {
+          const isExpanded = expandedCards.has(item.id);
+          const isMeasured = measuredCards.has(item.id);
+          const isLongAnswer = needsExpansion.has(item.id);
+
+          return (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={isLongAnswer ? 0.8 : 1}
+              onPress={() => toggleExpand(item.id)}
+              style={styles.cardWrapper}
+            >
+              <View style={styles.card}>
+                {/* Card Accent */}
+                <View style={styles.cardAccent} />
+
+                {/* Question Header with Icon */}
+                <View style={styles.questionHeader}>
+                  <LinearGradient
+                    colors={['#34D399', '#10B981', '#059669']}
+                    style={styles.questionIconGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.questionIconInner}>
+                      <Ionicons name={item.icon} size={16} color="#059669" />
+                    </View>
+                  </LinearGradient>
+                  <Text style={styles.questionText}>{item.question}</Text>
+                </View>
+
+                {/* Divider */}
+                <View style={styles.divider} />
+
+                {/* Answer Section */}
+                <View style={styles.answerSection}>
+                  <Text
+                    style={styles.answerText}
+                    numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
+                    onTextLayout={(e) => handleTextLayout(item.id, e)}
+                  >
+                    {item.answer}
+                  </Text>
+                  {isMeasured && isLongAnswer && (
+                    <View style={styles.expandIndicator}>
+                      <Text style={styles.expandText}>
+                        {isExpanded ? 'Show less' : 'Read more'}
+                      </Text>
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={14}
+                        color="#059669"
+                      />
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <View style={styles.header} pointerEvents="box-none">
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={handleBack}
@@ -128,121 +237,46 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
               <Ionicons name="pencil" size={18} color="#1F2937" />
             </TouchableOpacity>
           </View>
-          <View style={styles.headerContent}>
-            <View style={styles.titleRow}>
-              <LinearGradient
-                colors={['#34D399', '#10B981', '#059669']}
-                style={styles.titleIconGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.titleIconInner}>
-                  <Ionicons name="fitness" size={20} color="#059669" />
-                </View>
-              </LinearGradient>
-              <Text style={styles.title}>Physical Wealth</Text>
-            </View>
-            <Text style={styles.subtitle}>
-              Your vision for your best physical self
-            </Text>
-          </View>
         </View>
-
-        {/* Q&A Cards */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {SAMPLE_QA_DATA.map((item) => {
-            const isExpanded = expandedCards.has(item.id);
-            const isMeasured = measuredCards.has(item.id);
-            const isLongAnswer = needsExpansion.has(item.id);
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={isLongAnswer ? 0.8 : 1}
-                onPress={() => toggleExpand(item.id)}
-                style={styles.cardWrapper}
-              >
-                <View style={styles.card}>
-                  {/* Card Accent */}
-                  <View style={styles.cardAccent} />
-
-                  {/* Question Header with Icon */}
-                  <View style={styles.questionHeader}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.questionIconGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.questionIconInner}>
-                        <Ionicons name={item.icon} size={16} color="#059669" />
-                      </View>
-                    </LinearGradient>
-                    <Text style={styles.questionText}>{item.question}</Text>
-                  </View>
-
-                  {/* Divider */}
-                  <View style={styles.divider} />
-
-                  {/* Answer Section */}
-                  <View style={styles.answerSection}>
-                    <Text
-                      style={styles.answerText}
-                      numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
-                      onTextLayout={(e) => handleTextLayout(item.id, e)}
-                    >
-                      {item.answer}
-                    </Text>
-                    {isMeasured && isLongAnswer && (
-                      <View style={styles.expandIndicator}>
-                        <Text style={styles.expandText}>
-                          {isExpanded ? 'Show less' : 'Read more'}
-                        </Text>
-                        <Ionicons
-                          name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                          size={14}
-                          color="#059669"
-                        />
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-
-  // Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   backButton: {
     width: 40,
@@ -274,8 +308,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerContent: {
-    paddingHorizontal: 4,
+  scrollableTitle: {
+    marginBottom: 20,
   },
   titleRow: {
     flexDirection: 'row',
@@ -318,7 +352,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingBottom: 100,
   },
   bottomSpacer: {
     height: 32,

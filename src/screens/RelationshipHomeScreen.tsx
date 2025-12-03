@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
   Easing,
@@ -18,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -651,6 +651,8 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
   navigation,
   route,
 }) => {
+  const insets = useSafeAreaInsets();
+
   // Extract params with defaults
   const partnerName = route.params?.partnerName || 'Your Partner';
   const photoUri = route.params?.photoUri || null;
@@ -748,9 +750,62 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={!isSwipingCard}
+      >
+        {/* Hero Section */}
+        <HeroSection
+          photoUri={currentPhotoUri}
+          partnerName={partnerName}
+          sinceDate={sinceDate}
+          duration={duration}
+        />
+
+        {/* Date Ideas Section */}
+        <DateIdeasSection
+          navigation={navigation}
+          onSwipeStart={() => setIsSwipingCard(true)}
+          onSwipeEnd={() => setIsSwipingCard(false)}
+        />
+
+        {/* Relationship Tools Section */}
+        <RelationshipToolsSection />
+
+        {/* Partner Notes Section */}
+        <PartnerNotesSection
+          partnerName={partnerName}
+          notes={notes}
+          onAddNotePress={handleAddNotePress}
+          onEditNote={handleEditNote}
+          onDeleteNote={handleDeleteNote}
+          onSwipeStart={() => setIsSwipingCard(true)}
+          onSwipeEnd={() => setIsSwipingCard(false)}
+        />
+      </ScrollView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -773,106 +828,83 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
             <Ionicons name="settings-outline" size={22} color="#1F2937" />
           </TouchableOpacity>
         </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={!isSwipingCard}
-        >
-          {/* Hero Section */}
-          <HeroSection
-            photoUri={currentPhotoUri}
-            partnerName={partnerName}
-            sinceDate={sinceDate}
-            duration={duration}
-          />
-
-          {/* Date Ideas Section */}
-          <DateIdeasSection
-            navigation={navigation}
-            onSwipeStart={() => setIsSwipingCard(true)}
-            onSwipeEnd={() => setIsSwipingCard(false)}
-          />
-
-          {/* Relationship Tools Section */}
-          <RelationshipToolsSection />
-
-          {/* Partner Notes Section */}
-          <PartnerNotesSection
-            partnerName={partnerName}
-            notes={notes}
-            onAddNotePress={handleAddNotePress}
-            onEditNote={handleEditNote}
-            onDeleteNote={handleDeleteNote}
-            onSwipeStart={() => setIsSwipingCard(true)}
-            onSwipeEnd={() => setIsSwipingCard(false)}
-          />
-        </ScrollView>
-
-        {/* Note Modal (Add/Edit) */}
-        <Modal
-          visible={noteModalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setNoteModalVisible(false)}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalContainer}
-          >
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                onPress={() => setNoteModalVisible(false)}
-                style={styles.modalCloseButton}
-              >
-                <Text style={styles.modalCloseText}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>
-                {editingNote ? 'Edit Note' : 'New Note'}
-              </Text>
-              <TouchableOpacity
-                onPress={handleSaveNote}
-                style={[styles.modalSaveButton, !noteContent.trim() && styles.modalSaveButtonDisabled]}
-                disabled={!noteContent.trim()}
-              >
-                <Text style={[styles.modalSaveText, !noteContent.trim() && styles.modalSaveTextDisabled]}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalInputContainer}>
-              <TextInput
-                style={styles.modalTextInput}
-                placeholder="Write something you want to remember..."
-                placeholderTextColor="#9CA3AF"
-                value={noteContent}
-                onChangeText={setNoteContent}
-                multiline
-                textAlignVertical="top"
-                autoFocus
-              />
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
       </View>
-    </SafeAreaView>
+
+      {/* Note Modal (Add/Edit) */}
+      <Modal
+        visible={noteModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setNoteModalVisible(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {editingNote ? 'Edit Note' : 'New Note'}
+            </Text>
+            <TouchableOpacity
+              onPress={handleSaveNote}
+              style={[styles.modalSaveButton, !noteContent.trim() && styles.modalSaveButtonDisabled]}
+              disabled={!noteContent.trim()}
+            >
+              <Text style={[styles.modalSaveText, !noteContent.trim() && styles.modalSaveTextDisabled]}>
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalInputContainer}>
+            <TextInput
+              style={styles.modalTextInput}
+              placeholder="Write something you want to remember..."
+              placeholderTextColor="#9CA3AF"
+              value={noteContent}
+              onChangeText={setNoteContent}
+              multiline
+              textAlignVertical="top"
+              autoFocus
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,

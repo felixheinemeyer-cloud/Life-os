@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface InsightDetailScreenProps {
   navigation?: {
@@ -17,6 +17,8 @@ interface InsightDetailScreenProps {
 }
 
 const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JSX.Element => {
+  const insets = useSafeAreaInsets();
+
   // Mock insight data (Frontend only - would come from route params or global state in real app)
   const insight = {
     title: 'Small steps every day lead to remarkable transformations',
@@ -33,20 +35,7 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Today's Insight</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
+    <View style={styles.container}>
       {/* Content */}
       <LinearGradient
         colors={['#FFFBEB', '#FEF3C7', '#FECACA']}
@@ -55,9 +44,9 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
         end={{ x: 1, y: 1 }}
       >
         <ScrollView
-          style={styles.container}
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
         >
           <View style={styles.contentCard}>
           {/* Category Badge */}
@@ -90,38 +79,79 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </LinearGradient>
-    </SafeAreaView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Today's Insight</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F5F2',
   },
   gradientBackground: {
     flex: 1,
   },
-  container: {
+  scrollView: {
     flex: 1,
     backgroundColor: 'transparent',
   },
 
   // Header
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
   },
   backButton: {
     width: 40,

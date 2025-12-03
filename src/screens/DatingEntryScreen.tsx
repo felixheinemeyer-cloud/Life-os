@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -95,6 +95,8 @@ const layoutAnimConfig = {
 
 // Main Component
 const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   // Get existing person if editing
   const existingPerson = route?.params?.person;
   const isEditMode = !!existingPerson;
@@ -468,39 +470,16 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.roundButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={20} color="#1F2937" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{isEditMode ? 'Edit' : 'New Person'}</Text>
-            <TouchableOpacity
-              onPress={handleSave}
-              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
-              activeOpacity={0.7}
-              disabled={!isFormValid}
-            >
-              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Content */}
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets={true}
-        >
+    <View style={styles.container}>
+      {/* Content */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
           {/* Avatar Preview */}
           <View style={styles.avatarPreviewContainer}>
             <LinearGradient
@@ -728,29 +707,73 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
             minimumDate={new Date(1900, 0, 1)}
           />
         )}
+
+      {/* Fixed Header with Blur */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.roundButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{isEditMode ? 'Edit' : 'New Person'}</Text>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   headerTop: {
     flexDirection: 'row',

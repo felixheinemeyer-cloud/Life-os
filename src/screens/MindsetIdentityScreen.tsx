@@ -3,13 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface MindsetIdentityScreenProps {
@@ -20,6 +21,7 @@ interface MindsetIdentityScreenProps {
 }
 
 const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   // Scale animations for press (no entrance animations - content shows immediately)
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
@@ -50,21 +52,20 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Mindset & Identity</Text>
-            <Text style={styles.subtitle}>Shape who you want to become</Text>
-          </View>
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Scrollable Title */}
+        <View style={styles.scrollableTitle}>
+          <Text style={styles.title}>Mindset & Identity</Text>
+          <Text style={styles.subtitle}>Shape who you want to become</Text>
         </View>
 
         {/* Feature Cards */}
@@ -169,26 +170,67 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
             </Animated.View>
           </TouchableOpacity>
         </View>
+      </ScrollView>
 
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
+        {/* Header Content */}
+        <View style={styles.header} pointerEvents="box-none">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   backButton: {
     width: 40,
@@ -197,7 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
@@ -206,8 +247,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerContent: {
-    paddingHorizontal: 4,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  scrollableTitle: {
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
@@ -223,9 +271,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   cardsContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
     gap: 16,
   },
   featureCardWrapper: {
