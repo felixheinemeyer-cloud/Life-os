@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,16 @@ import {
   Keyboard,
   Image,
   Modal,
+  KeyboardAvoidingView,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useBooks, BookEntry } from '../context/BookContext';
+import { useBooks, BookEntry, ChapterNote } from '../context/BookContext';
+
+const NOTE_ACTION_WIDTH = 140;
 
 // Types
 interface BookVaultEntryScreenProps {
@@ -77,15 +81,25 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
   const [showFormatDropdown, setShowFormatDropdown] = useState(false);
   const [currentFormat, setCurrentFormat] = useState<BookEntry['format']>(entry.format);
   const [formatBadgeLayout, setFormatBadgeLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [chapterNotes, setChapterNotes] = useState<ChapterNote[]>(entry.chapterNotes || []);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [editingNote, setEditingNote] = useState<ChapterNote | null>(null);
+  const [isSwipingNote, setIsSwipingNote] = useState(false);
+  const [isProgressExpanded, setIsProgressExpanded] = useState(false);
 
   // Refs
   const formatBadgeRef = useRef<View>(null);
+  const noteTitleInputRef = useRef<TextInput>(null);
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const coverScale = useRef(new Animated.Value(0.95)).current;
   const headerOpacity = useRef(new Animated.Value(0)).current;
+  const progressAccordionAnim = useRef(new Animated.Value(0)).current;
+  const progressChevronAnim = useRef(new Animated.Value(1)).current;
 
   // Derived data
   const formatInfo = getFormatInfo(currentFormat);
@@ -172,6 +186,17 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
     }
   };
 
+  const handleAddToRead = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowDropdown(false);
+    if (!isToRead) {
+      setIsToRead(true);
+      updateEntry(entry.id, { isWatchlist: true });
+    }
+  };
+
   const handleFormatPress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -224,11 +249,97 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
     Keyboard.dismiss();
   };
 
-  const handleNotesPress = () => {
+  const toggleProgressSection = () => {
     if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate('BookVaultNotes', { entry });
+    const toValue = isProgressExpanded ? 0 : 1;
+    setIsProgressExpanded(!isProgressExpanded);
+
+    Animated.parallel([
+      Animated.spring(progressAccordionAnim, {
+        toValue,
+        useNativeDriver: false,
+        friction: 10,
+        tension: 100,
+      }),
+      Animated.spring(progressChevronAnim, {
+        toValue: isProgressExpanded ? 1 : 0,
+        useNativeDriver: true,
+        friction: 10,
+        tension: 100,
+      }),
+    ]).start();
+  };
+
+  const handleOpenNotesModal = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditingNote(null);
+    setNoteTitle('');
+    setNoteContent('');
+    setShowNotesModal(true);
+    setTimeout(() => noteTitleInputRef.current?.focus(), 100);
+  };
+
+  const handleEditNote = (note: ChapterNote) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditingNote(note);
+    setNoteTitle(note.title);
+    setNoteContent(note.notes);
+    setShowNotesModal(true);
+  };
+
+  const handleCloseNotesModal = () => {
+    setShowNotesModal(false);
+    setNoteTitle('');
+    setNoteContent('');
+    setEditingNote(null);
+    Keyboard.dismiss();
+  };
+
+  const handleSaveNote = () => {
+    if (noteContent.trim()) {
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      const autoTitle = noteTitle.trim() || noteContent.trim().split('\n')[0].slice(0, 50);
+
+      if (editingNote) {
+        // Update existing note
+        const updatedNotes = chapterNotes.map(n =>
+          n.id === editingNote.id
+            ? { ...n, title: autoTitle, notes: noteContent.trim() }
+            : n
+        );
+        setChapterNotes(updatedNotes);
+        updateEntry(entry.id, { chapterNotes: updatedNotes });
+      } else {
+        // Add new note
+        const newNote: ChapterNote = {
+          id: Date.now().toString(),
+          title: autoTitle,
+          notes: noteContent.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        const updatedNotes = [newNote, ...chapterNotes];
+        setChapterNotes(updatedNotes);
+        updateEntry(entry.id, { chapterNotes: updatedNotes });
+      }
+      handleCloseNotesModal();
+    }
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    const updatedNotes = chapterNotes.filter(n => n.id !== noteId);
+    setChapterNotes(updatedNotes);
+    updateEntry(entry.id, { chapterNotes: updatedNotes });
   };
 
   const handleToReadToggle = () => {
@@ -247,6 +358,7 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isSwipingNote}
         keyboardShouldPersistTaps="handled"
       >
         {/* Book Cover Hero */}
@@ -337,54 +449,84 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
             },
           ]}
         >
-          <View style={styles.cardHeader}>
+          <TouchableOpacity
+            style={[
+              styles.cardHeaderTouchable,
+              !isProgressExpanded && { marginBottom: 0 },
+            ]}
+            onPress={toggleProgressSection}
+            activeOpacity={0.7}
+          >
             <View style={styles.cardTitleRow}>
               <View style={styles.cardIconCircle}>
                 <Ionicons name="bookmark-outline" size={20} color="#F59E0B" />
               </View>
               <Text style={styles.cardTitle}>Reading Progress</Text>
             </View>
-          </View>
+            <Animated.View
+              style={{
+                transform: [{
+                  rotate: progressChevronAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['180deg', '0deg'],
+                  }),
+                }],
+              }}
+            >
+              <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+            </Animated.View>
+          </TouchableOpacity>
 
-          {/* Progress Bar (if both values set) */}
-          {progress !== null && (
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+          {/* Collapsible Content */}
+          <Animated.View
+            style={{
+              maxHeight: progressAccordionAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 200],
+              }),
+              opacity: progressAccordionAnim,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Progress Bar (if both values set) */}
+            {progress !== null && (
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarBackground}>
+                  <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+                </View>
+                <Text style={styles.progressPercentage}>{progress}%</Text>
               </View>
-              <Text style={styles.progressPercentage}>{progress}%</Text>
-            </View>
-          )}
+            )}
 
-          {/* Page Input Row */}
-          <View style={styles.pageInputRow}>
-            <View style={styles.pageInputGroup}>
-              <Text style={styles.pageInputLabel}>Current Page</Text>
-              <TextInput
-                style={styles.pageInput}
-                value={currentPage}
-                onChangeText={setCurrentPage}
-                placeholder="0"
-                placeholderTextColor="#D1D5DB"
-                keyboardType="number-pad"
-                returnKeyType="done"
-                onFocus={() => setIsEditingProgress(true)}
-                onBlur={handleProgressBlur}
-              />
-            </View>
+            {/* Page Input Row */}
+            <View style={styles.pageInputRow}>
+              <View style={styles.pageInputGroup}>
+                <Text style={styles.pageInputLabel}>Current Page</Text>
+                <TextInput
+                  style={styles.pageInput}
+                  value={currentPage}
+                  onChangeText={setCurrentPage}
+                  placeholder="0"
+                  placeholderTextColor="#D1D5DB"
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                  onFocus={() => setIsEditingProgress(true)}
+                  onBlur={handleProgressBlur}
+                />
+              </View>
 
-            <View style={styles.pageDivider}>
-              <Text style={styles.pageDividerText}>of</Text>
-            </View>
+              <View style={styles.pageDivider}>
+                <Text style={styles.pageDividerText}>of</Text>
+              </View>
 
-            <View style={styles.pageInputGroup}>
-              <Text style={styles.pageInputLabel}>Total Pages</Text>
-              <TextInput
-                style={styles.pageInput}
-                value={totalPages}
-                onChangeText={setTotalPages}
-                placeholder="—"
-                placeholderTextColor="#D1D5DB"
+              <View style={styles.pageInputGroup}>
+                <Text style={styles.pageInputLabel}>Total Pages</Text>
+                <TextInput
+                  style={styles.pageInput}
+                  value={totalPages}
+                  onChangeText={setTotalPages}
+                  placeholder="—"
+                  placeholderTextColor="#D1D5DB"
                 keyboardType="number-pad"
                 returnKeyType="done"
                 onFocus={() => setIsEditingProgress(true)}
@@ -392,45 +534,48 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
               />
             </View>
           </View>
+          </Animated.View>
         </Animated.View>
 
-        {/* Notes Card */}
+        {/* Notes Section */}
         <Animated.View
           style={[
-            styles.card,
+            styles.notesSection,
             {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardTitleRow}>
-              <View style={styles.cardIconCircle}>
-                <Ionicons name="document-text-outline" size={20} color="#F59E0B" />
-              </View>
-              <Text style={styles.cardTitle}>Notes</Text>
-            </View>
+          {/* Notes Header */}
+          <View style={styles.notesSectionHeader}>
+            <Text style={styles.notesSectionTitle}>Notes</Text>
+            <Text style={styles.notesSectionSubtitle}>Insights and thoughts about this book</Text>
           </View>
 
-          {/* Notes Preview */}
-          {entry.notes && (
-            <Text style={styles.notesPreview} numberOfLines={3}>
-              {entry.notes}
-            </Text>
-          )}
-
-          {/* View Notes Button */}
+          {/* Add Note Card */}
           <TouchableOpacity
-            style={styles.notesButton}
-            onPress={handleNotesPress}
-            activeOpacity={0.85}
+            style={styles.addNoteCard}
+            onPress={handleOpenNotesModal}
+            activeOpacity={0.7}
           >
-            <Ionicons name="create-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.notesButtonText}>
-              {entry.notes ? 'View Notes' : 'Add Notes'}
-            </Text>
+            <Text style={styles.addNotePlaceholder}>Add a note...</Text>
+            <View style={styles.addNoteButton}>
+              <Ionicons name="add" size={20} color="#F59E0B" />
+            </View>
           </TouchableOpacity>
+
+          {/* Note Cards */}
+          {chapterNotes.map((note) => (
+            <SwipeableNoteCard
+              key={note.id}
+              note={note}
+              onEdit={() => handleEditNote(note)}
+              onDelete={() => handleDeleteNote(note.id)}
+              onSwipeStart={() => setIsSwipingNote(true)}
+              onSwipeEnd={() => setIsSwipingNote(false)}
+            />
+          ))}
         </Animated.View>
 
         {/* Bottom Spacing */}
@@ -461,48 +606,57 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
 
-          <View>
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={handleMoreOptions}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
-            </TouchableOpacity>
-
-            {/* Dropdown Menu */}
-            {showDropdown && (
-              <View style={styles.dropdownMenu}>
-                {isToRead && (
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleRemoveToRead}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="bookmark-outline" size={18} color="#6B7280" />
-                    <Text style={styles.dropdownItemText}>Remove "To Read"</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.dropdownItem, styles.dropdownItemDestructive]}
-                  onPress={handleDeleteEntry}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                  <Text style={styles.dropdownItemTextDestructive}>Delete Entry</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleMoreOptions}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
+          </TouchableOpacity>
         </Animated.View>
       </View>
 
-      {/* Dropdown Overlay */}
-      {showDropdown && (
+      {/* Options Dropdown Modal */}
+      <Modal
+        visible={showDropdown}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDropdown(false)}
+      >
         <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
-          <View style={styles.dropdownOverlay} />
+          <View style={styles.dropdownModalOverlay}>
+            <View style={[styles.dropdownMenu, { top: insets.top + 56, right: 16 }]}>
+              {isToRead ? (
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleRemoveToRead}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="bookmark-outline" size={18} color="#6B7280" />
+                  <Text style={styles.dropdownItemText}>Remove "To Read"</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleAddToRead}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="bookmark" size={18} color="#F59E0B" />
+                  <Text style={styles.dropdownItemText}>Add "To Read"</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.dropdownItem, styles.dropdownItemDestructive]}
+                onPress={handleDeleteEntry}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                <Text style={styles.dropdownItemTextDestructive}>Delete Entry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </TouchableWithoutFeedback>
-      )}
+      </Modal>
 
       {/* Format Dropdown Modal */}
       <Modal
@@ -553,6 +707,283 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Add Note Modal */}
+      <Modal
+        visible={showNotesModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseNotesModal}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={handleCloseNotesModal}
+              style={styles.modalRoundButton}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{editingNote ? 'Edit Note' : 'New Note'}</Text>
+            <TouchableOpacity
+              onPress={handleSaveNote}
+              style={[styles.modalRoundButton, !noteContent.trim() && styles.modalRoundButtonDisabled]}
+              disabled={!noteContent.trim()}
+            >
+              <Ionicons name="checkmark" size={20} color={noteContent.trim() ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            <TextInput
+              ref={noteTitleInputRef}
+              style={styles.modalTitleInput}
+              placeholder="Title (optional)"
+              placeholderTextColor="#9CA3AF"
+              value={noteTitle}
+              onChangeText={setNoteTitle}
+            />
+            <TextInput
+              style={styles.modalContentInput}
+              placeholder="What did you learn?"
+              placeholderTextColor="#9CA3AF"
+              value={noteContent}
+              onChangeText={setNoteContent}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
+  );
+};
+
+// Swipeable Note Card Component
+const SwipeableNoteCard: React.FC<{
+  note: ChapterNote;
+  onEdit: () => void;
+  onDelete: () => void;
+  onSwipeStart: () => void;
+  onSwipeEnd: () => void;
+}> = ({ note, onEdit, onDelete, onSwipeStart, onSwipeEnd }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [needsExpansion, setNeedsExpansion] = useState(false);
+  const [measured, setMeasured] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentTranslateX = useRef(0);
+
+  useEffect(() => {
+    const listenerId = translateX.addListener(({ value }) => {
+      currentTranslateX.current = value;
+    });
+    return () => {
+      translateX.removeListener(listenerId);
+    };
+  }, [translateX]);
+
+  const isOpenRef = useRef(false);
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  const closeActions = useCallback(() => {
+    setIsOpen(false);
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  }, [translateX]);
+
+  const panResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+        onSwipeStart();
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        let newValue;
+        if (isOpenRef.current) {
+          newValue = -NOTE_ACTION_WIDTH + gestureState.dx;
+        } else {
+          newValue = gestureState.dx;
+        }
+        newValue = Math.max(-NOTE_ACTION_WIDTH, Math.min(0, newValue));
+        translateX.setValue(newValue);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const currentPos = currentTranslateX.current;
+        const velocity = gestureState.vx;
+        onSwipeEnd();
+
+        if (velocity < -0.3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          return;
+        }
+        if (velocity > 0.3) {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          return;
+        }
+
+        if (currentPos < -NOTE_ACTION_WIDTH / 3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        const currentPos = currentTranslateX.current;
+        onSwipeEnd();
+        if (currentPos < -NOTE_ACTION_WIDTH / 2) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -NOTE_ACTION_WIDTH,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  [translateX, onSwipeStart, onSwipeEnd]);
+
+  const handleTextLayout = (e: any) => {
+    if (!measured) {
+      const { lines } = e.nativeEvent;
+      if (lines.length > 3) {
+        setNeedsExpansion(true);
+      }
+      setMeasured(true);
+    }
+  };
+
+  const handleCardPress = () => {
+    if (isOpen) {
+      closeActions();
+    } else if (needsExpansion) {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      setExpanded(!expanded);
+    }
+  };
+
+  const handleEdit = () => {
+    closeActions();
+    setTimeout(() => onEdit(), 200);
+  };
+
+  const handleDelete = () => {
+    closeActions();
+    setTimeout(() => onDelete(), 200);
+  };
+
+  return (
+    <View style={styles.noteCardWrapper}>
+      {/* Action buttons behind the card */}
+      <View style={styles.noteActionsContainer}>
+        <TouchableOpacity
+          style={[styles.noteSwipeAction, styles.noteEditAction]}
+          onPress={handleEdit}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="pencil-outline" size={20} color="#6B7280" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.noteSwipeAction, styles.noteDeleteAction]}
+          onPress={handleDelete}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable card */}
+      <Animated.View
+        style={[styles.noteCardAnimated, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity activeOpacity={1} onPress={handleCardPress}>
+          <View style={styles.noteCard}>
+            <View style={styles.noteAccentBar} />
+            <View style={styles.noteContent}>
+              <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
+              <Text
+                style={styles.noteSnippet}
+                numberOfLines={!measured ? undefined : (expanded ? undefined : 3)}
+                onTextLayout={handleTextLayout}
+              >
+                {note.notes}
+              </Text>
+              {needsExpansion && (
+                <TouchableOpacity onPress={handleCardPress} style={styles.noteExpandButton}>
+                  <Text style={styles.noteExpandButtonText}>
+                    {expanded ? 'Show less' : 'Read more'}
+                  </Text>
+                  <Ionicons
+                    name={expanded ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -610,18 +1041,12 @@ const styles = StyleSheet.create({
   },
 
   // Dropdown Menu
-  dropdownOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 99,
+  dropdownModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   dropdownMenu: {
     position: 'absolute',
-    top: 48,
-    right: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingVertical: 6,
@@ -631,7 +1056,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
-    zIndex: 101,
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -794,6 +1218,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     marginBottom: 16,
   },
+  cardHeaderTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   cardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -877,39 +1307,198 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
 
-  // Notes
-  notesPreview: {
+  // Notes Section
+  notesSection: {
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  notesSectionHeader: {
+    marginBottom: 16,
+  },
+  notesSectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  notesSectionSubtitle: {
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 16,
   },
-  notesEmpty: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-  notesButton: {
+  addNoteCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1F2937',
-    paddingVertical: 14,
-    borderRadius: 14,
-    gap: 8,
-    shadowColor: '#1F2937',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  notesButtonText: {
+  addNotePlaceholder: {
+    flex: 1,
     fontSize: 15,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  addNoteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noteCardWrapper: {
+    marginBottom: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
+  noteCardAnimated: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  noteActionsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 0,
+    gap: 12,
+  },
+  noteSwipeAction: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  noteEditAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#6B7280',
+  },
+  noteDeleteAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FECACA',
+    shadowColor: '#EF4444',
+    marginRight: 16,
+  },
+  noteCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  noteAccentBar: {
+    width: 4,
+    backgroundColor: '#F59E0B',
+  },
+  noteContent: {
+    flex: 1,
+    padding: 16,
+  },
+  noteTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#1F2937',
+    marginBottom: 10,
+  },
+  noteSnippet: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 22,
+  },
+  noteExpandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 2,
+  },
+  noteExpandButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalRoundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  modalRoundButtonDisabled: {
+    opacity: 0.5,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  modalTitleInput: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    marginBottom: 12,
+  },
+  modalContentInput: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    lineHeight: 24,
+    flex: 1,
+    padding: 0,
   },
 
 });
