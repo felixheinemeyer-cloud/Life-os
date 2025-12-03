@@ -41,6 +41,32 @@ const INITIAL_ENTRIES: BookEntry[] = [
     dateAdded: '2024-09-15',
     totalPages: 320,
     currentPage: 142,
+    chapterNotes: [
+      {
+        id: '101',
+        title: 'The 1% Rule',
+        notes: 'Getting 1% better every day compounds to massive results over time. If you improve by 1% each day for a year, you end up 37 times better. This is why small habits matter so much - they compound into remarkable results.',
+        createdAt: '2024-11-28T10:30:00.000Z',
+      },
+      {
+        id: '102',
+        title: 'Identity-Based Habits',
+        notes: 'The most effective way to change your habits is to focus not on what you want to achieve, but on who you wish to become. Your identity emerges out of your habits. Every action is a vote for the type of person you wish to become. The goal is not to read a book, the goal is to become a reader. The goal is not to run a marathon, the goal is to become a runner.',
+        createdAt: '2024-11-25T14:15:00.000Z',
+      },
+      {
+        id: '103',
+        title: 'The Four Laws of Behavior Change',
+        notes: 'Make it obvious, make it attractive, make it easy, make it satisfying. These four laws are a simple set of rules for creating good habits and breaking bad ones. To break a bad habit, invert the laws: make it invisible, make it unattractive, make it difficult, make it unsatisfying.',
+        createdAt: '2024-11-20T09:45:00.000Z',
+      },
+      {
+        id: '104',
+        title: 'Environment Design',
+        notes: 'Environment is the invisible hand that shapes human behavior. Small changes in context can lead to large changes in behavior over time. Make the cues of good habits obvious in your environment.',
+        createdAt: '2024-11-15T16:00:00.000Z',
+      },
+    ],
   },
   {
     id: '2',

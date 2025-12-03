@@ -16,7 +16,7 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Entypo } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,51 +105,51 @@ const getFormatInfo = (format: MediaEntry['format']): { icon: keyof typeof Ionic
   }
 };
 
-// Platform detection from URL - returns platform icon or null if unknown
-const getPlatformIcon = (sourceUrl?: string): keyof typeof Ionicons.glyphMap | null => {
+// Platform detection from URL - returns platform icon info or null if unknown
+const getPlatformIcon = (sourceUrl?: string): { icon: string; iconLibrary?: 'entypo' } | null => {
   if (!sourceUrl) return null;
 
   const url = sourceUrl.toLowerCase();
 
   // Video platforms
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'logo-youtube';
-  if (url.includes('tiktok.com')) return 'logo-tiktok';
-  if (url.includes('vimeo.com')) return 'logo-vimeo';
-  if (url.includes('twitch.tv') || url.includes('twitch.com')) return 'logo-twitch';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return { icon: 'logo-youtube' };
+  if (url.includes('tiktok.com')) return { icon: 'logo-tiktok' };
+  if (url.includes('vimeo.com')) return { icon: 'logo-vimeo' };
+  if (url.includes('twitch.tv') || url.includes('twitch.com')) return { icon: 'logo-twitch' };
 
   // Social platforms
-  if (url.includes('reddit.com') || url.includes('redd.it')) return 'logo-reddit';
-  if (url.includes('twitter.com') || url.includes('x.com')) return 'logo-twitter';
-  if (url.includes('instagram.com')) return 'logo-instagram';
-  if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) return 'logo-facebook';
-  if (url.includes('linkedin.com')) return 'logo-linkedin';
-  if (url.includes('threads.net')) return 'at-outline'; // Meta Threads
+  if (url.includes('reddit.com') || url.includes('redd.it')) return { icon: 'logo-reddit' };
+  if (url.includes('twitter.com') || url.includes('x.com')) return { icon: 'logo-twitter' };
+  if (url.includes('instagram.com')) return { icon: 'logo-instagram' };
+  if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) return { icon: 'logo-facebook' };
+  if (url.includes('linkedin.com')) return { icon: 'logo-linkedin' };
+  if (url.includes('threads.net')) return { icon: 'at-outline' }; // Meta Threads
 
   // Audio platforms
-  if (url.includes('spotify.com') || url.includes('open.spotify.com')) return 'musical-notes';
-  if (url.includes('soundcloud.com')) return 'logo-soundcloud';
-  if (url.includes('podcasts.apple.com') || url.includes('music.apple.com')) return 'logo-apple';
+  if (url.includes('spotify.com') || url.includes('open.spotify.com')) return { icon: 'spotify', iconLibrary: 'entypo' };
+  if (url.includes('soundcloud.com')) return { icon: 'logo-soundcloud' };
+  if (url.includes('podcasts.apple.com') || url.includes('music.apple.com')) return { icon: 'logo-apple' };
 
   // Content platforms
-  if (url.includes('medium.com')) return 'logo-medium';
-  if (url.includes('substack.com')) return 'mail-outline';
-  if (url.includes('notion.so') || url.includes('notion.site')) return 'document-text-outline';
+  if (url.includes('medium.com')) return { icon: 'logo-medium' };
+  if (url.includes('substack.com')) return { icon: 'mail-outline' };
+  if (url.includes('notion.so') || url.includes('notion.site')) return { icon: 'document-text-outline' };
 
   // Dev/Design platforms
-  if (url.includes('github.com')) return 'logo-github';
-  if (url.includes('dribbble.com')) return 'logo-dribbble';
-  if (url.includes('behance.net')) return 'logo-behance';
-  if (url.includes('figma.com')) return 'color-palette-outline';
+  if (url.includes('github.com')) return { icon: 'logo-github' };
+  if (url.includes('dribbble.com')) return { icon: 'logo-dribbble' };
+  if (url.includes('behance.net')) return { icon: 'logo-behance' };
+  if (url.includes('figma.com')) return { icon: 'color-palette-outline' };
 
   // Other platforms
-  if (url.includes('discord.com') || url.includes('discord.gg')) return 'logo-discord';
-  if (url.includes('pinterest.com') || url.includes('pin.it')) return 'logo-pinterest';
-  if (url.includes('snapchat.com')) return 'logo-snapchat';
-  if (url.includes('whatsapp.com')) return 'logo-whatsapp';
-  if (url.includes('telegram.org') || url.includes('t.me')) return 'paper-plane-outline';
+  if (url.includes('discord.com') || url.includes('discord.gg')) return { icon: 'logo-discord' };
+  if (url.includes('pinterest.com') || url.includes('pin.it')) return { icon: 'logo-pinterest' };
+  if (url.includes('snapchat.com')) return { icon: 'logo-snapchat' };
+  if (url.includes('whatsapp.com')) return { icon: 'logo-whatsapp' };
+  if (url.includes('telegram.org') || url.includes('t.me')) return { icon: 'paper-plane-outline' };
 
   // News/Media
-  if (url.includes('nytimes.com') || url.includes('washingtonpost.com') || url.includes('theguardian.com')) return 'newspaper-outline';
+  if (url.includes('nytimes.com') || url.includes('washingtonpost.com') || url.includes('theguardian.com')) return { icon: 'newspaper-outline' };
 
   return null; // Unknown platform
 };
@@ -170,11 +170,42 @@ const getFormatIcon = (format: MediaEntry['format']): keyof typeof Ionicons.glyp
   }
 };
 
-// Get thumbnail icon - prioritizes platform icon, falls back to format icon
-const getThumbnailIcon = (format: MediaEntry['format'], sourceUrl?: string): keyof typeof Ionicons.glyphMap => {
+// Get thumbnail icon info - prioritizes platform icon, falls back to format icon
+const getThumbnailIconInfo = (format: MediaEntry['format'], sourceUrl?: string): { icon: string; iconLibrary?: 'entypo' } => {
   const platformIcon = getPlatformIcon(sourceUrl);
   if (platformIcon) return platformIcon;
-  return getFormatIcon(format);
+  return { icon: getFormatIcon(format) };
+};
+
+// Extract YouTube video ID from various URL formats
+const getYouTubeVideoId = (url?: string): string | null => {
+  if (!url) return null;
+
+  // youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) return watchMatch[1];
+
+  // youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortMatch) return shortMatch[1];
+
+  // youtube.com/shorts/VIDEO_ID
+  const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
+  if (shortsMatch) return shortsMatch[1];
+
+  // youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+  if (embedMatch) return embedMatch[1];
+
+  return null;
+};
+
+// Get YouTube thumbnail URL from video ID
+const getYouTubeThumbnail = (url?: string): string | null => {
+  const videoId = getYouTubeVideoId(url);
+  if (!videoId) return null;
+  // Use hqdefault for good quality without requiring the video to have HD
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 };
 
 // Media Card Component - Horizontal card style like CRM cards
@@ -183,19 +214,26 @@ const MediaCard: React.FC<{
   category: MediaCategory;
   onPress: () => void;
   showCategoryBadge?: boolean;
-}> = ({ entry, category, onPress, showCategoryBadge = true }) => {
+  showWatchlistBadge?: boolean;
+}> = ({ entry, category, onPress, showCategoryBadge = true, showWatchlistBadge = true }) => {
   const formatInfo = getFormatInfo(entry.format);
-  const thumbnailIcon = getThumbnailIcon(entry.format, entry.sourceUrl);
+  const thumbnailIconInfo = getThumbnailIconInfo(entry.format, entry.sourceUrl);
+  const youtubeThumbnail = getYouTubeThumbnail(entry.sourceUrl);
+  const thumbnailUrl = entry.thumbnail || youtubeThumbnail;
 
   return (
     <TouchableOpacity style={styles.mediaCard} onPress={onPress} activeOpacity={0.8}>
       {/* Thumbnail */}
       <View style={styles.thumbnailContainer}>
-        {entry.thumbnail ? (
-          <Image source={{ uri: entry.thumbnail }} style={styles.thumbnail} />
+        {thumbnailUrl ? (
+          <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} />
         ) : (
           <View style={[styles.thumbnailPlaceholder, { backgroundColor: category.lightColor }]}>
-            <Ionicons name={thumbnailIcon} size={20} color={category.color} />
+            {thumbnailIconInfo.iconLibrary === 'entypo' ? (
+              <Entypo name={thumbnailIconInfo.icon as keyof typeof Entypo.glyphMap} size={20} color={category.color} />
+            ) : (
+              <Ionicons name={thumbnailIconInfo.icon as keyof typeof Ionicons.glyphMap} size={20} color={category.color} />
+            )}
           </View>
         )}
       </View>
@@ -207,6 +245,12 @@ const MediaCard: React.FC<{
         </Text>
         {/* Badges Row */}
         <View style={styles.badgesRow}>
+          {/* Watchlist Badge */}
+          {entry.isWatchLater && showWatchlistBadge && (
+            <View style={styles.watchlistBadge}>
+              <Ionicons name="time-outline" size={14} color="#6B7280" />
+            </View>
+          )}
           {/* Source Badge */}
           <View style={[styles.sourceBadge, { backgroundColor: formatInfo.bgColor }]}>
             <Ionicons name={formatInfo.icon} size={12} color={formatInfo.color} />
@@ -762,6 +806,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
                         category={displayCategory}
                         onPress={() => handleEntryPress(entry)}
                         showCategoryBadge={showCategoryBadge}
+                        showWatchlistBadge={!isWatchlistFilter}
                       />
                     );
                   })}
@@ -1263,7 +1308,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     gap: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -1376,6 +1421,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  watchlistBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  watchlistBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
   },
   sourceBadge: {
     flexDirection: 'row',
