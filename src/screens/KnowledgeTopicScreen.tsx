@@ -84,6 +84,9 @@ const EntryCard: React.FC<{
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [needsExpansion, setNeedsExpansion] = useState(false);
+  const [hasCheckedLayout, setHasCheckedLayout] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -126,10 +129,26 @@ const EntryCard: React.FC<{
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const handleTextLayout = (e: any) => {
+    if (!hasCheckedLayout) {
+      setHasCheckedLayout(true);
+      if (e.nativeEvent.lines.length > 2) {
+        setNeedsExpansion(true);
+      }
+    }
+  };
+
+  const toggleExpand = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={onPress}
+      onPress={toggleExpand}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
@@ -145,8 +164,21 @@ const EntryCard: React.FC<{
         <View style={[styles.entryAccentBar, { backgroundColor: topicColor }]} />
         <View style={styles.entryContent}>
           <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
-          <Text style={styles.entrySnippet} numberOfLines={2}>{entry.content}</Text>
-          <Text style={styles.entryTimestamp}>{formatDate(entry.createdAt)}</Text>
+          <Text
+            style={styles.entrySnippet}
+            numberOfLines={hasCheckedLayout && !isExpanded ? 2 : undefined}
+            onTextLayout={handleTextLayout}
+          >
+            {entry.content}
+          </Text>
+          <View style={styles.entryFooter}>
+            <Text style={styles.entryTimestamp}>{formatDate(entry.createdAt)}</Text>
+            {needsExpansion && (
+              <Text style={[styles.expandText, { color: topicColor }]}>
+                {isExpanded ? 'Show less' : 'Show more'}
+              </Text>
+            )}
+          </View>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -757,10 +789,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 8,
   },
+  entryFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   entryTimestamp: {
     fontSize: 12,
     fontWeight: '500',
     color: '#9CA3AF',
+  },
+  expandText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   // No Results
