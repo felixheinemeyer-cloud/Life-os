@@ -14,6 +14,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   PanResponder,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +29,7 @@ interface DatingDetailScreenProps {
   route: {
     params?: {
       person?: DatingPerson;
+      onDelete?: (personId: string) => void;
     };
   };
 }
@@ -366,6 +368,7 @@ const InfoRow: React.FC<{
 const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, route }) => {
   // Get person from params or use mock
   const person = route.params?.person || MOCK_PERSON;
+  const onDelete = route.params?.onDelete;
 
   // State
   const [notes, setNotes] = useState<DatingNote[]>(person.notes || []);
@@ -374,6 +377,10 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<DatingNote | null>(null);
   const [noteContent, setNoteContent] = useState('');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Animation refs
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
 
 
   // Handlers
@@ -389,6 +396,53 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     navigation.navigate('DatingEntry', { person: { ...person, rating } });
+  };
+
+  const handleMorePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowMoreMenu(true);
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleDeletePerson = () => {
+    setShowMoreMenu(false);
+    Alert.alert(
+      'Delete Person',
+      `Are you sure you want to delete ${person.name}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            }
+            onDelete?.(person.id);
+            navigation.goBack();
+          },
+        },
+      ]
+    );
   };
 
   const handleCall = () => {
@@ -504,13 +558,25 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleEdit}
-            style={styles.editButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil" size={20} color="#1F2937" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={styles.editButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+            >
+              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
@@ -760,6 +826,31 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
           </KeyboardAvoidingView>
         </Modal>
+
+        {/* More Menu Modal */}
+        <Modal
+          visible={showMoreMenu}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowMoreMenu(false)}
+        >
+          <TouchableOpacity
+            style={styles.menuOverlay}
+            activeOpacity={1}
+            onPress={() => setShowMoreMenu(false)}
+          >
+            <View style={styles.menuContainer}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={handleDeletePerson}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Person</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -812,6 +903,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 10,
   },
   scrollView: {
     flex: 1,
@@ -1183,6 +1278,41 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     lineHeight: 24,
     padding: 0,
+  },
+
+  // More Menu
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  menuItemTextDanger: {
+    color: '#DC2626',
   },
 });
 

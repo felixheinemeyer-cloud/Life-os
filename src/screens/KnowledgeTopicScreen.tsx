@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   Dimensions,
   Modal,
   KeyboardAvoidingView,
+  PanResponder,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ENTRY_ACTION_WIDTH = 140;
 
 // Types
 interface KnowledgeTopic {
@@ -74,19 +77,33 @@ const AddEntryCard: React.FC<{
   );
 };
 
-// Entry Card Component
-const EntryCard: React.FC<{
+// Swipeable Entry Card Component
+const SwipeableEntryCard: React.FC<{
   entry: KnowledgeEntry;
   topicColor: string;
-  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onSwipeStart: () => void;
+  onSwipeEnd: () => void;
   index: number;
-}> = ({ entry, topicColor, onPress, index }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+}> = ({ entry, topicColor, onEdit, onDelete, onSwipeStart, onSwipeEnd, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [needsExpansion, setNeedsExpansion] = useState(false);
   const [hasCheckedLayout, setHasCheckedLayout] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentTranslateX = useRef(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    const listenerId = translateX.addListener(({ value }) => {
+      currentTranslateX.current = value;
+    });
+    return () => {
+      translateX.removeListener(listenerId);
+    };
+  }, [translateX]);
 
   useEffect(() => {
     Animated.parallel([
@@ -106,23 +123,120 @@ const EntryCard: React.FC<{
     ]).start();
   }, []);
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.98,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
+  const isOpenRef = useRef(false);
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
+  const closeActions = useCallback(() => {
+    setIsOpen(false);
+    Animated.spring(translateX, {
+      toValue: 0,
       useNativeDriver: true,
       friction: 8,
       tension: 100,
     }).start();
-  };
+  }, [translateX]);
+
+  const panResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderGrant: () => {
+        translateX.stopAnimation();
+        onSwipeStart();
+      },
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        let newValue;
+        if (isOpenRef.current) {
+          newValue = -ENTRY_ACTION_WIDTH + gestureState.dx;
+        } else {
+          newValue = gestureState.dx;
+        }
+        newValue = Math.max(-ENTRY_ACTION_WIDTH, Math.min(0, newValue));
+        translateX.setValue(newValue);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const currentPos = currentTranslateX.current;
+        const velocity = gestureState.vx;
+        onSwipeEnd();
+
+        if (velocity < -0.3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ENTRY_ACTION_WIDTH,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          return;
+        }
+        if (velocity > 0.3) {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          return;
+        }
+
+        if (currentPos < -ENTRY_ACTION_WIDTH / 3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ENTRY_ACTION_WIDTH,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        const currentPos = currentTranslateX.current;
+        onSwipeEnd();
+        if (currentPos < -ENTRY_ACTION_WIDTH / 2) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ENTRY_ACTION_WIDTH,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  [translateX, onSwipeStart, onSwipeEnd]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -132,87 +246,185 @@ const EntryCard: React.FC<{
   const handleTextLayout = (e: any) => {
     if (!hasCheckedLayout) {
       setHasCheckedLayout(true);
-      if (e.nativeEvent.lines.length > 2) {
+      if (e.nativeEvent.lines.length > 3) {
         setNeedsExpansion(true);
       }
     }
   };
 
-  const toggleExpand = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleCardPress = () => {
+    if (isOpen) {
+      closeActions();
+    } else if (needsExpansion) {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      setIsExpanded(!isExpanded);
     }
-    setIsExpanded(!isExpanded);
+  };
+
+  const handleEdit = () => {
+    closeActions();
+    setTimeout(() => onEdit(), 200);
+  };
+
+  const handleDelete = () => {
+    closeActions();
+    setTimeout(() => onDelete(), 200);
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={toggleExpand}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+    <Animated.View
+      style={[
+        swipeableEntryStyles.entryCardWrapper,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY }],
+        },
+      ]}
     >
+      {/* Action buttons behind the card */}
+      <View style={swipeableEntryStyles.entryActionsContainer}>
+        <TouchableOpacity
+          style={[swipeableEntryStyles.entrySwipeAction, swipeableEntryStyles.entryEditAction]}
+          onPress={handleEdit}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="pencil-outline" size={20} color="#6B7280" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[swipeableEntryStyles.entrySwipeAction, swipeableEntryStyles.entryDeleteAction]}
+          onPress={handleDelete}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Swipeable card */}
       <Animated.View
-        style={[
-          styles.entryCard,
-          {
-            transform: [{ scale: scaleAnim }, { translateY }],
-            opacity: fadeAnim,
-          },
-        ]}
+        style={[swipeableEntryStyles.entryCardAnimated, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
       >
-        <View style={[styles.entryAccentBar, { backgroundColor: topicColor }]} />
-        <View style={styles.entryContent}>
-          <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
-          <Text
-            style={styles.entrySnippet}
-            numberOfLines={hasCheckedLayout && !isExpanded ? 2 : undefined}
-            onTextLayout={handleTextLayout}
-          >
-            {entry.content}
-          </Text>
-          <View style={styles.entryFooter}>
-            <Text style={styles.entryTimestamp}>{formatDate(entry.createdAt)}</Text>
-            {needsExpansion && (
-              <Text style={[styles.expandText, { color: topicColor }]}>
-                {isExpanded ? 'Show less' : 'Show more'}
+        <TouchableOpacity activeOpacity={1} onPress={handleCardPress}>
+          <View style={swipeableEntryStyles.entryCard}>
+            <View style={[swipeableEntryStyles.entryAccentBar, { backgroundColor: topicColor }]} />
+            <View style={swipeableEntryStyles.entryContent}>
+              <Text style={swipeableEntryStyles.entryTitle} numberOfLines={1}>{entry.title}</Text>
+              <Text
+                style={swipeableEntryStyles.entrySnippet}
+                numberOfLines={!hasCheckedLayout ? undefined : (isExpanded ? undefined : 3)}
+                onTextLayout={handleTextLayout}
+              >
+                {entry.content}
               </Text>
-            )}
+              {needsExpansion && (
+                <TouchableOpacity onPress={handleCardPress} style={swipeableEntryStyles.expandButton}>
+                  <Text style={swipeableEntryStyles.expandButtonText}>
+                    {isExpanded ? 'Show less' : 'Read more'}
+                  </Text>
+                  <Ionicons
+                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Animated.View>
-    </TouchableOpacity>
+    </Animated.View>
   );
 };
 
-// Empty State Component
-const EmptyState: React.FC<{
-  topicName: string;
-  topicColor: string;
-  topicLightColor: string;
-  topicIcon: keyof typeof Ionicons.glyphMap;
-  onAddPress: () => void;
-}> = ({ topicName, topicColor, topicLightColor, topicIcon, onAddPress }) => {
-  return (
-    <View style={styles.emptyStateContainer}>
-      <View style={[styles.emptyIconCircle, { backgroundColor: topicLightColor }]}>
-        <Ionicons name={topicIcon} size={48} color={topicColor} />
-      </View>
-      <Text style={styles.emptyStateTitle}>No entries yet</Text>
-      <Text style={styles.emptyStateText}>
-        Add your first insight about {topicName}
-      </Text>
-      <TouchableOpacity
-        style={[styles.emptyAddButton, { backgroundColor: topicColor }]}
-        onPress={onAddPress}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.emptyAddButtonText}>Add Entry</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
+// Swipeable entry card styles
+const swipeableEntryStyles = StyleSheet.create({
+  entryCardWrapper: {
+    marginBottom: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
+  entryCardAnimated: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  entryActionsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 0,
+    gap: 12,
+  },
+  entrySwipeAction: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  entryEditAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#6B7280',
+  },
+  entryDeleteAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FECACA',
+    shadowColor: '#EF4444',
+    marginRight: 16,
+  },
+  entryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  entryAccentBar: {
+    width: 4,
+  },
+  entryContent: {
+    flex: 1,
+    padding: 16,
+  },
+  entryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 10,
+  },
+  entrySnippet: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 22,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 2,
+  },
+  expandButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+});
 
 // Main Component
 const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation, route }) => {
@@ -226,6 +438,8 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
   const [modalVisible, setModalVisible] = useState(false);
   const [entryTitle, setEntryTitle] = useState('');
   const [entryContent, setEntryContent] = useState('');
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
+  const [isSwipingEntry, setIsSwipingEntry] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
 
@@ -289,6 +503,9 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    setEditingEntry(null);
+    setEntryTitle('');
+    setEntryContent('');
     setModalVisible(true);
     setTimeout(() => titleInputRef.current?.focus(), 100);
   };
@@ -297,6 +514,7 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
     setModalVisible(false);
     setEntryTitle('');
     setEntryContent('');
+    setEditingEntry(null);
     Keyboard.dismiss();
   };
 
@@ -305,19 +523,66 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
       if (Platform.OS === 'ios') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      // Use title if provided, otherwise use first line or truncated content
-      const autoTitle = entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50);
-      const newEntry: KnowledgeEntry = {
-        id: Date.now().toString(),
-        topicId: topic.id,
-        title: autoTitle,
-        content: entryContent.trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setEntries(prev => [newEntry, ...prev]);
+
+      if (editingEntry) {
+        // Editing existing entry
+        const updatedEntries = entries.map(e =>
+          e.id === editingEntry.id
+            ? {
+                ...e,
+                title: entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50),
+                content: entryContent.trim(),
+                updatedAt: new Date().toISOString(),
+              }
+            : e
+        );
+        setEntries(updatedEntries);
+      } else {
+        // Creating new entry
+        const autoTitle = entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50);
+        const newEntry: KnowledgeEntry = {
+          id: Date.now().toString(),
+          topicId: topic.id,
+          title: autoTitle,
+          content: entryContent.trim(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setEntries(prev => [newEntry, ...prev]);
+      }
       handleCloseModal();
     }
+  };
+
+  const handleEditEntry = (entry: KnowledgeEntry) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditingEntry(entry);
+    setEntryTitle(entry.title);
+    setEntryContent(entry.content);
+    setModalVisible(true);
+    setTimeout(() => titleInputRef.current?.focus(), 100);
+  };
+
+  const handleDeleteEntry = (entryId: string) => {
+    Alert.alert(
+      'Delete Entry',
+      'Are you sure you want to delete this entry?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+            setEntries(prev => prev.filter(e => e.id !== entryId));
+          },
+        },
+      ]
+    );
   };
 
   const handleEntryPress = (entry: KnowledgeEntry) => {
@@ -356,6 +621,7 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
           { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isSwipingEntry}
         keyboardShouldPersistTaps="handled"
       >
         {/* Scrollable Title */}
@@ -370,63 +636,52 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
           </View>
         )}
 
-        {entries.length > 0 ? (
-          <>
-            {/* Add Entry Card */}
-            {!isSearching && (
-              <AddEntryCard
-                topicColor={topic.color}
-                onPress={handleOpenModal}
-              />
-            )}
-
-            {/* Entry Count */}
-            {!isSearching && (
-              <Text style={styles.entryCount}>
-                {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-              </Text>
-            )}
-
-            {/* Search Results Label */}
-            {isSearching && searchQuery.trim() && (
-              <Text style={styles.searchResultsLabel}>
-                {filteredEntries.length === 0
-                  ? 'No results'
-                  : `${filteredEntries.length} ${filteredEntries.length === 1 ? 'result' : 'results'}`}
-              </Text>
-            )}
-
-            {/* Entry Cards */}
-            {sortedEntries.length > 0 ? (
-              <View style={styles.entriesContainer}>
-                {sortedEntries.map((entry, index) => (
-                  <EntryCard
-                    key={entry.id}
-                    entry={entry}
-                    topicColor={topic.color}
-                    onPress={() => handleEntryPress(entry)}
-                    index={index}
-                  />
-                ))}
-              </View>
-            ) : isSearching && searchQuery.trim() ? (
-              <View style={styles.noResults}>
-                <Ionicons name="search-outline" size={40} color="#D1D5DB" />
-                <Text style={styles.noResultsText}>No entries found</Text>
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <EmptyState
-            topicName={topic.name}
+        {/* Add Entry Card */}
+        {!isSearching && (
+          <AddEntryCard
             topicColor={topic.color}
-            topicLightColor={topic.lightColor}
-            topicIcon={topic.icon}
-            onAddPress={() => {
-              // Focus on quick capture input
-            }}
+            onPress={handleOpenModal}
           />
         )}
+
+        {/* Entry Count */}
+        {!isSearching && entries.length > 0 && (
+          <Text style={styles.entryCount}>
+            {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+          </Text>
+        )}
+
+        {/* Search Results Label */}
+        {isSearching && searchQuery.trim() && (
+          <Text style={styles.searchResultsLabel}>
+            {filteredEntries.length === 0
+              ? 'No results'
+              : `${filteredEntries.length} ${filteredEntries.length === 1 ? 'result' : 'results'}`}
+          </Text>
+        )}
+
+        {/* Entry Cards */}
+        {sortedEntries.length > 0 ? (
+          <View style={styles.entriesContainer}>
+            {sortedEntries.map((entry, index) => (
+              <SwipeableEntryCard
+                key={entry.id}
+                entry={entry}
+                topicColor={topic.color}
+                onEdit={() => handleEditEntry(entry)}
+                onDelete={() => handleDeleteEntry(entry.id)}
+                onSwipeStart={() => setIsSwipingEntry(true)}
+                onSwipeEnd={() => setIsSwipingEntry(false)}
+                index={index}
+              />
+            ))}
+          </View>
+        ) : isSearching && searchQuery.trim() ? (
+          <View style={styles.noResults}>
+            <Ionicons name="search-outline" size={40} color="#D1D5DB" />
+            <Text style={styles.noResultsText}>No entries found</Text>
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* Fixed Header */}
@@ -532,7 +787,7 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
             >
               <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>New Insight</Text>
+            <Text style={styles.modalTitle}>{editingEntry ? 'Edit Insight' : 'New Insight'}</Text>
             <TouchableOpacity
               onPress={handleSaveEntry}
               style={[styles.roundButton, !entryContent.trim() && styles.roundButtonDisabled]}
@@ -754,54 +1009,7 @@ const styles = StyleSheet.create({
 
   // Entries Container
   entriesContainer: {
-    gap: 12,
-  },
-
-  // Entry Card
-  entryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  entryAccentBar: {
-    width: 4,
-  },
-  entryContent: {
-    flex: 1,
-    padding: 16,
-  },
-  entryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  entrySnippet: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  entryFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  entryTimestamp: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
-  },
-  expandText: {
-    fontSize: 12,
-    fontWeight: '600',
+    gap: 0,
   },
 
   // No Results
@@ -814,60 +1022,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#9CA3AF',
-  },
-
-  // Empty State
-  emptyStateContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 24,
-  },
-  emptyIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  emptyAddButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  emptyAddButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
   },
 
   // Modal
