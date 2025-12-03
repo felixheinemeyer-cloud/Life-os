@@ -309,19 +309,9 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         <Pressable onPress={() => Keyboard.dismiss()}>
           {/* Title Section */}
           <View style={styles.titleSection}>
-          <View style={styles.titleRow}>
-            <LinearGradient
-              colors={['#F7FEE7', '#ECFCCB', '#D9F99D']}
-              style={styles.titleIconCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="bookmark-outline" size={26} color="#65A30D" />
-            </LinearGradient>
-            <View>
-              <Text style={styles.title}>Story Bank</Text>
-              <Text style={styles.subtitle}>Your life stories, ready to share</Text>
-            </View>
+          <View>
+            <Text style={styles.title}>Story Bank</Text>
+            <Text style={styles.subtitle}>Your life stories, ready to share</Text>
           </View>
         </View>
 
@@ -565,23 +555,6 @@ const styles = StyleSheet.create({
   // Title Section
   titleSection: {
     marginBottom: 24,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  titleIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#84CC16',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
   },
   title: {
     fontSize: 26,
