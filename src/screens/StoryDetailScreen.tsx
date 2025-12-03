@@ -312,19 +312,17 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
           <View style={styles.editModalHeader}>
             <TouchableOpacity
               onPress={handleCancelEdit}
-              style={styles.editModalButton}
+              style={styles.roundButton}
             >
-              <Text style={styles.editModalCancelText}>Cancel</Text>
+              <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
             <Text style={styles.editModalTitle}>Edit Story</Text>
             <TouchableOpacity
               onPress={handleSaveEdit}
-              style={[styles.editModalButton, !canSaveEdit && styles.editModalButtonDisabled]}
+              style={[styles.roundButton, !canSaveEdit && styles.roundButtonDisabled]}
               disabled={!canSaveEdit}
             >
-              <Text style={[styles.editModalSaveText, !canSaveEdit && styles.editModalSaveTextDisabled]}>
-                Save
-              </Text>
+              <Ionicons name="checkmark" size={20} color={canSaveEdit ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
 
@@ -552,32 +550,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  editModalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  editModalButtonDisabled: {
+  roundButtonDisabled: {
     opacity: 0.5,
-  },
-  editModalCancelText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
   },
   editModalTitle: {
     fontSize: 17,
     fontWeight: '600',
     color: '#1F2937',
-  },
-  editModalSaveText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#65A30D',
-    textAlign: 'right',
-  },
-  editModalSaveTextDisabled: {
-    color: '#9CA3AF',
   },
   editModalContent: {
     flex: 1,

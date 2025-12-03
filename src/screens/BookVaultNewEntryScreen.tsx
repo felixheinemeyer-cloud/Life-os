@@ -252,21 +252,19 @@ const BookVaultNewEntryScreen: React.FC<BookVaultNewEntryScreenProps> = ({ navig
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={handleBack}
-              style={styles.cancelButton}
+              style={styles.roundButton}
               activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>New Book</Text>
             <TouchableOpacity
               onPress={handleSave}
-              style={[styles.saveButton, !isFormValid && styles.saveButtonDisabled]}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
               activeOpacity={0.7}
               disabled={!isFormValid}
             >
-              <Text style={[styles.saveButtonText, !isFormValid && styles.saveButtonTextDisabled]}>
-                Save
-              </Text>
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -503,15 +501,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
+  roundButtonDisabled: {
+    opacity: 0.5,
   },
   headerTitle: {
     fontSize: 17,
@@ -519,23 +525,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     flex: 1,
     textAlign: 'center',
-  },
-  saveButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
-    alignItems: 'flex-end',
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  saveButtonTextDisabled: {
-    color: '#9CA3AF',
   },
   scrollView: {
     flex: 1,

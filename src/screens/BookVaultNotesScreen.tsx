@@ -192,11 +192,11 @@ const BookVaultNotesScreen: React.FC<BookVaultNotesScreenProps> = ({ navigation,
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={styles.roundButton}
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
 
             <View style={styles.headerTitleContainer}>
@@ -211,11 +211,11 @@ const BookVaultNotesScreen: React.FC<BookVaultNotesScreenProps> = ({ navigation,
             </View>
 
             <TouchableOpacity
-              style={styles.doneButton}
+              style={styles.roundButton}
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Text style={styles.doneButtonText}>Done</Text>
+              <Ionicons name="checkmark" size={20} color="#1F2937" />
             </TouchableOpacity>
           </View>
         </View>
@@ -405,15 +405,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerTitleContainer: {
     flex: 1,
@@ -431,17 +436,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#9CA3AF',
     marginTop: 2,
-  },
-  doneButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minWidth: 60,
-    alignItems: 'flex-end',
-  },
-  doneButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F59E0B',
   },
 
   // Segmented Control
@@ -670,6 +664,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: 14,
     marginTop: 4,
+    marginBottom: 24,
   },
   addChapterText: {
     fontSize: 14,
