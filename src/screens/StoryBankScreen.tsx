@@ -425,51 +425,45 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.modalContent}
-            contentContainerStyle={styles.modalScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Story Details Card */}
-            <View style={styles.storyDetailsCard}>
-              {/* Title Input */}
+          <View style={styles.modalContent}>
+            {/* Title Row */}
+            <View style={styles.titleInputRow}>
               <TextInput
                 ref={titleInputRef}
                 style={styles.modalTitleInput}
-                placeholder="Story title"
+                placeholder="Title"
                 placeholderTextColor="#9CA3AF"
                 value={storyTitle}
                 onChangeText={setStoryTitle}
               />
-
-              {/* When Input - inline with icon */}
-              <View style={styles.whenInputRow}>
-                <Ionicons name="time-outline" size={18} color="#9CA3AF" />
-                <TextInput
-                  style={styles.whenInput}
-                  placeholder="When? (e.g., Summer 2023, May 2021)"
-                  placeholderTextColor="#9CA3AF"
-                  value={storyWhen}
-                  onChangeText={setStoryWhen}
-                />
-              </View>
+              <Text style={styles.optionalLabel}>optional</Text>
             </View>
 
-            {/* Story Content Area */}
-            <View style={styles.storyContentCard}>
-              <Text style={styles.storyContentLabel}>Your story</Text>
+            {/* When Row */}
+            <View style={styles.whenInputRow}>
+              <Ionicons name="time-outline" size={18} color="#65A30D" />
               <TextInput
-                style={styles.modalContentInput}
-                placeholder="What happened? Share the moment, the feelings, the details that made it memorable..."
-                placeholderTextColor="#B5B5B5"
-                value={storyContent}
-                onChangeText={setStoryContent}
-                multiline
-                textAlignVertical="top"
+                style={styles.whenInput}
+                placeholder="When? (e.g., Summer 2023, May 2021)"
+                placeholderTextColor="#9CA3AF"
+                value={storyWhen}
+                onChangeText={setStoryWhen}
               />
             </View>
-          </ScrollView>
+
+            <View style={styles.inputDivider} />
+
+            {/* Content Input */}
+            <TextInput
+              style={styles.modalContentInput}
+              placeholder="What happened? Share the moment, the feelings, the details that made it memorable..."
+              placeholderTextColor="#9CA3AF"
+              value={storyContent}
+              onChangeText={setStoryContent}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -789,7 +783,7 @@ const styles = StyleSheet.create({
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -797,7 +791,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
@@ -826,74 +819,54 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
-  },
-  modalScrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingTop: 8,
   },
-  storyDetailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+  titleInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   modalTitleInput: {
+    flex: 1,
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    paddingVertical: 8,
-    paddingHorizontal: 0,
-    marginBottom: 12,
+    paddingVertical: 12,
+  },
+  optionalLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
   whenInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 10,
+    paddingVertical: 6,
+    gap: 8,
+    marginBottom: 12,
   },
   whenInput: {
     flex: 1,
     fontSize: 15,
     fontWeight: '400',
     color: '#1F2937',
-    padding: 0,
+    paddingVertical: 8,
   },
-  storyContentCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    minHeight: 280,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  storyContentLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  inputDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
     marginBottom: 12,
   },
   modalContentInput: {
     fontSize: 16,
     fontWeight: '400',
     color: '#1F2937',
-    lineHeight: 26,
-    minHeight: 200,
+    lineHeight: 24,
+    flex: 1,
     padding: 0,
   },
 });

@@ -306,13 +306,13 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
       if (Platform.OS === 'ios') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      const autoTitle = noteTitle.trim() || noteContent.trim().split('\n')[0].slice(0, 50);
+      const title = noteTitle.trim();
 
       if (editingNote) {
         // Update existing note
         const updatedNotes = chapterNotes.map(n =>
           n.id === editingNote.id
-            ? { ...n, title: autoTitle, notes: noteContent.trim() }
+            ? { ...n, title, notes: noteContent.trim() }
             : n
         );
         setChapterNotes(updatedNotes);
@@ -321,7 +321,7 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
         // Add new note
         const newNote: ChapterNote = {
           id: Date.now().toString(),
-          title: autoTitle,
+          title,
           notes: noteContent.trim(),
           createdAt: new Date().toISOString(),
         };
@@ -737,14 +737,17 @@ const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation,
           </View>
 
           <View style={styles.modalContent}>
-            <TextInput
-              ref={noteTitleInputRef}
-              style={styles.modalTitleInput}
-              placeholder="Title (optional)"
-              placeholderTextColor="#9CA3AF"
-              value={noteTitle}
-              onChangeText={setNoteTitle}
-            />
+            <View style={styles.titleInputRow}>
+              <TextInput
+                ref={noteTitleInputRef}
+                style={styles.modalTitleInput}
+                placeholder="Title"
+                placeholderTextColor="#9CA3AF"
+                value={noteTitle}
+                onChangeText={setNoteTitle}
+              />
+              <Text style={styles.optionalLabel}>optional</Text>
+            </View>
             <TextInput
               style={styles.modalContentInput}
               placeholder="What did you learn?"
@@ -960,7 +963,9 @@ const SwipeableNoteCard: React.FC<{
           <View style={styles.noteCard}>
             <View style={styles.noteAccentBar} />
             <View style={styles.noteContent}>
-              <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
+              {note.title ? (
+                <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
+              ) : null}
               <Text
                 style={styles.noteSnippet}
                 numberOfLines={!measured ? undefined : (expanded ? undefined : 3)}
@@ -1483,14 +1488,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  titleInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    marginBottom: 12,
+  },
   modalTitleInput: {
+    flex: 1,
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    marginBottom: 12,
+  },
+  optionalLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
   modalContentInput: {
     fontSize: 16,
