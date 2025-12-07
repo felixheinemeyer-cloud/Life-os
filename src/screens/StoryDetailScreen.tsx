@@ -320,48 +320,44 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.editModalContent}
-            contentContainerStyle={styles.editModalScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Story Details Card */}
-            <View style={styles.editDetailsCard}>
+          <View style={styles.editModalContent}>
+            {/* Title Row */}
+            <View style={styles.titleInputRow}>
               <TextInput
                 style={styles.editTitleInput}
-                placeholder="Story title"
+                placeholder="Title"
                 placeholderTextColor="#9CA3AF"
                 value={editTitle}
                 onChangeText={setEditTitle}
               />
-
-              <View style={styles.editWhenRow}>
-                <Ionicons name="time-outline" size={18} color="#9CA3AF" />
-                <TextInput
-                  style={styles.editWhenInput}
-                  placeholder="When? (e.g., Summer 2023, May 2021)"
-                  placeholderTextColor="#9CA3AF"
-                  value={editWhen}
-                  onChangeText={setEditWhen}
-                />
-              </View>
+              <Text style={styles.optionalLabel}>optional</Text>
             </View>
 
-            {/* Story Content Card */}
-            <View style={styles.editContentCard}>
-              <Text style={styles.editContentLabel}>Your story</Text>
+            {/* When Row */}
+            <View style={styles.editWhenRow}>
+              <Ionicons name="time-outline" size={18} color="#65A30D" />
               <TextInput
-                style={styles.editContentInput}
-                placeholder="What happened? Share the moment..."
-                placeholderTextColor="#B5B5B5"
-                value={editContent}
-                onChangeText={setEditContent}
-                multiline
-                textAlignVertical="top"
+                style={styles.editWhenInput}
+                placeholder="When? (e.g., Summer 2023, May 2021)"
+                placeholderTextColor="#9CA3AF"
+                value={editWhen}
+                onChangeText={setEditWhen}
               />
             </View>
-          </ScrollView>
+
+            <View style={styles.inputDivider} />
+
+            {/* Content Input */}
+            <TextInput
+              style={styles.editContentInput}
+              placeholder="What happened? Share the moment, the feelings, the details that made it memorable..."
+              placeholderTextColor="#9CA3AF"
+              value={editContent}
+              onChangeText={setEditContent}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -545,7 +541,7 @@ const styles = StyleSheet.create({
   // Edit Modal
   editModalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
   editModalHeader: {
     flexDirection: 'row',
@@ -553,7 +549,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
@@ -582,74 +577,54 @@ const styles = StyleSheet.create({
   },
   editModalContent: {
     flex: 1,
-  },
-  editModalScrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingTop: 8,
   },
-  editDetailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+  titleInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   editTitleInput: {
+    flex: 1,
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    paddingVertical: 8,
-    paddingHorizontal: 0,
-    marginBottom: 12,
+    paddingVertical: 12,
+  },
+  optionalLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
   editWhenRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 10,
+    paddingVertical: 6,
+    gap: 8,
+    marginBottom: 12,
   },
   editWhenInput: {
     flex: 1,
     fontSize: 15,
     fontWeight: '400',
     color: '#1F2937',
-    padding: 0,
+    paddingVertical: 8,
   },
-  editContentCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    minHeight: 280,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  editContentLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  inputDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
     marginBottom: 12,
   },
   editContentInput: {
     fontSize: 16,
     fontWeight: '400',
     color: '#1F2937',
-    lineHeight: 26,
-    minHeight: 200,
+    lineHeight: 24,
+    flex: 1,
     padding: 0,
   },
 });
