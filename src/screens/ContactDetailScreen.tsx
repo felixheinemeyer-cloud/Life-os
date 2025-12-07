@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -62,38 +62,47 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
 
 // Category styling
-const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string } => {
+// Unified avatar colors matching homescreen
+const AVATAR_COLORS: [string, string, string] = ['#E8F1FC', '#CADCF8', '#A8C8F0'];
+const AVATAR_TEXT_COLOR = '#1E3A5F';
+
+const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string; badgeTextColor: string } => {
   switch (category.toLowerCase()) {
     case 'family':
       return {
-        colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-        textColor: '#BE185D',
+        colors: AVATAR_COLORS,
+        textColor: AVATAR_TEXT_COLOR,
         badgeColor: '#FCE7F3',
+        badgeTextColor: '#BE185D',
       };
     case 'close friend':
       return {
-        colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-        textColor: '#1D4ED8',
+        colors: AVATAR_COLORS,
+        textColor: AVATAR_TEXT_COLOR,
         badgeColor: '#DBEAFE',
+        badgeTextColor: '#1D4ED8',
       };
     case 'friend':
       return {
-        colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
-        textColor: '#7C3AED',
+        colors: AVATAR_COLORS,
+        textColor: AVATAR_TEXT_COLOR,
         badgeColor: '#EDE9FE',
+        badgeTextColor: '#7C3AED',
       };
     case 'work':
       return {
-        colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
-        textColor: '#047857',
+        colors: AVATAR_COLORS,
+        textColor: AVATAR_TEXT_COLOR,
         badgeColor: '#D1FAE5',
+        badgeTextColor: '#047857',
       };
     case 'acquaintance':
     default:
       return {
-        colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
-        textColor: '#6B7280',
+        colors: AVATAR_COLORS,
+        textColor: AVATAR_TEXT_COLOR,
         badgeColor: '#F3F4F6',
+        badgeTextColor: '#6B7280',
       };
   }
 };
@@ -384,6 +393,8 @@ const ContactInfoRow: React.FC<{
 
 // Main Component
 const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   // Get contact from params or use mock
   const contact = route.params?.contact || MOCK_CONTACT;
   const onDelete = route.params?.onDelete;
@@ -730,7 +741,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
 
             {/* Category Badge */}
             <View style={[styles.categoryBadge, { backgroundColor: categoryStyle.badgeColor }]}>
-              <Text style={[styles.categoryBadgeText, { color: categoryStyle.textColor }]}>
+              <Text style={[styles.categoryBadgeText, { color: categoryStyle.badgeTextColor }]}>
                 {contact.category}
               </Text>
             </View>
@@ -1027,6 +1038,41 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
+        {/* Fixed Header with Blur Background */}
+        <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+          {/* Gradient Fade Background */}
+          <View style={styles.headerBlur}>
+            <LinearGradient
+              colors={[
+                'rgba(247, 245, 242, 0.85)',
+                'rgba(247, 245, 242, 0.6)',
+                'rgba(247, 245, 242, 0.3)',
+                'rgba(247, 245, 242, 0)',
+              ]}
+              locations={[0, 0.3, 0.7, 1]}
+              style={styles.headerGradient}
+            />
+          </View>
+
+          {/* Header Content */}
+          <View style={styles.header} pointerEvents="box-none">
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={styles.editButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color="#1F2937" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Note Modal */}
         <Modal
           visible={noteModalVisible}
@@ -1206,19 +1252,33 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1278,10 +1338,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowColor: '#93C5FD',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
     elevation: 6,
   },
   avatarInitials: {
@@ -1317,7 +1377,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,

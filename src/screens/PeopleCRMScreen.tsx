@@ -129,13 +129,13 @@ const CONTACTS_DATA: Contact[] = [
   },
 ];
 
-// Unified avatar colors - matching the attention section background (rgba(0,0,0,0.03) on #F7F5F2)
+// Unified avatar colors - 3D gradient effect matching icon container
 const getAvatarColors = (): [string, string, string] => {
-  return ['#F0EEEB', '#F0EEEB', '#F0EEEB'];
+  return ['#E8F1FC', '#CADCF8', '#A8C8F0'];
 };
 
 const getInitialsColor = (): string => {
-  return '#1F2937'; // Same as contact name
+  return '#1E3A5F'; // Dark indigo gray
 };
 
 // Reminder bell colors based on status
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: 'rgba(0, 0, 0, 0.03)',
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
   },
   attentionBannerActive: {
@@ -674,13 +674,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     letterSpacing: -0.1,
   },
@@ -709,10 +714,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    shadowColor: '#93C5FD',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   contactInitials: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   contactCardContent: {
     flex: 1,

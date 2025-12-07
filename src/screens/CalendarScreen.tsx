@@ -3,11 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface TrackingStatus {
   morning: boolean;
@@ -22,6 +23,7 @@ interface DayData {
 }
 
 const CalendarScreen = (): React.JSX.Element => {
+  const insets = useSafeAreaInsets();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Mock data for tracking status (November 2024)
@@ -181,10 +183,18 @@ const CalendarScreen = (): React.JSX.Element => {
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Scrollable Title */}
+        <View style={styles.scrollableTitle}>
           <Text style={styles.headerTitle}>Calendar</Text>
         </View>
 
@@ -261,37 +271,66 @@ const CalendarScreen = (): React.JSX.Element => {
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F0EEE8',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F0EEE8',
+    backgroundColor: '#F7F5F2',
   },
-  header: {
-    backgroundColor: '#F0EEE8',
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 8,
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  scrollableTitle: {
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6B7280',
-    letterSpacing: -0.2,
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',

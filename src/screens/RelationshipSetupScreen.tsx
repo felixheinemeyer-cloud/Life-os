@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -31,6 +31,8 @@ interface RelationshipSetupScreenProps {
 }
 
 const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
   // Form state
   const [partnerPhoto, setPartnerPhoto] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState('');
@@ -213,30 +215,14 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
   }, [isNameFocused]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Your Relationship</Text>
-            <Text style={styles.subtitle}>Let's make this space feel like the two of you</Text>
-          </View>
-        </View>
-
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 120 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
             {/* Photo Card */}
             <View style={styles.sectionCard}>
               <TouchableOpacity
@@ -392,46 +378,88 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
             </View>
           </Modal>
 
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isFormValid && styles.continueButtonDisabled
+      {/* Fixed Header with Blur */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
             ]}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-            disabled={!isFormValid}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
           >
-            <Text style={[
-              styles.continueButtonText,
-              !isFormValid && styles.continueButtonTextDisabled
-            ]}>
-              Continue
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={isFormValid ? '#FFFFFF' : '#9CA3AF'}
-            />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.title}>Your Relationship</Text>
+            <Text style={styles.subtitle}>Let's make this space feel like the two of you</Text>
+          </View>
         </View>
       </View>
-    </SafeAreaView>
+
+      {/* Continue Button */}
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom : 24 }]}>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            !isFormValid && styles.continueButtonDisabled
+          ]}
+          onPress={handleContinue}
+          activeOpacity={0.8}
+          disabled={!isFormValid}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            !isFormValid && styles.continueButtonTextDisabled
+          ]}>
+            Continue
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isFormValid ? '#FFFFFF' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 16,

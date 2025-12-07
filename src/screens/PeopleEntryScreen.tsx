@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -59,37 +59,41 @@ interface Category {
   textColor: string;
 }
 
+// Unified avatar colors matching homescreen
+const AVATAR_COLORS: [string, string, string] = ['#E8F1FC', '#CADCF8', '#A8C8F0'];
+const AVATAR_TEXT_COLOR = '#1E3A5F';
+
 // Categories matching PeopleCRMScreen
 const CATEGORIES: Category[] = [
   {
     id: 'family',
     name: 'Family',
-    colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-    textColor: '#BE185D',
+    colors: AVATAR_COLORS,
+    textColor: AVATAR_TEXT_COLOR,
   },
   {
     id: 'close-friend',
     name: 'Close Friend',
-    colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-    textColor: '#1D4ED8',
+    colors: AVATAR_COLORS,
+    textColor: AVATAR_TEXT_COLOR,
   },
   {
     id: 'friend',
     name: 'Friend',
-    colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
-    textColor: '#7C3AED',
+    colors: AVATAR_COLORS,
+    textColor: AVATAR_TEXT_COLOR,
   },
   {
     id: 'work',
     name: 'Work',
-    colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
-    textColor: '#047857',
+    colors: AVATAR_COLORS,
+    textColor: AVATAR_TEXT_COLOR,
   },
   {
     id: 'acquaintance',
     name: 'Acquaintance',
-    colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
-    textColor: '#6B7280',
+    colors: AVATAR_COLORS,
+    textColor: AVATAR_TEXT_COLOR,
   },
 ];
 
@@ -134,6 +138,8 @@ const getCategoryIdFromName = (categoryName: string): string | null => {
 
 // Main Component
 const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   // Get existing contact if editing
   const existingContact = route?.params?.contact;
   const isEditMode = !!existingContact;
@@ -420,8 +426,8 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
           }}
           activeOpacity={0.6}
         >
-          <View style={[styles.addRowIconCircle, { backgroundColor: `${iconColor}12` }]}>
-            <Ionicons name={icon} size={18} color={iconColor} />
+          <View style={[styles.addRowIconCircle, { backgroundColor: '#E2ECFE' }]}>
+            <Ionicons name={icon} size={18} color="#1D4ED8" />
           </View>
           <Text style={styles.addRowText}>{label}</Text>
           <View style={styles.addRowRight}>
@@ -451,8 +457,8 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       <View key={field}>
         <View style={styles.expandedFieldContainer}>
           <View style={styles.expandedFieldHeader}>
-            <View style={[styles.fieldIconCircle, { backgroundColor: `${iconColor}15` }]}>
-              <Ionicons name={icon} size={18} color={iconColor} />
+            <View style={[styles.fieldIconCircle, { backgroundColor: '#E2ECFE' }]}>
+              <Ionicons name={icon} size={18} color="#1D4ED8" />
             </View>
             <Text style={styles.expandedFieldLabel}>{label}</Text>
             <TouchableOpacity
@@ -497,7 +503,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
       <View key="birthday">
         <View style={styles.expandedFieldContainer}>
           <View style={styles.expandedFieldHeader}>
-            <View style={[styles.fieldIconCircle, { backgroundColor: '#1D4ED815' }]}>
+            <View style={[styles.fieldIconCircle, { backgroundColor: '#E2ECFE' }]}>
               <Ionicons name="calendar-outline" size={18} color="#1D4ED8" />
             </View>
             <Text style={styles.expandedFieldLabel}>Birthday</Text>
@@ -526,39 +532,19 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                onPress={handleBack}
-                style={styles.roundButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={20} color="#1F2937" />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>{isEditMode ? 'Edit Contact' : 'New Contact'}</Text>
-              <TouchableOpacity
-                onPress={handleSave}
-                style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
-                activeOpacity={0.7}
-                disabled={!isFormValid}
-              >
-                <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Content */}
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            automaticallyAdjustKeyboardInsets={true}
-          >
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 64 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
             {/* Avatar Preview */}
             <View style={styles.avatarPreviewContainer}>
               <LinearGradient
@@ -622,10 +608,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                       key={category.id}
                       style={[
                         styles.categoryChip,
-                        isSelected && {
-                          backgroundColor: category.colors[0],
-                          borderColor: category.colors[1],
-                        },
+                        isSelected && styles.categoryChipSelected,
                       ]}
                       onPress={() => handleCategorySelect(category.id)}
                       activeOpacity={0.7}
@@ -633,7 +616,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                       <Text
                         style={[
                           styles.categoryChipText,
-                          isSelected && { color: category.textColor },
+                          isSelected && styles.categoryChipTextSelected,
                         ]}
                       >
                         {category.name}
@@ -725,111 +708,160 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
               </View>
             </View>
 
-            {/* Spacer for bottom padding */}
-            <View style={styles.bottomSpacer} />
-          </ScrollView>
+        {/* Spacer for bottom padding */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
 
-          {/* iOS Date Picker Modal */}
-          <Modal
-            visible={showDatePicker && Platform.OS === 'ios'}
-            transparent={true}
-            animationType="none"
-            onRequestClose={handleDatePickerDone}
-          >
-            <View style={styles.datePickerOverlay}>
-              <TouchableOpacity
-                style={styles.datePickerBackdrop}
-                activeOpacity={1}
-                onPress={handleDatePickerDone}
-              />
-              <Animated.View
-                style={[
-                  styles.datePickerContainer,
-                  { transform: [{ translateY: datePickerTranslateY }] },
-                ]}
-                {...datePickerPanResponder.panHandlers}
-              >
-                {/* Drag Handle */}
-                <View style={styles.datePickerHandle}>
-                  <View style={styles.datePickerHandleBar} />
-                </View>
-
-                {/* Title */}
-                <Text style={styles.datePickerTitle}>Select Birthday</Text>
-
-                {/* Date Picker */}
-                <View style={styles.datePickerWrapper}>
-                  <DateTimePicker
-                    value={dateOfBirth || new Date(2000, 0, 1)}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleDateChange}
-                    maximumDate={new Date()}
-                    minimumDate={new Date(1900, 0, 1)}
-                    style={styles.datePicker}
-                  />
-                </View>
-
-                {/* Action Buttons */}
-                <View style={styles.datePickerActions}>
-                  <TouchableOpacity
-                    onPress={handleClearDate}
-                    style={styles.datePickerClearButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerClearText}>Clear</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleDatePickerDone}
-                    style={styles.datePickerDoneButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerDoneText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
-            </View>
-          </Modal>
-
-          {/* Android Date Picker */}
-          {showDatePicker && Platform.OS === 'android' && (
-            <DateTimePicker
-              value={dateOfBirth || new Date(2000, 0, 1)}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              minimumDate={new Date(1900, 0, 1)}
-            />
-          )}
+      {/* Fixed Header with Blur Background */}
+      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+        {/* Gradient Fade Background */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
         </View>
-    </SafeAreaView>
+
+        {/* Header Content */}
+        <View style={styles.header} pointerEvents="box-none">
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.roundButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{isEditMode ? 'Edit Contact' : 'New Contact'}</Text>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* iOS Date Picker Modal */}
+      <Modal
+        visible={showDatePicker && Platform.OS === 'ios'}
+        transparent={true}
+        animationType="none"
+        onRequestClose={handleDatePickerDone}
+      >
+        <View style={styles.datePickerOverlay}>
+          <TouchableOpacity
+            style={styles.datePickerBackdrop}
+            activeOpacity={1}
+            onPress={handleDatePickerDone}
+          />
+          <Animated.View
+            style={[
+              styles.datePickerContainer,
+              { transform: [{ translateY: datePickerTranslateY }] },
+            ]}
+            {...datePickerPanResponder.panHandlers}
+          >
+            {/* Drag Handle */}
+            <View style={styles.datePickerHandle}>
+              <View style={styles.datePickerHandleBar} />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.datePickerTitle}>Select Birthday</Text>
+
+            {/* Date Picker */}
+            <View style={styles.datePickerWrapper}>
+              <DateTimePicker
+                value={dateOfBirth || new Date(2000, 0, 1)}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+                style={styles.datePicker}
+              />
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.datePickerActions}>
+              <TouchableOpacity
+                onPress={handleClearDate}
+                style={styles.datePickerClearButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.datePickerClearText}>Clear</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleDatePickerDone}
+                style={styles.datePickerDoneButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.datePickerDoneText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Android Date Picker */}
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={dateOfBirth || new Date(2000, 0, 1)}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+          minimumDate={new Date(1900, 0, 1)}
+        />
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 0,
   },
   roundButton: {
     width: 40,
@@ -861,7 +893,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
     paddingBottom: 40,
   },
 
@@ -877,10 +908,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: '#93C5FD',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 4,
   },
   avatarInitials: {
@@ -922,9 +953,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#E2ECFE',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#93C5FD',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardLabel: {
     fontSize: 16,
@@ -971,11 +1007,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: 'rgba(0, 0, 0, 0.08)',
   },
+  categoryChipSelected: {
+    backgroundColor: '#1F2937',
+    borderColor: '#1F2937',
+  },
   categoryChipText: {
     fontSize: 13,
     fontWeight: '500',
     color: '#6B7280',
     letterSpacing: -0.1,
+  },
+  categoryChipTextSelected: {
+    color: '#FFFFFF',
   },
 
   // Optional Card (no header)
@@ -1008,6 +1051,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#93C5FD',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   addRowText: {
     flex: 1,
@@ -1044,6 +1092,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#93C5FD',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   expandedFieldLabel: {
     fontSize: 16,
