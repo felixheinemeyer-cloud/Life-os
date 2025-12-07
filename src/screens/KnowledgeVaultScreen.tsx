@@ -93,79 +93,106 @@ const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[]
   {
     name: 'Popular',
     icons: [
-      'bookmark-outline', 'book-outline', 'folder-outline', 'document-text-outline',
-      'bulb-outline', 'star-outline', 'heart-outline', 'flag-outline',
+      'bookmark-outline', 'book-outline', 'bulb-outline', 'star-outline',
+      'folder-outline', 'document-text-outline', 'heart-outline', 'flag-outline',
     ],
   },
   {
-    name: 'Education',
+    name: 'Learning',
     icons: [
       'school-outline', 'library-outline', 'reader-outline', 'newspaper-outline',
-      'language-outline', 'pencil-outline', 'create-outline', 'flask-outline',
-      'telescope-outline', 'calculator-outline',
+      'language-outline', 'pencil-outline', 'create-outline', 'glasses-outline',
     ],
   },
   {
-    name: 'Business',
+    name: 'Mind & Growth',
     icons: [
-      'briefcase-outline', 'wallet-outline', 'card-outline', 'cash-outline',
-      'trending-up-outline', 'stats-chart-outline', 'pie-chart-outline', 'bar-chart-outline',
-      'receipt-outline', 'storefront-outline',
+      'body-outline', 'happy-outline', 'sparkles-outline', 'rocket-outline',
+      'fitness-outline', 'leaf-outline', 'sunny-outline', 'rose-outline',
     ],
   },
   {
-    name: 'Health',
+    name: 'Finance',
     icons: [
-      'fitness-outline', 'body-outline', 'medical-outline', 'nutrition-outline',
-      'pulse-outline', 'bandage-outline', 'medkit-outline', 'barbell-outline',
-      'bicycle-outline', 'walk-outline',
+      'wallet-outline', 'cash-outline', 'card-outline', 'trending-up-outline',
+      'stats-chart-outline', 'pie-chart-outline', 'calculator-outline', 'diamond-outline',
+    ],
+  },
+  {
+    name: 'Career',
+    icons: [
+      'briefcase-outline', 'business-outline', 'people-outline', 'podium-outline',
+      'trophy-outline', 'ribbon-outline', 'megaphone-outline', 'chatbubbles-outline',
     ],
   },
   {
     name: 'Technology',
     icons: [
       'hardware-chip-outline', 'code-slash-outline', 'terminal-outline', 'laptop-outline',
-      'phone-portrait-outline', 'desktop-outline', 'cloud-outline', 'server-outline',
-      'git-branch-outline', 'bug-outline', 'wifi-outline', 'bluetooth-outline',
+      'cloud-outline', 'server-outline', 'globe-outline', 'analytics-outline',
+    ],
+  },
+  {
+    name: 'Science',
+    icons: [
+      'flask-outline', 'planet-outline', 'telescope-outline', 'nuclear-outline',
+      'prism-outline', 'magnet-outline', 'thermometer-outline', 'earth-outline',
+    ],
+  },
+  {
+    name: 'Health',
+    icons: [
+      'medkit-outline', 'nutrition-outline', 'pulse-outline', 'medical-outline',
+      'barbell-outline', 'bicycle-outline', 'walk-outline', 'water-outline',
     ],
   },
   {
     name: 'Creative',
     icons: [
-      'brush-outline', 'color-palette-outline', 'camera-outline', 'film-outline',
-      'musical-notes-outline', 'mic-outline', 'videocam-outline', 'easel-outline',
-      'images-outline', 'aperture-outline',
+      'brush-outline', 'color-palette-outline', 'camera-outline', 'musical-notes-outline',
+      'film-outline', 'mic-outline', 'easel-outline', 'videocam-outline',
     ],
   },
   {
-    name: 'Nature',
+    name: 'Relationships',
     icons: [
-      'leaf-outline', 'flower-outline', 'earth-outline', 'planet-outline',
-      'sunny-outline', 'moon-outline', 'water-outline', 'paw-outline',
-      'rose-outline', 'fish-outline',
+      'person-outline', 'chatbubble-outline', 'mail-outline', 'call-outline',
+      'home-outline', 'hand-left-outline', 'gift-outline', 'paw-outline',
     ],
   },
   {
-    name: 'People',
+    name: 'Planning',
     icons: [
-      'people-outline', 'person-outline', 'happy-outline', 'chatbubble-outline',
-      'mail-outline', 'call-outline', 'share-social-outline', 'hand-left-outline',
-      'accessibility-outline', 'man-outline', 'woman-outline',
+      'calendar-outline', 'time-outline', 'alarm-outline', 'hourglass-outline',
+      'timer-outline', 'checkbox-outline', 'list-outline', 'clipboard-outline',
     ],
   },
   {
-    name: 'Travel',
+    name: 'Travel & Culture',
     icons: [
-      'airplane-outline', 'car-outline', 'train-outline', 'boat-outline',
-      'map-outline', 'location-outline', 'compass-outline', 'navigate-outline',
-      'globe-outline', 'bed-outline',
+      'airplane-outline', 'map-outline', 'compass-outline', 'location-outline',
+      'restaurant-outline', 'cafe-outline', 'bed-outline', 'trail-sign-outline',
+    ],
+  },
+  {
+    name: 'Ideas & Concepts',
+    icons: [
+      'infinite-outline', 'extension-puzzle-outline', 'cube-outline', 'git-branch-outline',
+      'layers-outline', 'options-outline', 'shuffle-outline', 'aperture-outline',
+    ],
+  },
+  {
+    name: 'Security & Legal',
+    icons: [
+      'shield-outline', 'lock-closed-outline', 'key-outline', 'finger-print-outline',
+      'document-outline', 'receipt-outline', 'construct-outline', 'settings-outline',
     ],
   },
   {
     name: 'Food',
     icons: [
       'restaurant-outline', 'cafe-outline', 'wine-outline', 'pizza-outline',
-      'fast-food-outline', 'beer-outline', 'ice-cream-outline',
+      'fast-food-outline', 'beer-outline', 'ice-cream-outline', 'nutrition-outline',
     ],
   },
   {
@@ -173,30 +200,6 @@ const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[]
     icons: [
       'basketball-outline', 'football-outline', 'golf-outline', 'game-controller-outline',
       'trophy-outline', 'medal-outline', 'tennisball-outline', 'american-football-outline',
-    ],
-  },
-  {
-    name: 'Home',
-    icons: [
-      'home-outline', 'bed-outline', 'key-outline', 'lock-closed-outline',
-      'bulb-outline', 'tv-outline', 'desktop-outline', 'construct-outline',
-      'hammer-outline', 'build-outline',
-    ],
-  },
-  {
-    name: 'Media',
-    icons: [
-      'play-outline', 'pause-outline', 'volume-high-outline', 'headset-outline',
-      'radio-outline', 'tv-outline', 'megaphone-outline', 'notifications-outline',
-    ],
-  },
-  {
-    name: 'Other',
-    icons: [
-      'shield-outline', 'ribbon-outline', 'gift-outline', 'sparkles-outline',
-      'diamond-outline', 'hourglass-outline', 'timer-outline', 'alarm-outline',
-      'calendar-outline', 'time-outline', 'cube-outline', 'prism-outline',
-      'infinite-outline', 'extension-puzzle-outline',
     ],
   },
 ];
@@ -1202,14 +1205,11 @@ const styles = StyleSheet.create({
   },
   topicNameInput: {
     fontSize: 17,
-    fontWeight: '500',
+    fontWeight: '400',
     color: '#1F2937',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingTop: 4,
+    paddingBottom: 0,
+    paddingHorizontal: 0,
   },
   iconPickerCard: {
     backgroundColor: '#FFFFFF',

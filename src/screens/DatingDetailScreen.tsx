@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 
 // Types
 interface DatingDetailScreenProps {
@@ -549,41 +549,10 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
   const hasInfo = person.phoneNumber || person.instagram || person.location || person.dateOfBirth;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={styles.editButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil" size={20} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleMorePress}
-              onPressIn={handleMoreButtonPressIn}
-              onPressOut={handleMoreButtonPressOut}
-            >
-              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
-                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
+    <View style={styles.container}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={!isSwipingCard}
@@ -885,12 +854,15 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
           </TouchableOpacity>
         </Modal>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
