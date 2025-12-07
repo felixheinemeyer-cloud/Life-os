@@ -24,6 +24,9 @@ import * as Haptics from 'expo-haptics';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ENTRY_ACTION_WIDTH = 140;
 
+// Consistent teal color matching KnowledgeVaultScreen
+const ACCENT_COLOR = '#0D9488';
+
 // Types
 interface KnowledgeTopic {
   id: string;
@@ -628,8 +631,8 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
         {!isSearching && (
           <View style={styles.titleSection}>
             <View style={styles.titleRow}>
-              <View style={[styles.titleIcon, { backgroundColor: topic.lightColor }]}>
-                <Ionicons name={topic.icon} size={24} color={topic.color} />
+              <View style={styles.titleIcon}>
+                <Ionicons name={topic.icon} size={24} color={ACCENT_COLOR} />
               </View>
               <Text style={styles.title}>{topic.name}</Text>
             </View>
@@ -639,7 +642,7 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
         {/* Add Entry Card */}
         {!isSearching && (
           <AddEntryCard
-            topicColor={topic.color}
+            topicColor={ACCENT_COLOR}
             onPress={handleOpenModal}
           />
         )}
@@ -667,7 +670,7 @@ const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation,
               <SwipeableEntryCard
                 key={entry.id}
                 entry={entry}
-                topicColor={topic.color}
+                topicColor={ACCENT_COLOR}
                 onEdit={() => handleEditEntry(entry)}
                 onDelete={() => handleDeleteEntry(entry.id)}
                 onSwipeStart={() => setIsSwipingEntry(true)}
@@ -950,6 +953,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
