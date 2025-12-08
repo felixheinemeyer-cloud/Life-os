@@ -56,6 +56,9 @@ import PhysicalWealthIntroAnimationScreen from './src/screens/PhysicalWealthIntr
 import PhysicalWealthIntroScreen from './src/screens/PhysicalWealthIntroScreen';
 import PhysicalWealthQuestionsContainerScreen from './src/screens/PhysicalWealthQuestionsContainerScreen';
 import PhysicalWealthOverviewScreen from './src/screens/PhysicalWealthOverviewScreen';
+import SocialWealthIntroAnimationScreen from './src/screens/SocialWealthIntroAnimationScreen';
+import SocialWealthIntroScreen from './src/screens/SocialWealthIntroScreen';
+import SocialWealthQuestionsContainerScreen from './src/screens/SocialWealthQuestionsContainerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -142,6 +145,9 @@ const KnowledgeStack = () => {
       <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
       <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />
       <Stack.Screen name="PhysicalWealthOverview" component={PhysicalWealthOverviewScreen} />
+      <Stack.Screen name="SocialWealthIntroAnimation" component={SocialWealthIntroAnimationScreen} />
+      <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
+      <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
     </Stack.Navigator>
   );
 };

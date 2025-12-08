@@ -196,6 +196,14 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         // Area is not defined yet - go to intro/setup flow
         navigation.navigate('PhysicalWealthIntroAnimation');
       }
+    } else if (type === 'social') {
+      if (isCompleted) {
+        // Area is already defined - go to overview screen
+        navigation.navigate('SocialWealthOverview');
+      } else {
+        // Area is not defined yet - go to intro/setup flow
+        navigation.navigate('SocialWealthIntroAnimation');
+      }
     } else {
       console.log(`Navigate to ${type} wealth flow`);
     }
@@ -204,7 +212,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
   // Count completed areas
   const completedCount = Object.values(completedWealth).filter(Boolean).length;
 
-  const wealthOrder: WealthType[] = ['physical', 'mental', 'financial', 'time', 'social'];
+  const wealthOrder: WealthType[] = ['social', 'mental', 'financial', 'time', 'physical'];
 
   const starPath = createStarPath(CENTER, CENTER, OUTER_RADIUS * 0.75, OUTER_RADIUS * 0.35, 5);
 
@@ -215,7 +223,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 64 },
+          { paddingTop: insets.top + 64, paddingBottom: 24 + 48 + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -329,16 +337,17 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
           </Animated.View>
         </View>
 
-        {/* Bottom instruction */}
-        <Animated.View style={[styles.bottomContainer, { opacity: fadeIn }]}>
-          <View style={styles.instructionCard}>
-            <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
-            <Text style={styles.instructionText}>
-              Tap any area to define your best self
-            </Text>
-          </View>
-        </Animated.View>
       </ScrollView>
+
+      {/* Bottom instruction - Fixed at bottom */}
+      <Animated.View style={[styles.bottomContainer, { opacity: fadeIn, bottom: 24 }]}>
+        <View style={styles.instructionCard}>
+          <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
+          <Text style={styles.instructionText}>
+            Tap any area to define your best self
+          </Text>
+        </View>
+      </Animated.View>
 
       {/* Fixed Header with Blur Background */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
@@ -509,7 +518,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    flexGrow: 1,
   },
 
   // Header
@@ -685,8 +694,10 @@ const styles = StyleSheet.create({
 
   // Bottom
   bottomContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     paddingHorizontal: 24,
-    paddingBottom: 24,
   },
   instructionCard: {
     flexDirection: 'row',
