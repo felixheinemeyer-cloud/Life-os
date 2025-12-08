@@ -62,7 +62,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
 
   // Track which wealth areas have been defined
   const completedWealth: Record<WealthType, boolean> = {
-    physical: true,
+    physical: false,
     mental: true,
     social: false,
     financial: false,

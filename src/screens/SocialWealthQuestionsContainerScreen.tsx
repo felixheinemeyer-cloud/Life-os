@@ -14,9 +14,12 @@ import * as Haptics from 'expo-haptics';
 
 // Import content components
 import SocialWealthQuestion1Content from '../components/socialwealth/SocialWealthQuestion1Content';
+import SocialWealthQuestion2Content from '../components/socialwealth/SocialWealthQuestion2Content';
+import SocialWealthQuestion3Content from '../components/socialwealth/SocialWealthQuestion3Content';
+import SocialWealthQuestion4Content from '../components/socialwealth/SocialWealthQuestion4Content';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 1;
+const TOTAL_STEPS = 4;
 
 interface SocialWealthQuestionsContainerScreenProps {
   navigation?: {
@@ -28,6 +31,9 @@ interface SocialWealthQuestionsContainerScreenProps {
 // Shared data state for all questions
 interface QuestionsData {
   question1Answer: string;
+  question2Answer: string;
+  question3Answer: string;
+  question4Answer: string;
 }
 
 const SocialWealthQuestionsContainerScreen: React.FC<SocialWealthQuestionsContainerScreenProps> = ({
@@ -36,6 +42,9 @@ const SocialWealthQuestionsContainerScreen: React.FC<SocialWealthQuestionsContai
   const [currentStep, setCurrentStep] = useState(0);
   const [questionsData, setQuestionsData] = useState<QuestionsData>({
     question1Answer: '',
+    question2Answer: '',
+    question3Answer: '',
+    question4Answer: '',
   });
 
   // Animation value for horizontal scroll position
@@ -74,9 +83,9 @@ const SocialWealthQuestionsContainerScreen: React.FC<SocialWealthQuestionsContai
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - complete the flow and go to Higher Self screen
+      // Final step - complete the flow and go to Social Wealth Overview
       console.log('Social Wealth questions complete:', questionsData);
-      navigation?.navigate('HigherSelf');
+      navigation?.navigate('SocialWealthOverview');
     }
   };
 
@@ -129,12 +138,40 @@ const SocialWealthQuestionsContainerScreen: React.FC<SocialWealthQuestionsContai
               },
             ]}
           >
-            {/* Step 1: Question 1 */}
+            {/* Step 1: Friendships - What they look like */}
+            <View style={styles.page}>
+              <SocialWealthQuestion3Content
+                answer={questionsData.question3Answer}
+                onAnswerChange={(value) => updateQuestionsData('question3Answer', value)}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 2: Friendships - How to nurture */}
+            <View style={styles.page}>
+              <SocialWealthQuestion4Content
+                answer={questionsData.question4Answer}
+                onAnswerChange={(value) => updateQuestionsData('question4Answer', value)}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 3: Romantic - What it looks like */}
             <View style={styles.page}>
               <SocialWealthQuestion1Content
                 answer={questionsData.question1Answer}
                 onAnswerChange={(value) => updateQuestionsData('question1Answer', value)}
                 onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 4: Romantic - How to show up */}
+            <View style={styles.page}>
+              <SocialWealthQuestion2Content
+                answer={questionsData.question2Answer}
+                onAnswerChange={(value) => updateQuestionsData('question2Answer', value)}
+                onContinue={handleContinue}
+                isLastQuestion={true}
               />
             </View>
           </Animated.View>

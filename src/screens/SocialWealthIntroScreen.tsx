@@ -277,7 +277,7 @@ const SocialWealthIntroScreen: React.FC<SocialWealthIntroScreenProps> = ({
           >
             <View style={styles.continueButton}>
               <Text style={styles.continueButtonText}>Begin</Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
             </View>
           </Animated.View>
         </TouchableOpacity>
