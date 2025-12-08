@@ -59,6 +59,7 @@ import PhysicalWealthOverviewScreen from './src/screens/PhysicalWealthOverviewSc
 import SocialWealthIntroAnimationScreen from './src/screens/SocialWealthIntroAnimationScreen';
 import SocialWealthIntroScreen from './src/screens/SocialWealthIntroScreen';
 import SocialWealthQuestionsContainerScreen from './src/screens/SocialWealthQuestionsContainerScreen';
+import SocialWealthOverviewScreen from './src/screens/SocialWealthOverviewScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -148,6 +149,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="SocialWealthIntroAnimation" component={SocialWealthIntroAnimationScreen} />
       <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
       <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
+      <Stack.Screen name="SocialWealthOverview" component={SocialWealthOverviewScreen} />
     </Stack.Navigator>
   );
 };
