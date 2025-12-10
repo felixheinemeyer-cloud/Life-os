@@ -1,0 +1,723 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  TextInput,
+  Keyboard,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Types
+interface DateIdea {
+  id: string;
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  category: string;
+  duration: string;
+  budget: 'free' | 'low' | 'medium' | 'high';
+  isCustom?: boolean;
+  createdAt?: string;
+}
+
+interface DateIdeaEntryScreenProps {
+  navigation: {
+    goBack: () => void;
+  };
+  route?: {
+    params?: {
+      idea?: DateIdea;
+      onSave?: () => void;
+    };
+  };
+}
+
+// Constants
+const STORAGE_KEY = '@custom_date_ideas';
+
+const CATEGORIES = [
+  { id: 'romantic', name: 'Romantic', icon: 'heart-outline' as const },
+  { id: 'adventure', name: 'Adventure', icon: 'compass-outline' as const },
+  { id: 'creative', name: 'Creative', icon: 'color-palette-outline' as const },
+  { id: 'food', name: 'Food & Drink', icon: 'restaurant-outline' as const },
+  { id: 'outdoor', name: 'Outdoors', icon: 'leaf-outline' as const },
+  { id: 'entertainment', name: 'Fun', icon: 'film-outline' as const },
+  { id: 'active', name: 'Active', icon: 'fitness-outline' as const },
+  { id: 'cozy', name: 'Cozy', icon: 'home-outline' as const },
+  { id: 'cultural', name: 'Cultural', icon: 'library-outline' as const },
+];
+
+const DURATIONS = [
+  { id: '1h', label: '1h' },
+  { id: '1-2h', label: '1-2h' },
+  { id: '2-3h', label: '2-3h' },
+  { id: '3-4h', label: '3-4h' },
+  { id: '4h+', label: '4h+' },
+  { id: 'half-day', label: 'Half day' },
+  { id: 'full-day', label: 'Full day' },
+];
+
+const BUDGETS: { id: DateIdea['budget']; label: string; description: string }[] = [
+  { id: 'free', label: 'Free', description: 'No cost' },
+  { id: 'low', label: '$', description: 'Budget-friendly' },
+  { id: 'medium', label: '$$', description: 'Moderate' },
+  { id: 'high', label: '$$$', description: 'Splurge' },
+];
+
+const ICONS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { icon: 'sunny-outline', label: 'Sun' },
+  { icon: 'moon-outline', label: 'Moon' },
+  { icon: 'star-outline', label: 'Star' },
+  { icon: 'heart-outline', label: 'Heart' },
+  { icon: 'cafe-outline', label: 'Cafe' },
+  { icon: 'wine-outline', label: 'Wine' },
+  { icon: 'pizza-outline', label: 'Food' },
+  { icon: 'film-outline', label: 'Movie' },
+  { icon: 'musical-notes-outline', label: 'Music' },
+  { icon: 'brush-outline', label: 'Art' },
+  { icon: 'camera-outline', label: 'Photo' },
+  { icon: 'bicycle-outline', label: 'Bike' },
+  { icon: 'walk-outline', label: 'Walk' },
+  { icon: 'boat-outline', label: 'Boat' },
+  { icon: 'airplane-outline', label: 'Travel' },
+  { icon: 'bed-outline', label: 'Relax' },
+  { icon: 'game-controller-outline', label: 'Games' },
+  { icon: 'book-outline', label: 'Read' },
+  { icon: 'flower-outline', label: 'Nature' },
+  { icon: 'sparkles-outline', label: 'Special' },
+];
+
+// Main Component
+const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
+  // Get existing idea if editing
+  const existingIdea = route?.params?.idea;
+  const isEditMode = !!existingIdea;
+  const onSaveCallback = route?.params?.onSave;
+
+  // Form state
+  const [title, setTitle] = useState(existingIdea?.title || '');
+  const [description, setDescription] = useState(existingIdea?.description || '');
+  const [selectedCategory, setSelectedCategory] = useState(existingIdea?.category || 'romantic');
+  const [selectedDuration, setSelectedDuration] = useState(existingIdea?.duration || '2-3h');
+  const [selectedBudget, setSelectedBudget] = useState<DateIdea['budget']>(existingIdea?.budget || 'low');
+  const [selectedIcon, setSelectedIcon] = useState<keyof typeof Ionicons.glyphMap>(existingIdea?.icon || 'heart-outline');
+
+  // Focus states
+  const [isTitleFocused, setIsTitleFocused] = useState(false);
+  const [isDescriptionFocused, setIsDescriptionFocused] = useState(false);
+
+  // Check if form is valid
+  const isFormValid = title.trim().length > 0;
+
+  const handleSave = async () => {
+    if (!isFormValid) return;
+
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    const ideaData: DateIdea = {
+      id: isEditMode ? existingIdea.id : `custom_${Date.now()}`,
+      title: title.trim(),
+      description: description.trim() || title.trim(),
+      icon: selectedIcon,
+      category: selectedCategory,
+      duration: selectedDuration,
+      budget: selectedBudget,
+      isCustom: true,
+      createdAt: isEditMode ? existingIdea.createdAt : new Date().toISOString(),
+    };
+
+    try {
+      // Get existing custom ideas
+      const existingData = await AsyncStorage.getItem(STORAGE_KEY);
+      let customIdeas: DateIdea[] = existingData ? JSON.parse(existingData) : [];
+
+      if (isEditMode) {
+        // Update existing idea
+        customIdeas = customIdeas.map(idea =>
+          idea.id === existingIdea.id ? ideaData : idea
+        );
+      } else {
+        // Add new idea
+        customIdeas.unshift(ideaData);
+      }
+
+      // Save to storage
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(customIdeas));
+
+      // Call the callback if provided
+      if (onSaveCallback) {
+        onSaveCallback();
+      }
+
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error saving date idea:', error);
+    }
+  };
+
+  const handleBack = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.goBack();
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedCategory(categoryId);
+
+    // Auto-select a relevant icon based on category
+    const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
+      romantic: 'heart-outline',
+      adventure: 'compass-outline',
+      creative: 'brush-outline',
+      food: 'restaurant-outline',
+      outdoor: 'leaf-outline',
+      entertainment: 'film-outline',
+      active: 'bicycle-outline',
+      cozy: 'bed-outline',
+      cultural: 'book-outline',
+    };
+    if (categoryIcons[categoryId] && !existingIdea) {
+      setSelectedIcon(categoryIcons[categoryId]);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 56 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Preview */}
+        <View style={styles.previewContainer}>
+          <LinearGradient
+            colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+            style={styles.previewIcon}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.previewIconInner}>
+              <Ionicons name={selectedIcon} size={28} color="#E11D48" />
+            </View>
+          </LinearGradient>
+          <Text style={styles.previewTitle}>
+            {title.trim().length > 0 ? title.trim() : 'New Date Idea'}
+          </Text>
+        </View>
+
+        {/* Title Card */}
+        <View style={[styles.card, isTitleFocused && styles.cardFocused]}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="create-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Title</Text>
+            <Text style={styles.requiredLabel}>required</Text>
+          </View>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Enter a title for your date idea..."
+            placeholderTextColor="#9CA3AF"
+            value={title}
+            onChangeText={setTitle}
+            onFocus={() => setIsTitleFocused(true)}
+            onBlur={() => setIsTitleFocused(false)}
+            autoCapitalize="sentences"
+            returnKeyType="next"
+          />
+        </View>
+
+        {/* Description Card */}
+        <View style={[styles.card, isDescriptionFocused && styles.cardFocused]}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="document-text-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Description</Text>
+            <Text style={styles.optionalLabel}>optional</Text>
+          </View>
+          <TextInput
+            style={[styles.textInput, styles.textInputMultiline]}
+            placeholder="Add a brief description..."
+            placeholderTextColor="#9CA3AF"
+            value={description}
+            onChangeText={setDescription}
+            onFocus={() => setIsDescriptionFocused(true)}
+            onBlur={() => setIsDescriptionFocused(false)}
+            autoCapitalize="sentences"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* Category Card */}
+        <View style={styles.card}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="grid-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Category</Text>
+          </View>
+          <View style={styles.chipGrid}>
+            {CATEGORIES.map(category => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.chip,
+                  selectedCategory === category.id && styles.chipSelected,
+                ]}
+                onPress={() => handleCategorySelect(category.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={category.icon}
+                  size={14}
+                  color={selectedCategory === category.id ? '#FFFFFF' : '#6B7280'}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    selectedCategory === category.id && styles.chipTextSelected,
+                  ]}
+                >
+                  {category.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Duration Card */}
+        <View style={styles.card}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="time-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Duration</Text>
+          </View>
+          <View style={styles.chipRow}>
+            {DURATIONS.map(duration => (
+              <TouchableOpacity
+                key={duration.id}
+                style={[
+                  styles.durationChip,
+                  selectedDuration === duration.id && styles.chipSelected,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSelectedDuration(duration.id);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.durationChipText,
+                    selectedDuration === duration.id && styles.chipTextSelected,
+                  ]}
+                >
+                  {duration.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Budget Card */}
+        <View style={styles.card}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="wallet-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Budget</Text>
+          </View>
+          <View style={styles.budgetGrid}>
+            {BUDGETS.map(budget => (
+              <TouchableOpacity
+                key={budget.id}
+                style={[
+                  styles.budgetOption,
+                  selectedBudget === budget.id && styles.budgetOptionSelected,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSelectedBudget(budget.id);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.budgetLabel,
+                    selectedBudget === budget.id && styles.budgetLabelSelected,
+                  ]}
+                >
+                  {budget.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.budgetDescription,
+                    selectedBudget === budget.id && styles.budgetDescriptionSelected,
+                  ]}
+                >
+                  {budget.description}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Icon Card */}
+        <View style={styles.card}>
+          <View style={styles.cardLabelRow}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="shapes-outline" size={20} color="#E11D48" />
+            </View>
+            <Text style={styles.cardLabel}>Icon</Text>
+          </View>
+          <View style={styles.iconGrid}>
+            {ICONS.map(item => (
+              <TouchableOpacity
+                key={item.icon}
+                style={[
+                  styles.iconOption,
+                  selectedIcon === item.icon && styles.iconOptionSelected,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSelectedIcon(item.icon);
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={22}
+                  color={selectedIcon === item.icon ? '#E11D48' : '#6B7280'}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Bottom Spacer */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Fixed Header */}
+      <View style={styles.headerContainer} pointerEvents="box-none">
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.95)',
+              'rgba(247, 245, 242, 0.8)',
+              'rgba(247, 245, 242, 0.4)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.roundButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <View style={styles.headerSpacer} />
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 8,
+    paddingBottom: 16,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  roundButtonDisabled: {
+    opacity: 0.5,
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+
+  // Preview
+  previewContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  previewIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewIconInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+
+  // Card Styles
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  cardFocused: {
+    borderColor: '#FECDD3',
+  },
+  cardLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 10,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  requiredLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#E11D48',
+    marginLeft: 'auto',
+  },
+  optionalLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    marginLeft: 'auto',
+  },
+
+  // Text Input
+  textInput: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  textInputMultiline: {
+    minHeight: 60,
+    lineHeight: 22,
+  },
+
+  // Chips
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    gap: 6,
+  },
+  chipSelected: {
+    backgroundColor: '#1F2937',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
+  },
+  durationChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  durationChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
+  // Budget
+  budgetGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  budgetOption: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+  },
+  budgetOptionSelected: {
+    backgroundColor: '#1F2937',
+  },
+  budgetLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  budgetLabelSelected: {
+    color: '#FFFFFF',
+  },
+  budgetDescription: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  budgetDescriptionSelected: {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+
+  // Icon Grid
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  iconOption: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconOptionSelected: {
+    backgroundColor: '#FFF1F2',
+  },
+
+  // Bottom Spacer
+  bottomSpacer: {
+    height: 40,
+  },
+});
+
+export default DateIdeaEntryScreen;
