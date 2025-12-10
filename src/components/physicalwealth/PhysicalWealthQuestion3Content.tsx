@@ -102,29 +102,27 @@ const PhysicalWealthQuestion3Content: React.FC<PhysicalWealthQuestion3ContentPro
         </ScrollView>
 
         {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isButtonEnabled && styles.continueButtonDisabled,
-            ]}
-            onPress={onContinue}
-            activeOpacity={0.8}
-            disabled={!isButtonEnabled}
-          >
-            <Text style={[
-              styles.continueButtonText,
-              !isButtonEnabled && styles.continueButtonTextDisabled,
-            ]}>
-              Continue
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            !isButtonEnabled && styles.continueButtonDisabled,
+          ]}
+          onPress={onContinue}
+          activeOpacity={0.8}
+          disabled={!isButtonEnabled}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            !isButtonEnabled && styles.continueButtonTextDisabled,
+          ]}>
+            Continue
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -203,9 +201,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputCardFocused: {
-    borderColor: '#10B981',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.15,
+    borderColor: '#D1D5DB',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
   },
   textInput: {
     fontSize: 16,
@@ -246,14 +244,19 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerKeyboard: {
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
-    paddingHorizontal: 24,
+    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
