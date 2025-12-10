@@ -486,7 +486,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={['#F5F3FF', '#EDE9FE']}
+            colors={['#FFFFFF', '#FFFFFF']}
             style={styles.menuCardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -518,7 +518,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={['#FFFBEB', '#FEF3C7']}
+            colors={['#FFFFFF', '#FFFFFF']}
             style={styles.menuCardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -1043,6 +1043,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
+    backgroundColor: '#F7F5F2',
   },
   sheetSectionTitle: {
     fontSize: 15,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface SocialWealthQuestion4ContentProps {
@@ -24,8 +25,23 @@ const SocialWealthQuestion4Content: React.FC<SocialWealthQuestion4ContentProps> 
   onContinue,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const handleFocus = (): void => {
     setIsFocused(true);
@@ -44,9 +60,12 @@ const SocialWealthQuestion4Content: React.FC<SocialWealthQuestion4ContentProps> 
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
+      keyboardVerticalOffset={120}
     >
-      <View style={styles.container}>
+      <View style={[
+        styles.container,
+        isKeyboardVisible && styles.containerKeyboardVisible,
+      ]}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
@@ -65,7 +84,9 @@ const SocialWealthQuestion4Content: React.FC<SocialWealthQuestion4ContentProps> 
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="hand-left" size={28} color="#8B5CF6" />
+                <View style={{ height: 27, width: 38, overflow: 'hidden', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="sprout" size={38} color="#8B5CF6" />
+                </View>
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
@@ -99,32 +120,34 @@ const SocialWealthQuestion4Content: React.FC<SocialWealthQuestion4ContentProps> 
               Think about how you reach out, make time for others, celebrate their wins, and show up during difficult moments.
             </Text>
           </View>
+
         </ScrollView>
 
         {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isButtonEnabled && styles.continueButtonDisabled,
-            ]}
-            onPress={onContinue}
-            activeOpacity={0.8}
-            disabled={!isButtonEnabled}
-          >
-            <Text style={[
-              styles.continueButtonText,
-              !isButtonEnabled && styles.continueButtonTextDisabled,
-            ]}>
-              Continue
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            !isButtonEnabled && styles.continueButtonDisabled,
+          ]}
+          onPress={() => {
+            Keyboard.dismiss();
+            onContinue();
+          }}
+          activeOpacity={0.8}
+          disabled={!isButtonEnabled}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            !isButtonEnabled && styles.continueButtonTextDisabled,
+          ]}>
+            Continue
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -138,6 +161,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  containerKeyboardVisible: {
+    backgroundColor: 'transparent',
+  },
   scrollView: {
     flex: 1,
   },
@@ -145,6 +171,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
+    backgroundColor: '#F7F5F2',
   },
 
   // Question Section
@@ -195,9 +222,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputCardFocused: {
-    borderColor: '#8B5CF6',
-    shadowColor: '#8B5CF6',
-    shadowOpacity: 0.15,
+    borderColor: '#D1D5DB',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
   },
   textInput: {
     fontSize: 16,
@@ -238,14 +265,19 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerKeyboard: {
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
-    paddingHorizontal: 24,
+    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

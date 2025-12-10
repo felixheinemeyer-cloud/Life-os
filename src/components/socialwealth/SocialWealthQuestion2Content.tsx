@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,8 +27,23 @@ const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> 
   isLastQuestion = false,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const handleFocus = (): void => {
     setIsFocused(true);
@@ -46,9 +62,12 @@ const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> 
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
+      keyboardVerticalOffset={120}
     >
-      <View style={styles.container}>
+      <View style={[
+        styles.container,
+        isKeyboardVisible && styles.containerKeyboardVisible,
+      ]}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
@@ -98,35 +117,37 @@ const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> 
               <Ionicons name="bulb-outline" size={18} color="#8B5CF6" />
             </View>
             <Text style={styles.hintText}>
-              Think about how you listen, support, express affection, and stay present with your partner every day.
+              Think about how you support, express affection, and what role you want to have for your partner.
             </Text>
           </View>
+
         </ScrollView>
 
         {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isButtonEnabled && styles.continueButtonDisabled,
-            ]}
-            onPress={onContinue}
-            activeOpacity={0.8}
-            disabled={!isButtonEnabled}
-          >
-            <Text style={[
-              styles.continueButtonText,
-              !isButtonEnabled && styles.continueButtonTextDisabled,
-            ]}>
-              {isLastQuestion ? 'Finish' : 'Continue'}
-            </Text>
-            <Ionicons
-              name={isLastQuestion ? 'checkmark' : 'chevron-forward'}
-              size={18}
-              color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            !isButtonEnabled && styles.continueButtonDisabled,
+          ]}
+          onPress={() => {
+            Keyboard.dismiss();
+            onContinue();
+          }}
+          activeOpacity={0.8}
+          disabled={!isButtonEnabled}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            !isButtonEnabled && styles.continueButtonTextDisabled,
+          ]}>
+            {isLastQuestion ? 'Finish' : 'Continue'}
+          </Text>
+          <Ionicons
+            name={isLastQuestion ? 'checkmark' : 'chevron-forward'}
+            size={18}
+            color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
+          />
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -140,6 +161,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  containerKeyboardVisible: {
+    backgroundColor: 'transparent',
+  },
   scrollView: {
     flex: 1,
   },
@@ -147,6 +171,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
+    backgroundColor: '#F7F5F2',
   },
 
   // Question Section
@@ -197,9 +222,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputCardFocused: {
-    borderColor: '#8B5CF6',
-    shadowColor: '#8B5CF6',
-    shadowOpacity: 0.15,
+    borderColor: '#D1D5DB',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
   },
   textInput: {
     fontSize: 16,
@@ -240,14 +265,19 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerKeyboard: {
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 18,
-    paddingHorizontal: 24,
+    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
