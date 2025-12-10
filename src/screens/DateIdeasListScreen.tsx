@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2; // 2 columns with padding
@@ -25,7 +23,6 @@ const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2; // 2 columns with padding
 interface DateIdeasListScreenProps {
   navigation?: {
     goBack: () => void;
-    navigate: (screen: string, params?: object) => void;
   };
 }
 
@@ -37,11 +34,7 @@ interface DateIdea {
   category: string;
   duration: string;
   budget: 'free' | 'low' | 'medium' | 'high';
-  isCustom?: boolean;
-  createdAt?: string;
 }
-
-const CUSTOM_IDEAS_STORAGE_KEY = '@custom_date_ideas';
 
 interface Category {
   id: string;
@@ -178,6 +171,7 @@ const DateIdeaCard: React.FC<{
   idea: DateIdea;
   onPress: () => void;
 }> = ({ idea, onPress }) => {
+  const category = CATEGORIES.find(c => c.id === idea.category);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -208,31 +202,33 @@ const DateIdeaCard: React.FC<{
     >
       <Animated.View style={[styles.ideaCard, { transform: [{ scale: scaleAnim }] }]}>
         {/* Icon */}
-        <View style={[styles.ideaIconContainer, { backgroundColor: '#FFF1F2' }]}>
+        <View style={[styles.ideaIconContainer, { backgroundColor: `${category?.color}12` }]}>
           <Ionicons
             name={idea.icon}
-            size={20}
-            color="#E11D48"
+            size={22}
+            color={category?.color || '#6B7280'}
           />
         </View>
 
-        {/* Content wrapper for flex layout */}
-        <View style={styles.ideaCardContent}>
-          {/* Title */}
-          <Text style={styles.ideaTitle} numberOfLines={2}>
-            {idea.title}
-          </Text>
+        {/* Title */}
+        <Text style={styles.ideaTitle} numberOfLines={1}>
+          {idea.title}
+        </Text>
 
-          {/* Bottom row: Duration & Budget */}
-          <View style={styles.ideaFooter}>
-            <Text style={styles.ideaDuration}>{idea.duration}</Text>
-            <Text style={[
-              styles.ideaBudget,
-              idea.budget === 'free' && styles.ideaBudgetFree
-            ]}>
-              {getBudgetDisplay(idea.budget)}
-            </Text>
-          </View>
+        {/* Description */}
+        <Text style={styles.ideaDescription} numberOfLines={1}>
+          {idea.description}
+        </Text>
+
+        {/* Bottom row: Duration & Budget */}
+        <View style={styles.ideaFooter}>
+          <Text style={styles.ideaDuration}>{idea.duration}</Text>
+          <Text style={[
+            styles.ideaBudget,
+            idea.budget === 'free' && styles.ideaBudgetFree
+          ]}>
+            {getBudgetDisplay(idea.budget)}
+          </Text>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -244,30 +240,10 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [customIdeas, setCustomIdeas] = useState<DateIdea[]>([]);
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
-
-  // Load custom ideas from AsyncStorage
-  const loadCustomIdeas = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(CUSTOM_IDEAS_STORAGE_KEY);
-      if (stored) {
-        setCustomIdeas(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Error loading custom ideas:', error);
-    }
-  };
-
-  // Reload custom ideas when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadCustomIdeas();
-    }, [])
-  );
 
   useEffect(() => {
     Animated.parallel([
@@ -303,21 +279,12 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation?.navigate('DateIdeaDetail', { idea });
+    // Could expand to show more details or navigate to detail screen
+    console.log('Selected:', idea.title);
   };
-
-  const handleAddIdea = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation?.navigate('DateIdeaEntry');
-  };
-
-  // Combine default and custom ideas, with custom ideas first
-  const allIdeas = [...customIdeas, ...DATE_IDEAS];
 
   // Filter ideas based on category and search
-  const filteredIdeas = allIdeas.filter(idea => {
+  const filteredIdeas = DATE_IDEAS.filter(idea => {
     const matchesCategory = selectedCategory === 'all' || idea.category === selectedCategory;
     const matchesSearch = searchQuery.trim() === '' ||
       idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -337,11 +304,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Scrollable Title */}
-        <View style={styles.scrollableTitle}>
-          <Text style={styles.title}>Date Ideas</Text>
-        </View>
-
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
@@ -382,6 +344,13 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
             />
           ))}
         </ScrollView>
+
+        {/* Results Count */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsCount}>
+            {filteredIdeas.length} {filteredIdeas.length === 1 ? 'idea' : 'ideas'}
+          </Text>
+        </View>
 
         {/* Ideas Grid */}
         {filteredIdeas.length > 0 ? (
@@ -438,16 +407,8 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-
+          <Text style={styles.headerTitle}>Date Ideas</Text>
           <View style={styles.headerSpacer} />
-
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddIdea}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={24} color="#1F2937" />
-          </TouchableOpacity>
         </Animated.View>
       </View>
     </View>
@@ -463,7 +424,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
     paddingBottom: 100,
   },
 
@@ -490,6 +450,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
   },
@@ -508,38 +469,19 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerSpacer: {
-    flex: 1,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-
-  // Scrollable Title
-  scrollableTitle: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
+  },
+  headerSpacer: {
+    width: 40,
   },
 
   // Search
   searchContainer: {
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
   searchBar: {
@@ -567,7 +509,6 @@ const styles = StyleSheet.create({
   // Categories
   categoriesContainer: {
     marginBottom: 16,
-    marginHorizontal: -16,
   },
   categoriesScroll: {
     paddingHorizontal: 16,
@@ -596,10 +537,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  // Results header
+  resultsHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  resultsCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+
   // Ideas Grid
   ideasGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    paddingHorizontal: 16,
     gap: 12,
   },
   cardTouchable: {
@@ -615,29 +568,31 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  ideaCardContent: {
-    flex: 1,
-  },
   ideaIconContainer: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
   },
   ideaTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    lineHeight: 18,
+    marginBottom: 3,
+  },
+  ideaDescription: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    marginBottom: 10,
   },
   ideaFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
   },
   ideaDuration: {
     fontSize: 11,
