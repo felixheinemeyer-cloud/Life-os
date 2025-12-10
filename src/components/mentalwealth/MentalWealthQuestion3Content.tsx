@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,40 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface PhysicalWealthQuestion4ContentProps {
+interface MentalWealthQuestion3ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
 }
 
-const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentProps> = ({
+const MentalWealthQuestion3Content: React.FC<MentalWealthQuestion3ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const handleFocus = (): void => {
     setIsFocused(true);
@@ -44,9 +60,12 @@ const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentPro
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
+      keyboardVerticalOffset={120}
     >
-      <View style={styles.container}>
+      <View style={[
+        styles.container,
+        isKeyboardVisible && styles.containerKeyboardVisible,
+      ]}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
@@ -59,17 +78,17 @@ const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentPro
           {/* Question Section */}
           <View style={styles.questionSection}>
             <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
+              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
               style={styles.iconGradientRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="leaf" size={28} color="#059669" />
+                <Ionicons name="bulb" size={28} color="#3B82F6" />
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
-              How does your best self rest, recover, and maintain well-being?
+              Which thoughts, beliefs, and mental habits strengthen your well-being and help you operate as your best self?
             </Text>
           </View>
 
@@ -93,21 +112,24 @@ const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentPro
           {/* Inspiration Hint */}
           <View style={styles.hintCard}>
             <View style={styles.hintIconContainer}>
-              <Ionicons name="bulb-outline" size={18} color="#059669" />
+              <Ionicons name="bulb-outline" size={18} color="#3B82F6" />
             </View>
             <Text style={styles.hintText}>
-              Think about sleep quality, relaxation practices, mental breaks, nature time, and how you balance activity with recovery.
+              Reflect on the positive thought patterns, core beliefs, and mental habits that support your growth and resilience.
             </Text>
           </View>
         </ScrollView>
 
-        {/* Finish Button */}
+        {/* Continue Button */}
         <TouchableOpacity
           style={[
             styles.continueButton,
             !isButtonEnabled && styles.continueButtonDisabled,
           ]}
-          onPress={onContinue}
+          onPress={() => {
+            Keyboard.dismiss();
+            onContinue();
+          }}
           activeOpacity={0.8}
           disabled={!isButtonEnabled}
         >
@@ -115,10 +137,10 @@ const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentPro
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Finish
+            Continue
           </Text>
           <Ionicons
-            name="checkmark"
+            name="chevron-forward"
             size={18}
             color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
           />
@@ -136,6 +158,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  containerKeyboardVisible: {
+    backgroundColor: 'transparent',
+  },
   scrollView: {
     flex: 1,
   },
@@ -143,6 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
+    backgroundColor: '#F7F5F2',
   },
 
   // Question Section
@@ -177,14 +203,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 12,
   },
-  questionSubtext: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-    textAlign: 'center',
-    letterSpacing: -0.2,
-    lineHeight: 20,
-  },
 
   // Input Card
   inputCard: {
@@ -216,7 +234,7 @@ const styles = StyleSheet.create({
 
   // Hint Card
   hintCard: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#EFF6FF',
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',
@@ -227,7 +245,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -235,21 +253,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '400',
-    color: '#065F46',
+    color: '#1E40AF',
     lineHeight: 19,
     letterSpacing: -0.2,
   },
 
-  // Button Container
-  buttonContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 16,
-    backgroundColor: '#F7F5F2',
-  },
-  buttonContainerKeyboard: {
-    backgroundColor: 'transparent',
-  },
+  // Continue Button
   continueButton: {
     backgroundColor: '#1F2937',
     borderRadius: 14,
@@ -282,4 +291,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhysicalWealthQuestion4Content;
+export default MentalWealthQuestion3Content;
