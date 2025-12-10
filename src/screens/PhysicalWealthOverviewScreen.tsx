@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Platform,
@@ -14,7 +15,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -114,7 +114,6 @@ const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
 const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> = ({
   navigation,
 }) => {
-  const insets = useSafeAreaInsets();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
@@ -548,6 +547,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
   };
 
   return (
+<<<<<<< HEAD
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
       <ScrollView
@@ -605,6 +605,12 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
 
         {/* Header Content */}
         <View style={styles.header} pointerEvents="box-none">
+=======
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={handleBack}
@@ -630,8 +636,96 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
               </TouchableOpacity>
             </View>
           </View>
+          <View style={styles.headerContent}>
+            <View style={styles.titleRow}>
+              <LinearGradient
+                colors={['#34D399', '#10B981', '#059669']}
+                style={styles.titleIconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.titleIconInner}>
+                  <Ionicons name="fitness" size={20} color="#059669" />
+                </View>
+              </LinearGradient>
+              <Text style={styles.title}>Physical Wealth</Text>
+            </View>
+            <Text style={styles.subtitle}>
+              Your vision for your best physical self
+            </Text>
+          </View>
         </View>
+
+        {/* Q&A Cards */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {SAMPLE_QA_DATA.map((item) => {
+            const isExpanded = expandedCards.has(item.id);
+            const isMeasured = measuredCards.has(item.id);
+            const isLongAnswer = needsExpansion.has(item.id);
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={isLongAnswer ? 0.8 : 1}
+                onPress={() => toggleExpand(item.id)}
+                style={styles.cardWrapper}
+              >
+                <View style={styles.card}>
+                  {/* Card Accent */}
+                  <View style={styles.cardAccent} />
+
+                  {/* Question Header with Icon */}
+                  <View style={styles.questionHeader}>
+                    <LinearGradient
+                      colors={['#34D399', '#10B981', '#059669']}
+                      style={styles.questionIconGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <View style={styles.questionIconInner}>
+                        <Ionicons name={item.icon} size={16} color="#059669" />
+                      </View>
+                    </LinearGradient>
+                    <Text style={styles.questionText}>{item.question}</Text>
+                  </View>
+
+                  {/* Divider */}
+                  <View style={styles.divider} />
+
+                  {/* Answer Section */}
+                  <View style={styles.answerSection}>
+                    <Text
+                      style={styles.answerText}
+                      numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
+                      onTextLayout={(e) => handleTextLayout(item.id, e)}
+                    >
+                      {item.answer}
+                    </Text>
+                    {isMeasured && isLongAnswer && (
+                      <View style={styles.expandIndicator}>
+                        <Text style={styles.expandText}>
+                          {isExpanded ? 'Show less' : 'Read more'}
+                        </Text>
+                        <Ionicons
+                          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                          size={14}
+                          color="#059669"
+                        />
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
       </View>
+<<<<<<< HEAD
 
       {/* Bottom Sheet Modal */}
       <Modal
@@ -728,42 +822,37 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
         </KeyboardAvoidingView>
       </Modal>
     </View>
+=======
+    </SafeAreaView>
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
+
+  // Header
   header: {
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 0,
+    paddingBottom: 20,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+<<<<<<< HEAD
+=======
+    marginBottom: 16,
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   },
   backButton: {
     width: 40,
@@ -815,8 +904,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  scrollableTitle: {
-    marginBottom: 20,
+  headerContent: {
+    paddingHorizontal: 4,
   },
   titleRow: {
     flexDirection: 'row',
@@ -859,7 +948,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingTop: 8,
   },
   bottomSpacer: {
     height: 32,

@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -15,8 +16,6 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useMedia, MediaEntry } from '../context/MediaContext';
 
@@ -85,8 +84,6 @@ const CATEGORY_COLORS = [
 
 // Main Component
 const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-
   // Get addEntry from context
   const { addEntry } = useMedia();
 
@@ -344,18 +341,46 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
   };
 
   return (
-    <View style={styles.container}>
-      {/* Content - ScrollView goes first */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 64 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.roundButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>New Entry</Text>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* Content */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Link & Title Card */}
           <Animated.View
             style={[
@@ -569,54 +594,7 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
             </TouchableOpacity>
           </Animated.View>
 
-      </ScrollView>
-
-      {/* Fixed Header with Blur Background */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-
-        {/* Header Content */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-          pointerEvents="box-none"
-        >
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.roundButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={20} color="#1F2937" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>New Entry</Text>
-            <TouchableOpacity
-              onPress={handleSave}
-              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
-              activeOpacity={0.7}
-              disabled={!isFormValid}
-            >
-              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
+        </ScrollView>
       </View>
 
       {/* Category Modal (Add/Edit) */}
@@ -724,38 +702,28 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
   header: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 0,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -792,6 +760,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 40,
   },
 
@@ -908,8 +877,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -918,7 +885,6 @@ const styles = StyleSheet.create({
   },
   categoryChipSelected: {
     backgroundColor: '#1F2937',
-    borderColor: '#1F2937',
   },
   categoryDot: {
     width: 8,

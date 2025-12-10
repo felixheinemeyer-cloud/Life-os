@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -11,8 +12,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,8 +26,6 @@ interface PhysicalWealthIntroScreenProps {
 const PhysicalWealthIntroScreen: React.FC<PhysicalWealthIntroScreenProps> = ({
   navigation,
 }) => {
-  const insets = useSafeAreaInsets();
-
   // Animation values
   const fadeIn = useRef(new Animated.Value(0)).current;
   const heroScale = useRef(new Animated.Value(0.8)).current;
@@ -143,12 +140,24 @@ const PhysicalWealthIntroScreen: React.FC<PhysicalWealthIntroScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Section */}
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Back Button */}
+          <Animated.View style={[styles.backButtonContainer, { opacity: fadeIn }]}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Hero Section */}
           <View style={styles.heroSection}>
             {/* Icon Circle */}
             <Animated.View
@@ -227,31 +236,7 @@ const PhysicalWealthIntroScreen: React.FC<PhysicalWealthIntroScreenProps> = ({
             </View>
           </Animated.View>
         </ScrollView>
-
-      {/* Fixed Header with Blur */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+      </SafeAreaView>
 
       {/* Fixed Bottom Button */}
       <Animated.View
@@ -291,34 +276,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
+  safeArea: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 100,
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
+
+  // Back Button
+  backButtonContainer: {
     paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   backButton: {
     width: 40,

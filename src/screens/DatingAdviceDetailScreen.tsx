@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   TouchableOpacity,
   Animated,
   Easing,
@@ -10,7 +11,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Types
 interface DatingAdvice {
@@ -87,7 +87,6 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
   navigation,
   route,
 }) => {
-  const insets = useSafeAreaInsets();
   const advice = route.params?.advice;
   const content = advice ? getAdviceContent(advice.id) : getAdviceContent('');
 
@@ -148,54 +147,50 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
 
   if (!advice) {
     return (
-      <View style={styles.container}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
-          showsVerticalScrollIndicator={false}
-        >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Content not found</Text>
           </View>
-        </ScrollView>
-
-        {/* Fixed Header with Blur Background */}
-        <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-          <View style={styles.headerBlur}>
-            <LinearGradient
-              colors={[
-                'rgba(247, 245, 242, 0.85)',
-                'rgba(247, 245, 242, 0.6)',
-                'rgba(247, 245, 242, 0.3)',
-                'rgba(247, 245, 242, 0)',
-              ]}
-              locations={[0, 0.3, 0.7, 1]}
-              style={styles.headerGradient}
-            />
-          </View>
-
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-          </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* ScrollView - scrolls under the header */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
-        showsVerticalScrollIndicator={false}
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+        </Animated.View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Hero Section */}
           <Animated.View
             style={[
@@ -261,75 +256,25 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
             </View>
           </Animated.View>
         </ScrollView>
-
-        {/* Fixed Header with Blur Background */}
-        <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-          {/* Gradient Fade Background */}
-          <View style={styles.headerBlur}>
-            <LinearGradient
-              colors={[
-                'rgba(247, 245, 242, 0.85)',
-                'rgba(247, 245, 242, 0.6)',
-                'rgba(247, 245, 242, 0.3)',
-                'rgba(247, 245, 242, 0)',
-              ]}
-              locations={[0, 0.3, 0.7, 1]}
-              style={styles.headerGradient}
-            />
-          </View>
-
-          {/* Header Content */}
-          <Animated.View
-            style={[
-              styles.header,
-              {
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }],
-              },
-            ]}
-            pointerEvents="box-none"
-          >
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
       </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
   header: {
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 0,
+    paddingBottom: 8,
   },
   backButton: {
     width: 40,

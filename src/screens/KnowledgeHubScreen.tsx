@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
   Animated,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 type VaultItem = {
@@ -31,8 +31,6 @@ interface KnowledgeHubScreenProps {
 }
 
 const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-
   // Vaults data - ordered as specified: Mindset, Knowledge, Media, Book, People, Love, Story
   const vaults: VaultItem[] = [
     {
@@ -115,11 +113,17 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
+        style={styles.container}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        contentContainerStyle={styles.scrollContent}
       >
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Second Brain</Text>
+        </View>
+
         {/* Vaults Grid */}
         <View style={styles.vaultsSection}>
           <View style={styles.vaultsGrid}>
@@ -136,26 +140,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* Fixed Header with Blur */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-        <View style={styles.header}>
-          <Text style={styles.title}>Second Brain</Text>
-        </View>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -229,35 +214,23 @@ const VaultCard: React.FC<{
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#F7F5F2',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F5F2', // Same as Dashboard
   },
   scrollContent: {
     paddingBottom: 40,
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
+
+  // Header
   header: {
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 8,
   },
   title: {

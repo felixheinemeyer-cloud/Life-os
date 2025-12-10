@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 // Types
@@ -84,8 +84,6 @@ const DATING_ADVICE_DATA: DatingAdvice[] = [
 
 // Main Component
 const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-
   const handlePersonPress = (person: DatingPerson) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -122,17 +120,38 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* ScrollView - scrolls under the header */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 64 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Fixed Header Row */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              // TODO: Navigate to settings
+              console.log('Settings pressed');
+            }}
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={22} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Scrollable Title */}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Dating</Text>
@@ -235,87 +254,28 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
             </View>
           </View>
         </ScrollView>
-
-      {/* Fixed Header with Blur Background */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-
-        {/* Header Content */}
-        <View style={styles.header} pointerEvents="box-none">
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                // TODO: Navigate to settings
-                console.log('Settings pressed');
-              }}
-              style={styles.settingsButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="settings-outline" size={22} color="#1F2937" />
-            </TouchableOpacity>
-          </View>
-        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
+  container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 0,
+    backgroundColor: '#F7F5F2',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 0,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: '#F7F5F2',
   },
   titleContainer: {
     paddingHorizontal: 20,

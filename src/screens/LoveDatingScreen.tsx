@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface LoveDatingScreenProps {
   navigation: {
@@ -17,63 +17,11 @@ interface LoveDatingScreenProps {
 }
 
 const LoveDatingScreen: React.FC<LoveDatingScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={styles.container}>
-      {/* ScrollView - scrolls under the header */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Empty State */}
-        <View style={styles.emptyStateContainer}>
-          <LinearGradient
-            colors={['#FFE4E6', '#FECDD3', '#FDA4AF']}
-            style={styles.emptyStateCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.iconCircle}>
-              <Ionicons name="heart" size={48} color="#F43F5E" />
-            </View>
-            <Text style={styles.emptyStateTitle}>No entries yet</Text>
-            <Text style={styles.emptyStateText}>
-              Your dates and romantic insights will appear here
-            </Text>
-          </LinearGradient>
-
-          {/* Placeholder Add Button */}
-          <TouchableOpacity
-            style={styles.addButton}
-            activeOpacity={0.7}
-            disabled
-          >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add Entry</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {/* Fixed Header with Blur Background */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-
-        {/* Header Content */}
-        <View style={styles.header} pointerEvents="box-none">
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -86,39 +34,67 @@ const LoveDatingScreen: React.FC<LoveDatingScreenProps> = ({ navigation }) => {
             <Text style={styles.subtitle}>Dates & romantic insights</Text>
           </View>
         </View>
+
+        {/* Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Empty State */}
+          <View style={styles.emptyStateContainer}>
+            <LinearGradient
+              colors={['#FFE4E6', '#FECDD3', '#FDA4AF']}
+              style={styles.emptyStateCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.iconCircle}>
+                <Ionicons name="heart" size={48} color="#F43F5E" />
+              </View>
+              <Text style={styles.emptyStateTitle}>No entries yet</Text>
+              <Text style={styles.emptyStateText}>
+                Your dates and romantic insights will appear here
+              </Text>
+            </LinearGradient>
+
+            {/* Placeholder Add Button */}
+            <TouchableOpacity
+              style={styles.addButton}
+              activeOpacity={0.7}
+              disabled
+            >
+              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Add Entry</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
+    backgroundColor: '#F1EEE0',
   },
   header: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 0,
+    paddingTop: 12,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   backButton: {
     width: 40,
@@ -147,6 +123,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
+    paddingTop: 40,
     paddingBottom: 40,
   },
   emptyStateContainer: {

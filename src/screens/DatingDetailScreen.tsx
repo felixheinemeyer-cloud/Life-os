@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -18,7 +19,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+<<<<<<< HEAD
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+=======
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
 
 // Types
 interface DatingDetailScreenProps {
@@ -366,8 +370,6 @@ const InfoRow: React.FC<{
 
 // Main Component
 const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, route }) => {
-  const insets = useSafeAreaInsets();
-
   // Get person from params or use mock
   const person = route.params?.person || MOCK_PERSON;
   const onDelete = route.params?.onDelete;
@@ -549,10 +551,36 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
   const hasInfo = person.phoneNumber || person.instagram || person.location || person.dateOfBirth;
 
   return (
+<<<<<<< HEAD
     <View style={styles.container}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
+=======
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleEdit}
+            style={styles.editButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pencil" size={20} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={!isSwipingCard}
@@ -750,48 +778,16 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             )}
           </View>
 
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
 
-      {/* Fixed Header with Blur Background */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <View style={styles.headerBlur}>
-          <LinearGradient
-            colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
-            ]}
-            locations={[0, 0.3, 0.7, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-        <View style={styles.header} pointerEvents="box-none">
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleEdit}
-            style={styles.editButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil" size={20} color="#1F2937" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Note Modal */}
-      <Modal
-        visible={noteModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setNoteModalVisible(false)}
-      >
+        {/* Note Modal */}
+        <Modal
+          visible={noteModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setNoteModalVisible(false)}
+        >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.modalContainer}
@@ -829,6 +825,7 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
           </KeyboardAvoidingView>
         </Modal>
+<<<<<<< HEAD
 
         {/* More Menu Modal */}
         <Modal
@@ -855,6 +852,10 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
           </TouchableOpacity>
         </Modal>
     </View>
+=======
+      </View>
+    </SafeAreaView>
+>>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   );
 };
 
@@ -867,26 +868,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
-  },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    flex: 1,
-  },
   header: {
+    backgroundColor: '#F7F5F2',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
