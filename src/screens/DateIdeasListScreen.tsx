@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   Animated,
@@ -12,14 +13,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< HEAD
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-=======
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2; // 2 columns with padding
@@ -244,7 +242,6 @@ const DateIdeaCard: React.FC<{
 
 // Main Component
 const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation }) => {
-<<<<<<< HEAD
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -289,8 +286,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
     ]).start();
   }, []);
 
-=======
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   const handleBack = (): void => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -332,7 +327,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
   });
 
   return (
-<<<<<<< HEAD
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
       <ScrollView
@@ -438,12 +432,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
             },
           ]}
         >
-=======
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
           <TouchableOpacity
             style={styles.backButton}
             onPress={handleBack}
@@ -453,7 +441,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
           </TouchableOpacity>
 
           <View style={styles.headerSpacer} />
-<<<<<<< HEAD
 
           <TouchableOpacity
             style={styles.addButton}
@@ -463,22 +450,8 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
             <Ionicons name="add" size={24} color="#1F2937" />
           </TouchableOpacity>
         </Animated.View>
-=======
-        </View>
-
-        {/* Placeholder Content */}
-        <View style={styles.content}>
-          <View style={styles.placeholderIcon}>
-            <Ionicons name="heart-outline" size={64} color="#E11D48" />
-          </View>
-          <Text style={styles.placeholderTitle}>Coming Soon</Text>
-          <Text style={styles.placeholderSubtitle}>
-            Browse all date ideas and find inspiration for your next adventure together.
-          </Text>
-        </View>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -487,7 +460,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-<<<<<<< HEAD
   scrollView: {
     flex: 1,
   },
@@ -514,9 +486,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-=======
+    flex: 1,
+  },
   container: {
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
@@ -525,10 +497,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
-<<<<<<< HEAD
-=======
-    paddingBottom: 12,
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   },
   backButton: {
     width: 40,

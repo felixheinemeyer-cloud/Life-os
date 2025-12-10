@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WealthType, WEALTH_CONFIGS } from '../components/WealthButton';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -57,6 +58,7 @@ const getWealthPosition = (index: number, centerX: number, centerY: number, radi
 };
 
 const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
 
   // Track which wealth areas have been defined
@@ -224,7 +226,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
   const starPath = createStarPath(CENTER, CENTER, OUTER_RADIUS * 0.75, OUTER_RADIUS * 0.35, 5);
 
   return (
-<<<<<<< HEAD
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
       <ScrollView
@@ -235,41 +236,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-=======
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View style={[styles.header, { opacity: fadeIn }]}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.title}>Your Best Self</Text>
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarTrack}>
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.progressBarSegment,
-                      index < completedCount && styles.progressBarSegmentFilled,
-                      index === 0 && styles.progressBarSegmentFirst,
-                      index === 4 && styles.progressBarSegmentLast,
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-            <Text style={styles.progressText}>{completedCount}/5 areas defined</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </Animated.View>
-
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
         {/* Star Visualization */}
         <View style={styles.starContainer}>
           <Animated.View
@@ -380,7 +346,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
           </Animated.View>
         </View>
 
-<<<<<<< HEAD
       </ScrollView>
 
       {/* Bottom instruction - Fixed at bottom */}
@@ -446,16 +411,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
             <Text style={styles.progressText}>{completedCount}/5 areas defined</Text>
           </View>
           <View style={styles.headerSpacer} />
-=======
-        {/* Bottom instruction */}
-        <Animated.View style={[styles.bottomContainer, { opacity: fadeIn }]}>
-          <View style={styles.instructionCard}>
-            <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
-            <Text style={styles.instructionText}>
-              Tap any area to define your best self
-            </Text>
-          </View>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
         </Animated.View>
       </View>
 
@@ -559,7 +514,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
           </Animated.View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -572,15 +527,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-<<<<<<< HEAD
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
   },
-=======
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
+
+  // Header Container
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
+  },
 
   // Header
   header: {

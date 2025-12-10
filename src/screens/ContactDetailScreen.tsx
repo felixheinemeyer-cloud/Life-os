@@ -683,7 +683,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-<<<<<<< HEAD
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={handleEdit}
@@ -703,15 +702,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
               </Animated.View>
             </TouchableOpacity>
           </View>
-=======
-          <TouchableOpacity
-            onPress={handleEdit}
-            style={styles.editButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil" size={20} color="#1F2937" />
-          </TouchableOpacity>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
         </View>
 
         <ScrollView
@@ -1185,7 +1175,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             minimumDate={new Date()}
           />
         )}
-<<<<<<< HEAD
 
         {/* More Menu Modal */}
         <Modal
@@ -1211,8 +1200,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             </View>
           </TouchableOpacity>
         </Modal>
-=======
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
       </View>
     </SafeAreaView>
   );

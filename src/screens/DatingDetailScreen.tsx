@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -19,10 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-<<<<<<< HEAD
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-=======
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Types
 interface DatingDetailScreenProps {
@@ -370,6 +366,8 @@ const InfoRow: React.FC<{
 
 // Main Component
 const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   // Get person from params or use mock
   const person = route.params?.person || MOCK_PERSON;
   const onDelete = route.params?.onDelete;
@@ -551,36 +549,10 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
   const hasInfo = person.phoneNumber || person.instagram || person.location || person.dateOfBirth;
 
   return (
-<<<<<<< HEAD
     <View style={styles.container}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
-=======
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleEdit}
-            style={styles.editButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil" size={20} color="#1F2937" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={!isSwipingCard}
@@ -825,7 +797,6 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
           </KeyboardAvoidingView>
         </Modal>
-<<<<<<< HEAD
 
         {/* More Menu Modal */}
         <Modal
@@ -852,10 +823,6 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
           </TouchableOpacity>
         </Modal>
     </View>
-=======
-      </View>
-    </SafeAreaView>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   );
 };
 

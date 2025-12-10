@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -114,6 +115,7 @@ const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
 const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> = ({
   navigation,
 }) => {
+  const insets = useSafeAreaInsets();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
@@ -547,7 +549,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
   };
 
   return (
-<<<<<<< HEAD
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
       <ScrollView
@@ -605,12 +606,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
 
         {/* Header Content */}
         <View style={styles.header} pointerEvents="box-none">
-=======
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
           <View style={styles.headerTop}>
             <TouchableOpacity
               onPress={handleBack}
@@ -662,7 +657,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {SAMPLE_QA_DATA.map((item) => {
+          {OPTIONAL_QUESTIONS.map((item) => {
             const isExpanded = expandedCards.has(item.id);
             const isMeasured = measuredCards.has(item.id);
             const isLongAnswer = needsExpansion.has(item.id);
@@ -725,7 +720,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </View>
-<<<<<<< HEAD
 
       {/* Bottom Sheet Modal */}
       <Modal
@@ -822,9 +816,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
         </KeyboardAvoidingView>
       </Modal>
     </View>
-=======
-    </SafeAreaView>
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   );
 };
 
@@ -836,6 +827,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  scrollableTitle: {
+    marginBottom: 24,
+  },
+
+  // Header Container
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    flex: 1,
   },
 
   // Header
@@ -849,10 +870,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-<<<<<<< HEAD
-=======
-    marginBottom: 16,
->>>>>>> parent of 303f3ea (SafeAreaView + People Vault)
   },
   backButton: {
     width: 40,
