@@ -650,75 +650,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
             </Text>
           </View>
         </View>
-
-        {/* Q&A Cards */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {OPTIONAL_QUESTIONS.map((item) => {
-            const isExpanded = expandedCards.has(item.id);
-            const isMeasured = measuredCards.has(item.id);
-            const isLongAnswer = needsExpansion.has(item.id);
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={isLongAnswer ? 0.8 : 1}
-                onPress={() => toggleExpand(item.id)}
-                style={styles.cardWrapper}
-              >
-                <View style={styles.card}>
-                  {/* Card Accent */}
-                  <View style={styles.cardAccent} />
-
-                  {/* Question Header with Icon */}
-                  <View style={styles.questionHeader}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.questionIconGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.questionIconInner}>
-                        <Ionicons name={item.icon} size={16} color="#059669" />
-                      </View>
-                    </LinearGradient>
-                    <Text style={styles.questionText}>{item.question}</Text>
-                  </View>
-
-                  {/* Divider */}
-                  <View style={styles.divider} />
-
-                  {/* Answer Section */}
-                  <View style={styles.answerSection}>
-                    <Text
-                      style={styles.answerText}
-                      numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
-                      onTextLayout={(e) => handleTextLayout(item.id, e)}
-                    >
-                      {item.answer}
-                    </Text>
-                    {isMeasured && isLongAnswer && (
-                      <View style={styles.expandIndicator}>
-                        <Text style={styles.expandText}>
-                          {isExpanded ? 'Show less' : 'Read more'}
-                        </Text>
-                        <Ionicons
-                          name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                          size={14}
-                          color="#059669"
-                        />
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
       </View>
 
       {/* Bottom Sheet Modal */}
@@ -923,6 +854,7 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingHorizontal: 4,
+    marginTop: 16,
   },
   titleRow: {
     flexDirection: 'row',
