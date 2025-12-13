@@ -62,6 +62,8 @@ import SocialWealthIntroAnimationScreen from './src/screens/SocialWealthIntroAni
 import SocialWealthIntroScreen from './src/screens/SocialWealthIntroScreen';
 import SocialWealthQuestionsContainerScreen from './src/screens/SocialWealthQuestionsContainerScreen';
 import SocialWealthOverviewScreen from './src/screens/SocialWealthOverviewScreen';
+import SocialWealthOptionalQuestionScreen from './src/screens/SocialWealthOptionalQuestionScreen';
+import SocialWealthCustomQuestionScreen from './src/screens/SocialWealthCustomQuestionScreen';
 import MentalWealthIntroAnimationScreen from './src/screens/MentalWealthIntroAnimationScreen';
 import MentalWealthIntroScreen from './src/screens/MentalWealthIntroScreen';
 import MentalWealthQuestionsContainerScreen from './src/screens/MentalWealthQuestionsContainerScreen';
@@ -161,6 +163,8 @@ const KnowledgeStack = () => {
       <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
       <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
       <Stack.Screen name="SocialWealthOverview" component={SocialWealthOverviewScreen} />
+      <Stack.Screen name="SocialWealthOptionalQuestion" component={SocialWealthOptionalQuestionScreen} />
+      <Stack.Screen name="SocialWealthCustomQuestion" component={SocialWealthCustomQuestionScreen} />
       <Stack.Screen name="MentalWealthIntroAnimation" component={MentalWealthIntroAnimationScreen} />
       <Stack.Screen name="MentalWealthIntro" component={MentalWealthIntroScreen} />
       <Stack.Screen name="MentalWealthQuestions" component={MentalWealthQuestionsContainerScreen} />

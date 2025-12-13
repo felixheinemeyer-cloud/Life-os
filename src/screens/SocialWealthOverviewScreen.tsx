@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,14 +15,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface SocialWealthOverviewScreenProps {
+  route?: {
+    params?: {
+      reopenOptionalQuestions?: boolean;
+      reopenGoDeeper?: boolean;
+    };
+  };
   navigation: {
     goBack: () => void;
-    navigate: (screen: string) => void;
+    navigate: (screen: string, params?: any) => void;
+    setParams: (params: any) => void;
   };
 }
 
@@ -39,6 +47,7 @@ interface OptionalQuestion {
   id: string;
   question: string;
   icon: keyof typeof Ionicons.glyphMap;
+  promptHint?: string;
 }
 
 // Core questions data
@@ -81,40 +90,36 @@ const CORE_QA_DATA: QuestionAnswer[] = [
 const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
   {
     id: 'opt1',
-    question: 'How does your best self handle conflicts in relationships?',
-    icon: 'shield-checkmark',
+    question: 'What social strengths or qualities do you want to be known for?',
+    icon: 'medal',
+    promptHint: 'Think about how you show up in relationships. Consider traits like being trustworthy, authentic, empathetic, inspiring, fun, a good listener, reliable, or someone who brings positive energy.',
   },
   {
     id: 'opt2',
-    question: 'What boundaries does your best self maintain in friendships?',
-    icon: 'git-branch',
+    question: 'How does your best self handle conflicts, misunderstandings, or emotional challenges in relationships?',
+    icon: 'shield-checkmark',
+    promptHint: 'Consider communication style, emotional regulation, courage in difficult conversations, and empathy.',
   },
   {
     id: 'opt3',
-    question: 'How does your best self show up for family members?',
-    icon: 'home',
+    question: 'Which types of people does your best social self intentionally surround themselves with?',
+    icon: 'people-circle',
+    promptHint: 'Think about values, energy, ambition, kindness, growth mindset, or shared passions.',
   },
   {
     id: 'opt4',
-    question: 'What does your best self\'s community involvement look like?',
-    icon: 'globe',
-  },
-  {
-    id: 'opt5',
-    question: 'How does your best self balance alone time with social connection?',
-    icon: 'partly-sunny',
-  },
-  {
-    id: 'opt6',
-    question: 'What qualities does your best self look for in new friendships?',
-    icon: 'sparkles',
+    question: 'What role does community play in your ideal life, and how do you contribute to it?',
+    icon: 'earth',
+    promptHint: 'Think about family, friendships, professional circles, networking, clubs, local groups, or digital communities.',
   },
 ];
 
 const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
+  route,
   navigation,
 }) => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
@@ -135,6 +140,41 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
   const availableOptionalQuestions = OPTIONAL_QUESTIONS.filter(
     (opt) => !additionalQAs.some((qa) => qa.id === opt.id)
   );
+
+  // Handle reopening optional questions when returning from question screen
+  useEffect(() => {
+    if (isFocused && route?.params?.reopenOptionalQuestions) {
+      // Clear the param
+      navigation.setParams({ reopenOptionalQuestions: undefined });
+      // Reopen the bottom sheet with optional questions
+      setShowBottomSheet(true);
+      setShowOptionalQuestions(true);
+      Animated.spring(bottomSheetAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 65,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isFocused, route?.params?.reopenOptionalQuestions]);
+
+  // Handle reopening Go deeper menu when returning from custom question screen
+  useEffect(() => {
+    if (isFocused && route?.params?.reopenGoDeeper) {
+      // Clear the param
+      navigation.setParams({ reopenGoDeeper: undefined });
+      // Reopen the bottom sheet with main menu
+      setShowBottomSheet(true);
+      setShowOptionalQuestions(false);
+      setShowCustomInput(false);
+      Animated.spring(bottomSheetAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 65,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isFocused, route?.params?.reopenGoDeeper]);
 
   const handleTextLayout = (id: string, e: any) => {
     if (!measuredCards.has(id)) {
@@ -218,15 +258,25 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setShowCustomInput(true);
+    // Close the bottom sheet
+    closeBottomSheet();
+    // Navigate to the custom question screen
+    navigation.navigate('SocialWealthCustomQuestion');
   };
 
   const handleSelectOptional = (question: OptionalQuestion) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setSelectedOptionalId(question.id);
-    setShowOptionalQuestions(false);
+    // Close the bottom sheet
+    closeBottomSheet();
+    // Navigate to the optional question screen
+    navigation.navigate('SocialWealthOptionalQuestion', {
+      question: question.question,
+      icon: question.icon,
+      promptHint: question.promptHint,
+      questionId: question.id,
+    });
   };
 
   const handleSaveAnswer = () => {
@@ -352,7 +402,6 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
               </View>
             )}
           </View>
-
           {/* Delete hint for additional cards */}
           {isAdditional && (
             <Text style={styles.deleteHint}>Long press to remove</Text>
@@ -366,9 +415,10 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
   const renderBottomSheetContent = () => {
     if (selectedOptionalId || showCustomInput) {
       // Show answer input
-      const selectedQuestion = selectedOptionalId
-        ? OPTIONAL_QUESTIONS.find((q) => q.id === selectedOptionalId)?.question
-        : customQuestion;
+      const selectedOptQuestion = selectedOptionalId
+        ? OPTIONAL_QUESTIONS.find((q) => q.id === selectedOptionalId)
+        : null;
+      const selectedQuestion = selectedOptQuestion?.question || customQuestion;
 
       return (
         <View style={styles.answerInputContainer}>
@@ -398,6 +448,15 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                   {selectedQuestion}
                 </Text>
               </View>
+
+              {selectedOptQuestion?.promptHint && (
+                <View style={styles.promptHintContainer}>
+                  <Ionicons name="bulb-outline" size={16} color="#8B5CF6" />
+                  <Text style={styles.promptHintText}>
+                    {selectedOptQuestion.promptHint}
+                  </Text>
+                </View>
+              )}
 
               <Text style={styles.inputLabel}>Your answer</Text>
               <TextInput
@@ -454,13 +513,15 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                   onPress={() => handleSelectOptional(question)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.optionalQuestionIcon}>
+                  <View style={styles.optionalQuestionIconRing}>
                     <Ionicons name={question.icon} size={18} color="#8B5CF6" />
                   </View>
-                  <Text style={styles.optionalQuestionText}>
-                    {question.question}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                  <View style={styles.optionalQuestionContent}>
+                    <Text style={styles.optionalQuestionTitle} numberOfLines={3}>
+                      {question.question}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
                 </TouchableOpacity>
               ))
             ) : (
@@ -507,7 +568,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                 Pick one and dive deeper
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={22} color="#8B5CF6" />
+            <Ionicons name="chevron-forward" size={22} color="#6B7280" />
           </LinearGradient>
         </TouchableOpacity>
 
@@ -539,7 +600,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                 Create your own question
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={22} color="#F59E0B" />
+            <Ionicons name="chevron-forward" size={22} color="#6B7280" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -1112,28 +1173,39 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   optionalQuestionsList: {
-    maxHeight: 400,
+    maxHeight: 500,
   },
   optionalQuestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  optionalQuestionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#EDE9FE',
+  optionalQuestionIconRing: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    flexShrink: 0,
   },
-  optionalQuestionText: {
+  optionalQuestionContent: {
     flex: 1,
+    marginRight: 8,
+  },
+  optionalQuestionTitle: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1F2937',
     lineHeight: 21,
   },
@@ -1182,7 +1254,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F3FF',
     borderRadius: 12,
     padding: 14,
-    marginBottom: 20,
+    marginBottom: 12,
     gap: 10,
   },
   selectedQuestionText: {
@@ -1191,6 +1263,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1F2937',
     lineHeight: 22,
+  },
+  promptHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
+    gap: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#F59E0B',
+  },
+  promptHintText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#92400E',
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   answerTextInput: {
     backgroundColor: '#FFFFFF',
@@ -1225,6 +1316,14 @@ const styles = StyleSheet.create({
   },
   saveButtonTextDisabled: {
     color: '#9CA3AF',
+  },
+  deleteHint: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });
 
