@@ -188,6 +188,14 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
+  const handleWeeklyTracking = (): void => {
+    if (navigation) {
+      navigation.navigate('WeeklyTracking');
+    } else {
+      console.log('Navigate to Weekly Tracking');
+    }
+  };
+
   const handleStatistics = (): void => {
     // TODO: Navigate to statistics screen
     console.log('Navigate to Statistics');
@@ -374,6 +382,34 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               </View>
             </TouchableOpacity>
           </View>
+
+          {/* Weekly Check-In Card */}
+          <TouchableOpacity
+            style={styles.weeklyCardTouchable}
+            onPress={handleWeeklyTracking}
+            activeOpacity={0.85}
+          >
+            <View style={styles.weeklyCard}>
+              {/* Icon with gradient ring */}
+              <LinearGradient
+                colors={['#5EEAD4', '#14B8A6', '#0D9488']}
+                style={styles.weeklyIconGradientRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.weeklyIconInnerCircle}>
+                  <Ionicons name="calendar" size={28} color="#0D9488" />
+                </View>
+              </LinearGradient>
+              {/* Text content */}
+              <View style={styles.weeklyTextContainer}>
+                <Text style={styles.weeklyCardTitle}>Weekly Check-In</Text>
+                <Text style={styles.weeklyCardSubtitle}>Reflect on your week</Text>
+              </View>
+              {/* Chevron indicator */}
+              <Ionicons name="chevron-forward" size={20} color="#0D9488" style={styles.weeklyChevron} />
+            </View>
+          </TouchableOpacity>
 
           {/* Today's Insight Section */}
           <View style={styles.insightSection}>
@@ -900,7 +936,7 @@ const styles = StyleSheet.create({
   trackingRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   trackingCardTouchable: {
     flex: 1,
@@ -934,6 +970,60 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Weekly Check-In Card Styles
+  weeklyCardTouchable: {
+    marginBottom: 24,
+  },
+  weeklyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    padding: 16,
+    paddingLeft: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0D9488',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  weeklyIconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weeklyIconInnerCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weeklyTextContainer: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  weeklyCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  weeklyCardSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#0D9488',
+    opacity: 0.85,
+  },
+  weeklyChevron: {
+    opacity: 0.6,
+    marginLeft: 8,
   },
   darkCardTitle: {
     fontSize: 16,

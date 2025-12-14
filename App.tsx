@@ -20,6 +20,7 @@ import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigher
 import MorningTrackingCompleteScreen from './src/screens/MorningTrackingCompleteScreen';
 import EveningTrackingContainerScreen from './src/screens/EveningTrackingContainerScreen';
 import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
+import WeeklyTrackingPhysicalWealthScreen from './src/screens/WeeklyTrackingPhysicalWealthScreen';
 import HomeIcon from './src/components/HomeIcon';
 import BrainIcon from './src/components/BrainIcon';
 import CalendarIcon from './src/components/CalendarIcon';
@@ -88,6 +89,7 @@ const DashboardStack = () => {
       <Stack.Screen name="MorningTrackingComplete" component={MorningTrackingCompleteScreen} />
       <Stack.Screen name="EveningTracking" component={EveningTrackingContainerScreen} />
       <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
+      <Stack.Screen name="WeeklyTracking" component={WeeklyTrackingPhysicalWealthScreen} />
     </Stack.Navigator>
   );
 };
