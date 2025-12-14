@@ -7,11 +7,9 @@ import {
   TouchableOpacity,
   Platform,
   TextInput,
-  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -43,17 +41,9 @@ interface DateIdeaEntryScreenProps {
 // Constants
 const STORAGE_KEY = '@custom_date_ideas';
 
-const CATEGORIES = [
-  { id: 'romantic', name: 'Romantic', icon: 'heart-outline' as const },
-  { id: 'adventure', name: 'Adventure', icon: 'compass-outline' as const },
-  { id: 'creative', name: 'Creative', icon: 'color-palette-outline' as const },
-  { id: 'food', name: 'Food & Drink', icon: 'restaurant-outline' as const },
-  { id: 'outdoor', name: 'Outdoors', icon: 'leaf-outline' as const },
-  { id: 'entertainment', name: 'Fun', icon: 'film-outline' as const },
-  { id: 'active', name: 'Active', icon: 'fitness-outline' as const },
-  { id: 'cozy', name: 'Cozy', icon: 'home-outline' as const },
-  { id: 'cultural', name: 'Cultural', icon: 'library-outline' as const },
-];
+// Default category and icon for all custom date ideas
+const CUSTOM_CATEGORY = 'custom';
+const CUSTOM_ICON: keyof typeof Ionicons.glyphMap = 'sparkles-outline';
 
 const DURATIONS = [
   { id: '1h', label: '1h' },
@@ -72,33 +62,9 @@ const BUDGETS: { id: DateIdea['budget']; label: string; description: string }[] 
   { id: 'high', label: '$$$', description: 'Splurge' },
 ];
 
-const ICONS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { icon: 'sunny-outline', label: 'Sun' },
-  { icon: 'moon-outline', label: 'Moon' },
-  { icon: 'star-outline', label: 'Star' },
-  { icon: 'heart-outline', label: 'Heart' },
-  { icon: 'cafe-outline', label: 'Cafe' },
-  { icon: 'wine-outline', label: 'Wine' },
-  { icon: 'pizza-outline', label: 'Food' },
-  { icon: 'film-outline', label: 'Movie' },
-  { icon: 'musical-notes-outline', label: 'Music' },
-  { icon: 'brush-outline', label: 'Art' },
-  { icon: 'camera-outline', label: 'Photo' },
-  { icon: 'bicycle-outline', label: 'Bike' },
-  { icon: 'walk-outline', label: 'Walk' },
-  { icon: 'boat-outline', label: 'Boat' },
-  { icon: 'airplane-outline', label: 'Travel' },
-  { icon: 'bed-outline', label: 'Relax' },
-  { icon: 'game-controller-outline', label: 'Games' },
-  { icon: 'book-outline', label: 'Read' },
-  { icon: 'flower-outline', label: 'Nature' },
-  { icon: 'sparkles-outline', label: 'Special' },
-];
 
 // Main Component
 const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, route }) => {
-  const insets = useSafeAreaInsets();
-
   // Get existing idea if editing
   const existingIdea = route?.params?.idea;
   const isEditMode = !!existingIdea;
@@ -107,10 +73,8 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
   // Form state
   const [title, setTitle] = useState(existingIdea?.title || '');
   const [description, setDescription] = useState(existingIdea?.description || '');
-  const [selectedCategory, setSelectedCategory] = useState(existingIdea?.category || 'romantic');
   const [selectedDuration, setSelectedDuration] = useState(existingIdea?.duration || '2-3h');
   const [selectedBudget, setSelectedBudget] = useState<DateIdea['budget']>(existingIdea?.budget || 'low');
-  const [selectedIcon, setSelectedIcon] = useState<keyof typeof Ionicons.glyphMap>(existingIdea?.icon || 'heart-outline');
 
   // Focus states
   const [isTitleFocused, setIsTitleFocused] = useState(false);
@@ -130,8 +94,8 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
       id: isEditMode ? existingIdea.id : `custom_${Date.now()}`,
       title: title.trim(),
       description: description.trim() || title.trim(),
-      icon: selectedIcon,
-      category: selectedCategory,
+      icon: CUSTOM_ICON,
+      category: CUSTOM_CATEGORY,
       duration: selectedDuration,
       budget: selectedBudget,
       isCustom: true,
@@ -174,29 +138,6 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
     navigation.goBack();
   };
 
-  const handleCategorySelect = (categoryId: string) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setSelectedCategory(categoryId);
-
-    // Auto-select a relevant icon based on category
-    const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
-      romantic: 'heart-outline',
-      adventure: 'compass-outline',
-      creative: 'brush-outline',
-      food: 'restaurant-outline',
-      outdoor: 'leaf-outline',
-      entertainment: 'film-outline',
-      active: 'bicycle-outline',
-      cozy: 'bed-outline',
-      cultural: 'book-outline',
-    };
-    if (categoryIcons[categoryId] && !existingIdea) {
-      setSelectedIcon(categoryIcons[categoryId]);
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Content */}
@@ -215,7 +156,7 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.previewIconInner}>
-              <Ionicons name={selectedIcon} size={28} color="#E11D48" />
+              <Ionicons name={CUSTOM_ICON} size={28} color="#E11D48" />
             </View>
           </LinearGradient>
           <Text style={styles.previewTitle}>
@@ -267,43 +208,6 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
             numberOfLines={3}
             textAlignVertical="top"
           />
-        </View>
-
-        {/* Category Card */}
-        <View style={styles.card}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="grid-outline" size={20} color="#E11D48" />
-            </View>
-            <Text style={styles.cardLabel}>Category</Text>
-          </View>
-          <View style={styles.chipGrid}>
-            {CATEGORIES.map(category => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.chip,
-                  selectedCategory === category.id && styles.chipSelected,
-                ]}
-                onPress={() => handleCategorySelect(category.id)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={category.icon}
-                  size={14}
-                  color={selectedCategory === category.id ? '#FFFFFF' : '#6B7280'}
-                />
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedCategory === category.id && styles.chipTextSelected,
-                  ]}
-                >
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
 
         {/* Duration Card */}
@@ -375,48 +279,6 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
                 >
                   {budget.label}
                 </Text>
-                <Text
-                  style={[
-                    styles.budgetDescription,
-                    selectedBudget === budget.id && styles.budgetDescriptionSelected,
-                  ]}
-                >
-                  {budget.description}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Icon Card */}
-        <View style={styles.card}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="shapes-outline" size={20} color="#E11D48" />
-            </View>
-            <Text style={styles.cardLabel}>Icon</Text>
-          </View>
-          <View style={styles.iconGrid}>
-            {ICONS.map(item => (
-              <TouchableOpacity
-                key={item.icon}
-                style={[
-                  styles.iconOption,
-                  selectedIcon === item.icon && styles.iconOptionSelected,
-                ]}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSelectedIcon(item.icon);
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={item.icon}
-                  size={22}
-                  color={selectedIcon === item.icon ? '#E11D48' : '#6B7280'}
-                />
               </TouchableOpacity>
             ))}
           </View>
@@ -620,32 +482,13 @@ const styles = StyleSheet.create({
   },
 
   // Chips
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    gap: 6,
-  },
   chipSelected: {
     backgroundColor: '#1F2937',
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
   },
   chipTextSelected: {
     color: '#FFFFFF',
@@ -682,36 +525,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 2,
   },
   budgetLabelSelected: {
     color: '#FFFFFF',
-  },
-  budgetDescription: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  budgetDescriptionSelected: {
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-
-  // Icon Grid
-  iconGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  iconOption: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconOptionSelected: {
-    backgroundColor: '#FFF1F2',
   },
 
   // Bottom Spacer
