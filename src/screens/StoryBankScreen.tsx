@@ -95,12 +95,16 @@ const AddStoryCard: React.FC<{
     <TouchableOpacity
       style={styles.addStoryCard}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <Text style={styles.addStoryPlaceholder}>Add a new story...</Text>
-      <View style={styles.addStoryButton}>
-        <Ionicons name="add" size={20} color="#84CC16" />
+      <View style={styles.addStoryIconContainer}>
+        <Ionicons name="add" size={18} color="#16A34A" />
       </View>
+      <View style={styles.addStoryContent}>
+        <Text style={styles.addStoryTitle}>New Story</Text>
+        <Text style={styles.addStorySubtitle}>Capture a memory</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
     </TouchableOpacity>
   );
 };
@@ -143,30 +147,28 @@ const StoryCard: React.FC<{
           { transform: [{ scale: scaleAnim }] },
         ]}
       >
-        {/* Subtle left accent bar */}
-        <View style={styles.storyAccentBar} />
+        {/* Icon */}
+        <View style={styles.storyIconContainer}>
+          <Ionicons name="bookmark" size={16} color="#16A34A" />
+        </View>
 
         {/* Card content */}
         <View style={styles.storyCardContent}>
-          {/* Header row with year and chevron */}
-          <View style={styles.storyCardHeader}>
-            {story.whenItHappened && (
-              <View style={styles.yearBadge}>
-                <Ionicons name="time-outline" size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
-                <Text style={styles.yearText}>{story.whenItHappened}</Text>
-              </View>
-            )}
-            <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
-          </View>
-
           {/* Title */}
-          <Text style={styles.storyTitle} numberOfLines={2}>{story.title}</Text>
+          <Text style={styles.storyTitle} numberOfLines={1}>{story.title}</Text>
 
-          {/* Content Preview with quote styling */}
-          <View style={styles.storySnippetContainer}>
-            <Text style={styles.quoteSymbol}>"</Text>
-            <Text style={styles.storySnippet} numberOfLines={2}>{story.content}</Text>
-          </View>
+          {/* Content Preview */}
+          <Text style={styles.storySnippet} numberOfLines={2}>{story.content}</Text>
+
+          {/* Year */}
+          {story.whenItHappened && (
+            <Text style={styles.storyYear}>{story.whenItHappened}</Text>
+          )}
+        </View>
+
+        {/* Chevron */}
+        <View style={styles.storyChevron}>
+          <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -180,13 +182,13 @@ const EmptyState: React.FC<{
   return (
     <View style={styles.emptyStateContainer}>
       <LinearGradient
-        colors={['#ECFCCB', '#D9F99D', '#BEF264']}
+        colors={['#DCFCE7', '#BBF7D0', '#86EFAC']}
         style={styles.emptyStateCard}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.emptyIconCircle}>
-          <Ionicons name="bookmark" size={40} color="#84CC16" />
+          <Ionicons name="bookmark" size={40} color="#16A34A" />
         </View>
         <Text style={styles.emptyStateTitle}>Your Story Bank is Empty</Text>
         <Text style={styles.emptyStateText}>
@@ -300,7 +302,7 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 72 },
+          { paddingTop: insets.top + 64 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -309,11 +311,8 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
         <Pressable onPress={() => Keyboard.dismiss()}>
           {/* Title Section */}
           <View style={styles.titleSection}>
-          <View>
             <Text style={styles.title}>Story Bank</Text>
-            <Text style={styles.subtitle}>Your life stories, ready to share</Text>
           </View>
-        </View>
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
@@ -343,24 +342,33 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
             {/* Add Story Card */}
             <AddStoryCard onPress={handleOpenModal} />
 
-            {/* Story Cards */}
-            {sortedStories.length > 0 ? (
-              <View style={styles.storiesContainer}>
-                {sortedStories.map((story) => (
-                  <StoryCard
-                    key={story.id}
-                    story={story}
-                    onPress={() => handleStoryPress(story)}
-                  />
-                ))}
+            {/* Stories Section */}
+            <View style={styles.storiesSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {searchQuery.trim() ? `Results` : 'All Stories'}
+                </Text>
               </View>
-            ) : searchQuery.trim() ? (
-              <View style={styles.noResults}>
-                <Ionicons name="search-outline" size={48} color="#D1D5DB" />
-                <Text style={styles.noResultsTitle}>No stories found</Text>
-                <Text style={styles.noResultsText}>Try a different search term</Text>
-              </View>
-            ) : null}
+
+              {/* Story Cards */}
+              {sortedStories.length > 0 ? (
+                <View style={styles.storiesContainer}>
+                  {sortedStories.map((story) => (
+                    <StoryCard
+                      key={story.id}
+                      story={story}
+                      onPress={() => handleStoryPress(story)}
+                    />
+                  ))}
+                </View>
+              ) : searchQuery.trim() ? (
+                <View style={styles.noResults}>
+                  <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                  <Text style={styles.noResultsTitle}>No stories found</Text>
+                  <Text style={styles.noResultsText}>Try a different search term</Text>
+                </View>
+              ) : null}
+            </View>
           </>
         ) : (
           <EmptyState onAddPress={handleOpenModal} />
@@ -436,12 +444,11 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
                 value={storyTitle}
                 onChangeText={setStoryTitle}
               />
-              <Text style={styles.optionalLabel}>optional</Text>
             </View>
 
             {/* When Row */}
             <View style={styles.whenInputRow}>
-              <Ionicons name="time-outline" size={18} color="#65A30D" />
+              <Ionicons name="time-outline" size={18} color="#16A34A" />
               <TextInput
                 style={styles.whenInput}
                 placeholder="When? (e.g., Summer 2023, May 2021)"
@@ -548,19 +555,13 @@ const styles = StyleSheet.create({
 
   // Title Section
   titleSection: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
   },
 
   // Search Bar
@@ -596,100 +597,114 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingLeft: 16,
-    paddingRight: 8,
+    borderRadius: 14,
     paddingVertical: 12,
-    marginBottom: 20,
+    paddingHorizontal: 14,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 2,
   },
-  addStoryPlaceholder: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#9CA3AF',
-  },
-  addStoryButton: {
+  addStoryIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#ECFCCB',
+    borderRadius: 10,
+    backgroundColor: '#DCFCE7',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  addStoryContent: {
+    flex: 1,
+    marginLeft: 14,
+    marginRight: 8,
+  },
+  addStoryTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 1,
+  },
+  addStorySubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
 
   // Stories Container
   storiesContainer: {
-    gap: 14,
+    gap: 12,
   },
 
   // Story Card
   storyCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     flexDirection: 'row',
-    overflow: 'hidden',
+    alignItems: 'flex-start',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
-  storyAccentBar: {
-    width: 4,
-    backgroundColor: '#65A30D',
+  storyIconContainer: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
   },
   storyCardContent: {
     flex: 1,
-    padding: 16,
-    paddingLeft: 14,
-  },
-  storyCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  yearBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  yearText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    letterSpacing: 0.2,
+    marginLeft: 14,
+    marginRight: 10,
   },
   storyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-    lineHeight: 24,
-    letterSpacing: -0.3,
-  },
-  storySnippetContainer: {
-    flexDirection: 'row',
-  },
-  quoteSymbol: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#D1D5DB',
-    lineHeight: 20,
-    marginRight: 4,
-    marginTop: -2,
+    color: '#1F2937',
+    letterSpacing: -0.2,
+    marginBottom: 6,
   },
   storySnippet: {
-    flex: 1,
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
-    lineHeight: 21,
-    fontStyle: 'italic',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  storyYear: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  storyChevron: {
+    alignSelf: 'center',
+    marginLeft: 4,
+  },
+
+  // Stories Section
+  storiesSection: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
   },
 
   // No Results
@@ -722,7 +737,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 40,
     alignItems: 'center',
-    shadowColor: '#84CC16',
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -748,26 +763,26 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#3F6212',
+    color: '#166534',
     marginBottom: 8,
     letterSpacing: -0.3,
   },
   emptyStateText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#4D7C0F',
+    color: '#15803D',
     textAlign: 'center',
     lineHeight: 22,
   },
   emptyAddButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#84CC16',
+    backgroundColor: '#16A34A',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 14,
     marginTop: 28,
-    shadowColor: '#84CC16',
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -833,11 +848,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     paddingVertical: 12,
-  },
-  optionalLabel: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
   },
   whenInputRow: {
     flexDirection: 'row',

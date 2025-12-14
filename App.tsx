@@ -105,24 +105,24 @@ const KnowledgeStack = () => {
       <Stack.Screen name="HigherSelf" component={HigherSelfScreen} />
       <Stack.Screen name="MindsetBeliefs" component={MindsetBeliefsScreen} />
       <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
-      <Stack.Screen name="KnowledgeTopic" component={KnowledgeTopicScreen} />
+      <Stack.Screen name="KnowledgeTopic" component={KnowledgeTopicScreen as React.ComponentType<any>} />
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
       <Stack.Screen
         name="MediaVaultNewEntry"
         component={MediaVaultNewEntryScreen}
         options={{ presentation: 'modal' }}
       />
-      <Stack.Screen name="MediaVaultEntry" component={MediaVaultEntryScreen} />
+      <Stack.Screen name="MediaVaultEntry" component={MediaVaultEntryScreen as React.ComponentType<any>} />
       <Stack.Screen name="BookVault" component={BookVaultScreen} />
       <Stack.Screen
         name="BookVaultNewEntry"
         component={BookVaultNewEntryScreen}
         options={{ presentation: 'modal' }}
       />
-      <Stack.Screen name="BookVaultEntry" component={BookVaultEntryScreen} />
+      <Stack.Screen name="BookVaultEntry" component={BookVaultEntryScreen as React.ComponentType<any>} />
       <Stack.Screen
         name="BookVaultNotes"
-        component={BookVaultNotesScreen}
+        component={BookVaultNotesScreen as React.ComponentType<any>}
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="PeopleCRM" component={PeopleCRMScreen} />
@@ -163,7 +163,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
       <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
       <Stack.Screen name="SocialWealthOverview" component={SocialWealthOverviewScreen} />
-      <Stack.Screen name="SocialWealthOptionalQuestion" component={SocialWealthOptionalQuestionScreen} />
+      <Stack.Screen name="SocialWealthOptionalQuestion" component={SocialWealthOptionalQuestionScreen as React.ComponentType<any>} />
       <Stack.Screen name="SocialWealthCustomQuestion" component={SocialWealthCustomQuestionScreen} />
       <Stack.Screen name="MentalWealthIntroAnimation" component={MentalWealthIntroAnimationScreen} />
       <Stack.Screen name="MentalWealthIntro" component={MentalWealthIntroScreen} />
