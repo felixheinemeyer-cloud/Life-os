@@ -550,9 +550,39 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
 
   return (
     <View style={styles.container}>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={styles.editButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+            >
+              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={!isSwipingCard}

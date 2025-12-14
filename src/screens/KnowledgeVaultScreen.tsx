@@ -86,7 +86,7 @@ const MOCK_ENTRIES: KnowledgeEntry[] = [
 ];
 
 // Consistent teal color for all topic card icons (matches KnowledgeHubScreen Knowledge card)
-const TOPIC_ICON_COLOR = '#0D9488';
+const TOPIC_ICON_COLOR = '#06B6D4';
 
 // Icon categories for the picker
 const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[] }[] = [
@@ -1262,7 +1262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconItemSelected: {
-    backgroundColor: '#E6F7F5',
+    backgroundColor: '#CFFAFE',
     borderWidth: 2,
     borderColor: TOPIC_ICON_COLOR,
   },

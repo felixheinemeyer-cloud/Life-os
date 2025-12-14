@@ -744,7 +744,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="call-outline" size={20} color="#1D4ED8" />
+                    <Ionicons name="call-outline" size={20} color="#6B7280" />
                   </View>
                   <Text style={styles.quickActionLabel}>Call</Text>
                 </TouchableOpacity>
@@ -756,7 +756,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="mail" size={20} color="#1D4ED8" />
+                    <Ionicons name="mail" size={20} color="#6B7280" />
                   </View>
                   <Text style={styles.quickActionLabel}>Email</Text>
                 </TouchableOpacity>
@@ -768,7 +768,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="logo-instagram" size={20} color="#1D4ED8" />
+                    <Ionicons name="logo-instagram" size={20} color="#6B7280" />
                   </View>
                   <Text style={styles.quickActionLabel}>Instagram</Text>
                 </TouchableOpacity>

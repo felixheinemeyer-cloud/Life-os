@@ -54,6 +54,7 @@ interface Category {
 // Categories
 const CATEGORIES: Category[] = [
   { id: 'all', name: 'All', icon: 'sparkles-outline', color: '#6B7280' },
+  { id: 'my-ideas', name: 'My Ideas', icon: 'person-outline', color: '#BE123C' },
   { id: 'romantic', name: 'Romantic', icon: 'heart-outline', color: '#E11D48' },
   { id: 'adventure', name: 'Adventure', icon: 'compass-outline', color: '#0891B2' },
   { id: 'creative', name: 'Creative', icon: 'color-palette-outline', color: '#7C3AED' },
@@ -319,7 +320,14 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
 
   // Filter ideas based on category and search
   const filteredIdeas = allIdeas.filter(idea => {
-    const matchesCategory = selectedCategory === 'all' || idea.category === selectedCategory;
+    let matchesCategory = false;
+    if (selectedCategory === 'all') {
+      matchesCategory = true;
+    } else if (selectedCategory === 'my-ideas') {
+      matchesCategory = idea.isCustom === true;
+    } else {
+      matchesCategory = idea.category === selectedCategory;
+    }
     const matchesSearch = searchQuery.trim() === '' ||
       idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       idea.description.toLowerCase().includes(searchQuery.toLowerCase());

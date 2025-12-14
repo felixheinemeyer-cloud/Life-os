@@ -187,7 +187,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
         <Pressable onPress={() => Keyboard.dismiss()}>
           {/* Scrollable Title */}
           <View style={styles.scrollableTitle}>
-            <Text style={styles.title}>Dating</Text>
+            <Text style={styles.title}>Dating Life</Text>
           </View>
 
           {/* Search Bar */}
