@@ -23,9 +23,83 @@ import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ENTRY_ACTION_WIDTH = 140;
+const CARD_GAP = 12;
+const HORIZONTAL_PADDING = 16;
+const CARD_WIDTH = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - CARD_GAP) / 2;
 
 // Consistent teal color matching KnowledgeVaultScreen
-const ACCENT_COLOR = '#0D9488';
+const ACCENT_COLOR = '#06B6D4';
+
+// Icon categories for the picker
+const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[] }[] = [
+  {
+    name: 'Popular',
+    icons: [
+      'bookmark-outline', 'book-outline', 'bulb-outline', 'star-outline',
+      'folder-outline', 'document-text-outline', 'heart-outline', 'flag-outline',
+    ],
+  },
+  {
+    name: 'Learning',
+    icons: [
+      'school-outline', 'library-outline', 'reader-outline', 'newspaper-outline',
+      'language-outline', 'pencil-outline', 'create-outline', 'glasses-outline',
+    ],
+  },
+  {
+    name: 'Mind & Growth',
+    icons: [
+      'body-outline', 'happy-outline', 'sparkles-outline', 'rocket-outline',
+      'fitness-outline', 'leaf-outline', 'sunny-outline', 'rose-outline',
+    ],
+  },
+  {
+    name: 'Finance',
+    icons: [
+      'wallet-outline', 'cash-outline', 'card-outline', 'trending-up-outline',
+      'stats-chart-outline', 'pie-chart-outline', 'calculator-outline', 'diamond-outline',
+    ],
+  },
+  {
+    name: 'Career',
+    icons: [
+      'briefcase-outline', 'business-outline', 'people-outline', 'podium-outline',
+      'trophy-outline', 'ribbon-outline', 'megaphone-outline', 'chatbubbles-outline',
+    ],
+  },
+  {
+    name: 'Technology',
+    icons: [
+      'hardware-chip-outline', 'code-slash-outline', 'terminal-outline', 'laptop-outline',
+      'cloud-outline', 'server-outline', 'globe-outline', 'analytics-outline',
+    ],
+  },
+  {
+    name: 'Health',
+    icons: [
+      'medkit-outline', 'nutrition-outline', 'pulse-outline', 'medical-outline',
+      'barbell-outline', 'bicycle-outline', 'walk-outline', 'water-outline',
+    ],
+  },
+  {
+    name: 'Creative',
+    icons: [
+      'brush-outline', 'color-palette-outline', 'camera-outline', 'musical-notes-outline',
+      'film-outline', 'mic-outline', 'easel-outline', 'videocam-outline',
+    ],
+  },
+  {
+    name: 'Food & Travel',
+    icons: [
+      'restaurant-outline', 'cafe-outline', 'airplane-outline', 'map-outline',
+      'compass-outline', 'location-outline', 'bed-outline', 'trail-sign-outline',
+    ],
+  },
+];
+
+// Flatten all icons for search
+const ALL_ICONS = ICON_CATEGORIES.flatMap(cat => cat.icons);
+const UNIQUE_ICONS = [...new Set(ALL_ICONS)];
 
 // Types
 interface KnowledgeTopic {
@@ -79,6 +153,369 @@ const AddEntryCard: React.FC<{
     </TouchableOpacity>
   );
 };
+
+// Edit Topic Modal Component
+const EditTopicModal: React.FC<{
+  visible: boolean;
+  topic: KnowledgeTopic;
+  entryCount: number;
+  onClose: () => void;
+  onSave: (name: string, icon: keyof typeof Ionicons.glyphMap) => void;
+}> = ({ visible, topic, entryCount, onClose, onSave }) => {
+  const insets = useSafeAreaInsets();
+  const [topicName, setTopicName] = useState(topic.name);
+  const [selectedIcon, setSelectedIcon] = useState<keyof typeof Ionicons.glyphMap>(topic.icon);
+  const [iconSearch, setIconSearch] = useState('');
+  const inputRef = useRef<TextInput>(null);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (visible) {
+      setTopicName(topic.name);
+      setSelectedIcon(topic.icon);
+      setIconSearch('');
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [visible, topic]);
+
+  const handleClose = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    Keyboard.dismiss();
+    onClose();
+  };
+
+  const handleSave = () => {
+    if (topicName.trim()) {
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      onSave(topicName.trim(), selectedIcon);
+      Keyboard.dismiss();
+    }
+  };
+
+  const handleIconSelect = (icon: keyof typeof Ionicons.glyphMap) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedIcon(icon);
+  };
+
+  const isValid = topicName.trim().length > 0;
+
+  // Filter icons based on search
+  const filteredCategories = iconSearch.trim()
+    ? [{
+        name: 'Search Results',
+        icons: UNIQUE_ICONS.filter(icon =>
+          icon.toLowerCase().includes(iconSearch.toLowerCase().replace(/\s+/g, '-'))
+        ),
+      }]
+    : ICON_CATEGORIES;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
+    >
+      <View style={[editTopicModalStyles.container, { paddingBottom: insets.bottom }]}>
+        {/* Header */}
+        <View style={editTopicModalStyles.header}>
+          <TouchableOpacity onPress={handleClose} activeOpacity={0.7} style={editTopicModalStyles.headerBtn}>
+            <Text style={editTopicModalStyles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={editTopicModalStyles.title}>Edit Topic</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            activeOpacity={0.7}
+            disabled={!isValid}
+            style={editTopicModalStyles.headerBtn}
+          >
+            <Text style={[editTopicModalStyles.saveText, !isValid && editTopicModalStyles.saveTextDisabled]}>
+              Save
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={editTopicModalStyles.scroll}
+          contentContainerStyle={editTopicModalStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Preview Card */}
+          <View style={editTopicModalStyles.previewSection}>
+            <View style={editTopicModalStyles.previewCard}>
+              <View style={editTopicModalStyles.previewIconCircle}>
+                <Ionicons name={selectedIcon} size={24} color={ACCENT_COLOR} />
+              </View>
+              <Text style={editTopicModalStyles.previewName} numberOfLines={1}>
+                {topicName.trim() || 'Topic name'}
+              </Text>
+              <Text style={editTopicModalStyles.previewCount}>{entryCount} {entryCount === 1 ? 'entry' : 'entries'}</Text>
+            </View>
+          </View>
+
+          {/* Topic Name Input */}
+          <View style={editTopicModalStyles.inputCard}>
+            <Text style={editTopicModalStyles.inputLabel}>Topic Name</Text>
+            <TextInput
+              ref={inputRef}
+              style={editTopicModalStyles.topicNameInput}
+              placeholder="Enter topic name..."
+              placeholderTextColor="#9CA3AF"
+              value={topicName}
+              onChangeText={setTopicName}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={30}
+            />
+          </View>
+
+          {/* Icon Picker */}
+          <View style={editTopicModalStyles.iconPickerCard}>
+            <Text style={editTopicModalStyles.inputLabel}>Choose Icon</Text>
+
+            {/* Icon Search */}
+            <View style={editTopicModalStyles.iconSearchContainer}>
+              <Ionicons name="search" size={18} color="#9CA3AF" />
+              <TextInput
+                style={editTopicModalStyles.iconSearchInput}
+                placeholder="Search icons..."
+                placeholderTextColor="#9CA3AF"
+                value={iconSearch}
+                onChangeText={setIconSearch}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {iconSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setIconSearch('')} activeOpacity={0.7}>
+                  <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Icon Categories */}
+            {filteredCategories.map((category) => (
+              <View key={category.name} style={editTopicModalStyles.iconCategory}>
+                <Text style={editTopicModalStyles.iconCategoryTitle}>{category.name}</Text>
+                <View style={editTopicModalStyles.iconGrid}>
+                  {category.icons.map((icon) => (
+                    <TouchableOpacity
+                      key={icon}
+                      style={[
+                        editTopicModalStyles.iconItem,
+                        selectedIcon === icon && editTopicModalStyles.iconItemSelected,
+                      ]}
+                      onPress={() => handleIconSelect(icon)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name={icon}
+                        size={24}
+                        color={selectedIcon === icon ? ACCENT_COLOR : '#6B7280'}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            {filteredCategories[0]?.icons.length === 0 && (
+              <View style={editTopicModalStyles.noIconsFound}>
+                <Ionicons name="search-outline" size={32} color="#D1D5DB" />
+                <Text style={editTopicModalStyles.noIconsText}>No icons found</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+};
+
+// Edit Topic Modal Styles
+const editTopicModalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerBtn: {
+    minWidth: 60,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  cancelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  saveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: ACCENT_COLOR,
+    textAlign: 'right',
+  },
+  saveTextDisabled: {
+    color: '#D1D5DB',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  previewSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  previewCard: {
+    width: CARD_WIDTH,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  previewIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+    letterSpacing: -0.2,
+  },
+  previewCount: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  inputCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  topicNameInput: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingTop: 4,
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+  },
+  iconPickerCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  iconSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+  },
+  iconSearchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#1F2937',
+    padding: 0,
+  },
+  iconCategory: {
+    marginBottom: 20,
+  },
+  iconCategoryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  iconItem: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconItemSelected: {
+    backgroundColor: '#CFFAFE',
+    borderWidth: 2,
+    borderColor: ACCENT_COLOR,
+  },
+  noIconsFound: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  noIconsText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+});
 
 // Swipeable Entry Card Component
 const SwipeableEntryCard: React.FC<{
@@ -435,6 +872,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const insets = useSafeAreaInsets();
 
   // State
+  const [currentTopic, setCurrentTopic] = useState<KnowledgeTopic>(topic);
   const [entries, setEntries] = useState<KnowledgeEntry[]>(initialEntries);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -443,6 +881,8 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const [entryContent, setEntryContent] = useState('');
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [isSwipingEntry, setIsSwipingEntry] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [editTopicModalVisible, setEditTopicModalVisible] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
 
@@ -450,6 +890,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
   const searchButtonScale = useRef(new Animated.Value(1)).current;
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
 
   // Show search only when 5+ entries
   const showSearch = entries.length >= 5;
@@ -614,6 +1055,70 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
     }).start();
   };
 
+  const handleEditTopic = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditTopicModalVisible(true);
+  };
+
+  const handleSaveTopicEdit = (name: string, icon: keyof typeof Ionicons.glyphMap) => {
+    setCurrentTopic(prev => ({
+      ...prev,
+      name,
+      icon,
+    }));
+    setEditTopicModalVisible(false);
+    // TODO: Persist changes to storage
+  };
+
+  const handleMorePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowMoreMenu(true);
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleDeleteTopic = () => {
+    setShowMoreMenu(false);
+    Alert.alert(
+      'Delete Topic',
+      `Are you sure you want to delete "${currentTopic.name}" and all its entries? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            }
+            // TODO: Implement actual deletion from storage
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* ScrollView */}
@@ -632,9 +1137,9 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
           <View style={styles.titleSection}>
             <View style={styles.titleRow}>
               <View style={styles.titleIcon}>
-                <Ionicons name={topic.icon} size={24} color={ACCENT_COLOR} />
+                <Ionicons name={currentTopic.icon} size={24} color={ACCENT_COLOR} />
               </View>
-              <Text style={styles.title}>{topic.name}</Text>
+              <Text style={styles.title}>{currentTopic.name}</Text>
             </View>
           </View>
         )}
@@ -755,18 +1260,37 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
               >
                 <Ionicons name="chevron-back" size={24} color="#1F2937" />
               </TouchableOpacity>
-              {showSearch && (
+              <View style={styles.headerActions}>
+                {showSearch && (
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={handleSearchPress}
+                    onPressIn={handleSearchPressIn}
+                    onPressOut={handleSearchPressOut}
+                  >
+                    <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
+                      <Ionicons name="search" size={22} color="#1F2937" />
+                    </Animated.View>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={handleEditTopic}
+                  style={styles.headerButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="pencil" size={20} color="#1F2937" />
+                </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={1}
-                  onPress={handleSearchPress}
-                  onPressIn={handleSearchPressIn}
-                  onPressOut={handleSearchPressOut}
+                  onPress={handleMorePress}
+                  onPressIn={handleMoreButtonPressIn}
+                  onPressOut={handleMoreButtonPressOut}
                 >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                    <Ionicons name="search" size={22} color="#1F2937" />
+                  <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
+                    <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
                   </Animated.View>
                 </TouchableOpacity>
-              )}
+              </View>
             </View>
           )}
         </Animated.View>
@@ -822,6 +1346,40 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* More Menu Modal */}
+      <Modal
+        visible={showMoreMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMoreMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMoreMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleDeleteTopic}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Topic</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Edit Topic Modal */}
+      <EditTopicModal
+        visible={editTopicModalVisible}
+        topic={currentTopic}
+        entryCount={entries.length}
+        onClose={() => setEditTopicModalVisible(false)}
+        onSave={handleSaveTopicEdit}
+      />
     </View>
   );
 };
@@ -861,6 +1419,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 10,
   },
   backButton: {
     width: 40,
@@ -1060,6 +1622,42 @@ const styles = StyleSheet.create({
   roundButtonDisabled: {
     opacity: 0.5,
   },
+
+  // More Menu Modal
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  menuItemTextDanger: {
+    color: '#DC2626',
+  },
+
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',

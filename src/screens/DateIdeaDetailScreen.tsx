@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,17 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Animated,
+  Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CUSTOM_IDEAS_STORAGE_KEY = '@custom_date_ideas';
 
 // Types
 interface DateIdea {
@@ -21,6 +27,7 @@ interface DateIdea {
   category: string;
   duration: string;
   budget: 'free' | 'low' | 'medium' | 'high';
+  isCustom?: boolean;
 }
 
 interface Category {
@@ -34,10 +41,12 @@ interface Category {
 interface DateIdeaDetailScreenProps {
   navigation: {
     goBack: () => void;
+    navigate: (screen: string, params?: any) => void;
   };
   route: {
     params?: {
       idea?: DateIdea;
+      onDelete?: (ideaId: string) => void;
     };
   };
 }
@@ -206,14 +215,95 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const idea = route.params?.idea;
+  const onDelete = route.params?.onDelete;
   const category = CATEGORIES.find(c => c.id === idea?.category) || CATEGORIES[0];
   const details = idea ? getIdeaDetails(idea.id) : getIdeaDetails('');
+
+  // State
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Animation refs
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
 
   const handleBack = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     navigation.goBack();
+  };
+
+  const handleEdit = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate('DateIdeaEntry', { idea });
+  };
+
+  const handleMorePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowMoreMenu(true);
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleDeleteIdea = async () => {
+    setShowMoreMenu(false);
+
+    if (!idea?.isCustom) {
+      Alert.alert(
+        'Cannot Delete',
+        'Only custom date ideas can be deleted.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Delete Date Idea',
+      `Are you sure you want to delete "${idea.title}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (Platform.OS === 'ios') {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            }
+            try {
+              const stored = await AsyncStorage.getItem(CUSTOM_IDEAS_STORAGE_KEY);
+              if (stored) {
+                const customIdeas = JSON.parse(stored);
+                const updatedIdeas = customIdeas.filter((i: DateIdea) => i.id !== idea.id);
+                await AsyncStorage.setItem(CUSTOM_IDEAS_STORAGE_KEY, JSON.stringify(updatedIdeas));
+              }
+              onDelete?.(idea.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error('Error deleting idea:', error);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (!idea) {
@@ -339,8 +429,52 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({
           <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={styles.editButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+            >
+              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
+
+      {/* More Menu Modal */}
+      <Modal
+        visible={showMoreMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMoreMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMoreMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleDeleteIdea}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Date Idea</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -399,6 +533,60 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+
+  // Menu Modal
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  menuItemTextDanger: {
+    color: '#DC2626',
   },
 
   // Empty State
