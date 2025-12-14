@@ -430,7 +430,7 @@ const swipeableEntryStyles = StyleSheet.create({
 });
 
 // Main Component
-const KnowledgeTopicScreen: React.FC<KnowledgeTopicScreenProps> = ({ navigation, route }) => {
+const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) => {
   const { topic, entries: initialEntries } = route.params;
   const insets = useSafeAreaInsets();
 

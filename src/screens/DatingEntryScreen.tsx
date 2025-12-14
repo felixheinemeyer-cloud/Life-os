@@ -232,7 +232,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     navigation.goBack();
   };
 
-  const toggleFieldExpanded = (field: string, inputRef?: React.RefObject<TextInput>) => {
+  const toggleFieldExpanded = (field: string, inputRef?: React.RefObject<TextInput | null>) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -353,7 +353,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
             if (field === 'birthday') {
               handleDatePress();
             } else {
-              const refs: { [key: string]: React.RefObject<TextInput> } = {
+              const refs: { [key: string]: React.RefObject<TextInput | null> } = {
                 phone: phoneInputRef,
                 instagram: instagramInputRef,
                 location: locationInputRef,
@@ -383,7 +383,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     icon: keyof typeof Ionicons.glyphMap,
     value: string,
     setValue: (val: string) => void,
-    inputRef: React.RefObject<TextInput>,
+    inputRef: React.RefObject<TextInput | null>,
     placeholder: string,
     keyboardType: 'default' | 'phone-pad' | 'email-address' = 'default',
     isLast: boolean = false,

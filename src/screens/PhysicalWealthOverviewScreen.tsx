@@ -891,14 +891,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // ScrollView
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
   bottomSpacer: {
     height: 32,
   },

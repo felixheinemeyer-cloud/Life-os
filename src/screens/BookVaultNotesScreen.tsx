@@ -29,7 +29,7 @@ interface BookVaultNotesScreenProps {
 
 type TabType = 'notes' | 'chapters';
 
-const BookVaultNotesScreen: React.FC<BookVaultNotesScreenProps> = ({ navigation, route }) => {
+const BookVaultNotesScreen = ({ navigation, route }: BookVaultNotesScreenProps) => {
   const insets = useSafeAreaInsets();
   const { entry } = route.params;
   const { updateEntry } = useBooks();

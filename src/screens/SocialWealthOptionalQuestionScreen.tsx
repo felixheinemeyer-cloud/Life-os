@@ -30,10 +30,10 @@ interface SocialWealthOptionalQuestionScreenProps {
   };
 }
 
-const SocialWealthOptionalQuestionScreen: React.FC<SocialWealthOptionalQuestionScreenProps> = ({
+const SocialWealthOptionalQuestionScreen = ({
   route,
   navigation,
-}) => {
+}: SocialWealthOptionalQuestionScreenProps) => {
   const { question, icon, promptHint, questionId } = route.params;
   const [answer, setAnswer] = useState('');
   const [isFocused, setIsFocused] = useState(false);

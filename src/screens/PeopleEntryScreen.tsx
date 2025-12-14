@@ -284,7 +284,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
   };
 
-  const toggleFieldExpanded = (field: string, inputRef?: React.RefObject<TextInput>) => {
+  const toggleFieldExpanded = (field: string, inputRef?: React.RefObject<TextInput | null>) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -409,7 +409,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
             if (field === 'birthday') {
               handleDatePress();
             } else {
-              const refs: { [key: string]: React.RefObject<TextInput> } = {
+              const refs: { [key: string]: React.RefObject<TextInput | null> } = {
                 phone: phoneInputRef,
                 email: emailInputRef,
                 instagram: instagramInputRef,
@@ -441,7 +441,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
     iconColor: string,
     value: string,
     setValue: (val: string) => void,
-    inputRef: React.RefObject<TextInput>,
+    inputRef: React.RefObject<TextInput | null>,
     placeholder: string,
     keyboardType: 'default' | 'phone-pad' | 'email-address' = 'default',
     isLast: boolean = false,

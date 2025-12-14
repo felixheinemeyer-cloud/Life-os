@@ -63,7 +63,7 @@ const formatDate = (dateString: string): string => {
   return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 };
 
-const BookVaultEntryScreen: React.FC<BookVaultEntryScreenProps> = ({ navigation, route }) => {
+const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) => {
   const insets = useSafeAreaInsets();
   const { entry } = route.params;
   const { updateEntry, deleteEntry } = useBooks();

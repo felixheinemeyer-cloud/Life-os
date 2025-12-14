@@ -209,7 +209,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
           {/* When badge */}
           {currentStory.whenItHappened && (
             <View style={styles.whenBadge}>
-              <Ionicons name="time-outline" size={14} color="#65A30D" />
+              <Ionicons name="time-outline" size={14} color="#16A34A" />
               <Text style={styles.whenText}>{currentStory.whenItHappened}</Text>
             </View>
           )}
@@ -321,7 +321,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
 
             {/* When Row */}
             <View style={styles.editWhenRow}>
-              <Ionicons name="time-outline" size={18} color="#65A30D" />
+              <Ionicons name="time-outline" size={18} color="#16A34A" />
               <TextInput
                 style={styles.editWhenInput}
                 placeholder="When? (e.g., Summer 2023, May 2021)"
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   accentBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#65A30D',
+    backgroundColor: '#16A34A',
     borderRadius: 2,
     marginBottom: 20,
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   whenText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#65A30D',
+    color: '#16A34A',
     letterSpacing: 0.2,
   },
   title: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   storyAccentLine: {
     width: 3,
-    backgroundColor: '#65A30D',
+    backgroundColor: '#16A34A',
     borderRadius: 1.5,
     marginRight: 18,
   },

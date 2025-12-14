@@ -488,7 +488,7 @@ const swipeableNoteStyles = StyleSheet.create({
   },
 });
 
-const MediaVaultEntryScreen: React.FC<MediaVaultEntryScreenProps> = ({ navigation, route }) => {
+const MediaVaultEntryScreen = ({ navigation, route }: MediaVaultEntryScreenProps) => {
   const insets = useSafeAreaInsets();
   const { entry } = route.params;
   const { updateEntry } = useMedia();
