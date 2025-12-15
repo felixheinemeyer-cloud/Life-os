@@ -196,6 +196,14 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
+  const handleMonthlyTracking = (): void => {
+    if (navigation) {
+      navigation.navigate('MonthlyTracking');
+    } else {
+      console.log('Navigate to Monthly Tracking');
+    }
+  };
+
   const handleStatistics = (): void => {
     // TODO: Navigate to statistics screen
     console.log('Navigate to Statistics');
@@ -408,6 +416,34 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               </View>
               {/* Chevron indicator */}
               <Ionicons name="chevron-forward" size={20} color="#0D9488" style={styles.weeklyChevron} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Monthly Check-In Card */}
+          <TouchableOpacity
+            style={styles.monthlyCardTouchable}
+            onPress={handleMonthlyTracking}
+            activeOpacity={0.85}
+          >
+            <View style={styles.monthlyCard}>
+              {/* Icon with gradient ring */}
+              <LinearGradient
+                colors={['#FBCFE8', '#F472B6', '#DB2777']}
+                style={styles.monthlyIconGradientRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.monthlyIconInnerCircle}>
+                  <Ionicons name="calendar-outline" size={28} color="#DB2777" />
+                </View>
+              </LinearGradient>
+              {/* Text content */}
+              <View style={styles.monthlyTextContainer}>
+                <Text style={styles.monthlyCardTitle}>Monthly Check-In</Text>
+                <Text style={styles.monthlyCardSubtitle}>Review your month</Text>
+              </View>
+              {/* Chevron indicator */}
+              <Ionicons name="chevron-forward" size={20} color="#DB2777" style={styles.monthlyChevron} />
             </View>
           </TouchableOpacity>
 
@@ -973,7 +1009,7 @@ const styles = StyleSheet.create({
   },
   // Weekly Check-In Card Styles
   weeklyCardTouchable: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   weeklyCard: {
     flexDirection: 'row',
@@ -1022,6 +1058,60 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   weeklyChevron: {
+    opacity: 0.6,
+    marginLeft: 8,
+  },
+  // Monthly Check-In Card Styles
+  monthlyCardTouchable: {
+    marginBottom: 24,
+  },
+  monthlyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    padding: 16,
+    paddingLeft: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#DB2777',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  monthlyIconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthlyIconInnerCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthlyTextContainer: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  monthlyCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  monthlyCardSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#DB2777',
+    opacity: 0.85,
+  },
+  monthlyChevron: {
     opacity: 0.6,
     marginLeft: 8,
   },
