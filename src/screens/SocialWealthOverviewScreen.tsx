@@ -1007,15 +1007,8 @@ const SwipeableCard: React.FC<{
               item.type === 'optional' && styles.optionalAccent,
             ]} />
 
-            {/* Badge for optional cards only */}
-            {isAdditional && item.type === 'optional' && (
-              <View style={[styles.badge, styles.optionalBadge]}>
-                <Text style={styles.badgeText}>Optional</Text>
-              </View>
-            )}
-
             {/* Question Header with Icon */}
-            <View style={[styles.questionHeader, isAdditional && item.type === 'optional' && { marginTop: 8 }]}>
+            <View style={styles.questionHeader}>
               <LinearGradient
                 colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
                 style={styles.questionIconGradient}
