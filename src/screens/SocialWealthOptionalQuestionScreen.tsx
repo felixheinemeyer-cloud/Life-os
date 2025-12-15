@@ -81,14 +81,15 @@ const SocialWealthOptionalQuestionScreen = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    // TODO: Save the answer here
-    // For now, we'll just log it and go back
-    console.log('Saving answer for question:', questionId, answer);
-
     Keyboard.dismiss();
-    // Navigate back and signal to reopen the optional questions list
+    // Navigate back with the optional question answer data
     navigation.navigate('SocialWealthOverview', {
-      reopenOptionalQuestions: true
+      newOptionalEntry: {
+        questionId: questionId,
+        question: question,
+        answer: answer.trim(),
+        icon: icon,
+      }
     });
   };
 

@@ -449,26 +449,38 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
                 <Ionicons name="close" size={24} color="#9CA3AF" />
               </TouchableOpacity>
 
-              {/* Header Icon */}
-              <View style={styles.modalIconContainer}>
-                <LinearGradient
-                  colors={['#E0E7FF', '#C7D2FE']}
-                  style={styles.modalIconBackground}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="star" size={32} color="#6366F1" />
-                </LinearGradient>
-              </View>
-
-              {/* Title */}
-              <Text style={styles.modalTitle}>What is Your Best Self?</Text>
-
               {/* Scrollable Content */}
               <ScrollView
                 style={styles.modalScrollView}
                 showsVerticalScrollIndicator={false}
               >
+                {/* Header Icon */}
+                <View style={styles.modalIconContainer}>
+                  <LinearGradient
+                    colors={['#E0E7FF', '#C7D2FE']}
+                    style={styles.modalIconBackground}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="star" size={32} color="#6366F1" />
+                  </LinearGradient>
+                </View>
+
+                {/* Title */}
+                <Text style={styles.modalTitle}>What is Your Best Self?</Text>
+
+                <View style={styles.modalQuoteSection}>
+                  <View style={styles.modalQuoteDecoration}>
+                    <Text style={styles.modalQuoteMarkLeft}>"</Text>
+                  </View>
+                  <Text style={styles.modalQuoteText}>
+                    The person who knows their destination finds the way. The person who doesn't wanders endlessly.
+                  </Text>
+                  <Text style={styles.modalQuoteAttribution}>Ancient Proverb</Text>
+                </View>
+
+                <View style={styles.modalDivider} />
+
                 <Text style={styles.modalParagraph}>
                   Your Best Self is the highest version of who you can become — the person you aspire to be when you're living with intention, clarity, and purpose.
                 </Text>
@@ -480,20 +492,15 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
                   Without a clear vision of who you want to become, daily decisions lack direction. By defining your Best Self across five key areas of life, you create a compass that guides every choice you make.
                 </Text>
 
-                <View style={styles.modalHighlightCard}>
-                  <Ionicons name="bulb" size={20} color="#F59E0B" style={styles.modalHighlightIcon} />
-                  <Text style={styles.modalHighlightText}>
-                    "The person who knows their destination finds the way. The person who doesn't wanders endlessly."
-                  </Text>
-                </View>
+                <View style={styles.modalDivider} />
 
-                <Text style={styles.modalSubtitle}>The Five Pillars</Text>
+                <Text style={styles.modalSubtitle}>Five Pillars of Wealth</Text>
                 <View style={styles.modalPillarList}>
                   {[
                     { icon: 'fitness-outline', color: '#059669', name: 'Physical', desc: 'Body, energy & health' },
                     { icon: 'bulb-outline', color: '#3B82F6', name: 'Mental', desc: 'Mind, clarity & resilience' },
                     { icon: 'people-outline', color: '#8B5CF6', name: 'Social', desc: 'Relationships & connection' },
-                    { icon: 'bar-chart-outline', color: '#F59E0B', name: 'Financial', desc: 'Wealth & security' },
+                    { icon: 'bar-chart-outline', color: '#F59E0B', name: 'Financial', desc: 'Money & security' },
                     { icon: 'time-outline', color: '#6366F1', name: 'Time', desc: 'Focus & priorities' },
                   ].map((pillar, index) => (
                     <View key={index} style={styles.modalPillarItem}>
@@ -809,27 +816,37 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 10,
   },
-  modalHighlightCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginVertical: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: '#F59E0B',
+  modalQuoteSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
-  modalHighlightIcon: {
-    marginRight: 12,
-    marginTop: 2,
+  modalQuoteDecoration: {
+    marginBottom: -16,
   },
-  modalHighlightText: {
-    flex: 1,
-    fontSize: 14,
+  modalQuoteMarkLeft: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#6366F1',
+    lineHeight: 36,
+  },
+  modalQuoteText: {
+    fontSize: 15,
     fontWeight: '500',
     fontStyle: 'italic',
-    color: '#92400E',
-    lineHeight: 21,
+    color: '#374151',
+    textAlign: 'center',
+    lineHeight: 22,
+    letterSpacing: -0.2,
+  },
+  modalQuoteAttribution: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6366F1',
+    textAlign: 'center',
+    marginTop: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   modalPillarList: {
     gap: 10,
