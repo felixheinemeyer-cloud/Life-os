@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   PanResponder,
   Dimensions,
@@ -13,13 +12,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-
-interface WeeklyTrackingPhysicalWealthScreenProps {
-  navigation?: {
-    goBack: () => void;
-    navigate: (screen: string, params?: any) => void;
-  };
-}
 
 const SLIDER_WIDTH = Dimensions.get('window').width - 64;
 const THUMB_SIZE = 24;
@@ -33,14 +25,101 @@ const THEME_COLORS = {
   fill: '#14B8A6',
 };
 
+// Wealth type configurations
+export type WealthType = 'physical' | 'social' | 'mental' | 'financial' | 'time';
+
+interface WealthConfig {
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  minLabel: string;
+  maxLabel: string;
+  guidingQuestions: Array<{
+    icon: keyof typeof Ionicons.glyphMap;
+    text: string;
+  }>;
+}
+
+const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
+  physical: {
+    title: 'Physical Wealth',
+    subtitle: 'Rate your physical health and vitality this week',
+    icon: 'body',
+    minLabel: 'Neglected',
+    maxLabel: 'Thriving',
+    guidingQuestions: [
+      { icon: 'flash-outline', text: 'How were your energy levels throughout the week?' },
+      { icon: 'bed-outline', text: 'Did you sleep well and wake up feeling rested?' },
+      { icon: 'fitness-outline', text: 'Were you consistent with exercise or movement?' },
+      { icon: 'nutrition-outline', text: 'How well did you nourish your body?' },
+    ],
+  },
+  social: {
+    title: 'Social Wealth',
+    subtitle: 'Rate your relationships and connections this week',
+    icon: 'people',
+    minLabel: 'Isolated',
+    maxLabel: 'Connected',
+    guidingQuestions: [
+      { icon: 'people-outline', text: 'Did you spend quality time with family or friends?' },
+      { icon: 'chatbubbles-outline', text: 'Did you have meaningful conversations this week?' },
+      { icon: 'heart-outline', text: 'Did you feel supported and connected to others?' },
+      { icon: 'hand-left-outline', text: 'Were you able to support or help someone else?' },
+    ],
+  },
+  mental: {
+    title: 'Mental Wealth',
+    subtitle: 'Rate your mental clarity and focus this week',
+    icon: 'bulb',
+    minLabel: 'Depleted',
+    maxLabel: 'Sharp',
+    guidingQuestions: [
+      { icon: 'bulb-outline', text: 'How clear and focused was your thinking this week?' },
+      { icon: 'book-outline', text: 'Did you learn something new or challenge your mind?' },
+      { icon: 'cloud-outline', text: 'How well did you manage stress and mental load?' },
+      { icon: 'sparkles-outline', text: 'Did you feel creative and mentally engaged?' },
+    ],
+  },
+  financial: {
+    title: 'Financial Wealth',
+    subtitle: 'Rate your financial health and security this week',
+    icon: 'wallet',
+    minLabel: 'Stressed',
+    maxLabel: 'Secure',
+    guidingQuestions: [
+      { icon: 'wallet-outline', text: 'Did you stay within your budget this week?' },
+      { icon: 'trending-up-outline', text: 'Did you make progress toward your financial goals?' },
+      { icon: 'shield-checkmark-outline', text: 'How secure do you feel about your finances?' },
+      { icon: 'cash-outline', text: 'Were you mindful about your spending decisions?' },
+    ],
+  },
+  time: {
+    title: 'Time Wealth',
+    subtitle: 'Rate your time balance and freedom this week',
+    icon: 'time',
+    minLabel: 'Rushed',
+    maxLabel: 'Balanced',
+    guidingQuestions: [
+      { icon: 'hourglass-outline', text: 'Did you have enough time for what matters most?' },
+      { icon: 'calendar-outline', text: 'How well did you balance work and personal life?' },
+      { icon: 'pause-outline', text: 'Did you have margin for rest and spontaneity?' },
+      { icon: 'checkmark-done-outline', text: 'Were you able to complete your priorities without rushing?' },
+    ],
+  },
+};
+
 interface RatingSliderProps {
   value: number;
   onValueChange: (value: number) => void;
+  minLabel: string;
+  maxLabel: string;
 }
 
 const RatingSlider: React.FC<RatingSliderProps> = ({
   value,
   onValueChange,
+  minLabel,
+  maxLabel,
 }) => {
   const [sliderWidth, setSliderWidth] = useState(SLIDER_WIDTH);
 
@@ -146,127 +225,96 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       </View>
 
       <View style={styles.sliderLabels}>
-        <Text style={styles.sliderMinLabel}>Neglected</Text>
-        <Text style={styles.sliderMaxLabel}>Thriving</Text>
+        <Text style={styles.sliderMinLabel}>{minLabel}</Text>
+        <Text style={styles.sliderMaxLabel}>{maxLabel}</Text>
       </View>
     </View>
   );
 };
 
-const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthScreenProps> = ({
-  navigation,
+interface WeeklyTrackingWealthContentProps {
+  wealthType: WealthType;
+  value: number;
+  onValueChange: (value: number) => void;
+  onContinue: () => void;
+}
+
+const WeeklyTrackingWealthContent: React.FC<WeeklyTrackingWealthContentProps> = ({
+  wealthType,
+  value,
+  onValueChange,
+  onContinue,
 }) => {
-  const [physicalWealth, setPhysicalWealth] = useState(5);
-
-  const handleBack = (): void => {
-    navigation?.goBack();
-  };
-
-  const handleContinue = (): void => {
-    console.log('Physical Wealth Rating:', physicalWealth);
-    navigation?.navigate('WeeklyTrackingSocialWealth', { physicalWealth });
-  };
-
-  // Guiding questions for Physical Wealth assessment
-  const guidingQuestions = [
-    { icon: 'flash-outline' as const, text: 'How were your energy levels throughout the week?' },
-    { icon: 'bed-outline' as const, text: 'Did you sleep well and wake up feeling rested?' },
-    { icon: 'fitness-outline' as const, text: 'Were you consistent with exercise or movement?' },
-    { icon: 'nutrition-outline' as const, text: 'How well did you nourish your body?' },
-  ];
+  const config = WEALTH_CONFIGS[wealthType];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Question Section */}
+        <View style={styles.questionSection}>
+          <LinearGradient
+            colors={THEME_COLORS.gradient}
+            style={styles.iconGradientRing}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressDotActive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
-          </View>
-          <View style={styles.headerSpacer} />
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name={config.icon} size={24} color={THEME_COLORS.primary} />
+            </View>
+          </LinearGradient>
+          <Text style={styles.questionText}>
+            {config.title}
+          </Text>
+          <Text style={styles.questionSubtext}>
+            {config.subtitle}
+          </Text>
         </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
+        {/* Guiding Questions Card */}
+        <View style={styles.guidingCard}>
+          <Text style={styles.guidingCardTitle}>Consider...</Text>
+          {config.guidingQuestions.map((item, index) => (
+            <View key={index} style={styles.guidingItem}>
+              <View style={styles.guidingIconContainer}>
+                <Ionicons name={item.icon} size={17} color={THEME_COLORS.primary} />
+              </View>
+              <Text style={styles.guidingText}>{item.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Rating Slider */}
+        <View style={styles.sliderSection}>
+          <RatingSlider
+            value={value}
+            onValueChange={onValueChange}
+            minLabel={config.minLabel}
+            maxLabel={config.maxLabel}
+          />
+        </View>
+      </ScrollView>
+
+      {/* Continue Button */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={onContinue}
+          activeOpacity={0.8}
         >
-          {/* Question Section */}
-          <View style={styles.questionSection}>
-            <LinearGradient
-              colors={THEME_COLORS.gradient}
-              style={styles.iconGradientRing}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.iconInnerCircle}>
-                <Ionicons name="body" size={24} color={THEME_COLORS.primary} />
-              </View>
-            </LinearGradient>
-            <Text style={styles.questionText}>
-              Physical Wealth
-            </Text>
-            <Text style={styles.questionSubtext}>
-              Rate your physical health and vitality this week
-            </Text>
-          </View>
-
-          {/* Guiding Questions Card */}
-          <View style={styles.guidingCard}>
-            <Text style={styles.guidingCardTitle}>Consider...</Text>
-            {guidingQuestions.map((item, index) => (
-              <View key={index} style={styles.guidingItem}>
-                <View style={styles.guidingIconContainer}>
-                  <Ionicons name={item.icon} size={17} color={THEME_COLORS.primary} />
-                </View>
-                <Text style={styles.guidingText}>{item.text}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Rating Slider */}
-          <View style={styles.sliderSection}>
-            <RatingSlider
-              value={physicalWealth}
-              onValueChange={setPhysicalWealth}
-            />
-          </View>
-        </ScrollView>
-
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+          <Text style={styles.continueButtonText}>Continue</Text>
+          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
@@ -279,55 +327,6 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 16,
     flexGrow: 1,
-  },
-
-  // Header
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-
-  // Progress Indicator
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  progressDotActive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1F2937',
-  },
-  progressDotInactive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E5E7EB',
   },
 
   // Question Section
@@ -536,4 +535,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WeeklyTrackingPhysicalWealthScreen;
+export default WeeklyTrackingWealthContent;

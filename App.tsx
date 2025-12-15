@@ -20,7 +20,10 @@ import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigher
 import MorningTrackingCompleteScreen from './src/screens/MorningTrackingCompleteScreen';
 import EveningTrackingContainerScreen from './src/screens/EveningTrackingContainerScreen';
 import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
-import WeeklyTrackingPhysicalWealthScreen from './src/screens/WeeklyTrackingPhysicalWealthScreen';
+import WeeklyTrackingContainerScreen from './src/screens/WeeklyTrackingContainerScreen';
+import WeeklyTrackingCompleteScreen from './src/screens/WeeklyTrackingCompleteScreen';
+import MonthlyTrackingContainerScreen from './src/screens/MonthlyTrackingContainerScreen';
+import MonthlyTrackingCompleteScreen from './src/screens/MonthlyTrackingCompleteScreen';
 import HomeIcon from './src/components/HomeIcon';
 import BrainIcon from './src/components/BrainIcon';
 import CalendarIcon from './src/components/CalendarIcon';
@@ -89,7 +92,10 @@ const DashboardStack = () => {
       <Stack.Screen name="MorningTrackingComplete" component={MorningTrackingCompleteScreen} />
       <Stack.Screen name="EveningTracking" component={EveningTrackingContainerScreen} />
       <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
-      <Stack.Screen name="WeeklyTracking" component={WeeklyTrackingPhysicalWealthScreen} />
+      <Stack.Screen name="WeeklyTracking" component={WeeklyTrackingContainerScreen} />
+      <Stack.Screen name="WeeklyTrackingComplete" component={WeeklyTrackingCompleteScreen} />
+      <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
+      <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
     </Stack.Navigator>
   );
 };

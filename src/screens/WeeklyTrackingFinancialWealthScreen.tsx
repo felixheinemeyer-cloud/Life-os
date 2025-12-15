@@ -14,10 +14,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-interface WeeklyTrackingPhysicalWealthScreenProps {
+interface WeeklyTrackingFinancialWealthScreenProps {
   navigation?: {
     goBack: () => void;
     navigate: (screen: string, params?: any) => void;
+  };
+  route?: {
+    params?: {
+      physicalWealth?: number;
+      socialWealth?: number;
+      mentalWealth?: number;
+    };
   };
 }
 
@@ -146,33 +153,37 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       </View>
 
       <View style={styles.sliderLabels}>
-        <Text style={styles.sliderMinLabel}>Neglected</Text>
-        <Text style={styles.sliderMaxLabel}>Thriving</Text>
+        <Text style={styles.sliderMinLabel}>Stressed</Text>
+        <Text style={styles.sliderMaxLabel}>Secure</Text>
       </View>
     </View>
   );
 };
 
-const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthScreenProps> = ({
+const WeeklyTrackingFinancialWealthScreen: React.FC<WeeklyTrackingFinancialWealthScreenProps> = ({
   navigation,
+  route,
 }) => {
-  const [physicalWealth, setPhysicalWealth] = useState(5);
+  const [financialWealth, setFinancialWealth] = useState(5);
+  const physicalWealth = route?.params?.physicalWealth;
+  const socialWealth = route?.params?.socialWealth;
+  const mentalWealth = route?.params?.mentalWealth;
 
   const handleBack = (): void => {
     navigation?.goBack();
   };
 
   const handleContinue = (): void => {
-    console.log('Physical Wealth Rating:', physicalWealth);
-    navigation?.navigate('WeeklyTrackingSocialWealth', { physicalWealth });
+    console.log('Financial Wealth Rating:', financialWealth);
+    navigation?.navigate('WeeklyTrackingTimeWealth', { physicalWealth, socialWealth, mentalWealth, financialWealth });
   };
 
-  // Guiding questions for Physical Wealth assessment
+  // Guiding questions for Financial Wealth assessment
   const guidingQuestions = [
-    { icon: 'flash-outline' as const, text: 'How were your energy levels throughout the week?' },
-    { icon: 'bed-outline' as const, text: 'Did you sleep well and wake up feeling rested?' },
-    { icon: 'fitness-outline' as const, text: 'Were you consistent with exercise or movement?' },
-    { icon: 'nutrition-outline' as const, text: 'How well did you nourish your body?' },
+    { icon: 'wallet-outline' as const, text: 'Did you stay within your budget this week?' },
+    { icon: 'trending-up-outline' as const, text: 'Did you make progress toward your financial goals?' },
+    { icon: 'shield-checkmark-outline' as const, text: 'How secure do you feel about your finances?' },
+    { icon: 'cash-outline' as const, text: 'Were you mindful about your spending decisions?' },
   ];
 
   return (
@@ -190,9 +201,9 @@ const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthS
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
             <View style={styles.progressDotActive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
-            <View style={styles.progressDotInactive} />
+            <View style={styles.progressDotActive} />
+            <View style={styles.progressDotActive} />
+            <View style={styles.progressDotActive} />
             <View style={styles.progressDotInactive} />
           </View>
           <View style={styles.headerSpacer} />
@@ -213,14 +224,14 @@ const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthS
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="body" size={24} color={THEME_COLORS.primary} />
+                <Ionicons name="wallet" size={24} color={THEME_COLORS.primary} />
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
-              Physical Wealth
+              Financial Wealth
             </Text>
             <Text style={styles.questionSubtext}>
-              Rate your physical health and vitality this week
+              Rate your financial health and security this week
             </Text>
           </View>
 
@@ -240,8 +251,8 @@ const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthS
           {/* Rating Slider */}
           <View style={styles.sliderSection}>
             <RatingSlider
-              value={physicalWealth}
-              onValueChange={setPhysicalWealth}
+              value={financialWealth}
+              onValueChange={setFinancialWealth}
             />
           </View>
         </ScrollView>
@@ -536,4 +547,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WeeklyTrackingPhysicalWealthScreen;
+export default WeeklyTrackingFinancialWealthScreen;
