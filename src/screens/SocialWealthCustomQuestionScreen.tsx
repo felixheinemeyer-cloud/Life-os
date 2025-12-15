@@ -75,13 +75,13 @@ const SocialWealthCustomQuestionScreen: React.FC<SocialWealthCustomQuestionScree
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    // TODO: Save the custom question and answer here
-    console.log('Saving custom question:', question, 'Answer:', answer);
-
     Keyboard.dismiss();
-    // Navigate back and signal to reopen the Go deeper menu
+    // Navigate back with the custom question and answer data
     navigation.navigate('SocialWealthOverview', {
-      reopenGoDeeper: true
+      newCustomEntry: {
+        question: question.trim(),
+        answer: answer.trim(),
+      }
     });
   };
 
@@ -121,13 +121,13 @@ const SocialWealthCustomQuestionScreen: React.FC<SocialWealthCustomQuestionScree
             {/* Icon Section */}
             <View style={styles.iconSection}>
               <LinearGradient
-                colors={['#FDE68A', '#FBBF24', '#F59E0B']}
+                colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
                 style={styles.iconGradientRing}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 <View style={styles.iconInnerCircle}>
-                  <Ionicons name="create" size={28} color="#F59E0B" />
+                  <Ionicons name="create" size={28} color="#8B5CF6" />
                 </View>
               </LinearGradient>
               <Text style={styles.instructionText}>

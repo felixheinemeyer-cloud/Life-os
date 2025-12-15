@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,20 +11,32 @@ import {
   Dimensions,
   TextInput,
   KeyboardAvoidingView,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, CommonActions } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps + padding)
 
 interface SocialWealthOverviewScreenProps {
   route?: {
     params?: {
       reopenOptionalQuestions?: boolean;
       reopenGoDeeper?: boolean;
+      newCustomEntry?: {
+        question: string;
+        answer: string;
+      };
+      newOptionalEntry?: {
+        questionId: string;
+        question: string;
+        answer: string;
+        icon: keyof typeof Ionicons.glyphMap;
+      };
     };
   };
   navigation: {
@@ -123,6 +135,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
+  const [isSwipingCard, setIsSwipingCard] = useState(false);
 
   // Bottom sheet state
   const [showBottomSheet, setShowBottomSheet] = useState(false);
@@ -176,6 +189,44 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
     }
   }, [isFocused, route?.params?.reopenGoDeeper]);
 
+  // Handle saving new custom entry
+  useEffect(() => {
+    if (isFocused && route?.params?.newCustomEntry) {
+      const { question, answer } = route.params.newCustomEntry;
+      // Clear the param
+      navigation.setParams({ newCustomEntry: undefined });
+      // Add the new custom entry
+      const newQA: QuestionAnswer = {
+        id: `custom_${Date.now()}`,
+        questionNumber: CORE_QA_DATA.length + additionalQAs.length + 1,
+        question: question,
+        answer: answer,
+        icon: 'create',
+        type: 'custom',
+      };
+      setAdditionalQAs((prev) => [...prev, newQA]);
+    }
+  }, [isFocused, route?.params?.newCustomEntry]);
+
+  // Handle saving new optional entry
+  useEffect(() => {
+    if (isFocused && route?.params?.newOptionalEntry) {
+      const { questionId, question, answer, icon } = route.params.newOptionalEntry;
+      // Clear the param
+      navigation.setParams({ newOptionalEntry: undefined });
+      // Add the new optional entry
+      const newQA: QuestionAnswer = {
+        id: questionId,
+        questionNumber: CORE_QA_DATA.length + additionalQAs.length + 1,
+        question: question,
+        answer: answer,
+        icon: icon,
+        type: 'optional',
+      };
+      setAdditionalQAs((prev) => [...prev, newQA]);
+    }
+  }, [isFocused, route?.params?.newOptionalEntry]);
+
   const handleTextLayout = (id: string, e: any) => {
     if (!measuredCards.has(id)) {
       const { lines } = e.nativeEvent;
@@ -191,13 +242,6 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     navigation.goBack();
-  };
-
-  const handleEdit = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    navigation.navigate('SocialWealthQuestions');
   };
 
   const toggleExpand = (id: string) => {
@@ -323,91 +367,33 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
     setAdditionalQAs((prev) => prev.filter((qa) => qa.id !== id));
   };
 
+  const handleEdit = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    navigation.navigate('SocialWealthQuestions');
+  };
+
   const renderCard = (item: QuestionAnswer, isAdditional: boolean = false) => {
     const isExpanded = expandedCards.has(item.id);
     const isMeasured = measuredCards.has(item.id);
     const isLongAnswer = needsExpansion.has(item.id);
 
     return (
-      <TouchableOpacity
+      <SwipeableCard
         key={item.id}
-        activeOpacity={isLongAnswer ? 0.8 : 1}
-        onPress={() => toggleExpand(item.id)}
-        onLongPress={isAdditional ? () => handleDeleteAdditional(item.id) : undefined}
-        style={styles.cardWrapper}
-      >
-        <View style={[styles.card, isAdditional && styles.additionalCard]}>
-          {/* Card Accent */}
-          <View style={[
-            styles.cardAccent,
-            item.type === 'custom' && styles.customAccent,
-            item.type === 'optional' && styles.optionalAccent,
-          ]} />
-
-          {/* Badge for additional cards */}
-          {isAdditional && (
-            <View style={[
-              styles.badge,
-              item.type === 'custom' ? styles.customBadge : styles.optionalBadge,
-            ]}>
-              <Text style={styles.badgeText}>
-                {item.type === 'custom' ? 'Custom' : 'Optional'}
-              </Text>
-            </View>
-          )}
-
-          {/* Question Header with Icon */}
-          <View style={[styles.questionHeader, isAdditional && { marginTop: 8 }]}>
-            <LinearGradient
-              colors={item.type === 'custom'
-                ? ['#FDE68A', '#FCD34D', '#F59E0B']
-                : ['#C4B5FD', '#A78BFA', '#8B5CF6']}
-              style={styles.questionIconGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.questionIconInner}>
-                <Ionicons
-                  name={item.icon}
-                  size={16}
-                  color={item.type === 'custom' ? '#F59E0B' : '#8B5CF6'}
-                />
-              </View>
-            </LinearGradient>
-            <Text style={styles.questionText}>{item.question}</Text>
-          </View>
-
-          {/* Divider */}
-          <View style={styles.divider} />
-
-          {/* Answer Section */}
-          <View style={styles.answerSection}>
-            <Text
-              style={styles.answerText}
-              numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
-              onTextLayout={(e) => handleTextLayout(item.id, e)}
-            >
-              {item.answer}
-            </Text>
-            {isMeasured && isLongAnswer && (
-              <View style={styles.expandIndicator}>
-                <Text style={styles.expandText}>
-                  {isExpanded ? 'Show less' : 'Read more'}
-                </Text>
-                <Ionicons
-                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color="#8B5CF6"
-                />
-              </View>
-            )}
-          </View>
-          {/* Delete hint for additional cards */}
-          {isAdditional && (
-            <Text style={styles.deleteHint}>Long press to remove</Text>
-          )}
-        </View>
-      </TouchableOpacity>
+        item={item}
+        isAdditional={isAdditional}
+        isExpanded={isExpanded}
+        isMeasured={isMeasured}
+        isLongAnswer={isLongAnswer}
+        onToggleExpand={() => toggleExpand(item.id)}
+        onEdit={handleEdit}
+        onDelete={isAdditional ? () => handleDeleteAdditional(item.id) : undefined}
+        onSwipeStart={() => setIsSwipingCard(true)}
+        onSwipeEnd={() => setIsSwipingCard(false)}
+        onTextLayout={(e) => handleTextLayout(item.id, e)}
+      />
     );
   };
 
@@ -521,7 +507,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                       {question.question}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
+                  <Ionicons name="chevron-forward" size={20} color="#6B7280" />
                 </TouchableOpacity>
               ))
             ) : (
@@ -585,13 +571,13 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#FDE68A', '#FBBF24', '#F59E0B']}
+              colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="create" size={24} color="#F59E0B" />
+                <Ionicons name="create" size={24} color="#8B5CF6" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -617,6 +603,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
           { paddingTop: insets.top + 64 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isSwipingCard}
       >
         {/* Scrollable Title */}
         <View style={styles.scrollableTitle}>
@@ -678,13 +665,6 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
                 activeOpacity={0.7}
               >
                 <Ionicons name="add" size={22} color="#1F2937" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={styles.editButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="pencil" size={18} color="#1F2937" />
               </TouchableOpacity>
             </View>
           </View>
@@ -789,6 +769,302 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
   );
 };
 
+// Swipeable Card Component
+const SwipeableCard: React.FC<{
+  item: QuestionAnswer;
+  isAdditional: boolean;
+  isExpanded: boolean;
+  isMeasured: boolean;
+  isLongAnswer: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete?: () => void;
+  onSwipeStart: () => void;
+  onSwipeEnd: () => void;
+  onTextLayout: (e: any) => void;
+}> = ({
+  item,
+  isAdditional,
+  isExpanded,
+  isMeasured,
+  isLongAnswer,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onSwipeStart,
+  onSwipeEnd,
+  onTextLayout,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentTranslateX = useRef(0);
+
+  // Track current translateX value - set up listener once
+  useEffect(() => {
+    const listenerId = translateX.addListener(({ value }) => {
+      currentTranslateX.current = value;
+    });
+    return () => {
+      translateX.removeListener(listenerId);
+    };
+  }, [translateX]);
+
+  const openActions = useCallback(() => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsOpen(true);
+    Animated.spring(translateX, {
+      toValue: -ACTION_WIDTH,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  }, [translateX]);
+
+  const closeActions = useCallback(() => {
+    setIsOpen(false);
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  }, [translateX]);
+
+  // Use a ref to track open state for PanResponder (avoids stale closure)
+  const isOpenRef = useRef(false);
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  const panResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Capture horizontal swipes - prioritize over ScrollView
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        // Capture phase - intercept before ScrollView gets the gesture
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        return isHorizontalSwipe && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderGrant: () => {
+        // Stop any running animation and disable scroll
+        translateX.stopAnimation();
+        onSwipeStart();
+      },
+      onPanResponderTerminationRequest: () => false, // Don't give up gesture to ScrollView
+      onShouldBlockNativeResponder: () => true, // Block native scroll
+      onPanResponderMove: (_, gestureState) => {
+        let newValue;
+        if (isOpenRef.current) {
+          newValue = -ACTION_WIDTH + gestureState.dx;
+        } else {
+          newValue = gestureState.dx;
+        }
+        // Clamp between -ACTION_WIDTH and 0
+        newValue = Math.max(-ACTION_WIDTH, Math.min(0, newValue));
+        translateX.setValue(newValue);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const currentPos = currentTranslateX.current;
+        const velocity = gestureState.vx;
+        onSwipeEnd();
+
+        // Lower velocity threshold for easier swiping (like Apple Notes)
+        if (velocity < -0.3) {
+          // Swipe left -> open
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ACTION_WIDTH,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          return;
+        }
+        if (velocity > 0.3) {
+          // Swipe right -> close
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            velocity: velocity,
+            friction: 7,
+            tension: 80,
+          }).start();
+          return;
+        }
+
+        // Position-based snap - lower threshold (1/3 instead of 1/2) for easier opening
+        if (currentPos < -ACTION_WIDTH / 3) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ACTION_WIDTH,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            friction: 7,
+            tension: 80,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        // If gesture is interrupted, snap to nearest position
+        const currentPos = currentTranslateX.current;
+        onSwipeEnd();
+        if (currentPos < -ACTION_WIDTH / 2) {
+          setIsOpen(true);
+          Animated.spring(translateX, {
+            toValue: -ACTION_WIDTH,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          setIsOpen(false);
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  [translateX, onSwipeStart, onSwipeEnd]);
+
+  const handleCardPress = () => {
+    if (isOpen) {
+      closeActions();
+    } else if (isLongAnswer) {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      onToggleExpand();
+    }
+  };
+
+  const handleEdit = () => {
+    closeActions();
+    setTimeout(() => onEdit(), 200);
+  };
+
+  const handleDelete = () => {
+    closeActions();
+    setTimeout(() => onDelete && onDelete(), 200);
+  };
+
+  return (
+    <View style={styles.cardWrapper}>
+      {/* Action buttons behind the card */}
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={[styles.swipeAction, styles.editAction]}
+          onPress={handleEdit}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="pencil-outline" size={20} color="#6B7280" />
+        </TouchableOpacity>
+        {isAdditional && onDelete && (
+          <TouchableOpacity
+            style={[styles.swipeAction, styles.deleteAction]}
+            onPress={handleDelete}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Swipeable card */}
+      <Animated.View
+        style={[styles.cardAnimatedWrapper, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          activeOpacity={isLongAnswer ? 0.8 : 1}
+          onPress={handleCardPress}
+        >
+          <View style={[styles.card, isAdditional && styles.additionalCard]}>
+            {/* Card Accent */}
+            <View style={[
+              styles.cardAccent,
+              item.type === 'custom' && styles.customAccent,
+              item.type === 'optional' && styles.optionalAccent,
+            ]} />
+
+            {/* Badge for optional cards only */}
+            {isAdditional && item.type === 'optional' && (
+              <View style={[styles.badge, styles.optionalBadge]}>
+                <Text style={styles.badgeText}>Optional</Text>
+              </View>
+            )}
+
+            {/* Question Header with Icon */}
+            <View style={[styles.questionHeader, isAdditional && item.type === 'optional' && { marginTop: 8 }]}>
+              <LinearGradient
+                colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
+                style={styles.questionIconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.questionIconInner}>
+                  <Ionicons
+                    name={item.icon}
+                    size={16}
+                    color="#8B5CF6"
+                  />
+                </View>
+              </LinearGradient>
+              <Text style={styles.questionText}>{item.question}</Text>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider} />
+
+            {/* Answer Section */}
+            <View style={styles.answerSection}>
+              <Text
+                style={styles.answerText}
+                numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
+                onTextLayout={onTextLayout}
+              >
+                {item.answer}
+              </Text>
+              {isMeasured && isLongAnswer && (
+                <View style={styles.expandIndicator}>
+                  <Text style={styles.expandText}>
+                    {isExpanded ? 'Show less' : 'Read more'}
+                  </Text>
+                  <Ionicons
+                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color="#8B5CF6"
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -858,22 +1134,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
   scrollableTitle: {
+    marginTop: 8,
     marginBottom: 20,
   },
   titleRow: {
@@ -924,6 +1186,46 @@ const styles = StyleSheet.create({
   // Card Styles
   cardWrapper: {
     marginBottom: 16,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
+  cardAnimatedWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  actionsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  swipeAction: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  editAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    shadowColor: '#6B7280',
+  },
+  deleteAction: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FECACA',
+    shadowColor: '#EF4444',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -952,7 +1254,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
   },
   customAccent: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#8B5CF6',
   },
   optionalAccent: {
     backgroundColor: '#A78BFA',
@@ -967,9 +1269,6 @@ const styles = StyleSheet.create({
   },
   optionalBadge: {
     backgroundColor: '#EDE9FE',
-  },
-  customBadge: {
-    backgroundColor: '#FEF3C7',
   },
   badgeText: {
     fontSize: 10,
@@ -1031,13 +1330,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: '#8B5CF6',
-  },
-  deleteHint: {
-    fontSize: 11,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    textAlign: 'right',
-    marginTop: 8,
   },
 
   // Modal & Bottom Sheet
