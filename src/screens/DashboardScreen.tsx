@@ -204,6 +204,14 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
+  const handleMonthlyBodyTracking = (): void => {
+    if (navigation) {
+      navigation.navigate('MonthlyBodyTracking');
+    } else {
+      console.log('Navigate to Monthly Body Tracking');
+    }
+  };
+
   const handleStatistics = (): void => {
     // TODO: Navigate to statistics screen
     console.log('Navigate to Statistics');
@@ -444,6 +452,34 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               </View>
               {/* Chevron indicator */}
               <Ionicons name="chevron-forward" size={20} color="#DB2777" style={styles.monthlyChevron} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Monthly Body Check-In Card */}
+          <TouchableOpacity
+            style={styles.bodyCheckInCardTouchable}
+            onPress={handleMonthlyBodyTracking}
+            activeOpacity={0.85}
+          >
+            <View style={styles.bodyCheckInCard}>
+              {/* Icon with gradient ring */}
+              <LinearGradient
+                colors={['#BAE6FD', '#38BDF8', '#0EA5E9']}
+                style={styles.bodyCheckInIconGradientRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.bodyCheckInIconInnerCircle}>
+                  <Ionicons name="body" size={28} color="#0EA5E9" />
+                </View>
+              </LinearGradient>
+              {/* Text content */}
+              <View style={styles.bodyCheckInTextContainer}>
+                <Text style={styles.bodyCheckInCardTitle}>Monthly Body Check-In</Text>
+                <Text style={styles.bodyCheckInCardSubtitle}>Track your physical progress</Text>
+              </View>
+              {/* Chevron indicator */}
+              <Ionicons name="chevron-forward" size={20} color="#0EA5E9" style={styles.bodyCheckInChevron} />
             </View>
           </TouchableOpacity>
 
@@ -1063,7 +1099,7 @@ const styles = StyleSheet.create({
   },
   // Monthly Check-In Card Styles
   monthlyCardTouchable: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   monthlyCard: {
     flexDirection: 'row',
@@ -1112,6 +1148,60 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   monthlyChevron: {
+    opacity: 0.6,
+    marginLeft: 8,
+  },
+  // Monthly Body Check-In Card Styles
+  bodyCheckInCardTouchable: {
+    marginBottom: 24,
+  },
+  bodyCheckInCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    padding: 16,
+    paddingLeft: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  bodyCheckInIconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bodyCheckInIconInnerCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bodyCheckInTextContainer: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  bodyCheckInCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  bodyCheckInCardSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#0EA5E9',
+    opacity: 0.85,
+  },
+  bodyCheckInChevron: {
     opacity: 0.6,
     marginLeft: 8,
   },
