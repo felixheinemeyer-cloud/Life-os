@@ -245,6 +245,8 @@ const styles = StyleSheet.create({
     minHeight: 220,
     letterSpacing: -0.2,
     lineHeight: 24,
+    paddingTop: 0,
+    paddingLeft: 0,
   },
 
   // Button Container

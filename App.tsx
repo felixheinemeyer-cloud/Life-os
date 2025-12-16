@@ -24,6 +24,7 @@ import WeeklyTrackingContainerScreen from './src/screens/WeeklyTrackingContainer
 import WeeklyTrackingCompleteScreen from './src/screens/WeeklyTrackingCompleteScreen';
 import MonthlyTrackingContainerScreen from './src/screens/MonthlyTrackingContainerScreen';
 import MonthlyTrackingCompleteScreen from './src/screens/MonthlyTrackingCompleteScreen';
+import MonthlyBodyTrackingContainerScreen from './src/screens/MonthlyBodyTrackingContainerScreen';
 import HomeIcon from './src/components/HomeIcon';
 import BrainIcon from './src/components/BrainIcon';
 import CalendarIcon from './src/components/CalendarIcon';
@@ -96,6 +97,7 @@ const DashboardStack = () => {
       <Stack.Screen name="WeeklyTrackingComplete" component={WeeklyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
+      <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
     </Stack.Navigator>
   );
 };
