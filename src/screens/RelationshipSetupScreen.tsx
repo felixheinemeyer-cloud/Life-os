@@ -28,13 +28,27 @@ interface RelationshipSetupScreenProps {
     goBack: () => void;
     navigate: (screen: string, params?: any) => void;
   };
+  route: {
+    params?: {
+      isEditMode?: boolean;
+      partnerName?: string;
+      sinceDate?: string | Date;
+      photoUri?: string | null;
+    };
+  };
 }
 
-const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navigation }) => {
-  // Form state
-  const [partnerPhoto, setPartnerPhoto] = useState<string | null>(null);
-  const [partnerName, setPartnerName] = useState('');
-  const [togetherSince, setTogetherSince] = useState<Date | null>(null);
+const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navigation, route }) => {
+  const isEditMode = route.params?.isEditMode || false;
+
+  // Form state - initialize with existing data if in edit mode
+  const [partnerPhoto, setPartnerPhoto] = useState<string | null>(route.params?.photoUri || null);
+  const [partnerName, setPartnerName] = useState(route.params?.partnerName || '');
+  const [togetherSince, setTogetherSince] = useState<Date | null>(
+    route.params?.sinceDate
+      ? (route.params.sinceDate instanceof Date ? route.params.sinceDate : new Date(route.params.sinceDate))
+      : null
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isNameFocused, setIsNameFocused] = useState(false);
 
@@ -164,11 +178,18 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('RelationshipHome', {
-      partnerName: partnerName.trim(),
-      sinceDate: togetherSince ? togetherSince.toISOString() : new Date().toISOString(),
-      photoUri: partnerPhoto,
-    });
+
+    if (isEditMode) {
+      // When in edit mode, just go back
+      navigation.goBack();
+    } else {
+      // When not in edit mode, navigate to RelationshipHome
+      navigation.navigate('RelationshipHome', {
+        partnerName: partnerName.trim(),
+        sinceDate: togetherSince ? togetherSince.toISOString() : new Date().toISOString(),
+        photoUri: partnerPhoto,
+      });
+    }
   };
 
   const isFormValid = partnerName.trim().length > 0;
@@ -407,10 +428,10 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
               styles.continueButtonText,
               !isFormValid && styles.continueButtonTextDisabled
             ]}>
-              Continue
+              {isEditMode ? 'Finish' : 'Continue'}
             </Text>
             <Ionicons
-              name="chevron-forward"
+              name={isEditMode ? 'checkmark' : 'chevron-forward'}
               size={18}
               color={isFormValid ? '#FFFFFF' : '#9CA3AF'}
             />

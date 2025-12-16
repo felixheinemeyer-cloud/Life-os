@@ -15,6 +15,7 @@ import {
   PanResponder,
   Modal,
   KeyboardAvoidingView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -51,6 +52,17 @@ interface DateIdea {
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
+  tagline: string;
+  duration: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  bestTime: string;
+  description: string;
+  steps: string[];
+  challenges: Array<{
+    id: string;
+    title: string;
+    description: string;
+  }>;
 }
 
 interface RelationshipTool {
@@ -67,9 +79,114 @@ interface PartnerNote {
 
 // Mock Data
 const DATE_IDEAS: DateIdea[] = [
-  { id: '1', title: 'Sunset walk by the river', subtitle: 'Golden hour magic', icon: 'sunny-outline', color: '#F59E0B' },
-  { id: '2', title: 'Cook together', subtitle: 'Create & connect', icon: 'restaurant-outline', color: '#10B981' },
-  { id: '3', title: 'Movie night', subtitle: 'Cozy at home', icon: 'film-outline', color: '#8B5CF6' },
+  {
+    id: '1',
+    title: 'Sunset walk by the river',
+    subtitle: 'Golden hour magic',
+    icon: 'sunny-outline',
+    color: '#F59E0B',
+    tagline: 'Watch the sky paint itself in shades of gold and pink',
+    duration: '1-2 hours',
+    difficulty: 'Easy',
+    bestTime: 'Evening',
+    description: 'There\'s something magical about watching the sunset together. The golden hour creates the perfect romantic atmosphere for deep conversations and quiet moments. Walking side by side as the day transitions to night reminds us to slow down and appreciate the beauty in simple things.',
+    steps: [
+      'Check sunset time and plan to arrive 30 minutes early',
+      'Pick a scenic spot along the river with a good view',
+      'Bring a blanket and some snacks or drinks',
+      'Leave your phones on silent and be present with each other',
+      'Share what you\'re grateful for as you watch the sunset',
+    ],
+    challenges: [
+      {
+        id: 'c1',
+        title: 'Golden hour photos',
+        description: 'Take at least 3 photos of each other in the golden light',
+      },
+      {
+        id: 'c2',
+        title: 'Gratitude sharing',
+        description: 'Each share 3 things you\'re grateful for about your partner',
+      },
+      {
+        id: 'c3',
+        title: 'Star gazing',
+        description: 'Stay until you see the first stars appear',
+      },
+    ],
+  },
+  {
+    id: '2',
+    title: 'Cook together',
+    subtitle: 'Create & connect',
+    icon: 'restaurant-outline',
+    color: '#10B981',
+    tagline: 'Turn your kitchen into a playground for two',
+    duration: '2-3 hours',
+    difficulty: 'Medium',
+    bestTime: 'Evening',
+    description: 'Cooking together is more than making a meal—it\'s about teamwork, creativity, and having fun. Whether you\'re following a recipe or improvising, the kitchen becomes a space where you create memories (and maybe a little mess). Plus, you get to enjoy the fruits of your labor together.',
+    steps: [
+      'Choose a recipe you\'ve both never tried before',
+      'Shop for ingredients together',
+      'Put on your favorite playlist',
+      'Assign roles: one preps, one cooks, or work together on everything',
+      'Set a beautiful table and enjoy your creation',
+    ],
+    challenges: [
+      {
+        id: 'c1',
+        title: 'Mystery ingredient',
+        description: 'Each person adds one surprise ingredient to the dish',
+      },
+      {
+        id: 'c2',
+        title: 'No recipe challenge',
+        description: 'Try to recreate a favorite restaurant dish from memory',
+      },
+      {
+        id: 'c3',
+        title: 'Dessert surprise',
+        description: 'One person makes a secret dessert while the other isn\'t looking',
+      },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Movie night',
+    subtitle: 'Cozy at home',
+    icon: 'film-outline',
+    color: '#8B5CF6',
+    tagline: 'Transform your living room into a private cinema',
+    duration: '2-3 hours',
+    difficulty: 'Easy',
+    bestTime: 'Evening',
+    description: 'Sometimes the best dates are the simplest ones. A cozy movie night at home gives you the chance to relax, cuddle up, and enjoy each other\'s company without any distractions. It\'s intimate, comfortable, and totally stress-free.',
+    steps: [
+      'Each person picks a movie, then flip a coin to choose',
+      'Make a cozy nest with blankets and pillows',
+      'Prepare movie snacks: popcorn, candy, or your favorites',
+      'Dim the lights and turn off all notifications',
+      'Cuddle up and enjoy the show',
+    ],
+    challenges: [
+      {
+        id: 'c1',
+        title: 'Genre roulette',
+        description: 'Watch a movie from a genre neither of you usually picks',
+      },
+      {
+        id: 'c2',
+        title: 'Snack chef',
+        description: 'Create a unique movie snack combo you\'ve never tried',
+      },
+      {
+        id: 'c3',
+        title: 'No phones rule',
+        description: 'Put phones in another room for the entire movie',
+      },
+    ],
+  },
 ];
 
 const RELATIONSHIP_TOOLS: RelationshipTool[] = [
@@ -158,14 +275,15 @@ const HeroSection: React.FC<{
   </View>
 );
 
-const CARD_WIDTH = 180;
-const CARD_HEIGHT = 180;
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 220;
 const SIDE_CARD_SCALE = 0.8;
-const SIDE_CARD_OFFSET = 112;
+const SIDE_CARD_OFFSET = 96;
 const DRAG_THRESHOLD = 150;
 
 const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ navigation, onSwipeStart, onSwipeEnd }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
   const animatedIndex = useRef(new Animated.Value(0)).current;
   const panX = useRef(new Animated.Value(0)).current;
 
@@ -173,7 +291,7 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Date idea selected:', idea.title);
+    navigation?.navigate('DateIdeaDetail', { idea });
   };
 
   const handleSeeAll = () => {
@@ -181,6 +299,22 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     navigation?.navigate('DateIdeasList');
+  };
+
+  const handleToggleSave = (ideaId: string, event: any) => {
+    event.stopPropagation();
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setSavedIdeas(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ideaId)) {
+        newSet.delete(ideaId);
+      } else {
+        newSet.add(ideaId);
+      }
+      return newSet;
+    });
   };
 
   const goToIndex = useCallback((newIndex: number) => {
@@ -290,12 +424,8 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
       })
     ));
 
-    // Opacity based on position - center card is full opacity, side cards are faded
-    const opacity = animatedIndex.interpolate({
-      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
-      outputRange: [0.3, 0.5, 1, 0.5, 0.3],
-      extrapolate: 'clamp',
-    });
+    // Opacity - keep all cards fully opaque so they properly cover each other
+    const opacity = 1;
 
     return {
       transform: [{ translateX }, { scale }],
@@ -317,7 +447,12 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
         indices.push(i);
       }
     }
-    return indices;
+    // Sort by z-index (furthest cards first, active card last)
+    return indices.sort((a, b) => {
+      const distanceA = Math.abs(a - activeIndex);
+      const distanceB = Math.abs(b - activeIndex);
+      return distanceB - distanceA; // Furthest first
+    });
   };
 
   return (
@@ -353,6 +488,19 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
                 onPress={() => handleIdeaPress(idea)}
                 activeOpacity={0.9}
               >
+                {/* Heart Save Button */}
+                <TouchableOpacity
+                  style={styles.dateIdeaHeartButton}
+                  onPress={(e) => handleToggleSave(idea.id, e)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={savedIdeas.has(idea.id) ? 'heart' : 'heart-outline'}
+                    size={20}
+                    color={savedIdeas.has(idea.id) ? '#E11D48' : '#9CA3AF'}
+                  />
+                </TouchableOpacity>
+
                 <View style={[styles.dateIdeaIcon, { backgroundColor: `${idea.color}15` }]}>
                   <Ionicons name={idea.icon} size={36} color={idea.color} />
                 </View>
@@ -673,6 +821,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<PartnerNote | null>(null);
   const [noteContent, setNoteContent] = useState('');
+  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
   // Photo handler
   const handleEditPhoto = async () => {
@@ -764,13 +913,12 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
               if (Platform.OS === 'ios') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
-              // TODO: Navigate to settings
-              console.log('Settings pressed');
+              setSettingsMenuVisible(true);
             }}
             style={styles.settingsButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="settings-outline" size={22} color="#1F2937" />
+            <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
           </TouchableOpacity>
         </View>
 
@@ -854,6 +1002,56 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
               />
             </View>
           </KeyboardAvoidingView>
+        </Modal>
+
+        {/* Settings Menu Modal */}
+        <Modal
+          visible={settingsMenuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSettingsMenuVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
+            <View style={styles.dropdownModalOverlay}>
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSettingsMenuVisible(false);
+                    navigation.navigate('RelationshipSetup', {
+                      isEditMode: true,
+                      partnerName: partnerName,
+                      sinceDate: sinceDate,
+                      photoUri: currentPhotoUri,
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                  <Text style={styles.dropdownItemText}>Edit Info</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.dropdownItem, styles.dropdownItemWithDivider]}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSettingsMenuVisible(false);
+                    // TODO: Switch to dating vault
+                    console.log('Switch to dating pressed');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="repeat" size={18} color="#6B7280" />
+                  <Text style={styles.dropdownItemText}>Switch to Dating</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
     </SafeAreaView>
@@ -1069,15 +1267,15 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   carouselContainer: {
-    height: 200,
+    height: 240,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'visible',
   },
   carouselCard: {
     position: 'absolute',
-    width: 180,
-    height: 180,
+    width: 220,
+    height: 220,
   },
   dateIdeaCardInner: {
     width: '100%',
@@ -1091,6 +1289,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
+    position: 'relative',
+  },
+  dateIdeaHeartButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    zIndex: 10,
   },
   dateIdeaIcon: {
     width: 64,
@@ -1105,6 +1321,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
 
   // Relationship Tools Section
@@ -1337,6 +1554,42 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     lineHeight: 24,
     padding: 0,
+  },
+
+  // Dropdown Modal
+  dropdownModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 116,
+    right: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 6,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  dropdownItemWithDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#374151',
   },
 });
 
