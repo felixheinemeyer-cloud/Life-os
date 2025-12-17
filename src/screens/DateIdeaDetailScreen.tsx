@@ -12,6 +12,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const DONE_IDEAS_STORAGE_KEY = '@done_date_ideas';
+const SAVED_IDEAS_STORAGE_KEY = '@saved_date_ideas';
 
 interface DateIdeaDetailScreenProps {
   navigation: any;
@@ -23,12 +27,37 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
 
   // State
   const [isSaved, setIsSaved] = useState(false);
+  const [isDone, setIsDone] = useState(false);
   const [completedChallenges, setCompletedChallenges] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState('');
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+
+  // Load saved and done status
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        // Load saved status
+        const savedStored = await AsyncStorage.getItem(SAVED_IDEAS_STORAGE_KEY);
+        if (savedStored) {
+          const savedIdeas = new Set(JSON.parse(savedStored));
+          setIsSaved(savedIdeas.has(idea.id));
+        }
+
+        // Load done status
+        const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
+        if (doneStored) {
+          const doneIdeas = new Set(JSON.parse(doneStored));
+          setIsDone(doneIdeas.has(idea.id));
+        }
+      } catch (error) {
+        console.error('Error loading status:', error);
+      }
+    };
+    loadStatus();
+  }, [idea.id]);
 
   useEffect(() => {
     Animated.parallel([
@@ -52,11 +81,26 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     navigation.goBack();
   };
 
-  const handleToggleSave = () => {
+  const handleToggleSave = async () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setIsSaved(!isSaved);
+
+    try {
+      const stored = await AsyncStorage.getItem(SAVED_IDEAS_STORAGE_KEY);
+      const savedIdeas = stored ? new Set(JSON.parse(stored)) : new Set<string>();
+
+      if (savedIdeas.has(idea.id)) {
+        savedIdeas.delete(idea.id);
+      } else {
+        savedIdeas.add(idea.id);
+      }
+
+      await AsyncStorage.setItem(SAVED_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(savedIdeas)));
+      setIsSaved(!isSaved);
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
   };
 
   const handleToggleChallenge = (challengeId: string) => {
@@ -74,12 +118,32 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     });
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return '#10B981';
-      case 'Medium': return '#F59E0B';
-      case 'Hard': return '#EF4444';
-      default: return '#6B7280';
+  const handleMarkAsDone = async () => {
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    try {
+      // Add to done ideas
+      const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
+      const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
+      doneIdeas.add(idea.id);
+      await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
+
+      // Keep in liked ideas (don't remove)
+      setIsDone(true);
+    } catch (error) {
+      console.error('Error marking date as done:', error);
+    }
+  };
+
+  const getBudgetDisplay = (budget: string): string => {
+    switch (budget) {
+      case 'free': return 'Free';
+      case 'low': return '$';
+      case 'medium': return '$$';
+      case 'high': return '$$$';
+      default: return '$';
     }
   };
 
@@ -95,17 +159,19 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleToggleSave}
-            style={styles.headerButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isSaved ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isSaved ? '#E11D48' : '#1F2937'}
-            />
-          </TouchableOpacity>
+          {isSaved && (
+            <TouchableOpacity
+              onPress={handleToggleSave}
+              style={styles.headerButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isSaved ? 'heart' : 'heart-outline'}
+                size={22}
+                color={isSaved ? '#E11D48' : '#1F2937'}
+              />
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView
@@ -151,9 +217,9 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
               <Ionicons name="time-outline" size={16} color="#6B7280" />
               <Text style={styles.infoPillText}>{idea.duration}</Text>
             </View>
-            <View style={[styles.infoPill, { borderColor: getDifficultyColor(idea.difficulty) }]}>
-              <View style={[styles.difficultyDot, { backgroundColor: getDifficultyColor(idea.difficulty) }]} />
-              <Text style={styles.infoPillText}>{idea.difficulty}</Text>
+            <View style={styles.infoPill}>
+              <Ionicons name="wallet-outline" size={16} color="#6B7280" />
+              <Text style={styles.infoPillText}>{getBudgetDisplay(idea.budget)}</Text>
             </View>
             <View style={styles.infoPill}>
               <Ionicons name="sunny-outline" size={16} color="#6B7280" />
@@ -229,18 +295,16 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
                 onPress={() => handleToggleChallenge(challenge.id)}
                 activeOpacity={0.7}
               >
-                <View style={styles.challengeCheckbox}>
+                <View style={[
+                  styles.challengeCheckbox,
+                  completedChallenges.has(challenge.id) && styles.challengeCheckboxCompleted,
+                ]}>
                   {completedChallenges.has(challenge.id) && (
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={18} color="#E11D48" />
                   )}
                 </View>
                 <View style={styles.challengeContent}>
-                  <Text
-                    style={[
-                      styles.challengeTitle,
-                      completedChallenges.has(challenge.id) && styles.challengeTitleCompleted,
-                    ]}
-                  >
+                  <Text style={styles.challengeTitle}>
                     {challenge.title}
                   </Text>
                   <Text style={styles.challengeDescription}>{challenge.description}</Text>
@@ -250,25 +314,32 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           </Animated.View>
 
           {/* Bottom Spacing */}
-          <View style={{ height: 100 }} />
+          <View style={{ height: isSaved ? 100 : 40 }} />
         </ScrollView>
 
-        {/* Bottom Action Button */}
-        <View style={styles.bottomButtonContainer}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              }
-              // TODO: Mark as planned or done
-            }}
-          >
-            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>Plan this date</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Mark as Done Button - Show for liked dates that aren't done yet */}
+        {isSaved && !isDone && (
+          <View style={styles.bottomButtonContainer}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              activeOpacity={0.8}
+              onPress={handleMarkAsDone}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>Mark as Done</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Done Button - Show for liked dates that are marked as done (non-clickable) */}
+        {isSaved && isDone && (
+          <View style={styles.bottomButtonContainer}>
+            <View style={styles.doneButton}>
+              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Text style={styles.doneButtonText}>Done</Text>
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -480,6 +551,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
     backgroundColor: '#FFFFFF',
   },
+  challengeCheckboxCompleted: {
+    borderColor: '#E11D48',
+  },
   challengeContent: {
     flex: 1,
   },
@@ -509,9 +583,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-    backgroundColor: '#F7F5F2',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
   },
   primaryButton: {
     backgroundColor: '#1F2937',
@@ -531,6 +602,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  doneButton: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 2,
+    borderColor: '#BBF7D0',
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
     letterSpacing: -0.2,
   },
 });

@@ -143,27 +143,10 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 56 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 88 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Preview */}
-        <View style={styles.previewContainer}>
-          <LinearGradient
-            colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-            style={styles.previewIcon}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.previewIconInner}>
-              <Ionicons name={CUSTOM_ICON} size={28} color="#E11D48" />
-            </View>
-          </LinearGradient>
-          <Text style={styles.previewTitle}>
-            {title.trim().length > 0 ? title.trim() : 'New Date Idea'}
-          </Text>
-        </View>
-
         {/* Title Card */}
         <View style={[styles.card, isTitleFocused && styles.cardFocused]}>
           <View style={styles.cardLabelRow}>
@@ -171,7 +154,6 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
               <Ionicons name="create-outline" size={20} color="#E11D48" />
             </View>
             <Text style={styles.cardLabel}>Title</Text>
-            <Text style={styles.requiredLabel}>required</Text>
           </View>
           <TextInput
             style={styles.textInput}
@@ -217,6 +199,7 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
               <Ionicons name="time-outline" size={20} color="#E11D48" />
             </View>
             <Text style={styles.cardLabel}>Duration</Text>
+            <Text style={styles.optionalLabel}>optional</Text>
           </View>
           <View style={styles.chipRow}>
             {DURATIONS.map(duration => (
@@ -254,6 +237,7 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
               <Ionicons name="wallet-outline" size={20} color="#E11D48" />
             </View>
             <Text style={styles.cardLabel}>Budget</Text>
+            <Text style={styles.optionalLabel}>optional</Text>
           </View>
           <View style={styles.budgetGrid}>
             {BUDGETS.map(budget => (
@@ -311,7 +295,7 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
             >
               <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
-            <View style={styles.headerSpacer} />
+            <Text style={styles.headerTitle}>New Date Idea</Text>
             <TouchableOpacity
               onPress={handleSave}
               style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
@@ -337,8 +321,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingTop: 8,
-    paddingBottom: 16,
     zIndex: 100,
   },
   headerBlur: {
@@ -353,8 +335,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -379,8 +367,13 @@ const styles = StyleSheet.create({
   roundButtonDisabled: {
     opacity: 0.5,
   },
-  headerSpacer: {
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
     flex: 1,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
@@ -446,7 +439,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF1F2',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -489,15 +482,23 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: '#1F2937',
+    borderColor: 'transparent',
   },
   chipTextSelected: {
     color: '#FFFFFF',
   },
   durationChip: {
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   durationChipText: {
     fontSize: 13,
@@ -512,14 +513,20 @@ const styles = StyleSheet.create({
   },
   budgetOption: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F9FAFB',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   budgetOptionSelected: {
     backgroundColor: '#1F2937',
+    borderColor: '#1F2937',
   },
   budgetLabel: {
     fontSize: 16,

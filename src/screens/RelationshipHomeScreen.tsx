@@ -486,25 +486,54 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
               <TouchableOpacity
                 style={styles.dateIdeaCardInner}
                 onPress={() => handleIdeaPress(idea)}
-                activeOpacity={0.9}
+                activeOpacity={1}
               >
-                {/* Heart Save Button */}
-                <TouchableOpacity
-                  style={styles.dateIdeaHeartButton}
-                  onPress={(e) => handleToggleSave(idea.id, e)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={savedIdeas.has(idea.id) ? 'heart' : 'heart-outline'}
-                    size={20}
-                    color={savedIdeas.has(idea.id) ? '#E11D48' : '#9CA3AF'}
-                  />
-                </TouchableOpacity>
+                <View style={styles.dateIdeaGradient}>
+                  {/* Heart Save Button */}
+                  <TouchableOpacity
+                    style={styles.dateIdeaHeartButton}
+                    onPress={(e) => handleToggleSave(idea.id, e)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={savedIdeas.has(idea.id) ? 'heart' : 'heart-outline'}
+                      size={20}
+                      color={savedIdeas.has(idea.id) ? '#E11D48' : '#9CA3AF'}
+                    />
+                  </TouchableOpacity>
 
-                <View style={[styles.dateIdeaIcon, { backgroundColor: `${idea.color}15` }]}>
-                  <Ionicons name={idea.icon} size={36} color={idea.color} />
+                  <View style={styles.dateIdeaMainContent}>
+                    <View style={[styles.dateIdeaIconContainer]}>
+                      <View style={[styles.dateIdeaIcon, {
+                        backgroundColor: '#FFFFFF',
+                        shadowColor: idea.color,
+                      }]}>
+                        <Ionicons name={idea.icon} size={36} color={idea.color} />
+                      </View>
+                    </View>
+
+                    <View style={styles.dateIdeaTextContent}>
+                      <Text style={styles.dateIdeaTitle} numberOfLines={2}>
+                        {idea.title}
+                      </Text>
+                      <Text style={styles.dateIdeaSubtitle} numberOfLines={1}>
+                        {idea.subtitle}
+                      </Text>
+                    </View>
+
+                    <View style={styles.dateIdeaFooter}>
+                      <View style={[styles.dateIdeaDurationBadge, {
+                        backgroundColor: `${idea.color}10`,
+                        borderColor: `${idea.color}20`,
+                      }]}>
+                        <Ionicons name="time-outline" size={11} color={idea.color} />
+                        <Text style={[styles.dateIdeaDurationText, { color: idea.color }]}>
+                          {idea.duration}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.dateIdeaTitle}>{idea.title}</Text>
               </TouchableOpacity>
             </Animated.View>
           );
@@ -1046,7 +1075,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="repeat" size={18} color="#6B7280" />
+                  <Ionicons name="sync-outline" size={18} color="#6B7280" />
                   <Text style={styles.dropdownItemText}>Switch to Dating</Text>
                 </TouchableOpacity>
               </View>
@@ -1276,20 +1305,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 220,
     height: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   dateIdeaCardInner: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
     position: 'relative',
+  },
+  dateIdeaGradient: {
+    width: '100%',
+    height: '100%',
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  dateIdeaMainContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   dateIdeaHeartButton: {
     position: 'absolute',
@@ -1298,7 +1337,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1308,20 +1347,59 @@ const styles = StyleSheet.create({
     elevation: 2,
     zIndex: 10,
   },
+  dateIdeaIconContainer: {
+    marginBottom: 4,
+  },
   dateIdeaIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  dateIdeaTextContent: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    flex: 1,
+    justifyContent: 'center',
   },
   dateIdeaTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-    paddingHorizontal: 16,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  dateIdeaSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+    textAlign: 'center',
+    letterSpacing: -0.1,
+    lineHeight: 16,
+  },
+  dateIdeaFooter: {
+    alignItems: 'center',
+  },
+  dateIdeaDurationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  dateIdeaDurationText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
 
   // Relationship Tools Section
