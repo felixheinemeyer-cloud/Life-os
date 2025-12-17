@@ -137,6 +137,24 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     }
   };
 
+  const handleUnmarkAsDone = async () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    try {
+      // Remove from done ideas
+      const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
+      const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
+      doneIdeas.delete(idea.id);
+      await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
+
+      setIsDone(false);
+    } catch (error) {
+      console.error('Error unmarking date as done:', error);
+    }
+  };
+
   const getBudgetDisplay = (budget: string): string => {
     switch (budget) {
       case 'free': return 'Free';
@@ -312,11 +330,11 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           </Animated.View>
 
           {/* Bottom Spacing */}
-          <View style={{ height: isSaved ? 100 : 40 }} />
+          <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Mark as Done Button - Show for liked dates that aren't done yet */}
-        {isSaved && !isDone && (
+        {/* Mark as Done Button - Show for dates that aren't done yet */}
+        {!isDone && (
           <View style={styles.bottomButtonContainer}>
             <TouchableOpacity
               style={styles.primaryButton}
@@ -329,13 +347,17 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           </View>
         )}
 
-        {/* Done Button - Show for liked dates that are marked as done (non-clickable) */}
-        {isSaved && isDone && (
+        {/* Done Button - Show for dates that are marked as done (clickable to unmark) */}
+        {isDone && (
           <View style={styles.bottomButtonContainer}>
-            <View style={styles.doneButton}>
+            <TouchableOpacity
+              style={styles.doneButton}
+              activeOpacity={0.8}
+              onPress={handleUnmarkAsDone}
+            >
               <Ionicons name="checkmark-circle" size={20} color="#64748B" />
               <Text style={styles.doneButtonText}>Done</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
       </View>

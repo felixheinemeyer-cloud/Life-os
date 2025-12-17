@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   cardFocused: {
-    borderColor: '#FECDD3',
+    borderColor: '#D1D5DB',
     shadowOpacity: 0.1,
   },
   cardLabelRow: {
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF1F2',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   requiredLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#BE123C',
+    color: '#9CA3AF',
     marginLeft: 'auto',
   },
 
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF1F2',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF1F2',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
