@@ -10,6 +10,8 @@ import {
   Easing,
   Dimensions,
   PanResponder,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -560,9 +562,9 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
           <Text style={styles.sectionTitle}>Date Ideas</Text>
           <Text style={styles.dateIdeasSubtitle}>First date inspiration</Text>
         </View>
-        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.6}>
-          <Text style={styles.seeAllText}>See all</Text>
-          <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
+          <Text style={styles.seeAllText}>See All</Text>
+          <Ionicons name="chevron-forward" size={16} color="#6B7280" />
         </TouchableOpacity>
       </View>
       <View style={styles.carouselContainer} {...carouselPanResponder.panHandlers}>
@@ -644,6 +646,7 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
 const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [isSwipingCard, setIsSwipingCard] = useState(false);
+  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -703,17 +706,17 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Dating</Text>
           </View>
-          {/* Dating Life Section */}
+          {/* Contacts Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Dating Life</Text>
+              <Text style={styles.sectionTitle}>Contacts</Text>
               <TouchableOpacity
                 style={styles.seeAllButton}
                 onPress={handleSeeAllCRM}
-                activeOpacity={0.6}
+                activeOpacity={0.7}
               >
-                <Text style={styles.seeAllText}>See all</Text>
-                <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+                <Text style={styles.seeAllText}>See All</Text>
+                <Ionicons name="chevron-forward" size={16} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
@@ -814,16 +817,45 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 if (Platform.OS === 'ios') {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
-                console.log('Settings pressed');
+                setSettingsMenuVisible(true);
               }}
               style={styles.settingsButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="settings-outline" size={22} color="#1F2937" />
+              <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
             </TouchableOpacity>
           </View>
         </Animated.View>
       </View>
+
+      {/* Settings Menu Modal */}
+      <Modal
+        visible={settingsMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsMenuVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
+          <View style={styles.dropdownModalOverlay}>
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSettingsMenuVisible(false);
+                  navigation.navigate('RelationshipSetup');
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sync-outline" size={18} color="#6B7280" />
+                <Text style={styles.dropdownItemText}>Switch to Relationship</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -930,15 +962,27 @@ const styles = StyleSheet.create({
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   seeAllText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginRight: 3,
+    letterSpacing: -0.1,
   },
 
-  // Dating Life Section
+  // Contacts Section
   peopleList: {
     paddingHorizontal: 20,
     gap: 10,
@@ -1139,6 +1183,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     color: '#9CA3AF',
+  },
+
+  // Dropdown Modal
+  dropdownModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 116,
+    right: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  dropdownItemWithDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#374151',
   },
 });
 

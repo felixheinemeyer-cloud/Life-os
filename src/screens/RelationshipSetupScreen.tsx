@@ -288,10 +288,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                     <View style={styles.photoIconCircle}>
                       <Ionicons name="people" size={28} color="#E11D48" />
                     </View>
-                    <Text style={styles.photoPlaceholderTitle}>Add a photo</Text>
-                    <Text style={styles.photoPlaceholderText}>
-                      Choose a picture that makes you smile when you see it
-                    </Text>
+                    <Text style={styles.photoPlaceholderTitle}>A photo of you two</Text>
                     <View style={styles.addPhotoButton}>
                       <Ionicons name="add" size={18} color="#BE123C" />
                       <Text style={styles.addPhotoButtonText}>Choose photo</Text>
@@ -507,7 +504,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photoPlaceholder: {
-    padding: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
     alignItems: 'center',
     borderRadius: 20,
   },
@@ -530,7 +528,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#BE123C',
     letterSpacing: -0.3,
-    marginBottom: 4,
+    marginBottom: 16,
   },
   photoPlaceholderText: {
     fontSize: 13,

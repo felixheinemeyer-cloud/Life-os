@@ -196,6 +196,12 @@ const RELATIONSHIP_TOOLS: RelationshipTool[] = [
     description: 'A simple practice to stay connected and aligned',
     icon: 'calendar-outline',
   },
+  {
+    id: '2',
+    title: 'Conflict resolution guide',
+    description: 'Navigate disagreements with empathy and understanding',
+    icon: 'people-outline',
+  },
 ];
 
 // Helper Functions
@@ -462,9 +468,9 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
           <Text style={styles.sectionTitle}>Date Ideas</Text>
           <Text style={styles.dateIdeasSubtitle}>Weekly Inspiration</Text>
         </View>
-        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.6}>
-          <Text style={styles.seeAllText}>See all</Text>
-          <Ionicons name="chevron-forward" size={14} color="#9CA3AF" />
+        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
+          <Text style={styles.seeAllText}>See All</Text>
+          <Ionicons name="chevron-forward" size={16} color="#6B7280" />
         </TouchableOpacity>
       </View>
       <View style={styles.carouselContainer} {...carouselPanResponder.panHandlers}>
@@ -563,6 +569,9 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
     if (tool.id === '1') {
       // Weekly check-in ritual
       navigation?.navigate('WeeklyCheckIn');
+    } else if (tool.id === '2') {
+      // Conflict resolution guide
+      navigation?.navigate('ConflictResolutionGuide');
     }
   };
 
@@ -570,7 +579,7 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
     <View style={styles.section}>
       <View style={styles.toolsSectionHeader}>
         <View>
-          <Text style={styles.sectionTitle}>Relationship Tool</Text>
+          <Text style={styles.sectionTitle}>Relationship Tools</Text>
           <Text style={styles.toolsSectionSubtitle}>Resources to grow together</Text>
         </View>
         <View style={styles.toolsTimerPill}>
@@ -1291,12 +1300,24 @@ const styles = StyleSheet.create({
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   seeAllText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginRight: 3,
+    letterSpacing: -0.1,
   },
   carouselContainer: {
     height: 240,

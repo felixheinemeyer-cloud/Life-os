@@ -1,16 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Animated,
-  Easing,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 // Types
 interface DatingAdvice {
@@ -32,7 +31,7 @@ interface DatingAdviceDetailScreenProps {
 }
 
 // Placeholder content for each advice type
-const getAdviceContent = (adviceId: string): { points: string[]; summary: string } => {
+const getAdviceContent = (adviceId: string): { points: string[]; summary: string; expandedPoints: { heading: string; body: string }[] } => {
   switch (adviceId) {
     case '1':
       return {
@@ -44,6 +43,32 @@ const getAdviceContent = (adviceId: string): { points: string[]; summary: string
           'They show genuine interest in your goals and passions',
           'They take responsibility for their actions and communicate openly',
           'They make plans and follow through on them',
+        ],
+        expandedPoints: [
+          {
+            heading: '1. They ask thoughtful questions',
+            body: 'Someone who genuinely cares will remember details about your life and ask follow-up questions. They show curiosity about who you are beyond surface-level conversation.',
+          },
+          {
+            heading: '2. Consistent communication',
+            body: "They don't play games or leave you guessing. Their actions match their words, and they communicate regularly without hot-and-cold patterns.",
+          },
+          {
+            heading: '3. They respect boundaries',
+            body: 'When you set a boundary, they honor it without making you feel guilty. They understand that healthy boundaries are essential for a strong connection.',
+          },
+          {
+            heading: '4. Genuine interest in your life',
+            body: 'They celebrate your wins and support your goals. Your passions matter to them because you matter to them.',
+          },
+          {
+            heading: '5. Taking responsibility',
+            body: 'They own their mistakes, apologize sincerely, and work to do better. Open communication about feelings and needs comes naturally to them.',
+          },
+          {
+            heading: '6. Following through on plans',
+            body: "They don't just talk about spending time together—they make it happen. Reliability and consistency show up in both their words and actions.",
+          },
         ],
       };
     case '2':
@@ -57,6 +82,32 @@ const getAdviceContent = (adviceId: string): { points: string[]; summary: string
           "\"What's something that always makes you feel recharged?\"",
           '"How do you like to show and receive care in relationships?"',
         ],
+        expandedPoints: [
+          {
+            heading: '1. "What are you proud of?"',
+            body: 'This question invites vulnerability and lets someone share achievements that matter to them personally, not just professionally. It reveals what they value.',
+          },
+          {
+            heading: '2. "Your ideal weekend?"',
+            body: 'Understanding how someone spends their free time shows you their lifestyle, energy levels, and what they find restorative or exciting.',
+          },
+          {
+            heading: '3. "Beliefs you\'ve changed?"',
+            body: 'This reveals self-awareness, growth, and open-mindedness. It shows they can reflect on their own evolution and aren\'t stuck in rigid thinking.',
+          },
+          {
+            heading: '4. "What are you looking for?"',
+            body: 'Direct but essential. This question helps you both understand if you\'re on the same page about relationship expectations and timelines.',
+          },
+          {
+            heading: '5. "What recharges you?"',
+            body: 'Learning what energizes someone helps you understand their self-care needs and whether your recharge modes complement each other.',
+          },
+          {
+            heading: '6. "How do you show care?"',
+            body: 'Understanding love languages early helps set realistic expectations and shows you both take emotional connection seriously.',
+          },
+        ],
       };
     case '3':
       return {
@@ -69,6 +120,32 @@ const getAdviceContent = (adviceId: string): { points: string[]; summary: string
           'Your comfort and safety always come first',
           'Boundaries can evolve as you get to know someone better',
         ],
+        expandedPoints: [
+          {
+            heading: '1. Communicate your preferences early',
+            body: 'Share how you prefer to communicate—texting frequency, phone calls, response times. Setting these expectations early prevents misunderstandings.',
+          },
+          {
+            heading: '2. Trust is built gradually',
+            body: "You don't owe anyone your entire story on the first date. Share at your own pace. The right person will respect your timeline for opening up.",
+          },
+          {
+            heading: '3. Saying no without guilt',
+            body: 'Last-minute plans don\'t work for you? That\'s completely valid. You don\'t need to explain or apologize excessively. A simple "I can\'t make it tonight" is enough.',
+          },
+          {
+            heading: '4. Watch their response',
+            body: 'Someone who respects you will accept your boundaries gracefully. If they push back, guilt-trip, or dismiss your needs, that\'s valuable information.',
+          },
+          {
+            heading: '5. Your comfort comes first',
+            body: "If something doesn't feel right—whether it's physical, emotional, or about pacing—trust that feeling. Your instincts are protecting you.",
+          },
+          {
+            heading: '6. Boundaries can change',
+            body: 'As trust deepens, you might naturally adjust certain boundaries. That\'s healthy growth. But you should never feel pressured to change them.',
+          },
+        ],
       };
     default:
       return {
@@ -79,6 +156,7 @@ const getAdviceContent = (adviceId: string): { points: string[]; summary: string
           'Trust your intuition when something feels off',
           'Celebrate the connections that feel right',
         ],
+        expandedPoints: [],
       };
   }
 };
@@ -90,67 +168,17 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
   const advice = route.params?.advice;
   const content = advice ? getAdviceContent(advice.id) : getAdviceContent('');
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
-  const heroOpacity = useRef(new Animated.Value(0)).current;
-  const heroScale = useRef(new Animated.Value(0.95)).current;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslateY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      // Header animation
-      Animated.parallel([
-        Animated.timing(headerOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Hero animation
-      Animated.parallel([
-        Animated.timing(heroOpacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(heroScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Content animation
-      Animated.parallel([
-        Animated.timing(contentOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(contentTranslateY, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, []);
+  const handleBackPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.goBack();
+  };
 
   if (!advice) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={handleBackPress}
             style={styles.backButton}
             activeOpacity={0.7}
           >
@@ -166,97 +194,79 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={handleBackPress}
+          style={styles.backButton}
+          activeOpacity={0.7}
         >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-        </Animated.View>
+          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Dating Advice</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
+      {/* Content with Gradient Background */}
+      <LinearGradient
+        colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+        style={styles.gradientBackground}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          style={styles.container}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {/* Hero Section */}
-          <Animated.View
-            style={[
-              styles.heroSection,
-              {
-                opacity: heroOpacity,
-                transform: [{ scale: heroScale }],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-              style={styles.heroIconContainer}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.heroIconCircle}>
-                <Ionicons name={advice.icon} size={32} color="#E11D48" />
+          <View style={styles.contentCard}>
+            {/* Category Badge */}
+            <View style={styles.categoryBadge}>
+              <Ionicons name="heart" size={14} color="#E11D48" />
+              <Text style={styles.categoryText}>Dating</Text>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.guideTitle}>{advice.title}</Text>
+
+            {/* Meta Info */}
+            <View style={styles.metaInfo}>
+              <View style={styles.metaItem}>
+                <Ionicons name="list-outline" size={14} color="#E11D48" />
+                <Text style={styles.metaText}>{content.expandedPoints.length} insights</Text>
               </View>
-            </LinearGradient>
+            </View>
 
-            <Text style={styles.heroTitle}>{advice.title}</Text>
-            <Text style={styles.heroDescription}>{content.summary}</Text>
-          </Animated.View>
+            {/* Divider */}
+            <View style={styles.divider} />
 
-          {/* Content Section */}
-          <Animated.View
-            style={[
-              styles.contentSection,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
-            <Text style={styles.contentSectionTitle}>Key Takeaways</Text>
+            {/* Introduction */}
+            <Text style={styles.introduction}>{content.summary}</Text>
 
-            {content.points.map((point, index) => (
-              <View key={index} style={styles.pointCard}>
-                <View style={styles.pointNumber}>
-                  <Text style={styles.pointNumberText}>{index + 1}</Text>
-                </View>
-                <Text style={styles.pointText}>{point}</Text>
+            {/* Expanded Points */}
+            {content.expandedPoints.map((point, index) => (
+              <View key={index} style={styles.pointSection}>
+                <Text style={styles.pointHeading}>{point.heading}</Text>
+                <Text style={styles.pointBody}>{point.body}</Text>
               </View>
             ))}
-          </Animated.View>
 
-          {/* Coming Soon Section */}
-          <Animated.View
-            style={[
-              styles.comingSoonSection,
-              {
-                opacity: contentOpacity,
-                transform: [{ translateY: contentTranslateY }],
-              },
-            ]}
-          >
-            <View style={styles.comingSoonCard}>
-              <Ionicons name="sparkles-outline" size={24} color="#9CA3AF" />
-              <Text style={styles.comingSoonText}>
-                More insights and interactive exercises coming soon
+            {/* Remember Box */}
+            <View style={styles.rememberBox}>
+              <View style={styles.rememberHeader}>
+                <Ionicons name="sparkles" size={20} color="#E11D48" />
+                <Text style={styles.rememberTitle}>Remember</Text>
+              </View>
+              <Text style={styles.rememberText}>
+                Dating is about discovering compatibility, not proving your worth. The right connection should feel natural, respectful, and energizing—not anxious or one-sided.
               </Text>
             </View>
-          </Animated.View>
+          </View>
+
+          {/* Bottom spacing */}
+          <View style={styles.bottomSpacer} />
         </ScrollView>
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -264,17 +274,40 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#FFFFFF',
+  },
+  gradientBackground: {
+    flex: 1,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: 'transparent',
   },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+
+  // Header
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   backButton: {
     width: 40,
@@ -291,134 +324,137 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  scrollView: {
-    flex: 1,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6B7280',
+  headerSpacer: {
+    width: 40,
   },
 
-  // Hero Section
-  heroSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 16,
+  // Content
+  scrollContent: {
+    padding: 16,
   },
-  heroIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+  contentCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 28,
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
     elevation: 6,
   },
-  heroIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
+  categoryBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFF1F2',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
   },
-  heroTitle: {
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E11D48',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  guideTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#1F2937',
+    lineHeight: 32,
     letterSpacing: -0.5,
     marginBottom: 12,
-    textAlign: 'center',
-    paddingHorizontal: 16,
   },
-  heroDescription: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 8,
-  },
-
-  // Content Section
-  contentSection: {
-    marginBottom: 24,
-  },
-  contentSectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-    marginBottom: 16,
-  },
-  pointCard: {
+  metaInfo: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  pointNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFF1F2',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    flexShrink: 0,
+    marginBottom: 20,
   },
-  pointNumberText: {
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#E11D48',
   },
-  pointText: {
-    flex: 1,
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(225, 29, 72, 0.2)',
+    marginBottom: 20,
+  },
+  introduction: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    lineHeight: 26,
+    letterSpacing: -0.1,
+    marginBottom: 28,
+  },
+
+  // Point Sections
+  pointSection: {
+    marginBottom: 24,
+  },
+  pointHeading: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1F2937',
+    lineHeight: 24,
+    letterSpacing: -0.3,
+    marginBottom: 8,
+  },
+  pointBody: {
     fontSize: 15,
     fontWeight: '400',
     color: '#374151',
-    lineHeight: 22,
+    lineHeight: 24,
+    letterSpacing: -0.1,
   },
 
-  // Coming Soon
-  comingSoonSection: {
+  // Remember Box
+  rememberBox: {
+    backgroundColor: '#FFF1F2',
+    borderRadius: 16,
+    padding: 20,
     marginTop: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E11D48',
   },
-  comingSoonCard: {
+  rememberHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    gap: 12,
+    gap: 8,
+    marginBottom: 10,
   },
-  comingSoonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    textAlign: 'center',
+  rememberTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#BE123C',
+    letterSpacing: -0.2,
+  },
+  rememberText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#374151',
+    lineHeight: 24,
+    letterSpacing: -0.1,
+  },
+
+  // Bottom Spacer
+  bottomSpacer: {
+    height: 40,
   },
 });
 
