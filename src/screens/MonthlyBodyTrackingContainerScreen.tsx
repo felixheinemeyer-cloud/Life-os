@@ -13,11 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import MonthlyBodyTrackingStatsContent from '../components/tracking/MonthlyBodyTrackingStatsContent';
+import MonthlyBodyTrackingInsightsContent from '../components/tracking/MonthlyBodyTrackingInsightsContent';
 import MonthlyBodyTrackingMetricsContent, { BodyMetricsData } from '../components/tracking/MonthlyBodyTrackingMetricsContent';
 import MonthlyBodyTrackingHealthContent, { HealthRatingsData } from '../components/tracking/MonthlyBodyTrackingHealthContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 interface MonthlyBodyTrackingContainerScreenProps {
   navigation?: {
@@ -150,6 +151,13 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               <MonthlyBodyTrackingHealthContent
                 data={healthRatings}
                 onDataChange={setHealthRatings}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 4: 30-Day Insights - Sleep, Energy, Nutrition */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingInsightsContent
                 onContinue={handleContinue}
               />
             </View>
