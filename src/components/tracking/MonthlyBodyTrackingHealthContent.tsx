@@ -142,7 +142,7 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       {/* Header: Icon + Label on left, Value on right */}
       <View style={styles.sliderHeader}>
         <Ionicons name={icon} size={18} color={themeColor} />
-        <Text style={[styles.sliderLabel, { color: themeColor }]}>{label}</Text>
+        <Text style={styles.sliderLabel}>{label}</Text>
         <Text style={[styles.valueText, { color: SLIDER_COLOR }]}>{value}/10</Text>
       </View>
 
@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.2,
+    color: '#1F2937',
   },
   valueText: {
     fontSize: 14,

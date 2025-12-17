@@ -183,6 +183,9 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
                 </View>
               </View>
             </View>
+            <Text style={styles.sectionSubtitle}>
+              Track body fat %, waist, chest, or any body stats
+            </Text>
             <View style={[
               styles.measurementsInputContainer,
               isMeasurementsFocused && styles.inputFocused
@@ -200,9 +203,6 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
                 textAlignVertical="top"
               />
             </View>
-            <Text style={styles.measurementsHint}>
-              Track body fat percentage, waist, chest, or any body stats
-            </Text>
           </View>
         </ScrollView>
 
@@ -397,11 +397,12 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingLeft: 0,
   },
-  measurementsHint: {
-    fontSize: 12,
+  sectionSubtitle: {
+    fontSize: 13,
     fontWeight: '400',
-    color: '#9CA3AF',
-    marginTop: 10,
+    color: '#6B7280',
+    marginTop: -8,
+    marginBottom: 16,
     fontStyle: 'italic',
   },
 
