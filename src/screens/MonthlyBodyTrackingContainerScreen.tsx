@@ -14,9 +14,10 @@ import * as Haptics from 'expo-haptics';
 
 import MonthlyBodyTrackingStatsContent from '../components/tracking/MonthlyBodyTrackingStatsContent';
 import MonthlyBodyTrackingMetricsContent, { BodyMetricsData } from '../components/tracking/MonthlyBodyTrackingMetricsContent';
+import MonthlyBodyTrackingHealthContent, { HealthRatingsData } from '../components/tracking/MonthlyBodyTrackingHealthContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 2;
+const TOTAL_STEPS = 3;
 
 interface MonthlyBodyTrackingContainerScreenProps {
   navigation?: {
@@ -35,7 +36,12 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
     weight: '',
     weightUnit: 'kg',
     measurements: '',
-    waterIntake: 6,
+  });
+
+  // Health ratings state
+  const [healthRatings, setHealthRatings] = useState<HealthRatingsData>({
+    overallHealth: 5,
+    skinQuality: 5,
   });
 
   // Animation value for horizontal scroll position
@@ -76,7 +82,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
     } else {
       // Final step - complete the check-in
       // For now, just go back. Later, navigate to a completion screen.
-      console.log('Monthly Body Check-In complete:', bodyMetrics);
+      console.log('Monthly Body Check-In complete:', { bodyMetrics, healthRatings });
       navigation?.goBack();
     }
   };
@@ -138,6 +144,15 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
                 onContinue={handleContinue}
               />
             </View>
+
+            {/* Step 3: Health Ratings */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingHealthContent
+                data={healthRatings}
+                onDataChange={setHealthRatings}
+                onContinue={handleContinue}
+              />
+            </View>
           </Animated.View>
         </View>
       </View>
@@ -195,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressDotActive: {
-    backgroundColor: '#0EA5E9', // Sky blue to match the theme
+    backgroundColor: '#1F2937', // Match continue button color
   },
   progressDotInactive: {
     backgroundColor: '#E5E7EB',
