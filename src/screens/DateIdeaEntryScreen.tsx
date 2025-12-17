@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   cardFocused: {
-    borderColor: '#FECDD3',
+    borderColor: '#D1D5DB',
   },
   cardLabelRow: {
     flexDirection: 'row',

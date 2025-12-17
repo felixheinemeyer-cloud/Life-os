@@ -553,14 +553,17 @@ const calculateDaysUntilMonday = (): number => {
   return daysUntilMonday;
 };
 
-const RelationshipToolsSection: React.FC = () => {
+const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const daysUntilUpdate = calculateDaysUntilMonday();
 
   const handleToolPress = (tool: RelationshipTool) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('Tool selected:', tool.title);
+    if (tool.id === '1') {
+      // Weekly check-in ritual
+      navigation?.navigate('WeeklyCheckIn');
+    }
   };
 
   return (
@@ -974,7 +977,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
           />
 
           {/* Relationship Tools Section */}
-          <RelationshipToolsSection />
+          <RelationshipToolsSection navigation={navigation} />
 
           {/* Partner Notes Section */}
           <PartnerNotesSection

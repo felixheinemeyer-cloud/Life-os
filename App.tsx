@@ -57,6 +57,7 @@ import DatingDetailScreen from './src/screens/DatingDetailScreen';
 import DatingAdviceDetailScreen from './src/screens/DatingAdviceDetailScreen';
 import DateIdeaDetailScreen from './src/screens/DateIdeaDetailScreen';
 import DateIdeaEntryScreen from './src/screens/DateIdeaEntryScreen';
+import WeeklyCheckInScreen from './src/screens/WeeklyCheckInScreen';
 import HigherSelfScreen from './src/screens/HigherSelfScreen';
 import MindsetBeliefsScreen from './src/screens/MindsetBeliefsScreen';
 import PhysicalWealthIntroAnimationScreen from './src/screens/PhysicalWealthIntroAnimationScreen';
@@ -147,6 +148,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="DatingModePlaceholder" component={DatingModePlaceholderScreen} />
       <Stack.Screen name="RelationshipSetup" component={RelationshipSetupScreen} />
       <Stack.Screen name="RelationshipHome" component={RelationshipHomeScreen} />
+      <Stack.Screen name="WeeklyCheckIn" component={WeeklyCheckInScreen} />
       <Stack.Screen name="DateIdeasList" component={DateIdeasListScreen} />
       <Stack.Screen name="DateIdeaDetail" component={DateIdeaDetailScreen} />
       <Stack.Screen

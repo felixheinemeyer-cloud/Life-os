@@ -159,19 +159,17 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
-          {isSaved && (
-            <TouchableOpacity
-              onPress={handleToggleSave}
-              style={styles.headerButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isSaved ? 'heart' : 'heart-outline'}
-                size={22}
-                color={isSaved ? '#E11D48' : '#1F2937'}
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={handleToggleSave}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isSaved ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isSaved ? '#E11D48' : '#1F2937'}
+            />
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -335,7 +333,7 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
         {isSaved && isDone && (
           <View style={styles.bottomButtonContainer}>
             <View style={styles.doneButton}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#64748B" />
               <Text style={styles.doneButtonText}>Done</Text>
             </View>
           </View>
@@ -605,7 +603,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   doneButton: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#F1F5F9',
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -613,12 +611,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     borderWidth: 2,
-    borderColor: '#BBF7D0',
+    borderColor: '#CBD5E1',
   },
   doneButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#10B981',
+    color: '#64748B',
     letterSpacing: -0.2,
   },
 });
