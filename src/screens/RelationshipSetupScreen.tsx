@@ -599,8 +599,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inputCardFocused: {
-    borderColor: '#FECDD3',
-    shadowColor: '#E11D48',
+    borderColor: '#D1D5DB',
+    shadowColor: '#000',
     shadowOpacity: 0.1,
   },
   inputLabelRow: {
