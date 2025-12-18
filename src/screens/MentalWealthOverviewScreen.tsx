@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Platform,
@@ -16,14 +15,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, CommonActions } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const ACTION_WIDTH = 140; // Width for swipe actions
+const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps + padding)
 
-interface PhysicalWealthOverviewScreenProps {
+interface MentalWealthOverviewScreenProps {
   route?: {
     params?: {
       reopenOptionalQuestions?: boolean;
@@ -68,33 +67,33 @@ const CORE_QA_DATA: QuestionAnswer[] = [
   {
     id: '1',
     questionNumber: 1,
-    question: 'Your best self\'s body, energy and overall health',
-    answer: 'I am strong, lean, and full of energy. I wake up feeling refreshed and ready to tackle the day. My body is capable and resilient, allowing me to enjoy all physical activities I love. I have excellent posture and move with confidence. My immune system is strong and I rarely get sick. I feel vibrant and alive every single day.',
-    icon: 'body',
+    question: 'What does your inner world look and feel like when you are living as your best mental self?',
+    answer: 'My mind is clear and focused, with a sense of calm confidence that permeates everything I do. I feel mentally energized yet peaceful, able to think clearly and respond thoughtfully rather than react impulsively. There\'s a quiet strength in my thoughts, and I approach challenges with curiosity rather than fear. My inner dialogue is supportive and constructive, helping me grow rather than holding me back.',
+    icon: 'eye',
     type: 'core',
   },
   {
     id: '2',
     questionNumber: 2,
-    question: 'Your best self\'s routines for strength, health and vitality',
-    answer: 'I exercise 5 times a week combining strength training and cardio. I eat whole, nutritious foods and stay hydrated. I prioritize 7-8 hours of quality sleep every night. I stretch and do mobility work daily. I take cold showers to boost my energy and resilience. I track my progress and celebrate small wins along the way.',
-    icon: 'barbell',
+    question: 'How does your best self think, make decisions, and respond to challenges?',
+    answer: 'I approach decisions with clarity and confidence, weighing options thoughtfully without overthinking. I trust my judgment while remaining open to new information. When challenges arise, I see them as opportunities for growth rather than threats. I maintain perspective, breaking down complex problems into manageable parts, and I\'m comfortable with uncertainty while staying focused on what I can control.',
+    icon: 'bulb',
     type: 'core',
   },
   {
     id: '3',
     questionNumber: 3,
-    question: 'Behaviors your best self refuses to tolerate',
-    answer: 'I refuse to skip workouts for convenience, eat processed junk food, stay up late scrolling on my phone, or neglect my body\'s signals when it needs rest.',
-    icon: 'shield-checkmark',
+    question: 'Which thoughts, beliefs, and mental habits strengthen your well-being and help you operate as your best self?',
+    answer: 'I believe in my ability to learn and grow from every experience. I maintain a growth mindset, seeing failures as feedback rather than final verdicts. I practice self-compassion, treating myself with the same kindness I\'d offer a good friend. I regularly reflect on what I\'m grateful for, and I challenge negative self-talk with evidence-based thinking. I trust the process and focus on progress over perfection.',
+    icon: 'infinite',
     type: 'core',
   },
   {
     id: '4',
     questionNumber: 4,
-    question: 'Your best self\'s approach to rest and recovery',
-    answer: 'I take rest days seriously, practice meditation and deep breathing, spend time in nature, and ensure I have quiet time for mental recovery. I listen to my body and rest when needed.',
-    icon: 'leaf',
+    question: 'What daily or weekly practices help your best self stay mentally strong, clear and grounded?',
+    answer: 'I start each day with meditation or journaling to center myself and set intentions. I protect time for deep work without distractions, and I take regular breaks to reset my focus. I move my body daily, which clears my mind and boosts my energy. I limit social media and news consumption to prevent mental clutter. Each week, I review what went well and what I learned, celebrating progress and adjusting my approach.',
+    icon: 'calendar',
     type: 'core',
   },
 ];
@@ -102,36 +101,37 @@ const CORE_QA_DATA: QuestionAnswer[] = [
 // Curated optional questions
 const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
   {
-    id: 'opt5',
-    question: 'How does your best self eat and nourish their body?',
-    icon: 'restaurant',
-    promptHint: 'Think about meal choices, nutrition quality, hydration, eating habits, and your relationship with food.',
-  },
-  {
-    id: 'opt6',
-    question: 'How does your best self listen to their body and adapt to its signals?',
-    icon: 'ear',
-    promptHint: 'Consider how you respond to fatigue, pain, hunger, stress signals, and when your body needs rest or movement.',
-  },
-  {
-    id: 'opt7',
-    question: 'How does your best self balance physical discipline with enjoyment and sustainability?',
-    icon: 'scale',
-    promptHint: 'Reflect on finding the balance between consistency and flexibility, effort and recovery, goals and enjoying the journey.',
-  },
-  {
-    id: 'opt8',
-    question: 'What habits help your best self protect and build physical health for the long term?',
+    id: 'opt1',
+    question: 'How does your best self manage stress and stay mentally grounded under pressure?',
     icon: 'shield-checkmark',
-    promptHint: 'Think about preventive care, regular check-ups, building sustainable habits, and investing in long-term health over quick fixes.',
+    promptHint: 'Think about breathing techniques, mindset shifts, perspective practices, or ways you create mental space when things get intense.',
+  },
+  {
+    id: 'opt2',
+    question: 'How does your best self manage attention, focus and mental distractions?',
+    icon: 'eye',
+    promptHint: 'Consider environment design, time blocking, single-tasking, digital boundaries, or rituals that help you enter deep focus.',
+  },
+  {
+    id: 'opt3',
+    question: 'How does your best self process emotions and maintain emotional balance?',
+    icon: 'heart-circle',
+    promptHint: 'Think about emotional awareness, healthy expression, regulation strategies, and how you stay balanced through ups and downs.',
+  },
+  {
+    id: 'opt4',
+    question: 'What\'s your best self\'s attitude towards change, development and adaptation?',
+    icon: 'trending-up',
+    promptHint: 'Consider your relationship with uncertainty, learning, feedback, failure, and continuous growth.',
   },
 ];
 
-const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> = ({
+const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
   route,
   navigation,
 }) => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [measuredCards, setMeasuredCards] = useState<Set<string>>(new Set());
   const [needsExpansion, setNeedsExpansion] = useState<Set<string>>(new Set());
@@ -154,9 +154,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     (opt) => !additionalQAs.some((qa) => qa.id === opt.id)
   );
 
-  const isFocused = useIsFocused();
-
-  // Handle reopening optional questions list when returning from optional question screen
+  // Handle reopening optional questions when returning from question screen
   useEffect(() => {
     if (isFocused && route?.params?.reopenOptionalQuestions) {
       // Clear the param
@@ -246,17 +244,6 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     navigation.goBack();
   };
 
-  const handleEdit = (item: QuestionAnswer) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    // Navigate to edit the specific question
-    navigation.navigate('PhysicalWealthEditQuestion', {
-      questionNumber: item.questionNumber,
-      currentAnswer: item.answer,
-    });
-  };
-
   const toggleExpand = (id: string) => {
     if (!needsExpansion.has(id)) return;
     if (Platform.OS === 'ios') {
@@ -318,7 +305,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the custom question screen
-    navigation.navigate('PhysicalWealthCustomQuestion');
+    navigation.navigate('MentalWealthCustomQuestion');
   };
 
   const handleSelectOptional = (question: OptionalQuestion) => {
@@ -328,7 +315,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the optional question screen
-    navigation.navigate('PhysicalWealthOptionalQuestion', {
+    navigation.navigate('MentalWealthOptionalQuestion', {
       question: question.question,
       icon: question.icon,
       promptHint: question.promptHint,
@@ -380,6 +367,16 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     setAdditionalQAs((prev) => prev.filter((qa) => qa.id !== id));
   };
 
+  const handleEdit = (item: QuestionAnswer) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    navigation.navigate('MentalWealthEditQuestion', {
+      questionNumber: item.questionNumber,
+      currentAnswer: item.answer,
+    });
+  };
+
   const renderCard = (item: QuestionAnswer, isAdditional: boolean = false) => {
     const isExpanded = expandedCards.has(item.id);
     const isMeasured = measuredCards.has(item.id);
@@ -403,100 +400,14 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
     );
   };
 
-  const renderCardOld = (item: QuestionAnswer, isAdditional: boolean = false) => {
-    const isExpanded = expandedCards.has(item.id);
-    const isMeasured = measuredCards.has(item.id);
-    const isLongAnswer = needsExpansion.has(item.id);
-
-    return (
-      <TouchableOpacity
-        key={item.id}
-        activeOpacity={isLongAnswer ? 0.8 : 1}
-        onPress={() => toggleExpand(item.id)}
-        onLongPress={isAdditional ? () => handleDeleteAdditional(item.id) : undefined}
-        style={styles.cardWrapper}
-      >
-        <View style={[styles.card, isAdditional && styles.additionalCard]}>
-          {/* Card Accent */}
-          <View style={[
-            styles.cardAccent,
-            item.type === 'custom' && styles.customAccent,
-            item.type === 'optional' && styles.optionalAccent,
-          ]} />
-
-          {/* Question Header with Icon */}
-          <View style={styles.questionHeader}>
-            <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
-              style={styles.questionIconGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.questionIconInner}>
-                <Ionicons
-                  name={item.icon}
-                  size={16}
-                  color="#059669"
-                />
-              </View>
-            </LinearGradient>
-            <Text style={styles.questionText}>{item.question}</Text>
-            {item.type === 'core' && (
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleEdit(item);
-                }}
-                style={styles.cardEditButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="pencil-outline" size={18} color="#6B7280" />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Divider */}
-          <View style={styles.divider} />
-
-          {/* Answer Section */}
-          <View style={styles.answerSection}>
-            <Text
-              style={styles.answerText}
-              numberOfLines={!isMeasured ? undefined : (isExpanded || !isLongAnswer ? undefined : 5)}
-              onTextLayout={(e) => handleTextLayout(item.id, e)}
-            >
-              {item.answer}
-            </Text>
-            {isMeasured && isLongAnswer && (
-              <View style={styles.expandIndicator}>
-                <Text style={styles.expandText}>
-                  {isExpanded ? 'Show less' : 'Read more'}
-                </Text>
-                <Ionicons
-                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color="#059669"
-                />
-              </View>
-            )}
-          </View>
-
-          {/* Delete hint for additional cards */}
-          {isAdditional && (
-            <Text style={styles.deleteHint}>Long press to remove</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   // Determine what to show in the bottom sheet content area
   const renderBottomSheetContent = () => {
     if (selectedOptionalId || showCustomInput) {
       // Show answer input
-      const selectedQuestion = selectedOptionalId
-        ? OPTIONAL_QUESTIONS.find((q) => q.id === selectedOptionalId)?.question
-        : customQuestion;
+      const selectedOptQuestion = selectedOptionalId
+        ? OPTIONAL_QUESTIONS.find((q) => q.id === selectedOptionalId)
+        : null;
+      const selectedQuestion = selectedOptQuestion?.question || customQuestion;
 
       return (
         <View style={styles.answerInputContainer}>
@@ -520,12 +431,21 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
                 <Ionicons
                   name={selectedOptionalId ? 'help-circle' : 'create'}
                   size={20}
-                  color="#059669"
+                  color="#3B82F6"
                 />
                 <Text style={styles.selectedQuestionText}>
                   {selectedQuestion}
                 </Text>
               </View>
+
+              {selectedOptQuestion?.promptHint && (
+                <View style={styles.promptHintContainer}>
+                  <Ionicons name="bulb-outline" size={16} color="#3B82F6" />
+                  <Text style={styles.promptHintText}>
+                    {selectedOptQuestion.promptHint}
+                  </Text>
+                </View>
+              )}
 
               <Text style={styles.inputLabel}>Your answer</Text>
               <TextInput
@@ -583,7 +503,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionalQuestionIconRing}>
-                    <Ionicons name={question.icon} size={18} color="#059669" />
+                    <Ionicons name={question.icon} size={18} color="#3B82F6" />
                   </View>
                   <View style={styles.optionalQuestionContent}>
                     <Text style={styles.optionalQuestionTitle} numberOfLines={3}>
@@ -595,7 +515,7 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
               ))
             ) : (
               <View style={styles.noQuestionsLeft}>
-                <Ionicons name="checkmark-circle" size={48} color="#059669" />
+                <Ionicons name="checkmark-circle" size={48} color="#3B82F6" />
                 <Text style={styles.noQuestionsText}>
                   You've answered all optional questions!
                 </Text>
@@ -622,13 +542,13 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
+              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="compass" size={24} color="#059669" />
+                <Ionicons name="compass" size={24} color="#3B82F6" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -654,13 +574,13 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
+              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="create" size={24} color="#059669" />
+                <Ionicons name="create" size={24} color="#3B82F6" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -692,19 +612,19 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
         <View style={styles.scrollableTitle}>
           <View style={styles.titleRow}>
             <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
+              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
               style={styles.titleIconGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.titleIconInner}>
-                <Ionicons name="fitness" size={20} color="#059669" />
+                <Ionicons name="bulb" size={20} color="#3B82F6" />
               </View>
             </LinearGradient>
-            <Text style={styles.title}>Physical Wealth</Text>
+            <Text style={styles.title}>Mental Wealth</Text>
           </View>
           <Text style={styles.subtitle}>
-            Your vision for your best physical self
+            Your vision for your best mental self
           </Text>
         </View>
 
@@ -719,7 +639,19 @@ const PhysicalWealthOverviewScreen: React.FC<PhysicalWealthOverviewScreenProps> 
 
       {/* Fixed Header */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Header Content */}
+        <View style={styles.headerBlur}>
+          <LinearGradient
+            colors={[
+              'rgba(247, 245, 242, 0.85)',
+              'rgba(247, 245, 242, 0.6)',
+              'rgba(247, 245, 242, 0.3)',
+              'rgba(247, 245, 242, 0)',
+            ]}
+            locations={[0, 0.3, 0.7, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+
         <View style={styles.header} pointerEvents="box-none">
           <View style={styles.headerTop}>
             <TouchableOpacity
@@ -870,6 +802,7 @@ const SwipeableCard: React.FC<{
   const translateX = useRef(new Animated.Value(0)).current;
   const currentTranslateX = useRef(0);
 
+  // Track current translateX value - set up listener once
   useEffect(() => {
     const listenerId = translateX.addListener(({ value }) => {
       currentTranslateX.current = value;
@@ -902,6 +835,7 @@ const SwipeableCard: React.FC<{
     }).start();
   }, [translateX]);
 
+  // Use a ref to track open state for PanResponder (avoids stale closure)
   const isOpenRef = useRef(false);
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -912,19 +846,22 @@ const SwipeableCard: React.FC<{
       onStartShouldSetPanResponder: () => false,
       onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Capture horizontal swipes - prioritize over ScrollView
         const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
         return isHorizontalSwipe && Math.abs(gestureState.dx) > 5;
       },
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        // Capture phase - intercept before ScrollView gets the gesture
         const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
         return isHorizontalSwipe && Math.abs(gestureState.dx) > 10;
       },
       onPanResponderGrant: () => {
+        // Stop any running animation and disable scroll
         translateX.stopAnimation();
         onSwipeStart();
       },
-      onPanResponderTerminationRequest: () => false,
-      onShouldBlockNativeResponder: () => true,
+      onPanResponderTerminationRequest: () => false, // Don't give up gesture to ScrollView
+      onShouldBlockNativeResponder: () => true, // Block native scroll
       onPanResponderMove: (_, gestureState) => {
         let newValue;
         if (isOpenRef.current) {
@@ -932,6 +869,7 @@ const SwipeableCard: React.FC<{
         } else {
           newValue = gestureState.dx;
         }
+        // Clamp between -ACTION_WIDTH and 0
         newValue = Math.max(-ACTION_WIDTH, Math.min(0, newValue));
         translateX.setValue(newValue);
       },
@@ -940,7 +878,9 @@ const SwipeableCard: React.FC<{
         const velocity = gestureState.vx;
         onSwipeEnd();
 
+        // Lower velocity threshold for easier swiping (like Apple Notes)
         if (velocity < -0.3) {
+          // Swipe left -> open
           setIsOpen(true);
           Animated.spring(translateX, {
             toValue: -ACTION_WIDTH,
@@ -955,6 +895,7 @@ const SwipeableCard: React.FC<{
           return;
         }
         if (velocity > 0.3) {
+          // Swipe right -> close
           setIsOpen(false);
           Animated.spring(translateX, {
             toValue: 0,
@@ -966,6 +907,7 @@ const SwipeableCard: React.FC<{
           return;
         }
 
+        // Position-based snap - lower threshold (1/3 instead of 1/2) for easier opening
         if (currentPos < -ACTION_WIDTH / 3) {
           setIsOpen(true);
           Animated.spring(translateX, {
@@ -988,6 +930,7 @@ const SwipeableCard: React.FC<{
         }
       },
       onPanResponderTerminate: () => {
+        // If gesture is interrupted, snap to nearest position
         const currentPos = currentTranslateX.current;
         onSwipeEnd();
         if (currentPos < -ACTION_WIDTH / 2) {
@@ -1070,7 +1013,7 @@ const SwipeableCard: React.FC<{
             {/* Question Header with Icon */}
             <View style={styles.questionHeader}>
               <LinearGradient
-                colors={['#34D399', '#10B981', '#059669']}
+                colors={['#93C5FD', '#60A5FA', '#3B82F6']}
                 style={styles.questionIconGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -1079,7 +1022,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={item.icon}
                     size={16}
-                    color="#059669"
+                    color="#3B82F6"
                   />
                 </View>
               </LinearGradient>
@@ -1106,7 +1049,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#059669"
+                    color="#3B82F6"
                   />
                 </View>
               )}
@@ -1119,31 +1062,16 @@ const SwipeableCard: React.FC<{
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  scrollableTitle: {
-    marginBottom: 24,
-  },
-
-  // Header Container
   headerContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    paddingBottom: 16,
     zIndex: 100,
   },
   headerBlur: {
@@ -1157,13 +1085,10 @@ const styles = StyleSheet.create({
   headerGradient: {
     flex: 1,
   },
-
-  // Header
   header: {
-    backgroundColor: 'transparent',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   headerTop: {
     flexDirection: 'row',
@@ -1205,24 +1130,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  headerContent: {
-    paddingHorizontal: 4,
-    marginTop: 16,
+  scrollableTitle: {
+    marginTop: 8,
+    marginBottom: 20,
   },
   titleRow: {
     flexDirection: 'row',
@@ -1258,7 +1168,13 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     letterSpacing: -0.2,
   },
-
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
   bottomSpacer: {
     height: 32,
   },
@@ -1266,6 +1182,9 @@ const styles = StyleSheet.create({
   // Card Styles
   cardWrapper: {
     marginBottom: 16,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 16,
   },
   cardAnimatedWrapper: {
     backgroundColor: '#FFFFFF',
@@ -1291,8 +1210,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   editAction: {
     backgroundColor: '#FFFFFF',
@@ -1309,12 +1228,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     paddingLeft: 20,
-    shadowColor: '#10B981',
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
     overflow: 'hidden',
+  },
+  additionalCard: {
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.15)',
   },
   cardAccent: {
     position: 'absolute',
@@ -1322,12 +1245,34 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#10B981',
+    backgroundColor: '#3B82F6',
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
-
-  // Question Header
+  customAccent: {
+    backgroundColor: '#3B82F6',
+  },
+  optionalAccent: {
+    backgroundColor: '#60A5FA',
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  optionalBadge: {
+    backgroundColor: '#DBEAFE',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   questionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1351,15 +1296,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  questionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#059669',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Question Text
   questionText: {
     flex: 1,
     flexShrink: 1,
@@ -1368,24 +1304,12 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     lineHeight: 22,
   },
-
-  // Divider
   divider: {
     height: 1,
     backgroundColor: '#E5E7EB',
     marginBottom: 12,
   },
-
-  // Answer Section
   answerSection: {},
-  answerLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
   answerText: {
     fontSize: 14,
     fontWeight: '500',
@@ -1401,45 +1325,7 @@ const styles = StyleSheet.create({
   expandText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#059669',
-  },
-  additionalCard: {
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.15)',
-  },
-  customAccent: {
-    backgroundColor: '#34D399',
-  },
-  optionalAccent: {
-    backgroundColor: '#34D399',
-  },
-  badge: {
-    position: 'absolute',
-    top: 8,
-    right: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  optionalBadge: {
-    backgroundColor: '#D1FAE5',
-  },
-  customBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  deleteHint: {
-    fontSize: 11,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    textAlign: 'right',
-    marginTop: 8,
+    color: '#3B82F6',
   },
 
   // Modal & Bottom Sheet
@@ -1575,7 +1461,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   optionalQuestionsList: {
-    paddingHorizontal: 0,
+    maxHeight: 500,
   },
   optionalQuestionItem: {
     flexDirection: 'row',
@@ -1595,17 +1481,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#059669',
+    borderColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    flexShrink: 0,
   },
   optionalQuestionContent: {
     flex: 1,
+    marginRight: 8,
   },
   optionalQuestionTitle: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1F2937',
     lineHeight: 21,
   },
@@ -1651,10 +1539,10 @@ const styles = StyleSheet.create({
   selectedQuestionCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#EFF6FF',
     borderRadius: 12,
     padding: 14,
-    marginBottom: 20,
+    marginBottom: 12,
     gap: 10,
   },
   selectedQuestionText: {
@@ -1663,6 +1551,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1F2937',
     lineHeight: 22,
+  },
+  promptHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#DBEAFE',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
+    gap: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+  },
+  promptHintText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1E40AF',
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   answerTextInput: {
     backgroundColor: '#FFFFFF',
@@ -1700,4 +1607,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhysicalWealthOverviewScreen;
+export default MentalWealthOverviewScreen;

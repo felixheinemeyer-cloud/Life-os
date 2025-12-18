@@ -1274,13 +1274,6 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                  onPress={handleEditTopic}
-                  style={styles.headerButton}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="pencil" size={20} color="#1F2937" />
-                </TouchableOpacity>
-                <TouchableOpacity
                   activeOpacity={1}
                   onPress={handleMorePress}
                   onPressIn={handleMoreButtonPressIn}
@@ -1360,6 +1353,18 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
           onPress={() => setShowMoreMenu(false)}
         >
           <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMoreMenu(false);
+                handleEditTopic();
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil-outline" size={20} color="#1F2937" />
+              <Text style={styles.menuItemText}>Edit Topic</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
             <TouchableOpacity
               style={styles.menuItem}
               onPress={handleDeleteTopic}
@@ -1630,7 +1635,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     position: 'absolute',
-    top: 100,
+    top: 116,
     right: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
@@ -1648,6 +1653,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 12,
   },
   menuItemText: {
     fontSize: 16,

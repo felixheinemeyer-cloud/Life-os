@@ -16,12 +16,14 @@ interface PhysicalWealthQuestion3ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
+  buttonText?: string;
 }
 
 const PhysicalWealthQuestion3Content: React.FC<PhysicalWealthQuestion3ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
@@ -115,7 +117,7 @@ const PhysicalWealthQuestion3Content: React.FC<PhysicalWealthQuestion3ContentPro
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Continue
+            {buttonText}
           </Text>
           <Ionicons
             name="chevron-forward"

@@ -367,11 +367,14 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
     setAdditionalQAs((prev) => prev.filter((qa) => qa.id !== id));
   };
 
-  const handleEdit = () => {
+  const handleEdit = (item: QuestionAnswer) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('SocialWealthQuestions');
+    navigation.navigate('SocialWealthEditQuestion', {
+      questionNumber: item.questionNumber,
+      currentAnswer: item.answer,
+    });
   };
 
   const renderCard = (item: QuestionAnswer, isAdditional: boolean = false) => {
@@ -388,7 +391,7 @@ const SocialWealthOverviewScreen: React.FC<SocialWealthOverviewScreenProps> = ({
         isMeasured={isMeasured}
         isLongAnswer={isLongAnswer}
         onToggleExpand={() => toggleExpand(item.id)}
-        onEdit={handleEdit}
+        onEdit={() => handleEdit(item)}
         onDelete={isAdditional ? () => handleDeleteAdditional(item.id) : undefined}
         onSwipeStart={() => setIsSwipingCard(true)}
         onSwipeEnd={() => setIsSwipingCard(false)}

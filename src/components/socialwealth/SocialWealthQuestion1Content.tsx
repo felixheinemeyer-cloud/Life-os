@@ -17,12 +17,14 @@ interface SocialWealthQuestion1ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
+  buttonText?: string;
 }
 
 const SocialWealthQuestion1Content: React.FC<SocialWealthQuestion1ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -137,7 +139,7 @@ const SocialWealthQuestion1Content: React.FC<SocialWealthQuestion1ContentProps> 
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Continue
+            {buttonText}
           </Text>
           <Ionicons
             name="chevron-forward"
