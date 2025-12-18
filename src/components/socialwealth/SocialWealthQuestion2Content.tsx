@@ -18,6 +18,7 @@ interface SocialWealthQuestion2ContentProps {
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
   isLastQuestion?: boolean;
+  buttonText?: string;
 }
 
 const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> = ({
@@ -25,6 +26,7 @@ const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> 
   onAnswerChange,
   onContinue,
   isLastQuestion = false,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -140,7 +142,7 @@ const SocialWealthQuestion2Content: React.FC<SocialWealthQuestion2ContentProps> 
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            {isLastQuestion ? 'Finish' : 'Continue'}
+            {buttonText || (isLastQuestion ? 'Finish' : 'Continue')}
           </Text>
           <Ionicons
             name={isLastQuestion ? 'checkmark' : 'chevron-forward'}

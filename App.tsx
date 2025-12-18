@@ -65,15 +65,23 @@ import PhysicalWealthIntroAnimationScreen from './src/screens/PhysicalWealthIntr
 import PhysicalWealthIntroScreen from './src/screens/PhysicalWealthIntroScreen';
 import PhysicalWealthQuestionsContainerScreen from './src/screens/PhysicalWealthQuestionsContainerScreen';
 import PhysicalWealthOverviewScreen from './src/screens/PhysicalWealthOverviewScreen';
+import PhysicalWealthEditQuestionScreen from './src/screens/PhysicalWealthEditQuestionScreen';
+import PhysicalWealthOptionalQuestionScreen from './src/screens/PhysicalWealthOptionalQuestionScreen';
+import PhysicalWealthCustomQuestionScreen from './src/screens/PhysicalWealthCustomQuestionScreen';
 import SocialWealthIntroAnimationScreen from './src/screens/SocialWealthIntroAnimationScreen';
 import SocialWealthIntroScreen from './src/screens/SocialWealthIntroScreen';
 import SocialWealthQuestionsContainerScreen from './src/screens/SocialWealthQuestionsContainerScreen';
 import SocialWealthOverviewScreen from './src/screens/SocialWealthOverviewScreen';
 import SocialWealthOptionalQuestionScreen from './src/screens/SocialWealthOptionalQuestionScreen';
 import SocialWealthCustomQuestionScreen from './src/screens/SocialWealthCustomQuestionScreen';
+import SocialWealthEditQuestionScreen from './src/screens/SocialWealthEditQuestionScreen';
 import MentalWealthIntroAnimationScreen from './src/screens/MentalWealthIntroAnimationScreen';
 import MentalWealthIntroScreen from './src/screens/MentalWealthIntroScreen';
 import MentalWealthQuestionsContainerScreen from './src/screens/MentalWealthQuestionsContainerScreen';
+import MentalWealthOverviewScreen from './src/screens/MentalWealthOverviewScreen';
+import MentalWealthEditQuestionScreen from './src/screens/MentalWealthEditQuestionScreen';
+import MentalWealthOptionalQuestionScreen from './src/screens/MentalWealthOptionalQuestionScreen';
+import MentalWealthCustomQuestionScreen from './src/screens/MentalWealthCustomQuestionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -173,15 +181,23 @@ const KnowledgeStack = () => {
       <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
       <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />
       <Stack.Screen name="PhysicalWealthOverview" component={PhysicalWealthOverviewScreen} />
+      <Stack.Screen name="PhysicalWealthEditQuestion" component={PhysicalWealthEditQuestionScreen} />
+      <Stack.Screen name="PhysicalWealthOptionalQuestion" component={PhysicalWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="PhysicalWealthCustomQuestion" component={PhysicalWealthCustomQuestionScreen} />
       <Stack.Screen name="SocialWealthIntroAnimation" component={SocialWealthIntroAnimationScreen} />
       <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
       <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
       <Stack.Screen name="SocialWealthOverview" component={SocialWealthOverviewScreen} />
       <Stack.Screen name="SocialWealthOptionalQuestion" component={SocialWealthOptionalQuestionScreen as React.ComponentType<any>} />
       <Stack.Screen name="SocialWealthCustomQuestion" component={SocialWealthCustomQuestionScreen} />
+      <Stack.Screen name="SocialWealthEditQuestion" component={SocialWealthEditQuestionScreen} />
       <Stack.Screen name="MentalWealthIntroAnimation" component={MentalWealthIntroAnimationScreen} />
       <Stack.Screen name="MentalWealthIntro" component={MentalWealthIntroScreen} />
       <Stack.Screen name="MentalWealthQuestions" component={MentalWealthQuestionsContainerScreen} />
+      <Stack.Screen name="MentalWealthOverview" component={MentalWealthOverviewScreen} />
+      <Stack.Screen name="MentalWealthEditQuestion" component={MentalWealthEditQuestionScreen} />
+      <Stack.Screen name="MentalWealthOptionalQuestion" component={MentalWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="MentalWealthCustomQuestion" component={MentalWealthCustomQuestionScreen} />
     </Stack.Navigator>
   );
 };

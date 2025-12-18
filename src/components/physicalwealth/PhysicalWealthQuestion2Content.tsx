@@ -16,12 +16,14 @@ interface PhysicalWealthQuestion2ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
+  buttonText?: string;
 }
 
 const PhysicalWealthQuestion2Content: React.FC<PhysicalWealthQuestion2ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
@@ -69,7 +71,7 @@ const PhysicalWealthQuestion2Content: React.FC<PhysicalWealthQuestion2ContentPro
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
-              What specific routines or actions does your best physical self practice to maintain strength, health, and vitality?
+              What specific routines or actions does your best physical self practice to maintain strength, energy, and vitality?
             </Text>
           </View>
 
@@ -115,7 +117,7 @@ const PhysicalWealthQuestion2Content: React.FC<PhysicalWealthQuestion2ContentPro
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Continue
+            {buttonText}
           </Text>
           <Ionicons
             name="chevron-forward"

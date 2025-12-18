@@ -1023,8 +1023,9 @@ const MediaVaultEntryScreen = ({ navigation, route }: MediaVaultEntryScreenProps
                   <Text style={styles.dropdownItemText}>Add to Watchlist</Text>
                 </TouchableOpacity>
               )}
+              <View style={styles.dropdownDivider} />
               <TouchableOpacity
-                style={[styles.dropdownItem, styles.dropdownItemDestructive]}
+                style={styles.dropdownItem}
                 onPress={handleDeleteEntry}
                 activeOpacity={0.7}
               >
@@ -1425,9 +1426,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  dropdownItemDestructive: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 12,
   },
   dropdownItemText: {
     fontSize: 15,

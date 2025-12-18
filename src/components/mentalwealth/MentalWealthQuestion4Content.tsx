@@ -17,12 +17,14 @@ interface MentalWealthQuestion4ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
+  buttonText?: string;
 }
 
 const MentalWealthQuestion4Content: React.FC<MentalWealthQuestion4ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -84,7 +86,7 @@ const MentalWealthQuestion4Content: React.FC<MentalWealthQuestion4ContentProps> 
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="bulb" size={28} color="#3B82F6" />
+                <Ionicons name="calendar" size={28} color="#3B82F6" />
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
@@ -137,7 +139,7 @@ const MentalWealthQuestion4Content: React.FC<MentalWealthQuestion4ContentProps> 
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Continue
+            {buttonText}
           </Text>
           <Ionicons
             name="chevron-forward"

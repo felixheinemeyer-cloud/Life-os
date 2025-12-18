@@ -258,17 +258,9 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
 
             {/* Star SVG */}
             <Svg width={STAR_SIZE} height={STAR_SIZE} style={styles.starSvg}>
-              <Defs>
-                <RadialGradient id="starGrad" cx="50%" cy="50%" rx="50%" ry="50%">
-                  <Stop offset="0%" stopColor="#C7D2FE" stopOpacity="1" />
-                  <Stop offset="100%" stopColor="#E0E7FF" stopOpacity="0.6" />
-                </RadialGradient>
-              </Defs>
               {/* Outer decorative circles */}
               <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS + 20} fill="none" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
               <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS * 0.5} fill="none" stroke="#E5E7EB" strokeWidth="1" />
-              {/* Star shape */}
-              <Path d={starPath} fill="url(#starGrad)" />
             </Svg>
 
             {/* Center Info Button */}

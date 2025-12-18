@@ -16,12 +16,14 @@ interface PhysicalWealthQuestion4ContentProps {
   answer: string;
   onAnswerChange: (value: string) => void;
   onContinue: () => void;
+  buttonText?: string;
 }
 
 const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentProps> = ({
   answer,
   onAnswerChange,
   onContinue,
+  buttonText = 'Continue',
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
@@ -115,7 +117,7 @@ const PhysicalWealthQuestion4Content: React.FC<PhysicalWealthQuestion4ContentPro
             styles.continueButtonText,
             !isButtonEnabled && styles.continueButtonTextDisabled,
           ]}>
-            Finish
+            {buttonText}
           </Text>
           <Ionicons
             name="checkmark"

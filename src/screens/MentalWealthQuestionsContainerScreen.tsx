@@ -83,9 +83,9 @@ const MentalWealthQuestionsContainerScreen: React.FC<MentalWealthQuestionsContai
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - complete the flow and go to Higher Self screen
+      // Final step - complete the flow and go to Mental Wealth Overview
       console.log('Mental Wealth questions complete:', questionsData);
-      navigation?.navigate('HigherSelf');
+      navigation?.navigate('MentalWealthOverview');
     }
   };
 
@@ -171,6 +171,7 @@ const MentalWealthQuestionsContainerScreen: React.FC<MentalWealthQuestionsContai
                 answer={questionsData.question4Answer}
                 onAnswerChange={(value) => updateQuestionsData('question4Answer', value)}
                 onContinue={handleContinue}
+                buttonText="Finish"
               />
             </View>
           </Animated.View>
