@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 // Types
@@ -207,66 +206,59 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content with Gradient Background */}
-      <LinearGradient
-        colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Content */}
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.contentCard}>
-            {/* Category Badge */}
-            <View style={styles.categoryBadge}>
-              <Ionicons name="heart" size={14} color="#E11D48" />
-              <Text style={styles.categoryText}>Dating</Text>
-            </View>
+        <View style={styles.contentCard}>
+          {/* Category Badge */}
+          <View style={styles.categoryBadge}>
+            <Ionicons name="heart" size={14} color="#E11D48" />
+            <Text style={styles.categoryText}>Dating</Text>
+          </View>
 
-            {/* Title */}
-            <Text style={styles.guideTitle}>{advice.title}</Text>
+          {/* Title */}
+          <Text style={styles.guideTitle}>{advice.title}</Text>
 
-            {/* Meta Info */}
-            <View style={styles.metaInfo}>
-              <View style={styles.metaItem}>
-                <Ionicons name="list-outline" size={14} color="#E11D48" />
-                <Text style={styles.metaText}>{content.expandedPoints.length} insights</Text>
-              </View>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Introduction */}
-            <Text style={styles.introduction}>{content.summary}</Text>
-
-            {/* Expanded Points */}
-            {content.expandedPoints.map((point, index) => (
-              <View key={index} style={styles.pointSection}>
-                <Text style={styles.pointHeading}>{point.heading}</Text>
-                <Text style={styles.pointBody}>{point.body}</Text>
-              </View>
-            ))}
-
-            {/* Remember Box */}
-            <View style={styles.rememberBox}>
-              <View style={styles.rememberHeader}>
-                <Ionicons name="sparkles" size={20} color="#E11D48" />
-                <Text style={styles.rememberTitle}>Remember</Text>
-              </View>
-              <Text style={styles.rememberText}>
-                Dating is about discovering compatibility, not proving your worth. The right connection should feel natural, respectful, and energizing—not anxious or one-sided.
-              </Text>
+          {/* Meta Info */}
+          <View style={styles.metaInfo}>
+            <View style={styles.metaItem}>
+              <Ionicons name="list-outline" size={14} color="#E11D48" />
+              <Text style={styles.metaText}>{content.expandedPoints.length} insights</Text>
             </View>
           </View>
 
-          {/* Bottom spacing */}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      </LinearGradient>
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Introduction */}
+          <Text style={styles.introduction}>{content.summary}</Text>
+
+          {/* Expanded Points */}
+          {content.expandedPoints.map((point, index) => (
+            <View key={index} style={styles.pointSection}>
+              <Text style={styles.pointHeading}>{point.heading}</Text>
+              <Text style={styles.pointBody}>{point.body}</Text>
+            </View>
+          ))}
+
+          {/* Remember Box */}
+          <View style={styles.rememberBox}>
+            <View style={styles.rememberHeader}>
+              <Ionicons name="sparkles" size={20} color="#E11D48" />
+              <Text style={styles.rememberTitle}>Remember</Text>
+            </View>
+            <Text style={styles.rememberText}>
+              Dating is about discovering compatibility, not proving your worth. The right connection should feel natural, respectful, and energizing—not anxious or one-sided.
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -276,12 +268,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  gradientBackground: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F7F5F2',
   },
   emptyState: {
     flex: 1,
@@ -296,18 +285,12 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
   },
   backButton: {
     width: 40,
@@ -344,7 +327,7 @@ const styles = StyleSheet.create({
     padding: 28,
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.22,
     shadowRadius: 20,
     elevation: 6,
   },

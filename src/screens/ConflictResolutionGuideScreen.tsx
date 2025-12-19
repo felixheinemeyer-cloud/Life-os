@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 interface ConflictResolutionGuideScreenProps {
@@ -40,116 +39,109 @@ const ConflictResolutionGuideScreen: React.FC<ConflictResolutionGuideScreenProps
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Content with Gradient Background */}
-      <LinearGradient
-        colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Content */}
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.contentCard}>
-            {/* Category Badge */}
-            <View style={styles.categoryBadge}>
-              <Ionicons name="heart" size={14} color="#E11D48" />
-              <Text style={styles.categoryText}>Relationship</Text>
-            </View>
+        <View style={styles.contentCard}>
+          {/* Category Badge */}
+          <View style={styles.categoryBadge}>
+            <Ionicons name="heart" size={14} color="#E11D48" />
+            <Text style={styles.categoryText}>Relationship</Text>
+          </View>
 
-            {/* Title */}
-            <Text style={styles.guideTitle}>Navigating Conflict Together</Text>
+          {/* Title */}
+          <Text style={styles.guideTitle}>Navigating Conflict Together</Text>
 
-            {/* Meta Info */}
-            <View style={styles.metaInfo}>
-              <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={14} color="#E11D48" />
-                <Text style={styles.metaText}>5 min read</Text>
-              </View>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Introduction */}
-            <Text style={styles.introduction}>
-              Every relationship has conflicts. What matters is how you navigate them together. These strategies help you turn disagreements into opportunities for deeper understanding and connection.
-            </Text>
-
-            {/* Strategy 1 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>1. Pause when emotions run high</Text>
-              <Text style={styles.strategyBody}>
-                If you're feeling overwhelmed, take a 20-minute break to cool down. This isn't running away—it's choosing to respond thoughtfully rather than react emotionally. A brief pause allows your nervous system to calm and helps you approach the conversation with clarity rather than defensiveness.
-              </Text>
-            </View>
-
-            {/* Strategy 2 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>2. Use "I feel" statements</Text>
-              <Text style={styles.strategyBody}>
-                Instead of saying "You never listen" or "You always ignore me," try "I feel hurt when I'm talking and it seems like you're distracted." This opens dialogue instead of triggering defensiveness. It shifts the conversation from blame to vulnerability, making it easier for your partner to hear you.
-              </Text>
-            </View>
-
-            {/* Strategy 3 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>3. Listen to understand, not to win</Text>
-              <Text style={styles.strategyBody}>
-                Your goal isn't to prove you're right—it's to understand your partner's perspective and find a path forward together. Put down your mental rebuttals and truly absorb what they're saying. Ask clarifying questions. Reflect back what you hear. Real listening is an act of love.
-              </Text>
-            </View>
-
-            {/* Strategy 4 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>4. Acknowledge your partner's feelings</Text>
-              <Text style={styles.strategyBody}>
-                Even if you disagree with their perspective, you can validate their emotions. "I hear that you're frustrated" or "I can see why that would hurt you" shows you care about their experience. Validation doesn't mean you're abandoning your own viewpoint—it means you're holding space for both realities.
-              </Text>
-            </View>
-
-            {/* Strategy 5 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>5. Focus on the issue, not the person</Text>
-              <Text style={styles.strategyBody}>
-                Attack the problem together, not each other. Avoid bringing up past conflicts or making character attacks. Stay present with the specific issue at hand. You're teammates working through a challenge, not adversaries trying to defeat each other.
-              </Text>
-            </View>
-
-            {/* Strategy 6 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>6. Find common ground</Text>
-              <Text style={styles.strategyBody}>
-                What do you both want? What can you both agree on? Start there and build toward solutions with compromise and creativity. Often, beneath surface-level disagreements, you'll find shared values and desires. Identify those and use them as your foundation.
-              </Text>
-            </View>
-
-            {/* Strategy 7 */}
-            <View style={styles.strategySection}>
-              <Text style={styles.strategyHeading}>7. Check in after resolution</Text>
-              <Text style={styles.strategyBody}>
-                A day or two later, ask "How are you feeling about our conversation?" This shows care and helps prevent lingering resentment. It also gives both of you space to process and share any thoughts that emerged after the heat of the moment passed.
-              </Text>
-            </View>
-
-            {/* Remember Box */}
-            <View style={styles.rememberBox}>
-              <View style={styles.rememberHeader}>
-                <Ionicons name="sparkles" size={20} color="#E11D48" />
-                <Text style={styles.rememberTitle}>Remember</Text>
-              </View>
-              <Text style={styles.rememberText}>
-                Conflict is not a sign of a failing relationship. It's a natural part of two individuals learning to navigate life together. The goal isn't to avoid conflict—it's to handle it with respect, empathy, and a genuine desire to understand each other.
-              </Text>
+          {/* Meta Info */}
+          <View style={styles.metaInfo}>
+            <View style={styles.metaItem}>
+              <Ionicons name="time-outline" size={14} color="#E11D48" />
+              <Text style={styles.metaText}>5 min read</Text>
             </View>
           </View>
 
-          {/* Bottom spacing */}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      </LinearGradient>
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Introduction */}
+          <Text style={styles.introduction}>
+            Every relationship has conflicts. What matters is how you navigate them together. These strategies help you turn disagreements into opportunities for deeper understanding and connection.
+          </Text>
+
+          {/* Strategy 1 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>1. Pause when emotions run high</Text>
+            <Text style={styles.strategyBody}>
+              If you're feeling overwhelmed, take a 20-minute break to cool down. This isn't running away—it's choosing to respond thoughtfully rather than react emotionally. A brief pause allows your nervous system to calm and helps you approach the conversation with clarity rather than defensiveness.
+            </Text>
+          </View>
+
+          {/* Strategy 2 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>2. Use "I feel" statements</Text>
+            <Text style={styles.strategyBody}>
+              Instead of saying "You never listen" or "You always ignore me," try "I feel hurt when I'm talking and it seems like you're distracted." This opens dialogue instead of triggering defensiveness. It shifts the conversation from blame to vulnerability, making it easier for your partner to hear you.
+            </Text>
+          </View>
+
+          {/* Strategy 3 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>3. Listen to understand, not to win</Text>
+            <Text style={styles.strategyBody}>
+              Your goal isn't to prove you're right—it's to understand your partner's perspective and find a path forward together. Put down your mental rebuttals and truly absorb what they're saying. Ask clarifying questions. Reflect back what you hear. Real listening is an act of love.
+            </Text>
+          </View>
+
+          {/* Strategy 4 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>4. Acknowledge your partner's feelings</Text>
+            <Text style={styles.strategyBody}>
+              Even if you disagree with their perspective, you can validate their emotions. "I hear that you're frustrated" or "I can see why that would hurt you" shows you care about their experience. Validation doesn't mean you're abandoning your own viewpoint—it means you're holding space for both realities.
+            </Text>
+          </View>
+
+          {/* Strategy 5 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>5. Focus on the issue, not the person</Text>
+            <Text style={styles.strategyBody}>
+              Attack the problem together, not each other. Avoid bringing up past conflicts or making character attacks. Stay present with the specific issue at hand. You're teammates working through a challenge, not adversaries trying to defeat each other.
+            </Text>
+          </View>
+
+          {/* Strategy 6 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>6. Find common ground</Text>
+            <Text style={styles.strategyBody}>
+              What do you both want? What can you both agree on? Start there and build toward solutions with compromise and creativity. Often, beneath surface-level disagreements, you'll find shared values and desires. Identify those and use them as your foundation.
+            </Text>
+          </View>
+
+          {/* Strategy 7 */}
+          <View style={styles.strategySection}>
+            <Text style={styles.strategyHeading}>7. Check in after resolution</Text>
+            <Text style={styles.strategyBody}>
+              A day or two later, ask "How are you feeling about our conversation?" This shows care and helps prevent lingering resentment. It also gives both of you space to process and share any thoughts that emerged after the heat of the moment passed.
+            </Text>
+          </View>
+
+          {/* Remember Box */}
+          <View style={styles.rememberBox}>
+            <View style={styles.rememberHeader}>
+              <Ionicons name="sparkles" size={20} color="#E11D48" />
+              <Text style={styles.rememberTitle}>Remember</Text>
+            </View>
+            <Text style={styles.rememberText}>
+              Conflict is not a sign of a failing relationship. It's a natural part of two individuals learning to navigate life together. The goal isn't to avoid conflict—it's to handle it with respect, empathy, and a genuine desire to understand each other.
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -159,12 +151,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  gradientBackground: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F7F5F2',
   },
 
   // Header
@@ -218,7 +207,7 @@ const styles = StyleSheet.create({
     padding: 28,
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.22,
     shadowRadius: 20,
     elevation: 6,
   },

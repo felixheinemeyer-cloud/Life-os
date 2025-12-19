@@ -8,7 +8,6 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface InsightDetailScreenProps {
   navigation?: {
@@ -48,48 +47,41 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
       </View>
 
       {/* Content */}
-      <LinearGradient
-        colors={['#FFFBEB', '#FEF3C7', '#FECACA']}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.contentCard}>
-          {/* Category Badge */}
-          <View style={styles.categoryBadge}>
-            <Ionicons name="diamond" size={14} color="#D97706" />
-            <Text style={styles.categoryText}>{insight.category}</Text>
+        <View style={styles.contentCard}>
+        {/* Category Badge */}
+        <View style={styles.categoryBadge}>
+          <Ionicons name="diamond" size={14} color="#D97706" />
+          <Text style={styles.categoryText}>{insight.category}</Text>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.insightTitle}>{insight.title}</Text>
+
+        {/* Meta Info */}
+        <View style={styles.metaInfo}>
+          <View style={styles.metaItem}>
+            <Ionicons name="time-outline" size={14} color="#D97706" />
+            <Text style={styles.metaText}>{insight.readTime}</Text>
           </View>
+          <Text style={styles.metaDot}>•</Text>
+          <Text style={styles.metaText}>{insight.date}</Text>
+        </View>
 
-          {/* Title */}
-          <Text style={styles.insightTitle}>{insight.title}</Text>
+        {/* Divider */}
+        <View style={styles.divider} />
 
-          {/* Meta Info */}
-          <View style={styles.metaInfo}>
-            <View style={styles.metaItem}>
-              <Ionicons name="time-outline" size={14} color="#D97706" />
-              <Text style={styles.metaText}>{insight.readTime}</Text>
-            </View>
-            <Text style={styles.metaDot}>•</Text>
-            <Text style={styles.metaText}>{insight.date}</Text>
-          </View>
+        {/* Content */}
+        <Text style={styles.insightContent}>{insight.content}</Text>
+        </View>
 
-          {/* Divider */}
-          <View style={styles.divider} />
-
-          {/* Content */}
-          <Text style={styles.insightContent}>{insight.content}</Text>
-          </View>
-
-          {/* Bottom spacing */}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      </LinearGradient>
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -99,12 +91,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  gradientBackground: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#F7F5F2',
   },
 
   // Header
@@ -150,7 +139,7 @@ const styles = StyleSheet.create({
     padding: 28,
     shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.22,
     shadowRadius: 20,
     elevation: 6,
   },
