@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 interface ConflictResolutionGuideScreenProps {
@@ -41,12 +40,7 @@ const ConflictResolutionGuideScreen: React.FC<ConflictResolutionGuideScreenProps
       </View>
 
       {/* Content with Gradient Background */}
-      <LinearGradient
-        colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={styles.backgroundContainer}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
@@ -149,7 +143,7 @@ const ConflictResolutionGuideScreen: React.FC<ConflictResolutionGuideScreenProps
           {/* Bottom spacing */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 };
@@ -159,8 +153,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  gradientBackground: {
+  backgroundContainer: {
     flex: 1,
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,

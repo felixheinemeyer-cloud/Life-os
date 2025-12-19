@@ -82,6 +82,7 @@ import MentalWealthOverviewScreen from './src/screens/MentalWealthOverviewScreen
 import MentalWealthEditQuestionScreen from './src/screens/MentalWealthEditQuestionScreen';
 import MentalWealthOptionalQuestionScreen from './src/screens/MentalWealthOptionalQuestionScreen';
 import MentalWealthCustomQuestionScreen from './src/screens/MentalWealthCustomQuestionScreen';
+import DailyOverviewScreen from './src/screens/DailyOverviewScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -202,6 +203,20 @@ const KnowledgeStack = () => {
   );
 };
 
+// Calendar Stack Navigator
+const CalendarStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="CalendarMain" component={CalendarScreen} />
+      <Stack.Screen name="DailyOverview" component={DailyOverviewScreen} />
+    </Stack.Navigator>
+  );
+};
+
 const App = (): React.JSX.Element => {
   return (
     <SafeAreaProvider>
@@ -244,7 +259,7 @@ const App = (): React.JSX.Element => {
           />
           <Tab.Screen
             name="Calendar"
-            component={CalendarScreen}
+            component={CalendarStack}
             options={{
               title: 'Calendar',
               tabBarLabel: 'Calendar',

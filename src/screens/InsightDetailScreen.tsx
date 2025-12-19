@@ -8,7 +8,6 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface InsightDetailScreenProps {
   navigation?: {
@@ -48,12 +47,7 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
       </View>
 
       {/* Content */}
-      <LinearGradient
-        colors={['#FFFBEB', '#FEF3C7', '#FECACA']}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={styles.backgroundContainer}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
@@ -89,7 +83,7 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
           {/* Bottom spacing */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 };
@@ -99,8 +93,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  gradientBackground: {
+  backgroundContainer: {
     flex: 1,
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,

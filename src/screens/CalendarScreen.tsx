@@ -21,7 +21,13 @@ interface DayData {
   isToday: boolean;
 }
 
-const CalendarScreen = (): React.JSX.Element => {
+interface CalendarScreenProps {
+  navigation?: {
+    navigate: (screen: string, params?: any) => void;
+  };
+}
+
+const CalendarScreen = ({ navigation }: CalendarScreenProps = {}): React.JSX.Element => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Mock data for tracking status (November 2024)
@@ -177,6 +183,19 @@ const CalendarScreen = (): React.JSX.Element => {
     );
   };
 
+  const handleDayPress = (dayData: DayData) => {
+    if (!dayData.isCurrentMonth || !navigation) return;
+
+    // For now, only navigate if it's December 19th (as per the requirements)
+    const month = currentDate.getMonth();
+
+    if (month === 11 && dayData.date === 19) {
+      const year = currentDate.getFullYear();
+      const selectedDate = new Date(year, month, dayData.date);
+      navigation.navigate('DailyOverview', { date: selectedDate });
+    }
+  };
+
   const calendarDays = generateCalendarDays();
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -228,11 +247,13 @@ const CalendarScreen = (): React.JSX.Element => {
             {calendarDays.map((dayData, index) => (
               <View key={index} style={styles.dayCell}>
                 {dayData.isCurrentMonth ? (
-                  <View
+                  <TouchableOpacity
                     style={[
                       styles.dayCellContent,
                       dayData.isToday && styles.todayCell,
                     ]}
+                    onPress={() => handleDayPress(dayData)}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -250,7 +271,7 @@ const CalendarScreen = (): React.JSX.Element => {
                         <View style={styles.eveningDot} />
                       )}
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ) : null}
               </View>
             ))}
