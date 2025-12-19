@@ -64,10 +64,10 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
   // Track which wealth areas have been defined
   const completedWealth: Record<WealthType, boolean> = {
     physical: true,
-    mental: false,
+    mental: true,
     social: true,
     financial: false,
-    time: false,
+    time: true,
   };
 
   // Get filled icons for both states (gray when undefined, colored when defined)
@@ -212,6 +212,22 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
       } else {
         // Area is not defined yet - go to intro/setup flow
         navigation.navigate('MentalWealthIntroAnimation');
+      }
+    } else if (type === 'time') {
+      if (isCompleted) {
+        // Area is already defined - go to overview screen
+        navigation.navigate('TimeWealthOverview');
+      } else {
+        // Area is not defined yet - go to intro/setup flow
+        navigation.navigate('TimeWealthIntroAnimation');
+      }
+    } else if (type === 'financial') {
+      if (isCompleted) {
+        // Area is already defined - go to overview screen
+        navigation.navigate('FinancialWealthOverview');
+      } else {
+        // Area is not defined yet - go to intro/setup flow
+        navigation.navigate('FinancialWealthIntroAnimation');
       }
     } else {
       console.log(`Navigate to ${type} wealth flow`);

@@ -22,7 +22,7 @@ import * as Haptics from 'expo-haptics';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps + padding)
 
-interface MentalWealthOverviewScreenProps {
+interface FinancialWealthOverviewScreenProps {
   route?: {
     params?: {
       reopenOptionalQuestions?: boolean;
@@ -67,33 +67,33 @@ const CORE_QA_DATA: QuestionAnswer[] = [
   {
     id: '1',
     questionNumber: 1,
-    question: 'Your best self\'s inner mental world',
-    answer: 'My mind is clear and focused, with a sense of calm confidence that permeates everything I do. I feel mentally energized yet peaceful, able to think clearly and respond thoughtfully rather than react impulsively. There\'s a quiet strength in my thoughts, and I approach challenges with curiosity rather than fear. My inner dialogue is supportive and constructive, helping me grow rather than holding me back.',
-    icon: 'eye',
+    question: 'Your best self\'s vision of financial wealth and freedom',
+    answer: 'Financial wealth means having the freedom to choose how I spend my time without being constrained by money. It provides security for my family, allows me to pursue meaningful experiences, and gives me the ability to be generous. It\'s not just about numbers in an account—it\'s about peace of mind, options, and the freedom to align my life with my values.',
+    icon: 'diamond',
     type: 'core',
   },
   {
     id: '2',
     questionNumber: 2,
-    question: 'How your best self thinks and makes decisions',
-    answer: 'I approach decisions with clarity and confidence, weighing options thoughtfully without overthinking. I trust my judgment while remaining open to new information. When challenges arise, I see them as opportunities for growth rather than threats. I maintain perspective, breaking down complex problems into manageable parts, and I\'m comfortable with uncertainty while staying focused on what I can control.',
-    icon: 'bulb',
+    question: 'How your best self builds financial wealth daily',
+    answer: 'I maintain a clear budget and track my spending to stay aligned with my goals. I invest consistently, even in small amounts, and educate myself about financial strategies and opportunities. I review my financial progress monthly, adjust as needed, and avoid impulsive purchases. I prioritize building multiple income streams and continuously develop skills that increase my earning potential.',
+    icon: 'trending-up',
     type: 'core',
   },
   {
     id: '3',
     questionNumber: 3,
-    question: 'Mental habits that strengthen your well-being',
-    answer: 'I believe in my ability to learn and grow from every experience. I maintain a growth mindset, seeing failures as feedback rather than final verdicts. I practice self-compassion, treating myself with the same kindness I\'d offer a good friend. I regularly reflect on what I\'m grateful for, and I challenge negative self-talk with evidence-based thinking. I trust the process and focus on progress over perfection.',
-    icon: 'infinite',
+    question: 'Your best self\'s relationship with money',
+    answer: 'I view money as a tool for creating the life I want, not as an end in itself. I feel grateful for what I have while working toward more. I approach financial decisions with both logic and intuition, balancing present enjoyment with future security. I don\'t let money define my worth, but I respect its importance and manage it responsibly with confidence and clarity.',
+    icon: 'heart',
     type: 'core',
   },
   {
     id: '4',
     questionNumber: 4,
-    question: 'Daily practices that keep your best self mentally strong',
-    answer: 'I start each day with meditation or journaling to center myself and set intentions. I protect time for deep work without distractions, and I take regular breaks to reset my focus. I move my body daily, which clears my mind and boosts my energy. I limit social media and news consumption to prevent mental clutter. Each week, I review what went well and what I learned, celebrating progress and adjusting my approach.',
-    icon: 'calendar',
+    question: 'How your best self manages long-term financial security',
+    answer: 'I maintain an emergency fund that covers 6 months of expenses for peace of mind. I invest in diversified assets that align with my risk tolerance and long-term goals. I regularly review and rebalance my portfolio, and I plan for retirement with consistent contributions. I protect my wealth with appropriate insurance and make informed decisions based on research and expert advice.',
+    icon: 'shield-checkmark',
     type: 'core',
   },
 ];
@@ -102,31 +102,31 @@ const CORE_QA_DATA: QuestionAnswer[] = [
 const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
   {
     id: 'opt1',
-    question: 'How does your best self manage stress and stay mentally grounded under pressure?',
-    icon: 'shield-checkmark',
-    promptHint: 'Think about breathing techniques, mindset shifts, perspective practices, or ways you create mental space when things get intense.',
+    question: 'Describe your ideal self\'s income streams',
+    icon: 'wallet',
+    promptHint: 'Consider salary, business income, investments, passive income, side projects, or other revenue sources. Think about diversification and sustainability.',
   },
   {
     id: 'opt2',
-    question: 'How does your best self manage attention, focus and mental distractions?',
-    icon: 'eye',
-    promptHint: 'Consider environment design, time blocking, single-tasking, digital boundaries, or rituals that help you enter deep focus.',
+    question: 'How does your best self make spending decisions that align with their values and long-term goals?',
+    icon: 'card',
+    promptHint: 'Consider your decision-making process, what you prioritize, how you evaluate purchases, and what criteria guide your spending choices.',
   },
   {
     id: 'opt3',
-    question: 'How does your best self process emotions and maintain emotional balance?',
-    icon: 'heart-circle',
-    promptHint: 'Think about emotional awareness, healthy expression, regulation strategies, and how you stay balanced through ups and downs.',
+    question: 'How does your best self approach risk, uncertainty and long-term financial decisions?',
+    icon: 'analytics',
+    promptHint: 'Think about your risk tolerance, how you gather information, balance security with growth, and make choices despite uncertainty.',
   },
   {
     id: 'opt4',
-    question: 'What\'s your best self\'s attitude towards change, development and adaptation?',
-    icon: 'trending-up',
-    promptHint: 'Consider your relationship with uncertainty, learning, feedback, failure, and continuous growth.',
+    question: 'How does your best self use money to create positive impact beyond themselves?',
+    icon: 'gift',
+    promptHint: 'Consider charitable giving, supporting causes you care about, helping family, investing in community, or using wealth to create meaningful change.',
   },
 ];
 
-const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
+const FinancialWealthOverviewScreen: React.FC<FinancialWealthOverviewScreenProps> = ({
   route,
   navigation,
 }) => {
@@ -305,7 +305,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the custom question screen
-    navigation.navigate('MentalWealthCustomQuestion');
+    navigation.navigate('FinancialWealthCustomQuestion');
   };
 
   const handleSelectOptional = (question: OptionalQuestion) => {
@@ -315,7 +315,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the optional question screen
-    navigation.navigate('MentalWealthOptionalQuestion', {
+    navigation.navigate('FinancialWealthOptionalQuestion', {
       question: question.question,
       icon: question.icon,
       promptHint: question.promptHint,
@@ -371,7 +371,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('MentalWealthEditQuestion', {
+    navigation.navigate('FinancialWealthEditQuestion', {
       questionNumber: item.questionNumber,
       currentAnswer: item.answer,
     });
@@ -431,7 +431,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
                 <Ionicons
                   name={selectedOptionalId ? 'help-circle' : 'create'}
                   size={20}
-                  color="#3B82F6"
+                  color="#EAB308"
                 />
                 <Text style={styles.selectedQuestionText}>
                   {selectedQuestion}
@@ -440,7 +440,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
 
               {selectedOptQuestion?.promptHint && (
                 <View style={styles.promptHintContainer}>
-                  <Ionicons name="bulb-outline" size={16} color="#3B82F6" />
+                  <Ionicons name="bulb-outline" size={16} color="#EAB308" />
                   <Text style={styles.promptHintText}>
                     {selectedOptQuestion.promptHint}
                   </Text>
@@ -503,7 +503,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionalQuestionIconRing}>
-                    <Ionicons name={question.icon} size={18} color="#3B82F6" />
+                    <Ionicons name={question.icon} size={18} color="#EAB308" />
                   </View>
                   <View style={styles.optionalQuestionContent}>
                     <Text style={styles.optionalQuestionTitle} numberOfLines={3}>
@@ -515,7 +515,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
               ))
             ) : (
               <View style={styles.noQuestionsLeft}>
-                <Ionicons name="checkmark-circle" size={48} color="#3B82F6" />
+                <Ionicons name="checkmark-circle" size={48} color="#EAB308" />
                 <Text style={styles.noQuestionsText}>
                   You've answered all optional questions!
                 </Text>
@@ -542,13 +542,13 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDE68A', '#FBBF24', '#EAB308']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="compass" size={24} color="#3B82F6" />
+                <Ionicons name="compass" size={24} color="#EAB308" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -574,13 +574,13 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDE68A', '#FBBF24', '#EAB308']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="create" size={24} color="#3B82F6" />
+                <Ionicons name="create" size={24} color="#EAB308" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -612,19 +612,19 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
         <View style={styles.scrollableTitle}>
           <View style={styles.titleRow}>
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDE68A', '#FBBF24', '#EAB308']}
               style={styles.titleIconGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.titleIconInner}>
-                <Ionicons name="bulb" size={20} color="#3B82F6" />
+                <Ionicons name="people" size={20} color="#EAB308" />
               </View>
             </LinearGradient>
-            <Text style={styles.title}>Mental Wealth</Text>
+            <Text style={styles.title}>Financial Wealth</Text>
           </View>
           <Text style={styles.subtitle}>
-            Your vision for your best mental self
+            Your vision for your best financial self
           </Text>
         </View>
 
@@ -1013,7 +1013,7 @@ const SwipeableCard: React.FC<{
             {/* Question Header with Icon */}
             <View style={styles.questionHeader}>
               <LinearGradient
-                colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+                colors={['#FDE68A', '#FBBF24', '#EAB308']}
                 style={styles.questionIconGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -1022,7 +1022,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={item.icon}
                     size={16}
-                    color="#3B82F6"
+                    color="#EAB308"
                   />
                 </View>
               </LinearGradient>
@@ -1049,7 +1049,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#3B82F6"
+                    color="#EAB308"
                   />
                 </View>
               )}
@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     paddingLeft: 20,
-    shadowColor: '#3B82F6',
+    shadowColor: '#EAB308',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -1237,7 +1237,7 @@ const styles = StyleSheet.create({
   },
   additionalCard: {
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: 'rgba(139, 92, 246, 0.15)',
   },
   cardAccent: {
     position: 'absolute',
@@ -1245,15 +1245,15 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#EAB308',
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
   customAccent: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#EAB308',
   },
   optionalAccent: {
-    backgroundColor: '#60A5FA',
+    backgroundColor: '#EAB308',
   },
   badge: {
     position: 'absolute',
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   optionalBadge: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#FEF9C3',
   },
   badgeText: {
     fontSize: 10,
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   expandText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#3B82F6',
+    color: '#EAB308',
   },
 
   // Modal & Bottom Sheet
@@ -1455,7 +1455,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     letterSpacing: -0.2,
   },
-
+  
   // Optional Questions List
   optionalQuestionsContainer: {
     paddingBottom: 24,
@@ -1481,7 +1481,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#3B82F6',
+    borderColor: '#EAB308',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1539,7 +1539,7 @@ const styles = StyleSheet.create({
   selectedQuestionCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F5F3FF',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -1555,19 +1555,19 @@ const styles = StyleSheet.create({
   promptHintContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#FFFBEB',
     borderRadius: 10,
     padding: 12,
     marginBottom: 20,
     gap: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#3B82F6',
+    borderLeftColor: '#F59E0B',
   },
   promptHintText: {
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: '#1E40AF',
+    color: '#92400E',
     lineHeight: 19,
     fontStyle: 'italic',
   },
@@ -1607,4 +1607,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MentalWealthOverviewScreen;
+export default FinancialWealthOverviewScreen;

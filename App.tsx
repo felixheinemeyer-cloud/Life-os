@@ -82,6 +82,18 @@ import MentalWealthOverviewScreen from './src/screens/MentalWealthOverviewScreen
 import MentalWealthEditQuestionScreen from './src/screens/MentalWealthEditQuestionScreen';
 import MentalWealthOptionalQuestionScreen from './src/screens/MentalWealthOptionalQuestionScreen';
 import MentalWealthCustomQuestionScreen from './src/screens/MentalWealthCustomQuestionScreen';
+import TimeWealthIntroAnimationScreen from './src/screens/TimeWealthIntroAnimationScreen';
+import TimeWealthIntroScreen from './src/screens/TimeWealthIntroScreen';
+import TimeWealthQuestionsContainerScreen from './src/screens/TimeWealthQuestionsContainerScreen';
+import TimeWealthOverviewScreen from './src/screens/TimeWealthOverviewScreen';
+import TimeWealthOptionalQuestionScreen from './src/screens/TimeWealthOptionalQuestionScreen';
+import TimeWealthCustomQuestionScreen from './src/screens/TimeWealthCustomQuestionScreen';
+import FinancialWealthIntroAnimationScreen from './src/screens/FinancialWealthIntroAnimationScreen';
+import FinancialWealthIntroScreen from './src/screens/FinancialWealthIntroScreen';
+import FinancialWealthQuestionsContainerScreen from './src/screens/FinancialWealthQuestionsContainerScreen';
+import FinancialWealthOverviewScreen from './src/screens/FinancialWealthOverviewScreen';
+import FinancialWealthOptionalQuestionScreen from './src/screens/FinancialWealthOptionalQuestionScreen';
+import FinancialWealthCustomQuestionScreen from './src/screens/FinancialWealthCustomQuestionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -198,6 +210,18 @@ const KnowledgeStack = () => {
       <Stack.Screen name="MentalWealthEditQuestion" component={MentalWealthEditQuestionScreen} />
       <Stack.Screen name="MentalWealthOptionalQuestion" component={MentalWealthOptionalQuestionScreen as React.ComponentType<any>} />
       <Stack.Screen name="MentalWealthCustomQuestion" component={MentalWealthCustomQuestionScreen} />
+      <Stack.Screen name="TimeWealthIntroAnimation" component={TimeWealthIntroAnimationScreen} />
+      <Stack.Screen name="TimeWealthIntro" component={TimeWealthIntroScreen} />
+      <Stack.Screen name="TimeWealthQuestions" component={TimeWealthQuestionsContainerScreen} />
+      <Stack.Screen name="TimeWealthOverview" component={TimeWealthOverviewScreen} />
+      <Stack.Screen name="TimeWealthOptionalQuestion" component={TimeWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="TimeWealthCustomQuestion" component={TimeWealthCustomQuestionScreen} />
+      <Stack.Screen name="FinancialWealthIntroAnimation" component={FinancialWealthIntroAnimationScreen} />
+      <Stack.Screen name="FinancialWealthIntro" component={FinancialWealthIntroScreen} />
+      <Stack.Screen name="FinancialWealthQuestions" component={FinancialWealthQuestionsContainerScreen} />
+      <Stack.Screen name="FinancialWealthOverview" component={FinancialWealthOverviewScreen} />
+      <Stack.Screen name="FinancialWealthOptionalQuestion" component={FinancialWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="FinancialWealthCustomQuestion" component={FinancialWealthCustomQuestionScreen} />
     </Stack.Navigator>
   );
 };

@@ -22,7 +22,7 @@ import * as Haptics from 'expo-haptics';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps + padding)
 
-interface MentalWealthOverviewScreenProps {
+interface TimeWealthOverviewScreenProps {
   route?: {
     params?: {
       reopenOptionalQuestions?: boolean;
@@ -67,33 +67,33 @@ const CORE_QA_DATA: QuestionAnswer[] = [
   {
     id: '1',
     questionNumber: 1,
-    question: 'Your best self\'s inner mental world',
-    answer: 'My mind is clear and focused, with a sense of calm confidence that permeates everything I do. I feel mentally energized yet peaceful, able to think clearly and respond thoughtfully rather than react impulsively. There\'s a quiet strength in my thoughts, and I approach challenges with curiosity rather than fear. My inner dialogue is supportive and constructive, helping me grow rather than holding me back.',
-    icon: 'eye',
+    question: 'Your best self\'s 2-3 biggest priorities in life',
+    answer: 'My top priorities are building deep, meaningful relationships with family and close friends, growing professionally while maintaining work-life balance, and investing in my physical and mental health. These three areas give my life meaning and purpose, and I make decisions based on how well they align with these priorities.',
+    icon: 'star',
     type: 'core',
   },
   {
     id: '2',
     questionNumber: 2,
-    question: 'How your best self thinks and makes decisions',
-    answer: 'I approach decisions with clarity and confidence, weighing options thoughtfully without overthinking. I trust my judgment while remaining open to new information. When challenges arise, I see them as opportunities for growth rather than threats. I maintain perspective, breaking down complex problems into manageable parts, and I\'m comfortable with uncertainty while staying focused on what I can control.',
-    icon: 'bulb',
+    question: 'How your best self spends time across different seasons of life',
+    answer: 'In my career-building years, I dedicate focused time to skill development and making an impact, while still protecting time for relationships and health. As I build a family, I shift toward more presence at home while maintaining professional excellence. In later seasons, I prioritize mentorship, giving back, and savoring deep connections over constant productivity.',
+    icon: 'calendar',
     type: 'core',
   },
   {
     id: '3',
     questionNumber: 3,
-    question: 'Mental habits that strengthen your well-being',
-    answer: 'I believe in my ability to learn and grow from every experience. I maintain a growth mindset, seeing failures as feedback rather than final verdicts. I practice self-compassion, treating myself with the same kindness I\'d offer a good friend. I regularly reflect on what I\'m grateful for, and I challenge negative self-talk with evidence-based thinking. I trust the process and focus on progress over perfection.',
-    icon: 'infinite',
+    question: 'How your best self spends time on a typical day and week',
+    answer: 'My mornings start with exercise and reflection before diving into deep work. I protect time for meaningful conversations with loved ones, and I take regular breaks to recharge. My weeks balance focused work with social connection, creative pursuits, and time in nature. I never let urgent tasks crowd out what truly matters—the people and activities that bring lasting fulfillment.',
+    icon: 'sunny',
     type: 'core',
   },
   {
     id: '4',
     questionNumber: 4,
-    question: 'Daily practices that keep your best self mentally strong',
-    answer: 'I start each day with meditation or journaling to center myself and set intentions. I protect time for deep work without distractions, and I take regular breaks to reset my focus. I move my body daily, which clears my mind and boosts my energy. I limit social media and news consumption to prevent mental clutter. Each week, I review what went well and what I learned, celebrating progress and adjusting my approach.',
-    icon: 'calendar',
+    question: 'What you would most regret about how you spent your time',
+    answer: 'I would regret spending too much time on work at the expense of relationships. I would regret not being present with my family, missing important moments because I was distracted or busy. I would regret playing it safe instead of pursuing meaningful experiences, and letting fear keep me from taking risks that could have led to growth and deeper connection.',
+    icon: 'hourglass',
     type: 'core',
   },
 ];
@@ -102,31 +102,31 @@ const CORE_QA_DATA: QuestionAnswer[] = [
 const OPTIONAL_QUESTIONS: OptionalQuestion[] = [
   {
     id: 'opt1',
-    question: 'How does your best self manage stress and stay mentally grounded under pressure?',
-    icon: 'shield-checkmark',
-    promptHint: 'Think about breathing techniques, mindset shifts, perspective practices, or ways you create mental space when things get intense.',
+    question: 'Which activities, obligations or habits would your best self choose to let go of?',
+    icon: 'trash-outline',
+    promptHint: 'Think about time drains, unproductive habits, commitments that don\'t align with your values, or activities that no longer serve your growth.',
   },
   {
     id: 'opt2',
-    question: 'How does your best self manage attention, focus and mental distractions?',
-    icon: 'eye',
-    promptHint: 'Consider environment design, time blocking, single-tasking, digital boundaries, or rituals that help you enter deep focus.',
+    question: 'How does your best self choose to spend their free time?',
+    icon: 'happy-outline',
+    promptHint: 'Consider hobbies, creative pursuits, learning, rest, adventure, or activities that recharge and fulfill you.',
   },
   {
     id: 'opt3',
-    question: 'How does your best self process emotions and maintain emotional balance?',
-    icon: 'heart-circle',
-    promptHint: 'Think about emotional awareness, healthy expression, regulation strategies, and how you stay balanced through ups and downs.',
+    question: 'How does your best self protect their time from distractions, interruptions, and overcommitment?',
+    icon: 'shield-checkmark',
+    promptHint: 'Think about boundaries, systems, saying no, managing digital distractions, and protecting focus time.',
   },
   {
     id: 'opt4',
-    question: 'What\'s your best self\'s attitude towards change, development and adaptation?',
-    icon: 'trending-up',
-    promptHint: 'Consider your relationship with uncertainty, learning, feedback, failure, and continuous growth.',
+    question: 'How does your best self plan and structure their time?',
+    icon: 'list',
+    promptHint: 'Consider planning systems, routines, time blocking, prioritization methods, or how you balance structure with flexibility.',
   },
 ];
 
-const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
+const TimeWealthOverviewScreen: React.FC<TimeWealthOverviewScreenProps> = ({
   route,
   navigation,
 }) => {
@@ -305,7 +305,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the custom question screen
-    navigation.navigate('MentalWealthCustomQuestion');
+    navigation.navigate('TimeWealthCustomQuestion');
   };
 
   const handleSelectOptional = (question: OptionalQuestion) => {
@@ -315,7 +315,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     // Close the bottom sheet
     closeBottomSheet();
     // Navigate to the optional question screen
-    navigation.navigate('MentalWealthOptionalQuestion', {
+    navigation.navigate('TimeWealthOptionalQuestion', {
       question: question.question,
       icon: question.icon,
       promptHint: question.promptHint,
@@ -371,7 +371,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('MentalWealthEditQuestion', {
+    navigation.navigate('TimeWealthEditQuestion', {
       questionNumber: item.questionNumber,
       currentAnswer: item.answer,
     });
@@ -431,7 +431,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
                 <Ionicons
                   name={selectedOptionalId ? 'help-circle' : 'create'}
                   size={20}
-                  color="#3B82F6"
+                  color="#FB923C"
                 />
                 <Text style={styles.selectedQuestionText}>
                   {selectedQuestion}
@@ -440,7 +440,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
 
               {selectedOptQuestion?.promptHint && (
                 <View style={styles.promptHintContainer}>
-                  <Ionicons name="bulb-outline" size={16} color="#3B82F6" />
+                  <Ionicons name="bulb-outline" size={16} color="#FB923C" />
                   <Text style={styles.promptHintText}>
                     {selectedOptQuestion.promptHint}
                   </Text>
@@ -503,7 +503,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionalQuestionIconRing}>
-                    <Ionicons name={question.icon} size={18} color="#3B82F6" />
+                    <Ionicons name={question.icon} size={18} color="#FB923C" />
                   </View>
                   <View style={styles.optionalQuestionContent}>
                     <Text style={styles.optionalQuestionTitle} numberOfLines={3}>
@@ -515,7 +515,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
               ))
             ) : (
               <View style={styles.noQuestionsLeft}>
-                <Ionicons name="checkmark-circle" size={48} color="#3B82F6" />
+                <Ionicons name="checkmark-circle" size={48} color="#FB923C" />
                 <Text style={styles.noQuestionsText}>
                   You've answered all optional questions!
                 </Text>
@@ -542,13 +542,13 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDBA74', '#FB923C', '#F97316']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="compass" size={24} color="#3B82F6" />
+                <Ionicons name="compass" size={24} color="#FB923C" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -574,13 +574,13 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDBA74', '#FB923C', '#F97316']}
               style={styles.menuCardIconRing}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.menuCardIconInner}>
-                <Ionicons name="create" size={24} color="#3B82F6" />
+                <Ionicons name="create" size={24} color="#FB923C" />
               </View>
             </LinearGradient>
             <View style={styles.menuCardContent}>
@@ -612,19 +612,19 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
         <View style={styles.scrollableTitle}>
           <View style={styles.titleRow}>
             <LinearGradient
-              colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+              colors={['#FDBA74', '#FB923C', '#F97316']}
               style={styles.titleIconGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.titleIconInner}>
-                <Ionicons name="bulb" size={20} color="#3B82F6" />
+                <Ionicons name="time" size={20} color="#FB923C" />
               </View>
             </LinearGradient>
-            <Text style={styles.title}>Mental Wealth</Text>
+            <Text style={styles.title}>Time Wealth</Text>
           </View>
           <Text style={styles.subtitle}>
-            Your vision for your best mental self
+            Your vision for your best use of time
           </Text>
         </View>
 
@@ -1013,7 +1013,7 @@ const SwipeableCard: React.FC<{
             {/* Question Header with Icon */}
             <View style={styles.questionHeader}>
               <LinearGradient
-                colors={['#93C5FD', '#60A5FA', '#3B82F6']}
+                colors={['#FDBA74', '#FB923C', '#F97316']}
                 style={styles.questionIconGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -1022,7 +1022,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={item.icon}
                     size={16}
-                    color="#3B82F6"
+                    color="#FB923C"
                   />
                 </View>
               </LinearGradient>
@@ -1049,7 +1049,7 @@ const SwipeableCard: React.FC<{
                   <Ionicons
                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={14}
-                    color="#3B82F6"
+                    color="#FB923C"
                   />
                 </View>
               )}
@@ -1228,7 +1228,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     paddingLeft: 20,
-    shadowColor: '#3B82F6',
+    shadowColor: '#FB923C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -1237,7 +1237,7 @@ const styles = StyleSheet.create({
   },
   additionalCard: {
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: 'rgba(245, 158, 11, 0.15)',
   },
   cardAccent: {
     position: 'absolute',
@@ -1245,15 +1245,15 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FB923C',
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
   customAccent: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FB923C',
   },
   optionalAccent: {
-    backgroundColor: '#60A5FA',
+    backgroundColor: '#FB923C',
   },
   badge: {
     position: 'absolute',
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   optionalBadge: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#FFEDD5',
   },
   badgeText: {
     fontSize: 10,
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
   expandText: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#3B82F6',
+    color: '#FB923C',
   },
 
   // Modal & Bottom Sheet
@@ -1481,7 +1481,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#3B82F6',
+    borderColor: '#FB923C',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1539,7 +1539,7 @@ const styles = StyleSheet.create({
   selectedQuestionCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFEDD5',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -1555,19 +1555,19 @@ const styles = StyleSheet.create({
   promptHintContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#FFFBEB',
     borderRadius: 10,
     padding: 12,
     marginBottom: 20,
     gap: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#3B82F6',
+    borderLeftColor: '#FB923C',
   },
   promptHintText: {
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: '#1E40AF',
+    color: '#92400E',
     lineHeight: 19,
     fontStyle: 'italic',
   },
@@ -1607,4 +1607,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MentalWealthOverviewScreen;
+export default TimeWealthOverviewScreen;

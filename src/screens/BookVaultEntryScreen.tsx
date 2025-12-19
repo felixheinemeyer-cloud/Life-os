@@ -645,6 +645,7 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
                   <Text style={styles.dropdownItemText}>Add "To Read"</Text>
                 </TouchableOpacity>
               )}
+              <View style={styles.dropdownDivider} />
               <TouchableOpacity
                 style={[styles.dropdownItem, styles.dropdownItemDestructive]}
                 onPress={handleDeleteEntry}
@@ -1069,9 +1070,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 12,
+  },
   dropdownItemDestructive: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
   dropdownItemText: {
     fontSize: 15,
