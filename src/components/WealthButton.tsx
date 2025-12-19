@@ -46,15 +46,15 @@ export const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
     title: 'Financial Wealth',
     icon: 'trending-up-outline',
     description: 'How does your best self manage money, decisions, and long-term security?',
-    color: '#F59E0B',
-    backgroundColor: '#FEF3C7',
+    color: '#EAB308',
+    backgroundColor: '#FEF9C3',
   },
   time: {
     title: 'Time Wealth',
     icon: 'time-outline',
     description: 'How does your best self use and protect their time?',
-    color: '#6366F1',
-    backgroundColor: '#E0E7FF',
+    color: '#FB923C',
+    backgroundColor: '#FFEDD5',
   },
 };
 

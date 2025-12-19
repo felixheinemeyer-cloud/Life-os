@@ -277,19 +277,21 @@ const AddTopicModal: React.FC<{
       <View style={[styles.addTopicContainer, { paddingBottom: insets.bottom }]}>
         {/* Header */}
         <View style={styles.addTopicHeader}>
-          <TouchableOpacity onPress={handleClose} activeOpacity={0.7} style={styles.addTopicHeaderBtn}>
-            <Text style={styles.modalCancelText}>Cancel</Text>
+          <TouchableOpacity onPress={handleClose} activeOpacity={0.7} style={styles.roundButton}>
+            <Ionicons name="close" size={20} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.modalTitle}>New Topic</Text>
           <TouchableOpacity
             onPress={handleSave}
             activeOpacity={0.7}
             disabled={!isValid}
-            style={styles.addTopicHeaderBtn}
+            style={[styles.roundButton, !isValid && styles.roundButtonDisabled]}
           >
-            <Text style={[styles.modalSaveText, !isValid && styles.modalSaveTextDisabled]}>
-              Create
-            </Text>
+            <Ionicons
+              name="checkmark"
+              size={20}
+              color={isValid ? "#1F2937" : "#9CA3AF"}
+            />
           </TouchableOpacity>
         </View>
 
@@ -1087,8 +1089,10 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1F2937',
+    flex: 1,
+    textAlign: 'center',
   },
   modalCancelText: {
     fontSize: 16,
@@ -1176,6 +1180,24 @@ const styles = StyleSheet.create({
   },
   addTopicHeaderBtn: {
     minWidth: 60,
+  },
+  roundButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  roundButtonDisabled: {
+    opacity: 0.5,
   },
   addTopicScroll: {
     flex: 1,
