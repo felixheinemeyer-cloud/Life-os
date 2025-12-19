@@ -16,9 +16,17 @@ import MonthlyBodyTrackingStatsContent from '../components/tracking/MonthlyBodyT
 import MonthlyBodyTrackingInsightsContent from '../components/tracking/MonthlyBodyTrackingInsightsContent';
 import MonthlyBodyTrackingMetricsContent, { BodyMetricsData } from '../components/tracking/MonthlyBodyTrackingMetricsContent';
 import MonthlyBodyTrackingHealthContent, { HealthRatingsData } from '../components/tracking/MonthlyBodyTrackingHealthContent';
+import MonthlyBodyTrackingExerciseContent, { PhysicalActivityData } from '../components/tracking/MonthlyBodyTrackingExerciseContent';
+import MonthlyBodyTrackingPhotoContent, { ProgressPhotoData } from '../components/tracking/MonthlyBodyTrackingPhotoContent';
+import MonthlyBodyTrackingPromiseContent, { BodyPromiseData } from '../components/tracking/MonthlyBodyTrackingPromiseContent';
+import MonthlyBodyTrackingMentalContent, { MentalWellnessData } from '../components/tracking/MonthlyBodyTrackingMentalContent';
+import MonthlyBodyTrackingMentalLoadContent, { MentalLoadData } from '../components/tracking/MonthlyBodyTrackingMentalLoadContent';
+import MonthlyBodyTrackingMindHelpersContent, { MindHelpersData } from '../components/tracking/MonthlyBodyTrackingMindHelpersContent';
+import MonthlyBodyTrackingMindDrainsContent, { MindDrainsData } from '../components/tracking/MonthlyBodyTrackingMindDrainsContent';
+import MonthlyBodyTrackingMindStateContent, { MindStateData } from '../components/tracking/MonthlyBodyTrackingMindStateContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 12;
 
 interface MonthlyBodyTrackingContainerScreenProps {
   navigation?: {
@@ -43,6 +51,48 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
   const [healthRatings, setHealthRatings] = useState<HealthRatingsData>({
     overallHealth: 5,
     skinQuality: 5,
+  });
+
+  // Physical activity data state
+  const [physicalActivityData, setPhysicalActivityData] = useState<PhysicalActivityData>({
+    activityLevel: null,
+  });
+
+  // Progress photo data state
+  const [progressPhotoData, setProgressPhotoData] = useState<ProgressPhotoData>({
+    photoUri: null,
+  });
+
+  // Body promise data state
+  const [bodyPromiseData, setBodyPromiseData] = useState<BodyPromiseData>({
+    promise: '',
+  });
+
+  // Mental wellness data state
+  const [mentalWellnessData, setMentalWellnessData] = useState<MentalWellnessData>({
+    mentalClarity: 5,
+    emotionalBalance: 5,
+    motivation: 5,
+  });
+
+  // Mental load data state
+  const [mentalLoadData, setMentalLoadData] = useState<MentalLoadData>({
+    mentalLoadLevel: null,
+  });
+
+  // Mind helpers data state
+  const [mindHelpersData, setMindHelpersData] = useState<MindHelpersData>({
+    selectedHelpers: [],
+  });
+
+  // Mind drains data state
+  const [mindDrainsData, setMindDrainsData] = useState<MindDrainsData>({
+    primaryDrain: null,
+  });
+
+  // Mind state data state
+  const [mindStateData, setMindStateData] = useState<MindStateData>({
+    mindState: null,
   });
 
   // Animation value for horizontal scroll position
@@ -83,7 +133,18 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
     } else {
       // Final step - complete the check-in
       // For now, just go back. Later, navigate to a completion screen.
-      console.log('Monthly Body Check-In complete:', { bodyMetrics, healthRatings });
+      console.log('Monthly Body Check-In complete:', {
+        bodyMetrics,
+        healthRatings,
+        physicalActivityData,
+        progressPhotoData,
+        bodyPromiseData,
+        mentalWellnessData,
+        mentalLoadData,
+        mindHelpersData,
+        mindDrainsData,
+        mindStateData,
+      });
       navigation?.goBack();
     }
   };
@@ -155,9 +216,81 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 4: 30-Day Insights - Sleep, Energy, Nutrition */}
+            {/* Step 4: Physical Activity */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingExerciseContent
+                data={physicalActivityData}
+                onDataChange={setPhysicalActivityData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 5: 30-Day Insights - Sleep, Energy, Nutrition */}
             <View style={styles.page}>
               <MonthlyBodyTrackingInsightsContent
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 6: Progress Photo */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingPhotoContent
+                data={progressPhotoData}
+                onDataChange={setProgressPhotoData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 7: Body Promise */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingPromiseContent
+                data={bodyPromiseData}
+                onDataChange={setBodyPromiseData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 8: Mental Wellness */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMentalContent
+                data={mentalWellnessData}
+                onDataChange={setMentalWellnessData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 9: Mental Load */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMentalLoadContent
+                data={mentalLoadData}
+                onDataChange={setMentalLoadData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 10: Mind Helpers */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMindHelpersContent
+                data={mindHelpersData}
+                onDataChange={setMindHelpersData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 11: Mind Drains */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMindDrainsContent
+                data={mindDrainsData}
+                onDataChange={setMindDrainsData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 12: Mind-Body State */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMindStateContent
+                data={mindStateData}
+                onDataChange={setMindStateData}
                 onContinue={handleContinue}
               />
             </View>
