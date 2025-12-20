@@ -12,10 +12,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import MonthlyTrackingOverviewContent from '../components/tracking/MonthlyTrackingOverviewContent';
 import MonthlyTrackingReflectionContent, { MonthlyReflectionType } from '../components/tracking/MonthlyTrackingReflectionContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 interface MonthlyTrackingContainerScreenProps {
   navigation?: {
@@ -126,6 +127,12 @@ const MonthlyTrackingContainerScreen: React.FC<MonthlyTrackingContainerScreenPro
               },
             ]}
           >
+            {/* Step 0: Monthly Overview with Stats */}
+            <View style={styles.page}>
+              <MonthlyTrackingOverviewContent
+                onContinue={handleContinue}
+              />
+            </View>
             {/* Step 1: Key Learning */}
             <View style={styles.page}>
               <MonthlyTrackingReflectionContent

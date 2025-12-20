@@ -12,12 +12,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+import WeeklyTrackingOverviewContent from '../components/tracking/WeeklyTrackingOverviewContent';
 import WeeklyTrackingWealthContent, { WealthType } from '../components/tracking/WeeklyTrackingWealthContent';
 import WeeklyTrackingReflectionContent from '../components/tracking/WeeklyTrackingReflectionContent';
 import WeeklyTrackingPhotoContent from '../components/tracking/WeeklyTrackingPhotoContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 const WEALTH_TYPES: WealthType[] = ['physical', 'social', 'mental', 'financial', 'time'];
 
 interface WeeklyTrackingContainerScreenProps {
@@ -144,6 +145,13 @@ const WeeklyTrackingContainerScreen: React.FC<WeeklyTrackingContainerScreenProps
               },
             ]}
           >
+            {/* Step 0: Weekly Overview with Daily Stats */}
+            <View style={styles.page}>
+              <WeeklyTrackingOverviewContent
+                onContinue={handleContinue}
+              />
+            </View>
+            {/* Steps 1-5: Wealth Ratings */}
             {WEALTH_TYPES.map((wealthType) => (
               <View key={wealthType} style={styles.page}>
                 <WeeklyTrackingWealthContent
