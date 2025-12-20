@@ -21,7 +21,7 @@ const THEME_COLORS = {
   primary: '#8B5CF6',
   primaryLight: '#A78BFA',
   primaryLighter: '#DDD6FE',
-  gradient: ['#DDD6FE', '#A78BFA', '#8B5CF6'] as const,
+  gradient: ['#A78BFA', '#8B5CF6', '#7C3AED'] as const,
 };
 
 // Mind helpers options - 2x4 grid layout
@@ -191,7 +191,7 @@ const MonthlyBodyTrackingMindHelpersContent: React.FC<MonthlyBodyTrackingMindHel
               <Ionicons name="sparkles-outline" size={24} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
-          <Text style={styles.headerTitle}>Mind Helpers</Text>
+          <Text style={styles.headerTitle}>What Helped</Text>
           <Text style={styles.headerSubtitle}>
             What helped your mind this month?
           </Text>
