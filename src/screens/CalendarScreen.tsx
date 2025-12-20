@@ -8,6 +8,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+
+interface CalendarScreenProps {
+  navigation?: {
+    navigate: (screen: string, params?: any) => void;
+  };
+}
 
 interface TrackingStatus {
   morning: boolean;
@@ -21,7 +28,7 @@ interface DayData {
   isToday: boolean;
 }
 
-const CalendarScreen = (): React.JSX.Element => {
+const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Mock data for tracking status (November 2024)
@@ -96,7 +103,7 @@ const CalendarScreen = (): React.JSX.Element => {
     '2025-12-17': { morning: true, evening: true },
     '2025-12-18': { morning: true, evening: true },
     '2025-12-19': { morning: true, evening: true },
-    '2025-12-20': { morning: true, evening: false },
+    '2025-12-20': { morning: true, evening: true },
     '2025-12-21': { morning: true, evening: true },
     '2025-12-22': { morning: true, evening: true },
     '2025-12-23': { morning: false, evening: true },
@@ -177,6 +184,25 @@ const CalendarScreen = (): React.JSX.Element => {
     );
   };
 
+  const handleDayPress = (day: number): void => {
+    if (day === 0) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const selectedDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      day
+    );
+
+    const dateString = `${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}-${day}`;
+
+    navigation?.navigate('DailyOverview', {
+      date: selectedDate.toISOString(),
+      dateString,
+    });
+  };
+
   const calendarDays = generateCalendarDays();
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -228,11 +254,13 @@ const CalendarScreen = (): React.JSX.Element => {
             {calendarDays.map((dayData, index) => (
               <View key={index} style={styles.dayCell}>
                 {dayData.isCurrentMonth ? (
-                  <View
+                  <TouchableOpacity
                     style={[
                       styles.dayCellContent,
                       dayData.isToday && styles.todayCell,
                     ]}
+                    onPress={() => handleDayPress(dayData.date)}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -250,7 +278,7 @@ const CalendarScreen = (): React.JSX.Element => {
                         <View style={styles.eveningDot} />
                       )}
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ) : null}
               </View>
             ))}

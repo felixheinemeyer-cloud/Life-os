@@ -12,6 +12,7 @@ import { BookProvider } from './src/context/BookContext';
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
+import DailyOverviewScreen from './src/screens/DailyOverviewScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
@@ -120,6 +121,20 @@ const DashboardStack = () => {
       <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Calendar Stack Navigator
+const CalendarStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="CalendarMain" component={CalendarScreen} />
+      <Stack.Screen name="DailyOverview" component={DailyOverviewScreen} />
     </Stack.Navigator>
   );
 };
@@ -268,7 +283,7 @@ const App = (): React.JSX.Element => {
           />
           <Tab.Screen
             name="Calendar"
-            component={CalendarScreen}
+            component={CalendarStack}
             options={{
               title: 'Calendar',
               tabBarLabel: 'Calendar',
