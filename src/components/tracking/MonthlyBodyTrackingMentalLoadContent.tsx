@@ -16,7 +16,7 @@ const THEME_COLORS = {
   primary: '#8B5CF6',
   primaryLight: '#A78BFA',
   primaryLighter: '#DDD6FE',
-  gradient: ['#DDD6FE', '#A78BFA', '#8B5CF6'] as const,
+  gradient: ['#A78BFA', '#8B5CF6', '#7C3AED'] as const,
 };
 
 // Mental load levels
