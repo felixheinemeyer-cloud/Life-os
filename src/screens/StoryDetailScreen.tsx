@@ -316,7 +316,6 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
                 value={editTitle}
                 onChangeText={setEditTitle}
               />
-              <Text style={styles.optionalLabel}>optional</Text>
             </View>
 
             {/* When Row */}
@@ -324,7 +323,7 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
               <Ionicons name="time-outline" size={18} color="#16A34A" />
               <TextInput
                 style={styles.editWhenInput}
-                placeholder="When? (e.g., Summer 2023, May 2021)"
+                placeholder="When? (e.g., 2024, Summer 2022)"
                 placeholderTextColor="#9CA3AF"
                 value={editWhen}
                 onChangeText={setEditWhen}
@@ -559,11 +558,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     paddingVertical: 12,
-  },
-  optionalLabel: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
   },
   editWhenRow: {
     flexDirection: 'row',

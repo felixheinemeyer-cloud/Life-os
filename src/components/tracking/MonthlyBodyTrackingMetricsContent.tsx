@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 
 // Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
@@ -51,28 +50,6 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
     const parts = cleaned.split('.');
     const formatted = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned;
     onDataChange({ ...data, weight: formatted });
-  };
-
-  const handleUnitToggle = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    const newUnit: WeightUnit = data.weightUnit === 'kg' ? 'lbs' : 'kg';
-
-    // Convert weight if a value exists
-    let newWeight = data.weight;
-    if (data.weight && !isNaN(parseFloat(data.weight))) {
-      const currentWeight = parseFloat(data.weight);
-      if (newUnit === 'lbs') {
-        // kg to lbs
-        newWeight = (currentWeight * 2.20462).toFixed(1);
-      } else {
-        // lbs to kg
-        newWeight = (currentWeight / 2.20462).toFixed(1);
-      }
-    }
-
-    onDataChange({ ...data, weight: newWeight, weightUnit: newUnit });
   };
 
   const handleMeasurementsChange = (measurements: string) => {
@@ -123,36 +100,9 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
 
           {/* Weight Input Card */}
           <View style={styles.inputCard}>
-            <View style={styles.inputCardHeader}>
-              <View style={styles.inputLabelRow}>
-                <Ionicons name="scale-outline" size={20} color={THEME_COLORS.primary} />
-                <Text style={styles.inputLabel}>Current Weight</Text>
-              </View>
-              {/* Unit Toggle */}
-              <TouchableOpacity
-                style={styles.unitToggle}
-                onPress={handleUnitToggle}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.unitOption,
-                  data.weightUnit === 'kg' && styles.unitOptionActive
-                ]}>
-                  <Text style={[
-                    styles.unitOptionText,
-                    data.weightUnit === 'kg' && styles.unitOptionTextActive
-                  ]}>kg</Text>
-                </View>
-                <View style={[
-                  styles.unitOption,
-                  data.weightUnit === 'lbs' && styles.unitOptionActive
-                ]}>
-                  <Text style={[
-                    styles.unitOptionText,
-                    data.weightUnit === 'lbs' && styles.unitOptionTextActive
-                  ]}>lbs</Text>
-                </View>
-              </TouchableOpacity>
+            <View style={styles.inputLabelRow}>
+              <Ionicons name="scale-outline" size={20} color={THEME_COLORS.primary} />
+              <Text style={styles.inputLabel}>Current Weight</Text>
             </View>
             <View style={[
               styles.weightInputContainer,
@@ -160,7 +110,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
             ]}>
               <TextInput
                 style={styles.weightInput}
-                placeholder={data.weightUnit === 'kg' ? '70.0' : '154.0'}
+                placeholder="70.0"
                 placeholderTextColor="#D1D5DB"
                 keyboardType="decimal-pad"
                 value={data.weight}
@@ -168,7 +118,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
                 onFocus={() => setIsWeightFocused(true)}
                 onBlur={() => setIsWeightFocused(false)}
               />
-              <Text style={styles.weightUnitDisplay}>{data.weightUnit}</Text>
+              <Text style={styles.weightUnitDisplay}>kg</Text>
             </View>
           </View>
 
@@ -300,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flex: 1,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -321,30 +271,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
-  },
-
-  // Unit Toggle
-  unitToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  unitOptionActive: {
-    backgroundColor: THEME_COLORS.primary,
-  },
-  unitOptionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  unitOptionTextActive: {
-    color: '#FFFFFF',
   },
 
   // Weight Input

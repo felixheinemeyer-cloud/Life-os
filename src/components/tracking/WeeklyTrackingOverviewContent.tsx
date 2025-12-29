@@ -10,7 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -25,6 +24,7 @@ const COLORS = {
   border: '#E5E7EB',
   teal: '#0D9488',
   tealLight: '#14B8A6',
+  tealBg: '#F0FDFA',
   // Metric colors
   sleep: '#8B5CF6',
   priority: '#10B981',
@@ -37,14 +37,16 @@ const COLORS = {
 interface DayData {
   dayName: string;
   dayShort: string;
+  dayLetter: string;
   date: number;
   isToday: boolean;
   tracked: boolean;
-  sleep: number; // hours (e.g., 7.5)
+  sleep: number;
   priorityCompleted: boolean;
-  nutrition: number; // 1-10
-  energy: number; // 1-10
-  satisfaction: number; // 1-10
+  nutrition: number;
+  energy: number;
+  satisfaction: number;
+  overallScore: number; // Average of nutrition, energy, satisfaction
 }
 
 interface WeeklyTrackingOverviewContentProps {
@@ -60,6 +62,7 @@ const generateWeekData = (): { weekRange: string; days: DayData[] } => {
 
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayShorts = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const sunday = new Date(monday);
@@ -73,21 +76,28 @@ const generateWeekData = (): { weekRange: string; days: DayData[] } => {
     date.setDate(monday.getDate() + i);
     const isTracked = i <= todayIndex;
 
+    const nutrition = isTracked ? Math.round(4 + Math.random() * 6) : 0;
+    const energy = isTracked ? Math.round(3 + Math.random() * 7) : 0;
+    const satisfaction = isTracked ? Math.round(4 + Math.random() * 6) : 0;
+    const overallScore = isTracked ? Math.round((nutrition + energy + satisfaction) / 3) : 0;
+
     days.push({
       dayName: dayNames[i],
       dayShort: dayShorts[i],
+      dayLetter: dayLetters[i],
       date: date.getDate(),
       isToday: i === todayIndex,
       tracked: isTracked,
-      sleep: isTracked ? Math.round((5.5 + Math.random() * 3.5) * 10) / 10 : 0, // 5.5-9 hours
+      sleep: isTracked ? Math.round((5.5 + Math.random() * 3.5) * 10) / 10 : 0,
       priorityCompleted: isTracked ? Math.random() > 0.3 : false,
-      nutrition: isTracked ? Math.round(4 + Math.random() * 6) : 0,
-      energy: isTracked ? Math.round(3 + Math.random() * 7) : 0,
-      satisfaction: isTracked ? Math.round(4 + Math.random() * 6) : 0,
+      nutrition,
+      energy,
+      satisfaction,
+      overallScore,
     });
   }
 
-  const weekRange = `${monthNames[monday.getMonth()]} ${monday.getDate()} – ${monthNames[sunday.getMonth()]} ${sunday.getDate()}`;
+  const weekRange = `${monthNames[monday.getMonth()]} ${monday.getDate()} – ${sunday.getDate()}`;
 
   return { weekRange, days };
 };
@@ -95,69 +105,72 @@ const generateWeekData = (): { weekRange: string; days: DayData[] } => {
 // Calculate averages
 const calculateAverages = (days: DayData[]) => {
   const tracked = days.filter(d => d.tracked);
-  if (tracked.length === 0) return { sleep: 0, nutrition: 0, energy: 0, satisfaction: 0, priorityRate: 0 };
+  if (tracked.length === 0) return { sleep: 0, nutrition: 0, energy: 0, satisfaction: 0, priorityRate: 0, overall: 0 };
+
+  const nutrition = tracked.reduce((sum, d) => sum + d.nutrition, 0) / tracked.length;
+  const energy = tracked.reduce((sum, d) => sum + d.energy, 0) / tracked.length;
+  const satisfaction = tracked.reduce((sum, d) => sum + d.satisfaction, 0) / tracked.length;
 
   return {
     sleep: tracked.reduce((sum, d) => sum + d.sleep, 0) / tracked.length,
-    nutrition: tracked.reduce((sum, d) => sum + d.nutrition, 0) / tracked.length,
-    energy: tracked.reduce((sum, d) => sum + d.energy, 0) / tracked.length,
-    satisfaction: tracked.reduce((sum, d) => sum + d.satisfaction, 0) / tracked.length,
+    nutrition,
+    energy,
+    satisfaction,
     priorityRate: (tracked.filter(d => d.priorityCompleted).length / tracked.length) * 100,
+    overall: (nutrition + energy + satisfaction) / 3,
   };
 };
 
-// Metric Value Cell
-const MetricCell: React.FC<{ value: number; type: 'rating' | 'sleep'; color: string }> = ({ value, type, color }) => {
-  if (value === 0) {
-    return <Text style={styles.cellEmpty}>–</Text>;
-  }
-
-  const displayValue = type === 'sleep' ? value.toFixed(1) : value.toString();
-  const isGood = type === 'sleep' ? value >= 7 : value >= 7;
-  const isBad = type === 'sleep' ? value < 6 : value <= 4;
-
-  return (
-    <Text style={[
-      styles.cellValue,
-      { color: isBad ? '#EF4444' : isGood ? color : COLORS.text }
-    ]}>
-      {displayValue}
-    </Text>
-  );
+// Get performance level
+const getPerformanceLevel = (score: number): { label: string; color: string; emoji: string } => {
+  if (score >= 8) return { label: 'Excellent', color: '#059669', emoji: '🔥' };
+  if (score >= 6.5) return { label: 'Good', color: '#0D9488', emoji: '👍' };
+  if (score >= 5) return { label: 'Okay', color: '#F59E0B', emoji: '👌' };
+  return { label: 'Needs work', color: '#EF4444', emoji: '💪' };
 };
 
-// Priority Cell
-const PriorityCell: React.FC<{ completed: boolean; tracked: boolean }> = ({ completed, tracked }) => {
-  if (!tracked) {
-    return <Text style={styles.cellEmpty}>–</Text>;
-  }
+// Day indicator dot
+const DayDot: React.FC<{ day: DayData }> = ({ day }) => {
+  const getColor = () => {
+    if (!day.tracked) return '#E5E7EB';
+    if (day.overallScore >= 7) return COLORS.priority;
+    if (day.overallScore >= 5) return COLORS.energy;
+    return '#EF4444';
+  };
 
   return (
-    <View style={[styles.priorityBadge, { backgroundColor: completed ? '#D1FAE5' : '#FEE2E2' }]}>
-      <Ionicons
-        name={completed ? 'checkmark' : 'close'}
-        size={14}
-        color={completed ? COLORS.priority : COLORS.priorityNo}
-      />
+    <View style={styles.dayDotContainer}>
+      <View style={[
+        styles.dayDot,
+        { backgroundColor: getColor() },
+        day.isToday && styles.dayDotToday,
+      ]}>
+        {day.isToday && <View style={styles.dayDotInner} />}
+      </View>
+      <Text style={[styles.dayDotLabel, day.isToday && styles.dayDotLabelToday]}>
+        {day.dayLetter}
+      </Text>
     </View>
   );
 };
 
-// Summary Card
-const SummaryCard: React.FC<{
+// Metric row
+const MetricRow: React.FC<{
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
-  subValue?: string;
   color: string;
-}> = ({ icon, label, value, subValue, color }) => (
-  <View style={styles.summaryCard}>
-    <View style={[styles.summaryIconContainer, { backgroundColor: color + '15' }]}>
-      <Ionicons name={icon} size={18} color={color} />
+  subtitle?: string;
+}> = ({ icon, label, value, color, subtitle }) => (
+  <View style={styles.metricRow}>
+    <View style={[styles.metricIcon, { backgroundColor: color + '15' }]}>
+      <Ionicons name={icon} size={16} color={color} />
     </View>
-    <Text style={styles.summaryLabel}>{label}</Text>
-    <Text style={[styles.summaryValue, { color }]}>{value}</Text>
-    {subValue && <Text style={styles.summarySubValue}>{subValue}</Text>}
+    <View style={styles.metricContent}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
+    </View>
+    <Text style={[styles.metricValue, { color }]}>{value}</Text>
   </View>
 );
 
@@ -166,14 +179,23 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
 }) => {
   const { weekRange, days } = generateWeekData();
   const averages = calculateAverages(days);
+  const performance = getPerformanceLevel(averages.overall);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   const handleContinue = () => {
@@ -184,6 +206,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
   };
 
   const trackedCount = days.filter(d => d.tracked).length;
+  const completedPriorities = days.filter(d => d.priorityCompleted).length;
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -193,145 +216,98 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Weekly Check-in</Text>
-          <View style={styles.weekBadge}>
-            <Ionicons name="calendar-outline" size={14} color={COLORS.teal} />
-            <Text style={styles.weekBadgeText}>{weekRange}</Text>
-          </View>
-        </View>
+        <Animated.View style={[styles.header, { transform: [{ translateY: slideAnim }] }]}>
+          <Text style={styles.weekLabel}>{weekRange}</Text>
+          <Text style={styles.headerTitle}>Your Week in Review</Text>
+          <Text style={styles.headerSubtitle}>
+            {trackedCount} days tracked · {completedPriorities} priorities completed
+          </Text>
+        </Animated.View>
 
-        {/* Summary Cards */}
-        <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Week Overview</Text>
-          <View style={styles.summaryGrid}>
-            <SummaryCard
-              icon="moon"
-              label="Avg Sleep"
-              value={`${averages.sleep.toFixed(1)}h`}
-              color={COLORS.sleep}
-            />
-            <SummaryCard
-              icon="flag"
-              label="Priorities"
-              value={`${Math.round(averages.priorityRate)}%`}
-              subValue="completed"
-              color={COLORS.priority}
-            />
-            <SummaryCard
-              icon="nutrition"
-              label="Nutrition"
-              value={averages.nutrition.toFixed(1)}
-              subValue="/10"
-              color={COLORS.nutrition}
-            />
-            <SummaryCard
-              icon="flash"
-              label="Energy"
-              value={averages.energy.toFixed(1)}
-              subValue="/10"
-              color={COLORS.energy}
-            />
-          </View>
-        </View>
-
-        {/* Day-by-Day Table */}
-        <View style={styles.tableSection}>
-          <Text style={styles.sectionTitle}>Daily Breakdown</Text>
-          <View style={styles.tableCard}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <View style={styles.tableDayColumn}>
-                <Text style={styles.tableHeaderText}>Day</Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Ionicons name="moon" size={14} color={COLORS.sleep} />
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Ionicons name="flag" size={14} color={COLORS.priority} />
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Ionicons name="nutrition" size={14} color={COLORS.nutrition} />
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Ionicons name="flash" size={14} color={COLORS.energy} />
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Ionicons name="happy" size={14} color={COLORS.satisfaction} />
+        {/* Overall Score Card */}
+        <View style={styles.scoreCard}>
+          <View style={styles.scoreHeader}>
+            <View>
+              <Text style={styles.scoreLabel}>Overall Score</Text>
+              <View style={styles.scoreRow}>
+                <Text style={[styles.scoreValue, { color: performance.color }]}>
+                  {averages.overall.toFixed(1)}
+                </Text>
+                <Text style={styles.scoreMax}>/10</Text>
               </View>
             </View>
+          </View>
 
-            {/* Table Rows */}
-            {days.map((day, index) => (
-              <View
-                key={day.dayShort}
-                style={[
-                  styles.tableRow,
-                  day.isToday && styles.tableRowToday,
-                  index === days.length - 1 && styles.tableRowLast,
-                ]}
-              >
-                <View style={styles.tableDayColumn}>
-                  <Text style={[styles.tableDayText, day.isToday && styles.tableDayTextToday]}>
-                    {day.dayShort}
-                  </Text>
-                  <Text style={[styles.tableDateText, day.isToday && styles.tableDateTextToday]}>
-                    {day.date}
-                  </Text>
-                </View>
-                <View style={styles.tableMetricColumn}>
-                  <MetricCell value={day.sleep} type="sleep" color={COLORS.sleep} />
-                </View>
-                <View style={styles.tableMetricColumn}>
-                  <PriorityCell completed={day.priorityCompleted} tracked={day.tracked} />
-                </View>
-                <View style={styles.tableMetricColumn}>
-                  <MetricCell value={day.nutrition} type="rating" color={COLORS.nutrition} />
-                </View>
-                <View style={styles.tableMetricColumn}>
-                  <MetricCell value={day.energy} type="rating" color={COLORS.energy} />
-                </View>
-                <View style={styles.tableMetricColumn}>
-                  <MetricCell value={day.satisfaction} type="rating" color={COLORS.satisfaction} />
-                </View>
-              </View>
+          {/* Week dots */}
+          <View style={styles.weekDots}>
+            {days.map((day) => (
+              <DayDot key={day.dayShort} day={day} />
             ))}
-
-            {/* Table Footer - Averages */}
-            <View style={styles.tableFooter}>
-              <View style={styles.tableDayColumn}>
-                <Text style={styles.tableFooterLabel}>Avg</Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Text style={[styles.tableFooterValue, { color: COLORS.sleep }]}>
-                  {averages.sleep.toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Text style={[styles.tableFooterValue, { color: COLORS.priority }]}>
-                  {Math.round(averages.priorityRate)}%
-                </Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Text style={[styles.tableFooterValue, { color: COLORS.nutrition }]}>
-                  {averages.nutrition.toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Text style={[styles.tableFooterValue, { color: COLORS.energy }]}>
-                  {averages.energy.toFixed(1)}
-                </Text>
-              </View>
-              <View style={styles.tableMetricColumn}>
-                <Text style={[styles.tableFooterValue, { color: COLORS.satisfaction }]}>
-                  {averages.satisfaction.toFixed(1)}
-                </Text>
-              </View>
-            </View>
           </View>
+        </View>
 
-          <Text style={styles.tableHint}>
-            {trackedCount} of 7 days tracked
+        {/* Metrics Card */}
+        <View style={styles.metricsCard}>
+          <Text style={styles.metricsTitle}>Weekly Averages</Text>
+
+          <MetricRow
+            icon="moon"
+            label="Sleep"
+            value={`${averages.sleep.toFixed(1)}h`}
+            color={COLORS.sleep}
+            subtitle="per night"
+          />
+
+          <View style={styles.metricDivider} />
+
+          <MetricRow
+            icon="nutrition"
+            label="Nutrition"
+            value={averages.nutrition.toFixed(1)}
+            color={COLORS.nutrition}
+            subtitle="out of 10"
+          />
+
+          <View style={styles.metricDivider} />
+
+          <MetricRow
+            icon="flash"
+            label="Energy"
+            value={averages.energy.toFixed(1)}
+            color={COLORS.energy}
+            subtitle="out of 10"
+          />
+
+          <View style={styles.metricDivider} />
+
+          <MetricRow
+            icon="happy"
+            label="Satisfaction"
+            value={averages.satisfaction.toFixed(1)}
+            color={COLORS.satisfaction}
+            subtitle="out of 10"
+          />
+
+          <View style={styles.metricDivider} />
+
+          <MetricRow
+            icon="flag"
+            label="Priorities"
+            value={`${Math.round(averages.priorityRate)}%`}
+            color={COLORS.priority}
+            subtitle="completion rate"
+          />
+        </View>
+
+        {/* Insight */}
+        <View style={styles.insightCard}>
+          <Ionicons name="bulb-outline" size={18} color={COLORS.teal} />
+          <Text style={styles.insightText}>
+            {averages.energy > averages.satisfaction
+              ? "Your energy is higher than satisfaction. Consider more activities you enjoy!"
+              : averages.sleep < 7
+              ? "Getting more sleep could boost your overall performance."
+              : "You're doing well! Keep up the consistency."}
           </Text>
         </View>
       </ScrollView>
@@ -343,7 +319,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
           onPress={handleContinue}
           activeOpacity={0.9}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>Continue to Reflection</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -370,194 +346,166 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
+  weekLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.teal,
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
   headerTitle: {
     fontSize: 26,
     fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  weekBadge: {
+  headerSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+
+  // Score Card
+  scoreCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  scoreHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  scoreLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  scoreValue: {
+    fontSize: 42,
+    fontWeight: '700',
+    letterSpacing: -1,
+  },
+  scoreMax: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginLeft: 2,
+  },
+
+  // Week dots
+  weekDots: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  dayDotContainer: {
     alignItems: 'center',
-    backgroundColor: COLORS.teal + '12',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
     gap: 6,
   },
-  weekBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.teal,
-  },
-
-  // Section
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-
-  // Summary Section
-  summarySection: {
-    marginBottom: 24,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  summaryCard: {
-    flex: 1,
-    minWidth: (SCREEN_WIDTH - 60) / 2 - 5,
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  summaryIconContainer: {
+  dayDot: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
   },
-  summaryLabel: {
+  dayDotToday: {
+    borderWidth: 2,
+    borderColor: COLORS.teal,
+  },
+  dayDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+  },
+  dayDotLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: COLORS.textSecondary,
-    marginBottom: 2,
-  },
-  summaryValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  summarySubValue: {
-    fontSize: 12,
     color: COLORS.textMuted,
-    marginTop: -2,
+  },
+  dayDotLabelToday: {
+    color: COLORS.teal,
+    fontWeight: '600',
   },
 
-  // Table Section
-  tableSection: {
-    marginBottom: 16,
-  },
-  tableCard: {
+  // Metrics Card
+  metricsCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  tableHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#FAFAFA',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  tableHeaderText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  tableDayColumn: {
-    width: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  tableMetricColumn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  tableRowToday: {
-    backgroundColor: COLORS.teal + '08',
-  },
-  tableRowLast: {
-    borderBottomWidth: 0,
-  },
-  tableDayText: {
-    fontSize: 14,
+  metricsTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: COLORS.text,
+    marginBottom: 16,
   },
-  tableDayTextToday: {
-    color: COLORS.teal,
-  },
-  tableDateText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: COLORS.textMuted,
-  },
-  tableDateTextToday: {
-    color: COLORS.tealLight,
-  },
-  cellValue: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  cellEmpty: {
-    fontSize: 14,
-    color: COLORS.textMuted,
-  },
-  priorityBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tableFooter: {
+  metricRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#FAFAFA',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    paddingVertical: 10,
   },
-  tableFooterLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
+  metricIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  tableFooterValue: {
-    fontSize: 13,
-    fontWeight: '700',
+  metricContent: {
+    flex: 1,
   },
-  tableHint: {
+  metricLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  metricSubtitle: {
     fontSize: 12,
     color: COLORS.textMuted,
-    textAlign: 'center',
-    marginTop: 10,
+    marginTop: 1,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  metricDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginLeft: 48,
+  },
+
+  // Insight Card
+  insightCard: {
+    backgroundColor: COLORS.tealBg,
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 8,
+  },
+  insightText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.teal,
+    lineHeight: 20,
   },
 
   // Button
