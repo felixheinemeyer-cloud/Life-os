@@ -451,7 +451,7 @@ const StoryBankScreen: React.FC<StoryBankScreenProps> = ({ navigation }) => {
               <Ionicons name="time-outline" size={18} color="#16A34A" />
               <TextInput
                 style={styles.whenInput}
-                placeholder="When? (e.g., Summer 2023, May 2021)"
+                placeholder="When? (e.g., 2024, Summer 2022)"
                 placeholderTextColor="#9CA3AF"
                 value={storyWhen}
                 onChangeText={setStoryWhen}

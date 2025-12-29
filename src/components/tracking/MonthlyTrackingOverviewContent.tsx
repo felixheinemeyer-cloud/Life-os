@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,857 +6,441 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Line, Circle, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop, G } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-// Rose/Pink color scheme for Monthly Check-In (consistent with monthly tracking theme)
-const THEME_COLORS = {
-  primary: '#DB2777',
-  primaryLight: '#F472B6',
-  primaryLighter: '#FBCFE8',
-  gradient: ['#FBCFE8', '#F472B6', '#DB2777'] as const,
+const COLORS = {
+  background: '#F7F5F2',
+  card: '#FFFFFF',
+  text: '#1F2937',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  green: '#059669',
+  greenBg: '#ECFDF5',
+  amber: '#D97706',
+  amberBg: '#FFFBEB',
+  red: '#DC2626',
+  redBg: '#FEF2F2',
 };
-
-// Wealth dimension colors - distinct, harmonious palette
-const WEALTH_COLORS = {
-  physical: {
-    primary: '#059669',
-    light: '#34D399',
-    gradient: ['#6EE7B7', '#34D399', '#059669'] as const,
-    icon: 'fitness' as const,
-    label: 'Physical'
-  },
-  social: {
-    primary: '#8B5CF6',
-    light: '#A78BFA',
-    gradient: ['#C4B5FD', '#A78BFA', '#8B5CF6'] as const,
-    icon: 'people' as const,
-    label: 'Social'
-  },
-  mental: {
-    primary: '#3B82F6',
-    light: '#60A5FA',
-    gradient: ['#93C5FD', '#60A5FA', '#3B82F6'] as const,
-    icon: 'bulb' as const,
-    label: 'Mental'
-  },
-  financial: {
-    primary: '#D97706',
-    light: '#FBBF24',
-    gradient: ['#FDE68A', '#FBBF24', '#D97706'] as const,
-    icon: 'wallet' as const,
-    label: 'Financial'
-  },
-  time: {
-    primary: '#EC4899',
-    light: '#F472B6',
-    gradient: ['#FBCFE8', '#F472B6', '#EC4899'] as const,
-    icon: 'time' as const,
-    label: 'Time'
-  },
-};
-
-type WealthType = 'physical' | 'social' | 'mental' | 'financial' | 'time';
 
 interface MonthlyTrackingOverviewContentProps {
   onContinue: () => void;
 }
 
-// Mock weekly data for the month (4-5 weeks of data)
-// In production, this would come from stored weekly tracking data
-const generateMockWeeklyData = () => {
-  const weeks = 4; // Typical month has 4 weeks of tracking
-  const data: Record<WealthType, number[]> = {
-    physical: [],
-    social: [],
-    mental: [],
-    financial: [],
-    time: [],
-  };
-
-  for (let i = 0; i < weeks; i++) {
-    data.physical.push(Math.round(4 + Math.random() * 6)); // 4-10
-    data.social.push(Math.round(3 + Math.random() * 7)); // 3-10
-    data.mental.push(Math.round(4 + Math.random() * 6)); // 4-10
-    data.financial.push(Math.round(3 + Math.random() * 7)); // 3-10
-    data.time.push(Math.round(4 + Math.random() * 6)); // 4-10
-  }
-
-  return data;
+type WealthArea = {
+  key: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  average: number;
+  trend: number; // percentage change from last month
+  weekScores: number[];
 };
 
-// Get current month and year for display
-const getMonthDisplay = (): { month: string; year: string; fullDate: string } => {
-  const now = new Date();
+const generateMonthlyData = () => {
+  const areas: WealthArea[] = [
+    { key: 'physical', label: 'Physical', icon: 'fitness', color: '#059669', average: 0, trend: 0, weekScores: [] },
+    { key: 'social', label: 'Social', icon: 'people', color: '#8B5CF6', average: 0, trend: 0, weekScores: [] },
+    { key: 'mental', label: 'Mental', icon: 'bulb', color: '#3B82F6', average: 0, trend: 0, weekScores: [] },
+    { key: 'financial', label: 'Financial', icon: 'wallet', color: '#D97706', average: 0, trend: 0, weekScores: [] },
+    { key: 'time', label: 'Time', icon: 'time', color: '#EC4899', average: 0, trend: 0, weekScores: [] },
+  ];
+
+  const weeks = 4;
+
+  areas.forEach(area => {
+    for (let i = 0; i < weeks; i++) {
+      area.weekScores.push(Math.round(40 + Math.random() * 55) / 10);
+    }
+    area.average = area.weekScores.reduce((a, b) => a + b, 0) / weeks;
+    area.trend = Math.round((Math.random() - 0.4) * 30); // -12% to +18%
+  });
+
+  const overall = areas.reduce((sum, a) => sum + a.average, 0) / areas.length;
+  const overallTrend = Math.round((Math.random() - 0.4) * 20);
+
+  // Sort by average to find best and worst
+  const sorted = [...areas].sort((a, b) => b.average - a.average);
+
+  return { areas, overall, overallTrend, weeks, best: sorted[0], needsFocus: sorted[sorted.length - 1] };
+};
+
+const getMonthName = (): string => {
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  const month = monthNames[now.getMonth()];
-  const year = now.getFullYear().toString().slice(-2); // Get last 2 digits
-
-  return {
-    month,
-    year,
-    fullDate: `${month} '${year}`,
-  };
+  return monthNames[new Date().getMonth()];
 };
 
-interface WealthStatCardProps {
-  wealthType: WealthType;
-  average: number;
-  trend: 'up' | 'down' | 'neutral';
-  trendValue: string;
-  isActive: boolean;
-  onPress: () => void;
-}
+// Week dots component
+const WeekDots: React.FC<{ scores: number[] }> = ({ scores }) => (
+  <View style={styles.weekDots}>
+    {scores.map((score, i) => (
+      <View
+        key={i}
+        style={[
+          styles.weekDot,
+          {
+            backgroundColor: score >= 7 ? COLORS.green : score >= 5 ? COLORS.amber : COLORS.red,
+            opacity: 0.2 + (score / 10) * 0.8,
+          }
+        ]}
+      />
+    ))}
+  </View>
+);
 
-const WealthStatCard: React.FC<WealthStatCardProps> = ({
-  wealthType,
-  average,
-  trend,
-  trendValue,
-  isActive,
-  onPress,
-}) => {
-  const colors = WEALTH_COLORS[wealthType];
-  const trendIcon = trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove';
-  const trendColor = trend === 'up' ? '#059669' : trend === 'down' ? '#DC2626' : '#6B7280';
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.wealthCard,
-        {
-          borderColor: isActive ? colors.primary : 'transparent',
-          borderWidth: isActive ? 2.5 : 2,
-        }
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <LinearGradient
-        colors={colors.gradient}
-        style={styles.wealthIconGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.wealthIconInner}>
-          <Ionicons name={colors.icon} size={16} color={colors.primary} />
-        </View>
-      </LinearGradient>
-
-      <View style={styles.wealthCardContent}>
-        <Text style={styles.wealthCardTitle}>{colors.label}</Text>
-        <View style={styles.wealthCardValueRow}>
-          <Text style={[styles.wealthCardValue, { color: colors.primary }]}>
-            {average.toFixed(1)}
-          </Text>
-          <Text style={styles.wealthCardUnit}>/10</Text>
-        </View>
-      </View>
-
-      <View style={styles.wealthCardTrend}>
-        <Ionicons name={trendIcon} size={14} color={trendColor} />
-        <Text style={[styles.wealthCardTrendText, { color: trendColor }]}>
-          {trendValue}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Mini trend chart for weekly data
-interface WeeklyTrendChartProps {
-  data: Record<WealthType, number[]>;
-  activeWealth: WealthType | null;
-}
-
-const WeeklyTrendChart: React.FC<WeeklyTrendChartProps> = ({ data, activeWealth }) => {
-  const screenWidth = Dimensions.get('window').width;
-  const chartWidth = screenWidth - 64;
-  const chartHeight = 180;
-  const padding = { top: 20, right: 16, bottom: 32, left: 36 };
-
-  const plotWidth = chartWidth - padding.left - padding.right;
-  const plotHeight = chartHeight - padding.top - padding.bottom;
-
-  const weeks = data.physical.length;
-  const weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-
-  const getX = (index: number): number => {
-    return padding.left + (index / (weeks - 1)) * plotWidth;
-  };
-
-  const getY = (value: number): number => {
-    const minValue = 1;
-    const maxValue = 10;
-    const normalizedValue = Math.max(minValue, Math.min(maxValue, value));
-    return padding.top + plotHeight - ((normalizedValue - minValue) / (maxValue - minValue)) * plotHeight;
-  };
-
-  // Generate smooth bezier path
-  const generatePath = (values: number[]): string => {
-    if (values.length === 0) return '';
-
-    const points = values.map((value, index) => ({
-      x: getX(index),
-      y: getY(value),
-    }));
-
-    let path = `M ${points[0].x} ${points[0].y}`;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const tension = 0.35;
-
-      const cp1x = current.x + (next.x - current.x) * tension;
-      const cp1y = current.y;
-      const cp2x = next.x - (next.x - current.x) * tension;
-      const cp2y = next.y;
-
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
-    }
-
-    return path;
-  };
-
-  // Get opacity based on active state
-  const getOpacity = (wealthType: WealthType) => {
-    if (activeWealth === null) return 0.85;
-    return activeWealth === wealthType ? 1 : 0.15;
-  };
-
-  const wealthTypes: WealthType[] = ['physical', 'social', 'mental', 'financial', 'time'];
+// Trend badge
+const TrendBadge: React.FC<{ trend: number; size?: 'small' | 'normal' }> = ({ trend, size = 'normal' }) => {
+  const isPositive = trend > 0;
+  const isNeutral = trend === 0;
+  const color = isPositive ? COLORS.green : isNeutral ? COLORS.textMuted : COLORS.red;
+  const bg = isPositive ? COLORS.greenBg : isNeutral ? '#F3F4F6' : COLORS.redBg;
 
   return (
-    <View style={styles.chartCard}>
-      <View style={styles.chartHeader}>
-        <Text style={styles.chartTitle}>Weekly Progress</Text>
-        <Text style={styles.chartSubtitle}>Tap a card to highlight</Text>
-      </View>
-
-      <Svg width={chartWidth} height={chartHeight}>
-        <Defs>
-          {wealthTypes.map((type) => (
-            <SvgLinearGradient key={`${type}-grad`} id={`${type}Gradient`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={WEALTH_COLORS[type].light} />
-              <Stop offset="100%" stopColor={WEALTH_COLORS[type].primary} />
-            </SvgLinearGradient>
-          ))}
-        </Defs>
-
-        {/* Horizontal grid lines */}
-        {[2.5, 5, 7.5].map((value) => (
-          <Line
-            key={value}
-            x1={padding.left}
-            y1={getY(value)}
-            x2={chartWidth - padding.right}
-            y2={getY(value)}
-            stroke="#E5E7EB"
-            strokeWidth="1"
-            strokeDasharray="4,4"
-          />
-        ))}
-
-        {/* Baseline */}
-        <Line
-          x1={padding.left}
-          y1={padding.top + plotHeight}
-          x2={chartWidth - padding.right}
-          y2={padding.top + plotHeight}
-          stroke="#D1D5DB"
-          strokeWidth="1"
+    <View style={[styles.trendBadge, { backgroundColor: bg }, size === 'small' && styles.trendBadgeSmall]}>
+      {!isNeutral && (
+        <Ionicons
+          name={isPositive ? 'arrow-up' : 'arrow-down'}
+          size={size === 'small' ? 10 : 12}
+          color={color}
         />
-
-        {/* Y-axis */}
-        <Line
-          x1={padding.left}
-          y1={padding.top}
-          x2={padding.left}
-          y2={padding.top + plotHeight}
-          stroke="#D1D5DB"
-          strokeWidth="1"
-        />
-
-        {/* Y-axis labels */}
-        <SvgText x={padding.left - 8} y={getY(10) + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">10</SvgText>
-        <SvgText x={padding.left - 8} y={getY(5) + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">5</SvgText>
-        <SvgText x={padding.left - 8} y={getY(1) + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">1</SvgText>
-
-        {/* Lines for each wealth type */}
-        {wealthTypes.map((type) => (
-          <G key={type} opacity={getOpacity(type)}>
-            {/* Glow effect */}
-            <Path
-              d={generatePath(data[type])}
-              stroke={WEALTH_COLORS[type].light}
-              strokeWidth="6"
-              fill="none"
-              opacity={0.3}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Main line */}
-            <Path
-              d={generatePath(data[type])}
-              stroke={`url(#${type}Gradient)`}
-              strokeWidth="3"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Data points */}
-            {data[type].map((value, index) => (
-              <Circle
-                key={index}
-                cx={getX(index)}
-                cy={getY(value)}
-                r={4}
-                fill="#FFFFFF"
-                stroke={WEALTH_COLORS[type].primary}
-                strokeWidth="2"
-              />
-            ))}
-          </G>
-        ))}
-
-        {/* X-axis labels */}
-        {weekLabels.slice(0, weeks).map((label, index) => (
-          <SvgText
-            key={label}
-            x={getX(index)}
-            y={chartHeight - 10}
-            fontSize="10"
-            fill="#6B7280"
-            textAnchor="middle"
-          >
-            {label}
-          </SvgText>
-        ))}
-      </Svg>
-
-      {/* Legend */}
-      <View style={styles.chartLegend}>
-        {wealthTypes.map((type) => (
-          <View key={type} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: WEALTH_COLORS[type].primary }]} />
-            <Text style={styles.legendText}>{WEALTH_COLORS[type].label}</Text>
-          </View>
-        ))}
-      </View>
+      )}
+      <Text style={[styles.trendText, { color }, size === 'small' && styles.trendTextSmall]}>
+        {isNeutral ? '—' : `${Math.abs(trend)}%`}
+      </Text>
     </View>
   );
 };
 
+// Area row component
+const AreaRow: React.FC<{ area: WealthArea; isLast: boolean }> = ({ area, isLast }) => (
+  <View style={[styles.areaRow, !isLast && styles.areaRowBorder]}>
+    <View style={[styles.areaIcon, { backgroundColor: area.color + '15' }]}>
+      <Ionicons name={area.icon} size={18} color={area.color} />
+    </View>
+    <View style={styles.areaContent}>
+      <Text style={styles.areaLabel}>{area.label}</Text>
+      <WeekDots scores={area.weekScores} />
+    </View>
+    <View style={styles.areaStats}>
+      <Text style={[styles.areaScore, { color: area.color }]}>{area.average.toFixed(1)}</Text>
+      <TrendBadge trend={area.trend} size="small" />
+    </View>
+  </View>
+);
+
 const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentProps> = ({
   onContinue,
 }) => {
-  const [activeWealth, setActiveWealth] = useState<WealthType | null>(null);
-  const [weeklyData] = useState(generateMockWeeklyData);
+  const monthName = getMonthName();
+  const data = generateMonthlyData();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const monthDisplay = getMonthDisplay();
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
-  // Calculate averages and trends for each wealth type
-  const calculateStats = (data: number[]) => {
-    if (data.length === 0) return { avg: 0, trend: 'neutral' as const, trendValue: '0%' };
-
-    const avg = data.reduce((a, b) => a + b, 0) / data.length;
-
-    if (data.length < 2) return { avg, trend: 'neutral' as const, trendValue: '0%' };
-
-    const firstHalf = data.slice(0, Math.ceil(data.length / 2));
-    const secondHalf = data.slice(Math.ceil(data.length / 2));
-    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-
-    const trendPercent = firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
-
-    return {
-      avg,
-      trend: trendPercent > 3 ? 'up' : trendPercent < -3 ? 'down' : 'neutral',
-      trendValue: `${Math.abs(trendPercent).toFixed(0)}%`,
-    };
-  };
-
-  const wealthStats: Record<WealthType, ReturnType<typeof calculateStats>> = {
-    physical: calculateStats(weeklyData.physical),
-    social: calculateStats(weeklyData.social),
-    mental: calculateStats(weeklyData.mental),
-    financial: calculateStats(weeklyData.financial),
-    time: calculateStats(weeklyData.time),
-  };
-
-  const handleWealthPress = (wealthType: WealthType) => {
+  const handleContinue = () => {
     if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setActiveWealth(activeWealth === wealthType ? null : wealthType);
+    onContinue();
   };
 
-  // Calculate overall month score
-  const overallScore = (
-    wealthStats.physical.avg +
-    wealthStats.social.avg +
-    wealthStats.mental.avg +
-    wealthStats.financial.avg +
-    wealthStats.time.avg
-  ) / 5;
+  const scoreColor = data.overall >= 7 ? COLORS.green : data.overall >= 5 ? COLORS.amber : COLORS.red;
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }
-      ]}
-    >
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Month Header Section */}
-        <View style={styles.monthHeader}>
-          <LinearGradient
-            colors={THEME_COLORS.gradient}
-            style={styles.monthBadge}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="calendar" size={16} color="#FFFFFF" />
-            <Text style={styles.monthBadgeText}>{monthDisplay.fullDate}</Text>
-          </LinearGradient>
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.monthName}>{monthName}</Text>
+            <Text style={styles.subtitle}>{data.weeks} weeks tracked</Text>
+          </View>
 
-          <Text style={styles.headerTitle}>Monthly Check-in</Text>
-          <Text style={styles.headerSubtitle}>
-            Here's how your weeks shaped this month
-          </Text>
-        </View>
-
-        {/* Overall Score Card */}
-        <View style={styles.overallCard}>
-          <LinearGradient
-            colors={THEME_COLORS.gradient}
-            style={styles.overallGradientBorder}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.overallCardInner}>
-              <View style={styles.overallScoreSection}>
-                <Text style={styles.overallLabel}>Monthly Wellness Score</Text>
-                <View style={styles.overallScoreRow}>
-                  <Text style={styles.overallScoreValue}>{overallScore.toFixed(1)}</Text>
-                  <Text style={styles.overallScoreMax}>/10</Text>
-                </View>
-              </View>
-              <View style={styles.overallIconSection}>
-                <LinearGradient
-                  colors={THEME_COLORS.gradient}
-                  style={styles.overallIconGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.overallIconInner}>
-                    <Ionicons name="sparkles" size={24} color={THEME_COLORS.primary} />
-                  </View>
-                </LinearGradient>
+          {/* Overall Score Card */}
+          <View style={styles.overallCard}>
+            <View style={styles.overallMain}>
+              <Text style={styles.overallLabel}>Monthly Score</Text>
+              <View style={styles.overallScoreRow}>
+                <Text style={[styles.overallScore, { color: scoreColor }]}>
+                  {data.overall.toFixed(1)}
+                </Text>
+                <TrendBadge trend={data.overallTrend} />
               </View>
             </View>
-          </LinearGradient>
-        </View>
-
-        {/* Wealth Stats Section */}
-        <Text style={styles.sectionTitle}>Your 5 Wealth Areas</Text>
-
-        <View style={styles.wealthGrid}>
-          {(['physical', 'social', 'mental', 'financial', 'time'] as WealthType[]).map((type) => (
-            <WealthStatCard
-              key={type}
-              wealthType={type}
-              average={wealthStats[type].avg}
-              trend={wealthStats[type].trend as 'up' | 'down' | 'neutral'}
-              trendValue={wealthStats[type].trendValue}
-              isActive={activeWealth === type}
-              onPress={() => handleWealthPress(type)}
-            />
-          ))}
-        </View>
-
-        {/* Weekly Trend Chart */}
-        <WeeklyTrendChart data={weeklyData} activeWealth={activeWealth} />
-
-        {/* Insights Section */}
-        <View style={styles.insightsCard}>
-          <View style={styles.insightsHeader}>
-            <Ionicons name="bulb-outline" size={20} color={THEME_COLORS.primary} />
-            <Text style={styles.insightsTitle}>Quick Insights</Text>
+            <View style={styles.overallHighlights}>
+              <View style={styles.highlightItem}>
+                <Text style={styles.highlightLabel}>Best</Text>
+                <View style={styles.highlightValue}>
+                  <Ionicons name={data.best.icon} size={14} color={data.best.color} />
+                  <Text style={[styles.highlightText, { color: data.best.color }]}>
+                    {data.best.label}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.highlightDivider} />
+              <View style={styles.highlightItem}>
+                <Text style={styles.highlightLabel}>Focus</Text>
+                <View style={styles.highlightValue}>
+                  <Ionicons name={data.needsFocus.icon} size={14} color={data.needsFocus.color} />
+                  <Text style={[styles.highlightText, { color: data.needsFocus.color }]}>
+                    {data.needsFocus.label}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-          <Text style={styles.insightsText}>
-            Based on your weekly check-ins, your strongest area was{' '}
-            <Text style={styles.insightsHighlight}>
-              {Object.entries(wealthStats).reduce((a, b) =>
-                wealthStats[a[0] as WealthType].avg > wealthStats[b[0] as WealthType].avg ? a : b
-              )[0]}
-            </Text>
-            {' '}with an average of{' '}
-            <Text style={styles.insightsHighlight}>
-              {Math.max(...Object.values(wealthStats).map(s => s.avg)).toFixed(1)}
-            </Text>.
-          </Text>
-        </View>
 
+          {/* Areas Breakdown */}
+          <View style={styles.areasCard}>
+            <View style={styles.areasHeader}>
+              <Text style={styles.areasTitle}>Wealth Areas</Text>
+              <Text style={styles.areasHint}>vs last month</Text>
+            </View>
+            {data.areas.map((area, index) => (
+              <AreaRow
+                key={area.key}
+                area={area}
+                isLast={index === data.areas.length - 1}
+              />
+            ))}
+          </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Continue Button */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
-          activeOpacity={0.8}
+          onPress={handleContinue}
+          activeOpacity={0.9}
         >
-          <Text style={styles.continueButtonText}>Begin Reflection</Text>
+          <Text style={styles.continueButtonText}>Continue</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: COLORS.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
 
-  // Month Header
-  monthHeader: {
+  // Header
+  header: {
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  monthBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    marginBottom: 16,
-  },
-  monthBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#6B7280',
-    textAlign: 'center',
-    letterSpacing: -0.2,
-  },
-
-  // Overall Score Card
-  overallCard: {
     marginBottom: 24,
   },
-  overallGradientBorder: {
+  monthName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textMuted,
+  },
+
+  // Overall Card
+  overallCard: {
+    backgroundColor: COLORS.card,
     borderRadius: 20,
-    padding: 2.5,
-  },
-  overallCardInner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
     padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  overallScoreSection: {
-    flex: 1,
+  overallMain: {
+    marginBottom: 20,
   },
   overallLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 4,
-    letterSpacing: 0.2,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
   },
   overallScoreRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  overallScoreValue: {
-    fontSize: 42,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -1.5,
-  },
-  overallScoreMax: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginLeft: 4,
-  },
-  overallIconSection: {},
-  overallIconGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    padding: 3,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  overallIconInner: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Section Title
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-    letterSpacing: -0.2,
-  },
-
-  // Wealth Grid
-  wealthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  wealthCard: {
-    width: '48%',
-    flexGrow: 1,
-    flexBasis: '46%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  wealthIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  wealthIconInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wealthCardContent: {
-    flex: 1,
-  },
-  wealthCardTitle: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  wealthCardValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  wealthCardValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  wealthCardUnit: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginLeft: 2,
-  },
-  wealthCardTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  wealthCardTrendText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-
-  // Chart Card
-  chartCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-  },
-  chartSubtitle: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-  },
-  chartLegend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: 12,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
-  legendItem: {
+  overallScore: {
+    fontSize: 44,
+    fontWeight: '700',
+    letterSpacing: -1,
+  },
+
+  // Highlights
+  overallHighlights: {
     flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 14,
+  },
+  highlightItem: {
+    flex: 1,
     alignItems: 'center',
     gap: 4,
   },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 11,
-    color: '#6B7280',
+  highlightLabel: {
+    fontSize: 12,
+    color: COLORS.textMuted,
     fontWeight: '500',
   },
-
-  // Insights Card
-  insightsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  insightsHeader: {
+  highlightValue: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    gap: 6,
   },
-  insightsTitle: {
-    fontSize: 14,
+  highlightText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
-    letterSpacing: -0.2,
   },
-  insightsText: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  insightsHighlight: {
-    color: THEME_COLORS.primary,
-    fontWeight: '600',
+  highlightDivider: {
+    width: 1,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 12,
   },
 
-  // Button Container
+  // Trend Badge
+  trendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 3,
+  },
+  trendBadgeSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  trendText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  trendTextSmall: {
+    fontSize: 11,
+  },
+
+  // Areas Card
+  areasCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  areasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  areasTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  areasHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
+
+  // Area Row
+  areaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  areaRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  areaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  areaContent: {
+    flex: 1,
+    gap: 6,
+  },
+  areaLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  areaStats: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  areaScore: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+
+  // Week Dots
+  weekDots: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  weekDot: {
+    width: 18,
+    height: 6,
+    borderRadius: 3,
+  },
+
+  // Button
   buttonContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: COLORS.background,
   },
   continueButton: {
-    backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    backgroundColor: COLORS.text,
+    borderRadius: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 10,
   },
   continueButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
-    letterSpacing: -0.2,
   },
 });
 

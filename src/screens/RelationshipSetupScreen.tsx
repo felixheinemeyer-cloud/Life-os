@@ -393,6 +393,8 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                     onChange={handleDateChange}
                     maximumDate={new Date()}
                     style={styles.datePicker}
+                    textColor="#1F2937"
+                    themeVariant="light"
                   />
                 </View>
 

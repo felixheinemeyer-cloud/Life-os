@@ -28,31 +28,31 @@ interface PremiumStatsChartProps {
   activeVariable?: 'nutrition' | 'energy' | 'satisfaction' | null;
 }
 
-// Opacity configuration for interactive legend
+// Opacity configuration for interactive legend - clean, minimal design
 const OPACITY_CONFIG = {
   allActive: {
     line: 1.0,
-    lineGlow: 0.25,
-    areaFill: 1.0,
+    lineGlow: 0,
+    areaFill: 0,
     point: 1.0,
-    pointGlowOuter: 0.2,
-    pointGlowMiddle: 0.25,
+    pointGlowOuter: 0,
+    pointGlowMiddle: 0,
   },
   focused: {
     line: 1.0,
-    lineGlow: 0.25,
-    areaFill: 1.0,
+    lineGlow: 0,
+    areaFill: 0.08,
     point: 1.0,
-    pointGlowOuter: 0.2,
-    pointGlowMiddle: 0.25,
+    pointGlowOuter: 0,
+    pointGlowMiddle: 0,
   },
   dimmed: {
-    line: 0.35,
-    lineGlow: 0,        // NO GLOW - completely removed
-    areaFill: 0.33,     // Reduced fill opacity
-    point: 0.35,
-    pointGlowOuter: 0,  // NO GLOW - completely removed
-    pointGlowMiddle: 0, // NO GLOW - completely removed
+    line: 0.25,
+    lineGlow: 0,
+    areaFill: 0,
+    point: 0.25,
+    pointGlowOuter: 0,
+    pointGlowMiddle: 0,
   },
 };
 
@@ -174,34 +174,34 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
 
           {/* Nutrition Line Gradients - Emerald (matches legend) */}
           <LinearGradient id="nutritionLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#059669" />
-            <Stop offset="100%" stopColor="#34D399" />
+            <Stop offset="0%" stopColor="#10B981" />
+            <Stop offset="100%" stopColor="#10B981" />
           </LinearGradient>
 
           <LinearGradient id="nutritionFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#059669" stopOpacity="0.15" />
-            <Stop offset="100%" stopColor="#059669" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#10B981" stopOpacity="0.12" />
+            <Stop offset="100%" stopColor="#10B981" stopOpacity="0" />
           </LinearGradient>
 
-          {/* Energy Line Gradients - Yellow/Amber (matches legend) */}
+          {/* Energy Line Gradients - Amber (matches legend) */}
           <LinearGradient id="energyLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor="#D97706" />
-            <Stop offset="100%" stopColor="#FBBF24" />
+            <Stop offset="0%" stopColor="#F59E0B" />
+            <Stop offset="100%" stopColor="#F59E0B" />
           </LinearGradient>
 
           <LinearGradient id="energyFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#D97706" stopOpacity="0.15" />
-            <Stop offset="100%" stopColor="#D97706" stopOpacity="0" />
+            <Stop offset="0%" stopColor="#F59E0B" stopOpacity="0.12" />
+            <Stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
           </LinearGradient>
 
           {/* Satisfaction Line Gradients - Blue (matches legend) */}
           <LinearGradient id="satisfactionLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <Stop offset="0%" stopColor="#3B82F6" />
-            <Stop offset="100%" stopColor="#60A5FA" />
+            <Stop offset="100%" stopColor="#3B82F6" />
           </LinearGradient>
 
           <LinearGradient id="satisfactionFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
+            <Stop offset="0%" stopColor="#3B82F6" stopOpacity="0.12" />
             <Stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
           </LinearGradient>
         </Defs>
@@ -209,24 +209,22 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
         {/* Background Rectangle with Unified Gradient */}
         <Rect width={chartWidth} height={chartHeight} fill="url(#bgGradient)" />
 
-        {/* Horizontal Grid Lines - Subtle Light */}
+        {/* Horizontal Grid Lines - Very Subtle */}
         <Line
           x1={padding.left}
           y1={getY(4)}
           x2={chartWidth - padding.right}
           y2={getY(4)}
-          stroke="#E5E7EB"
-          strokeWidth="0.5"
-          strokeDasharray="2,4"
+          stroke="#F3F4F6"
+          strokeWidth="1"
         />
         <Line
           x1={padding.left}
           y1={getY(7)}
           x2={chartWidth - padding.right}
           y2={getY(7)}
-          stroke="#E5E7EB"
-          strokeWidth="0.5"
-          strokeDasharray="2,4"
+          stroke="#F3F4F6"
+          strokeWidth="1"
         />
 
         {/* Y-axis labels - Dark Gray, right-aligned so "10" aligns with single digits */}
@@ -243,14 +241,14 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           10
         </SvgText>
 
-        {/* Axis Lines - Subtle but Visible */}
+        {/* Axis Lines - Very Subtle */}
         {/* Y-axis */}
         <Line
           x1={padding.left}
           y1={padding.top}
           x2={padding.left}
           y2={chartHeight - padding.bottom}
-          stroke="#D1D5DB"
+          stroke="#E5E7EB"
           strokeWidth="1"
         />
         {/* X-axis */}
@@ -259,7 +257,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           y1={chartHeight - padding.bottom}
           x2={chartWidth - padding.right}
           y2={chartHeight - padding.bottom}
-          stroke="#D1D5DB"
+          stroke="#E5E7EB"
           strokeWidth="1"
         />
 
@@ -304,7 +302,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           <Path
             d={generateSmoothPath(data.nutrition)}
             stroke="url(#nutritionLineGrad)"
-            strokeWidth="3"
+            strokeWidth="2.5"
             fill="none"
             opacity={nutritionOpacity.line}
             strokeLinecap="round"
@@ -330,7 +328,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           <Path
             d={generateSmoothPath(data.energy)}
             stroke="url(#energyLineGrad)"
-            strokeWidth="3"
+            strokeWidth="2.5"
             fill="none"
             opacity={energyOpacity.line}
             strokeLinecap="round"
@@ -356,7 +354,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
           <Path
             d={generateSmoothPath(data.satisfaction)}
             stroke="url(#satisfactionLineGrad)"
-            strokeWidth="3"
+            strokeWidth="2.5"
             fill="none"
             opacity={satisfactionOpacity.line}
             strokeLinecap="round"
@@ -391,8 +389,8 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Circle
               cx={getX(index)}
               cy={getY(value)}
-              r="3.5"
-              fill="#059669"
+              r="4"
+              fill="#10B981"
               stroke="#FFFFFF"
               strokeWidth="2"
               opacity={nutritionOpacity.point}
@@ -427,8 +425,8 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Circle
               cx={getX(index)}
               cy={getY(value)}
-              r="3.5"
-              fill="#D97706"
+              r="4"
+              fill="#F59E0B"
               stroke="#FFFFFF"
               strokeWidth="2"
               opacity={energyOpacity.point}
@@ -463,7 +461,7 @@ const PremiumStatsChart: React.FC<PremiumStatsChartProps> = ({
             <Circle
               cx={getX(index)}
               cy={getY(value)}
-              r="3.5"
+              r="4"
               fill="#3B82F6"
               stroke="#FFFFFF"
               strokeWidth="2"

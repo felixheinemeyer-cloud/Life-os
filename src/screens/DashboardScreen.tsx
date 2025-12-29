@@ -552,23 +552,16 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 onPress={() => handleLegendPress('nutrition')}
                 activeOpacity={0.7}
               >
-                <Animated.View
+                <View
                   style={[
                     styles.legendItem,
-                    {
-                      transform: [{ scale: activeVariable === 'nutrition' ? 1.05 : 1.0 }],
-                      backgroundColor: activeVariable === 'nutrition'
-                        ? '#EEF2FF'
-                        : 'transparent',
+                    activeVariable === 'nutrition' && {
+                      backgroundColor: '#F0FDF4',
+                      borderColor: '#BBF7D0',
                     },
                   ]}
                 >
-                  <LinearGradient
-                    colors={['#059669', '#34D399']}
-                    style={styles.gradientDot}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  />
+                  <View style={[styles.gradientDot, { backgroundColor: '#10B981' }]} />
                   <Text
                     style={[
                       styles.legendLabel,
@@ -577,7 +570,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   >
                     Nutrition
                   </Text>
-                </Animated.View>
+                </View>
               </TouchableOpacity>
 
               {/* Energy Button */}
@@ -586,23 +579,16 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 onPress={() => handleLegendPress('energy')}
                 activeOpacity={0.7}
               >
-                <Animated.View
+                <View
                   style={[
                     styles.legendItem,
-                    {
-                      transform: [{ scale: activeVariable === 'energy' ? 1.05 : 1.0 }],
-                      backgroundColor: activeVariable === 'energy'
-                        ? '#EEF2FF'
-                        : 'transparent',
+                    activeVariable === 'energy' && {
+                      backgroundColor: '#FFFBEB',
+                      borderColor: '#FDE68A',
                     },
                   ]}
                 >
-                  <LinearGradient
-                    colors={['#D97706', '#FBBF24']}
-                    style={styles.gradientDot}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  />
+                  <View style={[styles.gradientDot, { backgroundColor: '#F59E0B' }]} />
                   <Text
                     style={[
                       styles.legendLabel,
@@ -611,7 +597,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   >
                     Energy
                   </Text>
-                </Animated.View>
+                </View>
               </TouchableOpacity>
 
               {/* Satisfaction Button */}
@@ -620,23 +606,16 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 onPress={() => handleLegendPress('satisfaction')}
                 activeOpacity={0.7}
               >
-                <Animated.View
+                <View
                   style={[
                     styles.legendItem,
-                    {
-                      transform: [{ scale: activeVariable === 'satisfaction' ? 1.05 : 1.0 }],
-                      backgroundColor: activeVariable === 'satisfaction'
-                        ? '#EEF2FF'
-                        : 'transparent',
+                    activeVariable === 'satisfaction' && {
+                      backgroundColor: '#EFF6FF',
+                      borderColor: '#BFDBFE',
                     },
                   ]}
                 >
-                  <LinearGradient
-                    colors={['#3B82F6', '#60A5FA']}
-                    style={styles.gradientDot}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  />
+                  <View style={[styles.gradientDot, { backgroundColor: '#3B82F6' }]} />
                   <Text
                     style={[
                       styles.legendLabel,
@@ -645,7 +624,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   >
                     Satisfaction
                   </Text>
-                </Animated.View>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -657,109 +636,64 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
           </View>
         </View>
 
-        {/* Focus Section - Premium Design */}
-        <View style={styles.recapSection}>
-          <View style={styles.recapOuterCard}>
+        {/* Focus Section - Clean Design */}
+        <View style={styles.focusSection}>
+          <View style={styles.focusCard}>
             {/* Section Header */}
-            <Text style={styles.recapTitle}>Focus</Text>
+            <Text style={styles.focusSectionTitle}>Focus</Text>
 
-            {/* Week Container - Premium Gradient Card */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={toggleWeek}
-            style={styles.recapCardTouchable}
-          >
-            <Animated.View
-              style={[
-                styles.recapCardShadow,
-                {
-                  shadowOpacity: weekShadowOpacity,
-                  shadowRadius: weekShadowRadius,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: weekShadowOffsetY },
-                },
-              ]}
-            >
-              <View
-                style={[styles.recapCard, { backgroundColor: '#EEF2FF' }]}
-              >
-                {/* Status Chip */}
-                <View style={styles.recapStatusChip}>
-                  <Text style={styles.weekLabel}>Week</Text>
+            {/* Week Focus Item */}
+            <View style={styles.focusItem}>
+              <View style={styles.focusItemHeader}>
+                <View style={[styles.focusIconContainer, styles.focusIconWeek]}>
+                  <Ionicons name="calendar" size={18} color="#0D9488" />
                 </View>
-
-                {/* Body Text */}
+                <Text style={styles.focusItemTitle}>This Week</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.focusItemBody}
+                onPress={toggleWeek}
+                activeOpacity={0.7}
+              >
                 <Text
-                  style={styles.recapText}
-                  numberOfLines={isWeekExpanded ? undefined : 2}
+                  style={styles.focusItemText}
+                  numberOfLines={isWeekExpanded ? undefined : 3}
                 >
                   {FOCUS_CONTENT.week}
                 </Text>
+                <Text style={styles.focusReadMore}>
+                  {isWeekExpanded ? 'Show less' : 'Read more'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-                {/* View More Button - Minimal Text Style */}
-                <View style={styles.viewMoreButton}>
-                  <Text style={[styles.viewMoreButtonText, styles.weekButtonText]}>
-                    {isWeekExpanded ? 'Show less' : 'Read more'}
-                  </Text>
-                  <Ionicons
-                    name={isWeekExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={14}
-                    color="#6366F1"
-                    style={styles.viewMoreArrow}
-                  />
+            {/* Divider */}
+            <View style={styles.focusDivider} />
+
+            {/* Month Focus Item */}
+            <View style={styles.focusItem}>
+              <View style={styles.focusItemHeader}>
+                <View style={[styles.focusIconContainer, styles.focusIconMonth]}>
+                  <Ionicons name="calendar-outline" size={18} color="#8B5CF6" />
                 </View>
+                <Text style={styles.focusItemTitle}>This Month</Text>
               </View>
-            </Animated.View>
-          </TouchableOpacity>
-
-          {/* Month Container - Premium Gradient Card */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={toggleMonth}
-            style={styles.recapCardTouchable}
-          >
-            <Animated.View
-              style={[
-                styles.recapCardShadow,
-                {
-                  shadowOpacity: monthShadowOpacity,
-                  shadowRadius: monthShadowRadius,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: monthShadowOffsetY },
-                },
-              ]}
-            >
-              <View
-                style={[styles.recapCard, { backgroundColor: '#EEF2FF' }]}
+              <TouchableOpacity
+                style={styles.focusItemBody}
+                onPress={toggleMonth}
+                activeOpacity={0.7}
               >
-                {/* Status Chip */}
-                <View style={styles.recapStatusChip}>
-                  <Text style={styles.monthLabel}>Month</Text>
-                </View>
-
-                {/* Body Text */}
                 <Text
-                  style={styles.recapText}
-                  numberOfLines={isMonthExpanded ? undefined : 2}
+                  style={styles.focusItemText}
+                  numberOfLines={isMonthExpanded ? undefined : 3}
                 >
                   {FOCUS_CONTENT.month}
                 </Text>
-
-                {/* View More Button - Minimal Text Style */}
-                <View style={styles.viewMoreButton}>
-                  <Text style={[styles.viewMoreButtonText, styles.monthButtonText]}>
-                    {isMonthExpanded ? 'Show less' : 'Read more'}
-                  </Text>
-                  <Ionicons
-                    name={isMonthExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={14}
-                    color="#6366F1"
-                    style={styles.viewMoreArrow}
-                  />
-                </View>
-              </View>
-            </Animated.View>
-          </TouchableOpacity>
+                <Text style={styles.focusReadMore}>
+                  {isMonthExpanded ? 'Show less' : 'Read more'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -1399,11 +1333,8 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 0,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 32,
-    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
   statsHeader: {
     flexDirection: 'row',
@@ -1422,30 +1353,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
   },
   seeAllLink: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginRight: 3,
-    letterSpacing: -0.1,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginRight: 2,
   },
   statsLegend: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 0,
-    paddingHorizontal: 8,
+    marginTop: 4,
+    marginBottom: 4,
+    gap: 6,
   },
   legendButton: {
     // Touchable wrapper for legend items
@@ -1454,141 +1377,94 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    // Active state styling applied inline via Animated.View
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   gradientDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   legendLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '500',
+    color: '#6B7280',
   },
   legendLabelActive: {
-    fontWeight: '700',
-    // Color set inline per variable
+    fontWeight: '600',
+    color: '#374151',
   },
-  // Recap Section - Premium Design
-  recapSection: {
-    paddingHorizontal: 16, // Distance from screen edges to recap cards (matches Knowledge Hub)
+  // Focus Section - Clean Design
+  focusSection: {
+    paddingHorizontal: 16,
     marginTop: 24,
   },
-  recapOuterCard: {
+  focusCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    paddingTop: 24,
-    paddingHorizontal: 24,
-    paddingBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 32,
-    elevation: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
-  recapTitle: {
+  focusSectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 18, // Adjusted spacing after removing subheader
+    marginBottom: 16,
     letterSpacing: -0.3,
   },
-  recapCardTouchable: {
-    marginBottom: 14,
+  focusItem: {
+    paddingVertical: 4,
   },
-  recapCardShadow: {
-    // Shadow wrapper for animated shadow effects
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  recapCard: {
-    // Gradient card container
-    borderRadius: 18,
-    padding: 20,
-    minHeight: 100,
-    overflow: 'hidden',
-  },
-  recapStatusChip: {
+  focusItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  recapIconCircle: {
+  focusIconContainer: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  weekIconCircle: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  focusIconWeek: {
+    backgroundColor: '#F0FDFA',
   },
-  monthIconCircle: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  focusIconMonth: {
+    backgroundColor: '#F5F3FF',
   },
-  focusNumberText: {
+  focusItemTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-  },
-  weekLabel: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  monthLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.2,
+  focusItemBody: {
+    marginLeft: 42,
   },
-  recapText: {
+  focusItemText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#374151',
+    color: '#4B5563',
     lineHeight: 21,
     letterSpacing: -0.1,
   },
-  viewMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: 14,
-  },
-  viewMoreButtonText: {
+  focusReadMore: {
     fontSize: 13,
     fontWeight: '500',
-    letterSpacing: 0.2,
-  },
-  viewMoreArrow: {
-    marginLeft: 4,
-  },
-  weekButtonText: {
     color: '#6366F1',
+    marginTop: 6,
   },
-  monthButtonText: {
-    color: '#6366F1',
+  focusDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginVertical: 14,
+    marginLeft: 42,
   },
   bottomSpacer: {
     height: 40,
