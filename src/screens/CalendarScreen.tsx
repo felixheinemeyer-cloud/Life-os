@@ -186,20 +186,22 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
 
   const handleDayPress = (day: number): void => {
     if (day === 0) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const selectedDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
+    // Create date key for the selected day
+    const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
 
-    const dateString = `${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}-${day}`;
+    // Format display date
+    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateDisplay = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
 
     navigation?.navigate('DailyOverview', {
-      date: selectedDate.toISOString(),
-      dateString,
+      date: dateKey,
+      dateDisplay: dateDisplay,
     });
   };
 
