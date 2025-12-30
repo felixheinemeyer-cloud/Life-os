@@ -68,8 +68,6 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
             <Ionicons name="time-outline" size={14} color="#D97706" />
             <Text style={styles.metaText}>{insight.readTime}</Text>
           </View>
-          <Text style={styles.metaDot}>•</Text>
-          <Text style={styles.metaText}>{insight.date}</Text>
         </View>
 
         {/* Divider */}
