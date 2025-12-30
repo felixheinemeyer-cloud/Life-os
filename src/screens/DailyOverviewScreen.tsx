@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,39 +7,34 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 interface DailyOverviewScreenProps {
-  route?: {
-    params?: {
-      date: Date;
-      dateString: string;
-    };
-  };
   navigation?: {
     goBack: () => void;
   };
+  route?: {
+    params?: {
+      date: string;
+      dateDisplay: string;
+    };
+  };
 }
 
-// Mock data structure - in production this would come from storage/API
-interface MorningTrackingData {
+interface MorningData {
   completed: boolean;
   bedtime: { hour: number; minute: number };
   wakeTime: { hour: number; minute: number };
   gratitude: string;
-  intention: string;
+  priority: string;
 }
 
-interface EveningTrackingData {
+interface EveningData {
   completed: boolean;
   priorityCompleted: boolean | null;
-  priorityText: string;
   ratings: {
     nutrition: number;
     energy: number;
@@ -48,164 +43,157 @@ interface EveningTrackingData {
   journal: string;
 }
 
-// Mock data for demonstration
-const getMockMorningData = (dateKey: string): MorningTrackingData | null => {
-  // Simulate some days having data
-  const mockData: { [key: string]: MorningTrackingData } = {
+const getMockData = (dateKey: string): { morning: MorningData; evening: EveningData } => {
+  const mockDatabase: { [key: string]: { morning: MorningData; evening: EveningData } } = {
+    '2025-12-24': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 30 },
+        wakeTime: { hour: 7, minute: 15 },
+        gratitude: 'Grateful for the peaceful morning and the opportunity to spend time with family during the holidays.',
+        priority: 'Finish holiday preparations and wrap all remaining gifts',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 8, energy: 7, satisfaction: 9 },
+        journal: 'Had a wonderful day preparing for Christmas. The house is decorated beautifully and I feel ready for tomorrow.',
+      },
+    },
+    '2025-12-23': {
+      morning: {
+        completed: false,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 7, minute: 0 },
+        gratitude: '',
+        priority: '',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: null,
+        ratings: { nutrition: 6, energy: 5, satisfaction: 7 },
+        journal: 'Got all the last-minute gifts wrapped and ready. Feeling accomplished.',
+      },
+    },
+    '2025-12-22': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 22, minute: 45 },
+        wakeTime: { hour: 6, minute: 30 },
+        gratitude: 'Thankful for my health and the ability to exercise this morning.',
+        priority: 'Complete all work tasks before the holiday break',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: false,
+        ratings: { nutrition: 7, energy: 6, satisfaction: 8 },
+        journal: 'Got distracted by meetings and couldn\'t finish all the tasks. Will need to wrap up tomorrow.',
+      },
+    },
+    '2025-12-21': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 15 },
+        wakeTime: { hour: 7, minute: 30 },
+        gratitude: 'Grateful for the cozy winter weather and hot coffee.',
+        priority: 'Relax and recharge for the upcoming week',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 8, energy: 8, satisfaction: 9 },
+        journal: 'Perfect winter day. Spent quality time reading and relaxing.',
+      },
+    },
     '2025-12-20': {
-      completed: true,
-      bedtime: { hour: 23, minute: 30 },
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 6, minute: 45 },
+        gratitude: 'Thankful for supportive colleagues at work.',
+        priority: 'Complete end-of-week reports and clear inbox',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 6, satisfaction: 8 },
+        journal: 'Great end to the work week. Looking forward to the holidays.',
+      },
+    },
+    '2025-12-15': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 22, minute: 30 },
+        wakeTime: { hour: 6, minute: 0 },
+        gratitude: 'Grateful for a productive morning routine.',
+        priority: 'Stay focused on deep work and avoid distractions',
+      },
+      evening: {
+        completed: false,
+        priorityCompleted: null,
+        ratings: { nutrition: 5, energy: 5, satisfaction: 5 },
+        journal: '',
+      },
+    },
+    '2025-12-14': {
+      morning: {
+        completed: false,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 7, minute: 0 },
+        gratitude: '',
+        priority: '',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: false,
+        ratings: { nutrition: 5, energy: 4, satisfaction: 5 },
+        journal: 'Challenging day but learned a lot. Need to prioritize better tomorrow.',
+      },
+    },
+    '2025-12-1': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 7, minute: 0 },
+        gratitude: 'Grateful for the start of a new month full of possibilities.',
+        priority: 'Set clear goals for December and create action plan',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 7, satisfaction: 8 },
+        journal: 'Great start to December! Feeling organized and motivated.',
+      },
+    },
+  };
+
+  return mockDatabase[dateKey] || {
+    morning: {
+      completed: false,
+      bedtime: { hour: 23, minute: 0 },
       wakeTime: { hour: 7, minute: 0 },
-      gratitude: "I'm grateful for the peaceful morning and the opportunity to start fresh. The sunrise through my window reminded me of life's simple beauties.",
-      intention: "Today I will focus on deep work for 4 hours and make meaningful progress on the app redesign project.",
+      gratitude: '',
+      priority: '',
     },
-    '2025-12-19': {
-      completed: true,
-      bedtime: { hour: 22, minute: 45 },
-      wakeTime: { hour: 6, minute: 30 },
-      gratitude: "Grateful for my health and the energy to pursue my goals.",
-      intention: "I will practice mindful listening in all my conversations today.",
-    },
-  };
-  return mockData[dateKey] || null;
-};
-
-const getMockEveningData = (dateKey: string): EveningTrackingData | null => {
-  const mockData: { [key: string]: EveningTrackingData } = {
-    '2025-12-20': {
-      completed: true,
-      priorityCompleted: true,
-      priorityText: "Finish implementing the DailyOverviewScreen feature",
-      ratings: {
-        nutrition: 9,
-        energy: 8,
-        satisfaction: 9,
-      },
-      journal: "An amazing day of focused work. Built the daily overview screen with beautiful animations and clean design. Feeling proud of the progress made today.",
-    },
-    '2025-12-19': {
-      completed: true,
-      priorityCompleted: true,
-      priorityText: "Complete the UI mockups for the calendar feature",
-      ratings: {
-        nutrition: 8,
-        energy: 7,
-        satisfaction: 9,
-      },
-      journal: "Today was incredibly productive. I managed to finish the design work ahead of schedule and had a great workout. Feeling accomplished and ready to rest.",
-    },
-    '2025-12-18': {
-      completed: true,
-      priorityCompleted: false,
-      priorityText: "Finish reading chapter 5",
-      ratings: {
-        nutrition: 6,
-        energy: 5,
-        satisfaction: 6,
-      },
-      journal: "Challenging day with some unexpected interruptions. Learning to be more adaptable.",
+    evening: {
+      completed: false,
+      priorityCompleted: null,
+      ratings: { nutrition: 5, energy: 5, satisfaction: 5 },
+      journal: '',
     },
   };
-  return mockData[dateKey] || null;
 };
 
-const DailyOverviewScreen = ({ route, navigation }: DailyOverviewScreenProps): React.JSX.Element => {
-  const selectedDate = route?.params?.date ? new Date(route.params.date) : new Date();
-  const dateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth() + 1}-${selectedDate.getDate()}`;
+const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): React.JSX.Element => {
+  const dateKey = route?.params?.date || '';
+  const dateDisplay = route?.params?.dateDisplay || 'Today';
 
-  // Animation values
+  const { morning, evening } = getMockData(dateKey);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const overviewCardAnim = useRef(new Animated.Value(0)).current;
-  const morningCardAnim = useRef(new Animated.Value(0)).current;
-  const eveningCardAnim = useRef(new Animated.Value(0)).current;
 
-  // Get tracking data
-  const morningData = getMockMorningData(dateKey);
-  const eveningData = getMockEveningData(dateKey);
-
-  // Calculate sleep duration
-  const calculateSleepDuration = (): string => {
-    if (!morningData) return '--';
-    const bedtime = morningData.bedtime;
-    const wakeTime = morningData.wakeTime;
-
-    let sleepMinutes = (wakeTime.hour * 60 + wakeTime.minute) - (bedtime.hour * 60 + bedtime.minute);
-    if (sleepMinutes < 0) sleepMinutes += 24 * 60; // Handle overnight sleep
-
-    const hours = Math.floor(sleepMinutes / 60);
-    const minutes = sleepMinutes % 60;
-
-    return `${hours}h ${minutes}m`;
-  };
-
-  // Calculate average rating
-  const calculateAverageRating = (): string => {
-    if (!eveningData?.ratings) return '--';
-    const { nutrition, energy, satisfaction } = eveningData.ratings;
-    const avg = (nutrition + energy + satisfaction) / 3;
-    return avg.toFixed(1);
-  };
-
-  // Format time
-  const formatTime = (time: { hour: number; minute: number }): string => {
-    const hour = time.hour % 12 || 12;
-    const ampm = time.hour >= 12 ? 'PM' : 'AM';
-    const minute = time.minute.toString().padStart(2, '0');
-    return `${hour}:${minute} ${ampm}`;
-  };
-
-  // Format date for header
-  const formatDateHeader = (): string => {
-    return selectedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  // Entrance animations
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Staggered card animations
-    Animated.sequence([
-      Animated.delay(150),
-      Animated.timing(overviewCardAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.sequence([
-      Animated.delay(250),
-      Animated.timing(morningCardAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.sequence([
-      Animated.delay(350),
-      Animated.timing(eveningCardAnim, {
-        toValue: 1,
-        duration: 350,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
   }, []);
 
   const handleBack = () => {
@@ -213,325 +201,215 @@ const DailyOverviewScreen = ({ route, navigation }: DailyOverviewScreenProps): R
     navigation?.goBack();
   };
 
+  const calculateSleepDuration = (): string => {
+    const bedtimeMinutes = morning.bedtime.hour * 60 + morning.bedtime.minute;
+    const wakeTimeMinutes = morning.wakeTime.hour * 60 + morning.wakeTime.minute;
+    let durationMinutes = wakeTimeMinutes - bedtimeMinutes;
+    if (durationMinutes < 0) durationMinutes += 24 * 60;
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const formatTime = (hour: number, minute: number): string => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const displayMinute = minute.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinute} ${period}`;
+  };
+
+  const hasAnyData = morning.completed || evening.completed;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>{formatDateHeader()}</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+      {/* Fixed Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          activeOpacity={0.7}
         >
-          {/* Quick Overview Card */}
-          <Animated.View
-            style={[
-              styles.overviewCard,
-              {
-                opacity: overviewCardAnim,
-                transform: [{
-                  translateY: overviewCardAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                }],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['#F8F7F4', '#FFFFFF']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.overviewGradient}
-            >
-              <View style={styles.overviewContent}>
-                {/* Sleep Duration */}
-                <View style={styles.overviewItem}>
-                  <View style={[styles.overviewIconContainer, { backgroundColor: '#F3F4F6' }]}>
-                    <Ionicons name="bed" size={18} color="#7C3AED" />
-                  </View>
-                  <Text style={styles.overviewValue}>{calculateSleepDuration()}</Text>
-                  <Text style={styles.overviewLabel}>Sleep</Text>
-                </View>
+          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+        </TouchableOpacity>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>{dateDisplay}</Text>
+        </View>
+        <View style={styles.headerSpacer} />
+      </View>
 
-                {/* Divider */}
-                <View style={styles.overviewDivider} />
-
-                {/* Average Rating */}
-                <View style={styles.overviewItem}>
-                  <View style={[styles.overviewIconContainer, { backgroundColor: '#F3F4F6' }]}>
-                    <Ionicons name="stats-chart" size={18} color="#D97706" />
-                  </View>
-                  <Text style={styles.overviewValue}>{calculateAverageRating()}</Text>
-                  <Text style={styles.overviewLabel}>Avg Rating</Text>
-                </View>
-
-                {/* Divider */}
-                <View style={styles.overviewDivider} />
-
-                {/* Completion Status */}
-                <View style={styles.overviewItem}>
-                  <View style={styles.completionMinimal}>
-                    {/* AM */}
-                    <View style={styles.completionRow}>
-                      <Ionicons
-                        name={morningData?.completed ? "sunny" : "sunny-outline"}
-                        size={16}
-                        color={morningData?.completed ? '#F59E0B' : '#D1D5DB'}
-                      />
-                      <Text style={[
-                        styles.completionLabel,
-                        { color: morningData?.completed ? '#6B7280' : '#D1D5DB' }
-                      ]}>AM</Text>
-                      {morningData?.completed && (
-                        <View style={styles.completionDot} />
-                      )}
-                    </View>
-
-                    {/* PM */}
-                    <View style={styles.completionRow}>
-                      <Ionicons
-                        name={eveningData?.completed ? "moon" : "moon-outline"}
-                        size={16}
-                        color={eveningData?.completed ? '#8B5CF6' : '#D1D5DB'}
-                      />
-                      <Text style={[
-                        styles.completionLabel,
-                        { color: eveningData?.completed ? '#6B7280' : '#D1D5DB' }
-                      ]}>PM</Text>
-                      {eveningData?.completed && (
-                        <View style={styles.completionDot} />
-                      )}
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-
-          {/* Morning Tracking Section */}
-          <Animated.View
-            style={{
-              opacity: morningCardAnim,
-              transform: [{
-                translateY: morningCardAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              }],
-            }}
-          >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {/* Morning Check-in Section */}
+          <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIcon, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="sunny" size={16} color="#D97706" />
+              <LinearGradient
+                colors={['#FBBF24', '#F59E0B', '#D97706']}
+                style={styles.sectionIconRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sectionIconInner}>
+                  <Ionicons name="sunny" size={22} color="#D97706" />
+                </View>
+              </LinearGradient>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Morning Check-in</Text>
+                {morning.completed && (
+                  <View style={styles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.sectionTitle}>MORNING TRACKING</Text>
             </View>
 
-            <View style={styles.trackingCard}>
-              {morningData ? (
-                <>
-                  {/* Sleep Times */}
-                  <View style={styles.sleepTimesRow}>
-                    <View style={styles.sleepTimeItem}>
-                      <LinearGradient
-                        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-                        style={styles.sleepTimeIconGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                      >
-                        <View style={styles.sleepTimeIconInner}>
-                          <Ionicons name="moon" size={14} color="#7C3AED" />
-                        </View>
-                      </LinearGradient>
-                      <View>
-                        <Text style={styles.sleepTimeLabel}>Bedtime</Text>
-                        <Text style={styles.sleepTimeValue}>{formatTime(morningData.bedtime)}</Text>
-                      </View>
+            {morning.completed ? (
+              <View style={styles.sectionContent}>
+                {/* Sleep */}
+                <View style={styles.infoBlock}>
+                  <View style={styles.sleepList}>
+                    <View style={styles.sleepItem}>
+                      <Ionicons name="moon" size={16} color="#8B5CF6" />
+                      <Text style={styles.sleepItemLabel}>Bedtime</Text>
+                      <Text style={styles.sleepItemValue}>
+                        {formatTime(morning.bedtime.hour, morning.bedtime.minute)}
+                      </Text>
                     </View>
-
-                    <View style={styles.sleepArrow}>
-                      <Ionicons name="arrow-forward" size={16} color="#D1D5DB" />
+                    <View style={styles.sleepItem}>
+                      <Ionicons name="sunny" size={16} color="#F59E0B" />
+                      <Text style={styles.sleepItemLabel}>Wake up</Text>
+                      <Text style={styles.sleepItemValue}>
+                        {formatTime(morning.wakeTime.hour, morning.wakeTime.minute)}
+                      </Text>
                     </View>
-
-                    <View style={styles.sleepTimeItem}>
-                      <LinearGradient
-                        colors={['#FBBF24', '#F59E0B', '#D97706']}
-                        style={styles.sleepTimeIconGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                      >
-                        <View style={styles.sleepTimeIconInner}>
-                          <Ionicons name="sunny" size={14} color="#D97706" />
-                        </View>
-                      </LinearGradient>
-                      <View>
-                        <Text style={styles.sleepTimeLabel}>Wake Time</Text>
-                        <Text style={styles.sleepTimeValue}>{formatTime(morningData.wakeTime)}</Text>
+                    <View style={styles.sleepItem}>
+                      <Ionicons name="bed-outline" size={16} color="#8B5CF6" />
+                      <Text style={styles.sleepItemLabel}>Sleep</Text>
+                      <View style={styles.sleepBadge}>
+                        <Text style={styles.sleepBadgeText}>{calculateSleepDuration()}</Text>
                       </View>
                     </View>
                   </View>
-
-                  {/* Divider */}
-                  <View style={styles.cardDivider} />
-
-                  {/* Gratitude */}
-                  <View style={styles.textSection}>
-                    <View style={styles.textSectionHeader}>
-                      <Ionicons name="heart" size={14} color="#EC4899" />
-                      <Text style={styles.textSectionTitle}>Gratitude</Text>
-                    </View>
-                    <Text style={styles.textContent} numberOfLines={3}>
-                      {morningData.gratitude}
-                    </Text>
-                  </View>
-
-                  {/* Intention */}
-                  <View style={styles.textSection}>
-                    <View style={styles.textSectionHeader}>
-                      <Ionicons name="flag" size={14} color="#3B82F6" />
-                      <Text style={styles.textSectionTitle}>Intention</Text>
-                    </View>
-                    <Text style={styles.textContent} numberOfLines={2}>
-                      {morningData.intention}
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIconContainer}>
-                    <Ionicons name="sunny-outline" size={32} color="#D1D5DB" />
-                  </View>
-                  <Text style={styles.emptyTitle}>No Morning Tracking</Text>
-                  <Text style={styles.emptySubtitle}>Morning tracking was not completed for this day</Text>
                 </View>
-              )}
-            </View>
-          </Animated.View>
 
-          {/* Evening Tracking Section */}
-          <Animated.View
-            style={{
-              opacity: eveningCardAnim,
-              transform: [{
-                translateY: eveningCardAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              }],
-            }}
-          >
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIcon, { backgroundColor: '#EDE9FE' }]}>
-                <Ionicons name="moon" size={16} color="#7C3AED" />
+                {/* Gratitude */}
+                {morning.gratitude && (
+                  <View style={styles.infoBlock}>
+                    <View style={styles.infoHeader}>
+                      <Ionicons name="heart" size={16} color="#EC4899" />
+                      <Text style={styles.infoLabel}>Gratitude</Text>
+                    </View>
+                    <Text style={styles.infoText}>{morning.gratitude}</Text>
+                  </View>
+                )}
+
+                {/* Priority */}
+                {morning.priority && (
+                  <View style={styles.infoBlock}>
+                    <View style={styles.infoHeader}>
+                      <Ionicons name="flag" size={16} color="#3B82F6" />
+                      <Text style={styles.infoLabel}>Today's Priority</Text>
+                    </View>
+                    <Text style={styles.infoText}>{morning.priority}</Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.sectionTitle}>EVENING TRACKING</Text>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Morning reflection wasn't recorded</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Evening Check-in Section */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                style={styles.sectionIconRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sectionIconInner}>
+                  <Ionicons name="moon" size={22} color="#7C3AED" />
+                </View>
+              </LinearGradient>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Evening Check-in</Text>
+                {evening.completed && (
+                  <View style={styles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
-            <View style={styles.trackingCard}>
-              {eveningData ? (
-                <>
-                  {/* Priority Completion */}
-                  <View style={styles.prioritySection}>
-                    <View style={styles.priorityHeader}>
+            {evening.completed ? (
+              <View style={styles.sectionContent}>
+                {/* Priority Review - only show if morning had a priority */}
+                {morning.completed && morning.priority && (
+                  <View style={[
+                    styles.infoBlock,
+                    styles.priorityReview,
+                    evening.priorityCompleted ? styles.prioritySuccess : styles.priorityMissed
+                  ]}>
+                    <View style={styles.infoHeader}>
+                      <Ionicons
+                        name={evening.priorityCompleted ? "checkmark-circle" : "close-circle"}
+                        size={16}
+                        color={evening.priorityCompleted ? "#059669" : "#EF4444"}
+                      />
+                      <Text style={styles.infoLabel}>Priority Review</Text>
                       <View style={[
-                        styles.priorityStatus,
-                        { backgroundColor: eveningData.priorityCompleted ? '#D1FAE5' : '#FEE2E2' }
+                        styles.priorityBadge,
+                        { backgroundColor: evening.priorityCompleted ? '#D1FAE5' : '#FEE2E2' }
                       ]}>
-                        <Ionicons
-                          name={eveningData.priorityCompleted ? "checkmark-circle" : "close-circle"}
-                          size={16}
-                          color={eveningData.priorityCompleted ? '#059669' : '#DC2626'}
-                        />
                         <Text style={[
-                          styles.priorityStatusText,
-                          { color: eveningData.priorityCompleted ? '#059669' : '#DC2626' }
+                          styles.priorityBadgeText,
+                          { color: evening.priorityCompleted ? '#059669' : '#EF4444' }
                         ]}>
-                          {eveningData.priorityCompleted ? 'Priority Completed' : 'Priority Not Completed'}
+                          {evening.priorityCompleted ? 'Achieved' : 'Missed'}
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.priorityText} numberOfLines={2}>
-                      {eveningData.priorityText}
-                    </Text>
+                    <Text style={styles.priorityText}>{morning.priority}</Text>
                   </View>
+                )}
 
-                  {/* Divider */}
-                  <View style={styles.cardDivider} />
-
-                  {/* Ratings */}
-                  <View style={styles.ratingsSection}>
-                    <RatingBar
-                      label="Nutrition"
-                      value={eveningData.ratings.nutrition}
-                      color="#10B981"
-                      icon="nutrition"
-                    />
-                    <RatingBar
-                      label="Energy"
-                      value={eveningData.ratings.energy}
-                      color="#F59E0B"
-                      icon="flash"
-                    />
-                    <RatingBar
-                      label="Satisfaction"
-                      value={eveningData.ratings.satisfaction}
-                      color="#8B5CF6"
-                      icon="happy"
-                    />
-                  </View>
-
-                  {/* Divider */}
-                  <View style={styles.cardDivider} />
-
-                  {/* Journal */}
-                  <View style={styles.textSection}>
-                    <View style={styles.textSectionHeader}>
-                      <Ionicons name="book" size={14} color="#6366F1" />
-                      <Text style={styles.textSectionTitle}>Journal</Text>
-                    </View>
-                    <Text style={styles.textContent} numberOfLines={4}>
-                      {eveningData.journal}
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIconContainer}>
-                    <Ionicons name="moon-outline" size={32} color="#D1D5DB" />
-                  </View>
-                  <Text style={styles.emptyTitle}>No Evening Tracking</Text>
-                  <Text style={styles.emptySubtitle}>Evening tracking was not completed for this day</Text>
+                {/* Ratings */}
+                <View style={styles.ratingsBlock}>
+                  <RatingBar label="Nutrition" value={evening.ratings.nutrition} color="#10B981" icon="nutrition" />
+                  <RatingBar label="Energy" value={evening.ratings.energy} color="#F59E0B" icon="flash" />
+                  <RatingBar label="Satisfaction" value={evening.ratings.satisfaction} color="#8B5CF6" icon="happy" />
                 </View>
-              )}
-            </View>
-          </Animated.View>
 
-          {/* Bottom Spacer */}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      </Animated.View>
+                {/* Journal */}
+                {evening.journal && (
+                  <View style={styles.infoBlock}>
+                    <View style={styles.infoHeader}>
+                      <Ionicons name="book" size={16} color="#6366F1" />
+                      <Text style={styles.infoLabel}>Journal</Text>
+                    </View>
+                    <Text style={styles.infoText}>{evening.journal}</Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Evening reflection wasn't recorded</Text>
+              </View>
+            )}
+          </View>
+
+        </Animated.View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -544,25 +422,18 @@ interface RatingBarProps {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-const RatingBar = ({ label, value, color, icon }: RatingBarProps): React.JSX.Element => {
+const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon }) => {
   const percentage = (value / 10) * 100;
 
   return (
-    <View style={styles.ratingBarContainer}>
+    <View style={styles.ratingBarItem}>
       <View style={styles.ratingBarHeader}>
-        <View style={styles.ratingBarLabel}>
-          <Ionicons name={icon} size={14} color={color} />
-          <Text style={styles.ratingBarLabelText}>{label}</Text>
-        </View>
+        <Ionicons name={icon} size={16} color={color} />
+        <Text style={styles.ratingBarLabel}>{label}</Text>
         <Text style={[styles.ratingBarValue, { color }]}>{value}</Text>
       </View>
       <View style={styles.ratingBarTrack}>
-        <View
-          style={[
-            styles.ratingBarFill,
-            { width: `${percentage}%`, backgroundColor: color }
-          ]}
-        />
+        <View style={[styles.ratingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -575,14 +446,18 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F0EEE8',
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
     backgroundColor: '#F0EEE8',
   },
   backButton: {
@@ -596,9 +471,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
-  headerCenter: {
+  headerTextContainer: {
     flex: 1,
     alignItems: 'center',
   },
@@ -611,286 +486,237 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
 
-  // Overview Card
-  overviewCard: {
-    marginBottom: 24,
+  // Section Card
+  sectionCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderRadius: 20,
-    overflow: 'hidden',
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4,
   },
-  overviewGradient: {
-    padding: 20,
-  },
-  overviewContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  overviewItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  overviewIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  overviewValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.5,
-  },
-  overviewLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  overviewDivider: {
-    width: 1,
-    height: 50,
-    backgroundColor: '#E5E7EB',
-  },
-  completionMinimal: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  completionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  completionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  completionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#10B981',
-  },
-
-  // Section Headers
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+  sectionIconRing: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+  },
+  sectionIconInner: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitleContainer: {
+    flex: 1,
+    marginLeft: 14,
   },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 1.5,
-  },
-
-  // Tracking Cards
-  trackingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginVertical: 16,
-  },
-
-  // Sleep Times
-  sleepTimesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sleepTimeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  sleepTimeIconGradient: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-    padding: 2,
-  },
-  sleepTimeIconInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sleepTimeLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  sleepTimeValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
-    marginTop: 2,
+    letterSpacing: -0.3,
   },
-  sleepArrow: {
-    paddingHorizontal: 12,
-  },
-
-  // Text Sections
-  textSection: {
-    marginBottom: 12,
-  },
-  textSectionHeader: {
+  completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: 4,
+    gap: 4,
   },
-  textSectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginLeft: 6,
-    letterSpacing: 0.3,
+  completedText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#059669',
   },
-  textContent: {
+
+  // Content
+  sectionContent: {
+    gap: 16,
+  },
+  infoBlock: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 16,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  infoLabel: {
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: '600',
     color: '#374151',
-    lineHeight: 21,
-    letterSpacing: -0.1,
+    flex: 1,
+  },
+  infoText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#4B5563',
+    lineHeight: 22,
   },
 
-  // Priority Section
-  prioritySection: {
-    marginBottom: 0,
+  // Sleep
+  sleepList: {
+    gap: 12,
   },
-  priorityHeader: {
-    marginBottom: 8,
-  },
-  priorityStatus: {
+  sleepItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
   },
-  priorityStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  priorityText: {
+  sleepItemLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
-    lineHeight: 20,
+    color: '#6B7280',
+    marginLeft: 10,
+    flex: 1,
+  },
+  sleepItemValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  sleepBadge: {
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  sleepBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#7C3AED',
   },
 
-  // Ratings Section
-  ratingsSection: {
-    gap: 14,
+  // Priority Review
+  priorityReview: {
+    borderWidth: 1.5,
+    borderStyle: 'solid',
   },
-  ratingBarContainer: {
-    gap: 6,
+  prioritySuccess: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  priorityMissed: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  priorityBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priorityBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  priorityText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#374151',
+    lineHeight: 22,
+  },
+
+  // Ratings
+  ratingsBlock: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 16,
+    gap: 16,
+  },
+  ratingBarItem: {
+    gap: 8,
   },
   ratingBarHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   ratingBarLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingBarLabelText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
-    marginLeft: 6,
+    color: '#374151',
+    marginLeft: 10,
+    flex: 1,
   },
   ratingBarValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
   },
   ratingBarTrack: {
-    height: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 3,
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   ratingBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
 
   // Empty State
   emptyState: {
-    alignItems: 'center',
     paddingVertical: 24,
+    alignItems: 'center',
   },
-  emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#F9FAFB',
+  emptyText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+
+  // No Data
+  noDataCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  noDataIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  emptyTitle: {
-    fontSize: 16,
+  noDataTitle: {
+    fontSize: 17,
     fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 4,
+    color: '#4B5563',
+    marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 13,
+  noDataSubtitle: {
+    fontSize: 14,
     fontWeight: '400',
     color: '#9CA3AF',
     textAlign: 'center',
+    lineHeight: 20,
   },
 
   bottomSpacer: {
-    height: 40,
+    height: 20,
   },
 });
 
