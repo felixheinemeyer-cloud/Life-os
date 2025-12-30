@@ -299,17 +299,6 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
           />
         </View>
 
-        {/* Insight */}
-        <View style={styles.insightCard}>
-          <Ionicons name="bulb-outline" size={18} color={COLORS.teal} />
-          <Text style={styles.insightText}>
-            {averages.energy > averages.satisfaction
-              ? "Your energy is higher than satisfaction. Consider more activities you enjoy!"
-              : averages.sleep < 7
-              ? "Getting more sleep could boost your overall performance."
-              : "You're doing well! Keep up the consistency."}
-          </Text>
-        </View>
       </ScrollView>
 
       {/* Continue Button */}
@@ -344,7 +333,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   weekLabel: {
     fontSize: 14,
@@ -369,8 +358,8 @@ const styles = StyleSheet.create({
   scoreCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
@@ -378,7 +367,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   scoreLabel: {
     fontSize: 14,
@@ -391,12 +380,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   scoreValue: {
-    fontSize: 42,
+    fontSize: 32,
     fontWeight: '700',
     letterSpacing: -1,
   },
   scoreMax: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '500',
     color: COLORS.textMuted,
     marginLeft: 2,
@@ -410,12 +399,12 @@ const styles = StyleSheet.create({
   },
   dayDotContainer: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   dayDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -443,7 +432,8 @@ const styles = StyleSheet.create({
   metricsCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
+    paddingBottom: 8,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
@@ -452,12 +442,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   metricRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   metricIcon: {
     width: 36,
@@ -488,24 +478,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F3F4F6',
     marginLeft: 48,
-  },
-
-  // Insight Card
-  insightCard: {
-    backgroundColor: COLORS.tealBg,
-    borderRadius: 14,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 8,
-  },
-  insightText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.teal,
-    lineHeight: 20,
   },
 
   // Button
