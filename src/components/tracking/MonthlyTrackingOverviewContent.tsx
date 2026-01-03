@@ -17,6 +17,7 @@ const COLORS = {
   text: '#1F2937',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
+  accent: '#8B5CF6',
   green: '#059669',
   greenBg: '#ECFDF5',
   amber: '#D97706',
@@ -167,8 +168,10 @@ const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentPro
         <Animated.View style={{ opacity: fadeAnim }}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.monthName}>{monthName}</Text>
-            <Text style={styles.subtitle}>{data.weeks} weeks tracked</Text>
+            <View style={styles.monthLabelContainer}>
+              <Text style={styles.monthLabel}>{monthName}</Text>
+            </View>
+            <Text style={styles.headerTitle}>Your Month in Review</Text>
           </View>
 
           {/* Overall Score Card */}
@@ -254,44 +257,54 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  monthName: {
-    fontSize: 28,
+  monthLabelContainer: {
+    backgroundColor: COLORS.accent + '12',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  monthLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.accent,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.textMuted,
   },
 
   // Overall Card
   overallCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
   overallMain: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   overallLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: 6,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
   },
   overallScoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   overallScore: {
-    fontSize: 44,
+    fontSize: 36,
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -300,26 +313,26 @@ const styles = StyleSheet.create({
   overallHighlights: {
     flexDirection: 'row',
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 10,
+    padding: 10,
   },
   highlightItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   highlightLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textMuted,
     fontWeight: '500',
   },
   highlightValue: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   highlightText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
   highlightDivider: {

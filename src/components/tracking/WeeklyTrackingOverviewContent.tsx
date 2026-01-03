@@ -205,9 +205,6 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
     onContinue();
   };
 
-  const trackedCount = days.filter(d => d.tracked).length;
-  const completedPriorities = days.filter(d => d.priorityCompleted).length;
-
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView
@@ -217,11 +214,10 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
       >
         {/* Header */}
         <Animated.View style={[styles.header, { transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.weekLabel}>{weekRange}</Text>
+          <View style={styles.weekLabelContainer}>
+            <Text style={styles.weekLabel}>{weekRange}</Text>
+          </View>
           <Text style={styles.headerTitle}>Your Week in Review</Text>
-          <Text style={styles.headerSubtitle}>
-            {trackedCount} days tracked · {completedPriorities} priorities completed
-          </Text>
         </Animated.View>
 
         {/* Overall Score Card */}
@@ -229,12 +225,9 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
           <View style={styles.scoreHeader}>
             <View>
               <Text style={styles.scoreLabel}>Overall Score</Text>
-              <View style={styles.scoreRow}>
-                <Text style={[styles.scoreValue, { color: performance.color }]}>
-                  {averages.overall.toFixed(1)}
-                </Text>
-                <Text style={styles.scoreMax}>/10</Text>
-              </View>
+              <Text style={[styles.scoreValue, { color: performance.color }]}>
+                {averages.overall.toFixed(1)}
+              </Text>
             </View>
           </View>
 
@@ -333,25 +326,26 @@ const styles = StyleSheet.create({
   // Header
   header: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  weekLabelContainer: {
+    backgroundColor: COLORS.teal + '12',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
   },
   weekLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.teal,
-    marginBottom: 8,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
   },
 
   // Score Card
@@ -375,20 +369,10 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 4,
   },
-  scoreRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
   scoreValue: {
     fontSize: 32,
     fontWeight: '700',
     letterSpacing: -1,
-  },
-  scoreMax: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.textMuted,
-    marginLeft: 2,
   },
 
   // Week dots

@@ -9,11 +9,15 @@ import {
   Alert,
   Platform,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const MAX_PHOTO_HEIGHT = SCREEN_HEIGHT * 0.45; // Max 45% of screen height
 
 // Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
@@ -48,6 +52,12 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
     }).start();
   }, []);
 
+  const triggerHaptic = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
   const requestCameraPermission = async (): Promise<boolean> => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -75,9 +85,7 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
   };
 
   const handleTakePhoto = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    triggerHaptic();
 
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
@@ -95,9 +103,7 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
   };
 
   const handleUploadPhoto = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    triggerHaptic();
 
     const hasPermission = await requestMediaLibraryPermission();
     if (!hasPermission) return;
@@ -115,16 +121,12 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
   };
 
   const handleRemovePhoto = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    triggerHaptic();
     onDataChange({ photoUri: null });
   };
 
   const handleSkip = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    triggerHaptic();
     onContinue();
   };
 
@@ -136,90 +138,84 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        {/* Header Section */}
-        <View style={styles.headerSection}>
+        {/* Question Section - matches weekly check-in */}
+        <View style={styles.questionSection}>
           <LinearGradient
             colors={THEME_COLORS.gradient}
-            style={styles.headerIconGradient}
+            style={styles.iconGradientRing}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.headerIconInner}>
-              <Ionicons name="camera" size={24} color={THEME_COLORS.primary} />
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name="camera" size={26} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
-          <Text style={styles.headerTitle}>Progress Photo</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={styles.questionText}>Progress Photo</Text>
+          <Text style={styles.questionSubtext}>
             Capture your journey - photos reveal changes numbers can't show
           </Text>
         </View>
 
-        {/* Photo Area */}
-        {data.photoUri ? (
-          // Photo Preview
-          <View style={styles.photoPreviewContainer}>
-            <Image source={{ uri: data.photoUri }} style={styles.photoPreview} />
-            <View style={styles.photoOverlay}>
+        {/* Photo Card - matches weekly check-in card style */}
+        <View style={[styles.photoCard, data.photoUri && styles.photoCardWithImage]}>
+          {data.photoUri ? (
+            <View style={styles.photoPreviewWrapper}>
+              <Image source={{ uri: data.photoUri }} style={styles.photoPreview} resizeMode="cover" />
               <TouchableOpacity
-                style={styles.photoActionButton}
-                onPress={handleTakePhoto}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="camera" size={20} color="#FFFFFF" />
-                <Text style={styles.photoActionText}>Retake</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.photoActionButton}
+                style={styles.removeButton}
                 onPress={handleRemovePhoto}
                 activeOpacity={0.8}
               >
-                <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.photoActionText}>Remove</Text>
+                <Ionicons name="close" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
-          </View>
-        ) : (
-          // Empty State - Photo Capture Area
-          <View style={styles.photoPlaceholder}>
-            <View style={styles.photoPlaceholderInner}>
-              <View style={styles.cameraIconContainer}>
-                <Ionicons name="body-outline" size={48} color={THEME_COLORS.primaryLight} />
+          ) : (
+            <TouchableOpacity
+              style={styles.photoPlaceholder}
+              onPress={handleTakePhoto}
+              activeOpacity={0.8}
+            >
+              <View style={styles.placeholderIcon}>
+                <Ionicons name="body-outline" size={32} color={THEME_COLORS.primary} />
               </View>
-              <Text style={styles.placeholderTitle}>Add a Progress Photo</Text>
-              <Text style={styles.placeholderSubtitle}>
-                Track visual changes over time
-              </Text>
+              <Text style={styles.placeholderText}>Tap to take a photo</Text>
+              <Text style={styles.placeholderSubtext}>or use the options below</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-              {/* Action Buttons */}
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                  style={styles.primaryActionButton}
-                  onPress={handleTakePhoto}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="camera" size={22} color="#FFFFFF" />
-                  <Text style={styles.primaryActionText}>Take Photo</Text>
-                </TouchableOpacity>
+        {/* Action Buttons - matches weekly check-in style */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleTakePhoto}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="camera" size={20} color={THEME_COLORS.primary} />
+            <Text style={styles.actionButtonText}>Take Photo</Text>
+          </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.secondaryActionButton}
-                  onPress={handleUploadPhoto}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="images-outline" size={20} color={THEME_COLORS.primary} />
-                  <Text style={styles.secondaryActionText}>Upload from Library</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
+          <View style={styles.actionDivider} />
 
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleUploadPhoto}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="images-outline" size={20} color={THEME_COLORS.primary} />
+            <Text style={styles.actionButtonText}>From Library</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Optional Note */}
+        <Text style={styles.optionalNote}>
+          This step is optional
+        </Text>
       </ScrollView>
 
       {/* Bottom Actions */}
       <View style={styles.buttonContainer}>
         {data.photoUri ? (
-          // Continue Button (when photo is added)
           <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
@@ -229,7 +225,6 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
             <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         ) : (
-          // Skip Button (when no photo)
           <TouchableOpacity
             style={styles.skipButton}
             onPress={handleSkip}
@@ -253,177 +248,160 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 16,
   },
 
-  // Header Section
-  headerSection: {
+  // Question Section - matches weekly check-in exactly
+  questionSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  headerIconGradient: {
+  iconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    padding: 2,
+  },
+  iconInnerCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  headerIconInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
+  questionText: {
     fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    lineHeight: 28,
+    paddingHorizontal: 16,
   },
-  headerSubtitle: {
+  questionSubtext: {
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    letterSpacing: -0.2,
-    paddingHorizontal: 24,
-    lineHeight: 20,
+    marginTop: 4,
+    paddingHorizontal: 16,
   },
 
-  // Photo Placeholder (Empty State)
-  photoPlaceholder: {
+  // Photo Card - matches weekly check-in card style
+  photoCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 4,
-    marginBottom: 16,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  photoPlaceholderInner: {
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 20,
     borderWidth: 2,
-    borderColor: THEME_COLORS.primaryLighter,
-    borderStyle: 'dashed',
-    borderRadius: 16,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
+    borderColor: 'transparent',
   },
-  cameraIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: THEME_COLORS.primaryLighter + '40',
+  photoCardWithImage: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+
+  // Placeholder - tappable, themed
+  photoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+  },
+  placeholderIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: THEME_COLORS.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  placeholderTitle: {
-    fontSize: 17,
+  placeholderText: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 4,
-    letterSpacing: -0.3,
   },
-  placeholderSubtitle: {
+  placeholderSubtext: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
-    marginBottom: 24,
+    color: '#9CA3AF',
   },
 
-  // Action Buttons
-  actionButtonsContainer: {
-    width: '100%',
-    gap: 12,
-  },
-  primaryActionButton: {
-    backgroundColor: THEME_COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: THEME_COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryActionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  secondaryActionButton: {
-    backgroundColor: THEME_COLORS.primaryLighter + '40',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  secondaryActionText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: THEME_COLORS.primary,
-    letterSpacing: -0.2,
-  },
-
-  // Photo Preview (When photo is taken)
-  photoPreviewContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 4,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+  // Photo Preview
+  photoPreviewWrapper: {
+    position: 'relative',
+    maxHeight: MAX_PHOTO_HEIGHT,
     overflow: 'hidden',
+    borderRadius: 12,
   },
   photoPreview: {
     width: '100%',
-    aspectRatio: 3 / 4,
-    borderRadius: 16,
-  },
-  photoOverlay: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  photoActionButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    height: MAX_PHOTO_HEIGHT,
     borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Action Row - matches weekly check-in
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
   },
-  photoActionText: {
-    fontSize: 14,
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: THEME_COLORS.primary,
+  },
+  actionDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+  },
+
+  // Optional Note
+  optionalNote: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 
   // Button Container

@@ -11,12 +11,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-// Purple color scheme for Mental Wellness
+// Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
-  primary: '#8B5CF6',
-  primaryLight: '#A78BFA',
-  primaryLighter: '#DDD6FE',
-  gradient: ['#A78BFA', '#8B5CF6', '#7C3AED'] as const,
+  primary: '#0EA5E9',
+  primaryLight: '#38BDF8',
+  primaryLighter: '#BAE6FD',
+  gradient: ['#BAE6FD', '#38BDF8', '#0EA5E9'] as const,
 };
 
 // Mind drains options

@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   inputLabelRow: {
     flexDirection: 'row',
@@ -327,8 +327,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     color: '#6B7280',
-    marginTop: -8,
-    marginBottom: 16,
+    marginTop: -12,
+    marginBottom: 12,
     fontStyle: 'italic',
   },
 

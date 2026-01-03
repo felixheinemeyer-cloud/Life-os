@@ -143,7 +143,7 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       >
         <View style={styles.sliderTrackBackground} />
         <Animated.View
-          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: '#A78BFA' }]}
+          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: themeColor }]}
         />
         <Animated.View
           style={[
@@ -184,13 +184,13 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
         {/* Question Section */}
         <View style={styles.questionSection}>
           <LinearGradient
-            colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+            colors={['#BAE6FD', '#38BDF8', '#0EA5E9']}
             style={styles.iconGradientRing}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.iconInnerCircle}>
-              <Ionicons name="cloudy-night" size={24} color="#7C3AED" />
+              <Ionicons name="cloudy-night" size={24} color="#0EA5E9" />
             </View>
           </LinearGradient>
           <Text style={styles.questionText}>
@@ -208,7 +208,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
             icon="bulb"
             value={data.mentalClarity}
             onValueChange={(v) => handleRatingChange('mentalClarity', v)}
-            themeColor="#8B5CF6"
+            themeColor="#0EA5E9"
             minLabel="Foggy"
             maxLabel="Clear"
           />
@@ -218,7 +218,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
             icon="leaf"
             value={data.emotionalBalance}
             onValueChange={(v) => handleRatingChange('emotionalBalance', v)}
-            themeColor="#10B981"
+            themeColor="#0EA5E9"
             minLabel="Overwhelmed"
             maxLabel="Grounded"
           />
@@ -228,7 +228,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
             icon="rocket"
             value={data.motivation}
             onValueChange={(v) => handleRatingChange('motivation', v)}
-            themeColor="#3B82F6"
+            themeColor="#0EA5E9"
             minLabel="Drained"
             maxLabel="Driven"
           />
@@ -264,24 +264,24 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  // Question Section
+  // Header Section - matches Health Assessment
   questionSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  iconInnerCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    padding: 2,
-  },
-  iconInnerCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
