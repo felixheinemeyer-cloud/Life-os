@@ -16,12 +16,12 @@ const CARD_GAP = 10;
 const HORIZONTAL_PADDING = 16;
 const CARD_WIDTH = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - CARD_GAP) / 2;
 
-// Purple color scheme for Mental Wellness
+// Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
-  primary: '#8B5CF6',
-  primaryLight: '#A78BFA',
-  primaryLighter: '#DDD6FE',
-  gradient: ['#A78BFA', '#8B5CF6', '#7C3AED'] as const,
+  primary: '#0EA5E9',
+  primaryLight: '#38BDF8',
+  primaryLighter: '#BAE6FD',
+  gradient: ['#BAE6FD', '#38BDF8', '#0EA5E9'] as const,
 };
 
 // Mind helpers options - 2x4 grid layout

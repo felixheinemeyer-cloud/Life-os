@@ -1361,9 +1361,10 @@ const DateIdeaCard: React.FC<{
     }).start();
   };
 
-  // Get category color
+  // Get category color - use teal for custom ideas
+  const customIdeaColor = '#0D9488';
   const category = CATEGORIES.find(cat => cat.id === idea.category) || CATEGORIES[0];
-  const categoryColor = category.color;
+  const categoryColor = idea.isCustom ? customIdeaColor : category.color;
 
   return (
     <TouchableOpacity

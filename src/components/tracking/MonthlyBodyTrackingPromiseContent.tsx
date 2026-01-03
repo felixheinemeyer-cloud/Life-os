@@ -92,13 +92,6 @@ const MonthlyBodyTrackingPromiseContent: React.FC<MonthlyBodyTrackingPromiseCont
           </Text>
         </View>
 
-        {/* Encouragement Note */}
-        <View style={styles.noteContainer}>
-          <Ionicons name="sparkles" size={16} color={THEME_COLORS.primary} />
-          <Text style={styles.noteText}>
-            Small, consistent actions create lasting change
-          </Text>
-        </View>
       </ScrollView>
 
       {/* Continue Button */}
@@ -196,21 +189,6 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'right',
     marginTop: 8,
-  },
-
-  // Encouragement Note
-  noteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  noteText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    fontStyle: 'italic',
   },
 
   // Button Container

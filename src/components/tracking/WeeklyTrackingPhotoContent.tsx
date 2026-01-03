@@ -7,11 +7,15 @@ import {
   Image,
   Alert,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const MAX_PHOTO_HEIGHT = SCREEN_HEIGHT * 0.45; // Max 45% of screen height
 
 // Teal color scheme for weekly check-in
 const THEME_COLORS = {
@@ -132,7 +136,7 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Question Section */}
+        {/* Question Section - matches reflection screen */}
         <View style={styles.questionSection}>
           <LinearGradient
             colors={THEME_COLORS.gradient}
@@ -152,69 +156,64 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
           </Text>
         </View>
 
-        {/* Photo Area */}
-        <View style={styles.photoSection}>
+        {/* Photo Card - matches input card style from reflection */}
+        <View style={[styles.photoCard, photoUri && styles.photoCardWithImage]}>
           {photoUri ? (
-            <View style={styles.photoPreviewContainer}>
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            <View style={styles.photoPreviewWrapper}>
+              <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
               <TouchableOpacity
-                style={styles.removePhotoButton}
+                style={styles.removeButton}
                 onPress={handleRemovePhoto}
                 activeOpacity={0.8}
               >
-                <Ionicons name="close" size={20} color="#FFFFFF" />
+                <Ionicons name="close" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.photoPlaceholder}>
-              <View style={styles.placeholderIconContainer}>
-                <Ionicons name="image-outline" size={48} color="#D1D5DB" />
+            <TouchableOpacity
+              style={styles.photoPlaceholder}
+              onPress={handleTakeSelfie}
+              activeOpacity={0.8}
+              disabled={isLoading}
+            >
+              <View style={styles.placeholderIcon}>
+                <Ionicons name="camera-outline" size={32} color={THEME_COLORS.primary} />
               </View>
-              <Text style={styles.placeholderText}>No photo added yet</Text>
-              <Text style={styles.placeholderSubtext}>
-                Use the buttons below to add one
-              </Text>
-            </View>
+              <Text style={styles.placeholderText}>Tap to take a selfie</Text>
+              <Text style={styles.placeholderSubtext}>or use the options below</Text>
+            </TouchableOpacity>
           )}
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
+        {/* Action Buttons - simplified, consistent styling */}
+        <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleTakeSelfie}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
             disabled={isLoading}
           >
-            <LinearGradient
-              colors={THEME_COLORS.gradient}
-              style={styles.actionButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="camera" size={22} color="#FFFFFF" />
-              <Text style={styles.actionButtonText}>Take Selfie</Text>
-            </LinearGradient>
+            <Ionicons name="camera" size={20} color={THEME_COLORS.primary} />
+            <Text style={styles.actionButtonText}>Take Selfie</Text>
           </TouchableOpacity>
 
+          <View style={styles.actionDivider} />
+
           <TouchableOpacity
-            style={styles.actionButtonSecondary}
+            style={styles.actionButton}
             onPress={handleChooseFromGallery}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
             disabled={isLoading}
           >
-            <Ionicons name="images-outline" size={22} color={THEME_COLORS.primary} />
-            <Text style={styles.actionButtonSecondaryText}>From Gallery</Text>
+            <Ionicons name="images-outline" size={20} color={THEME_COLORS.primary} />
+            <Text style={styles.actionButtonText}>From Gallery</Text>
           </TouchableOpacity>
         </View>
 
         {/* Optional Note */}
-        <View style={styles.optionalNoteContainer}>
-          <Ionicons name="information-circle-outline" size={16} color="#9CA3AF" />
-          <Text style={styles.optionalNoteText}>
-            This step is optional - feel free to skip
-          </Text>
-        </View>
+        <Text style={styles.optionalNote}>
+          This step is optional
+        </Text>
       </View>
 
       {/* Continue Button */}
@@ -243,7 +242,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
 
-  // Question Section
+  // Question Section - matches reflection screen exactly
   questionSection: {
     alignItems: 'center',
     marginBottom: 24,
@@ -272,37 +271,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.5,
     lineHeight: 28,
+    paddingHorizontal: 16,
   },
   questionSubtext: {
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    letterSpacing: -0.2,
-    lineHeight: 18,
     marginTop: 4,
-    paddingHorizontal: 16,
   },
 
-  // Photo Section
-  photoSection: {
-    marginBottom: 20,
-  },
-  photoPlaceholder: {
+  // Photo Card - matches input card from reflection screen
+  photoCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-    paddingVertical: 48,
+    borderColor: 'transparent',
+  },
+  photoCardWithImage: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+
+  // Placeholder - tappable, themed
+  photoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 48,
   },
-  placeholderIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+  placeholderIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: THEME_COLORS.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -310,7 +318,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#1F2937',
     marginBottom: 4,
   },
   placeholderSubtext: {
@@ -318,94 +326,72 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#9CA3AF',
   },
-  photoPreviewContainer: {
+
+  // Photo Preview
+  photoPreviewWrapper: {
     position: 'relative',
-    borderRadius: 16,
+    maxHeight: MAX_PHOTO_HEIGHT,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    borderRadius: 12,
   },
   photoPreview: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 16,
+    maxHeight: MAX_PHOTO_HEIGHT,
+    borderRadius: 12,
   },
-  removePhotoButton: {
+  removeButton: {
     position: 'absolute',
     top: 12,
     right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // Action Buttons
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  actionButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: THEME_COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  actionButtonGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  actionButtonSecondary: {
-    flex: 1,
-    height: 52,
+  // Action Row - simple text buttons
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    borderWidth: 2,
-    borderColor: THEME_COLORS.primary,
-    gap: 8,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
   },
-  actionButtonSecondaryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: THEME_COLORS.primary,
-    letterSpacing: -0.2,
-  },
-
-  // Optional Note
-  optionalNoteContainer: {
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    gap: 8,
   },
-  optionalNoteText: {
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: THEME_COLORS.primary,
+  },
+  actionDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+  },
+
+  // Optional Note
+  optionalNote: {
     fontSize: 13,
     fontWeight: '400',
     color: '#9CA3AF',
+    textAlign: 'center',
   },
 
   // Button Container
@@ -433,7 +419,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginRight: 8,
+    marginRight: 4,
     letterSpacing: -0.2,
   },
 });
