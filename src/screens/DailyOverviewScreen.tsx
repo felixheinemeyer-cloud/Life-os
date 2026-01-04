@@ -45,6 +45,67 @@ interface EveningData {
 
 const getMockData = (dateKey: string): { morning: MorningData; evening: EveningData } => {
   const mockDatabase: { [key: string]: { morning: MorningData; evening: EveningData } } = {
+    // January 2026
+    '2026-1-1': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 45 },
+        wakeTime: { hour: 7, minute: 30 },
+        gratitude: 'Grateful for a fresh start to the new year and the chance to set new intentions.',
+        priority: 'Set goals for 2026 and create a vision board',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 8, satisfaction: 9 },
+        journal: 'Amazing first day of 2026! Spent time reflecting on last year and setting intentions for the new one. Feeling motivated and excited.',
+      },
+    },
+    '2026-1-2': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 0, minute: 30 },
+        wakeTime: { hour: 8, minute: 0 },
+        gratitude: 'Thankful for my family and the quality time we spent together during the holidays.',
+        priority: 'Organize workspace and plan the first week back',
+      },
+      evening: {
+        completed: false,
+        priorityCompleted: null,
+        ratings: { nutrition: 5, energy: 5, satisfaction: 5 },
+        journal: '',
+      },
+    },
+    '2026-1-3': {
+      morning: {
+        completed: false,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 7, minute: 0 },
+        gratitude: '',
+        priority: '',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: null,
+        ratings: { nutrition: 6, energy: 5, satisfaction: 7 },
+        journal: 'Busy day getting back into routine. Missed my morning check-in but the day turned out well overall.',
+      },
+    },
+    '2026-1-4': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 22, minute: 30 },
+        wakeTime: { hour: 6, minute: 45 },
+        gratitude: 'Grateful for the discipline to wake up early and start the day with intention.',
+        priority: 'Complete weekly planning and catch up on emails',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 8, energy: 7, satisfaction: 8 },
+        journal: 'Productive Saturday! Got all my planning done and feeling ready for next week. Good balance of work and rest today.',
+      },
+    },
     '2025-12-24': {
       morning: {
         completed: true,

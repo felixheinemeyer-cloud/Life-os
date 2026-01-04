@@ -108,6 +108,11 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
     '2025-12-22': { morning: true, evening: true },
     '2025-12-23': { morning: false, evening: true },
     '2025-12-24': { morning: true, evening: true },
+    // January 2026
+    '2026-1-1': { morning: true, evening: true },
+    '2026-1-2': { morning: true, evening: false },
+    '2026-1-3': { morning: false, evening: true },
+    '2026-1-4': { morning: true, evening: true },
   };
 
   // Helper functions

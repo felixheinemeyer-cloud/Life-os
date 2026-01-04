@@ -194,7 +194,7 @@ const ScoreRing: React.FC<{ score: number; color: string; size?: number }> = ({
 const DayIndicator: React.FC<{ day: DayData; index: number; animDelay: number }> = ({ day, index, animDelay }) => {
   const heightAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const maxBarHeight = 36;
+  const maxBarHeight = 28;
   const barHeight = day.tracked ? Math.max(8, (day.overallScore / 10) * maxBarHeight) : 0;
 
   const getColor = () => {
@@ -252,7 +252,7 @@ const DayIndicator: React.FC<{ day: DayData; index: number; animDelay: number }>
   );
 };
 
-// Enhanced Metric row with progress bar
+// Enhanced Metric row with progress bar and trend
 const MetricRow: React.FC<{
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -261,10 +261,10 @@ const MetricRow: React.FC<{
   maxValue: number;
   color: string;
   bgColor: string;
-  subtitle?: string;
+  trend: number; // percentage change vs last week
   animDelay: number;
   isLast?: boolean;
-}> = ({ icon, label, value, numericValue, maxValue, color, bgColor, subtitle, animDelay, isLast }) => {
+}> = ({ icon, label, value, numericValue, maxValue, color, bgColor, trend, animDelay, isLast }) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const progress = Math.min(numericValue / maxValue, 1);
 
@@ -282,17 +282,29 @@ const MetricRow: React.FC<{
     outputRange: ['0%', '100%'],
   });
 
+  const getTrendColor = () => {
+    if (trend > 0) return COLORS.excellent;
+    if (trend < 0) return COLORS.needsWork;
+    return COLORS.textMuted;
+  };
+
+  const getTrendLabel = () => {
+    if (trend === 0) return 'no change';
+    const symbol = trend > 0 ? '↑' : '↓';
+    return `${symbol} ${Math.abs(trend)}%`;
+  };
+
   return (
     <View style={[styles.metricRow, isLast && styles.metricRowLast]}>
       <View style={[styles.metricIcon, { backgroundColor: bgColor }]}>
-        <Ionicons name={icon} size={18} color={color} />
+        <Ionicons name={icon} size={16} color={color} />
       </View>
       <View style={styles.metricContent}>
         <View style={styles.metricHeader}>
           <Text style={styles.metricLabel}>{label}</Text>
           <Text style={[styles.metricValue, { color }]}>{value}</Text>
         </View>
-        <View style={styles.progressBarContainer}>
+        <View style={styles.progressRow}>
           <View style={styles.progressBarBg}>
             <Animated.View
               style={[
@@ -301,7 +313,9 @@ const MetricRow: React.FC<{
               ]}
             />
           </View>
-          {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
+          <Text style={[styles.metricTrend, { color: getTrendColor() }]}>
+            {getTrendLabel()}
+          </Text>
         </View>
       </View>
     </View>
@@ -317,40 +331,13 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const scoreScaleAnim = useRef(new Animated.Value(0.8)).current;
-  const cardSlideAnim = useRef(new Animated.Value(40)).current;
 
   useEffect(() => {
-    // Staggered entrance animations
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 50,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.spring(scoreScaleAnim, {
-          toValue: 1,
-          tension: 60,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardSlideAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleContinue = () => {
@@ -368,24 +355,21 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Animated.View style={[styles.header, { transform: [{ translateY: slideAnim }] }]}>
+        <View style={styles.header}>
           <View style={styles.weekLabelContainer}>
             <Ionicons name="calendar-outline" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.weekLabel}>{weekRange}</Text>
           </View>
           <Text style={styles.headerTitle}>Your Week in Review</Text>
           <Text style={styles.headerSubtitle}>Here's how you performed this week</Text>
-        </Animated.View>
+        </View>
 
-        {/* Overall Score Card - Redesigned */}
-        <Animated.View style={[
-          styles.scoreCard,
-          { transform: [{ scale: scoreScaleAnim }] }
-        ]}>
+        {/* Overall Score Card */}
+        <View style={styles.scoreCard}>
           <View style={styles.scoreContainer}>
             {/* Score Ring */}
             <View style={styles.scoreRingWrapper}>
-              <ScoreRing score={averages.overall} color={performance.color} size={110} />
+              <ScoreRing score={averages.overall} color={performance.color} size={90} />
               <View style={styles.scoreTextOverlay}>
                 <Text style={[styles.scoreValue, { color: performance.color }]}>
                   {averages.overall.toFixed(1)}
@@ -417,17 +401,14 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
               ))}
             </View>
           </View>
-        </Animated.View>
+        </View>
 
-        {/* Metrics Card - Enhanced */}
-        <Animated.View style={[
-          styles.metricsCard,
-          { transform: [{ translateY: cardSlideAnim }] }
-        ]}>
+        {/* Metrics Card */}
+        <View style={styles.metricsCard}>
           <View style={styles.metricsHeader}>
             <Text style={styles.metricsTitle}>Weekly Averages</Text>
             <View style={styles.metricsBadge}>
-              <Ionicons name="analytics" size={12} color={COLORS.primary} />
+              <Ionicons name="analytics" size={10} color={COLORS.primary} />
               <Text style={styles.metricsBadgeText}>{days.filter(d => d.tracked).length} days</Text>
             </View>
           </View>
@@ -440,19 +421,19 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
             maxValue={9}
             color={COLORS.sleep}
             bgColor={COLORS.sleepBg}
-            subtitle="avg per night"
+            trend={8}
             animDelay={600}
           />
 
           <MetricRow
-            icon="nutrition"
+            icon="pizza"
             label="Nutrition"
             value={averages.nutrition.toFixed(1)}
             numericValue={averages.nutrition}
             maxValue={10}
             color={COLORS.nutrition}
             bgColor={COLORS.nutritionBg}
-            subtitle="quality score"
+            trend={12}
             animDelay={700}
           />
 
@@ -464,19 +445,19 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
             maxValue={10}
             color={COLORS.energy}
             bgColor={COLORS.energyBg}
-            subtitle="daily average"
+            trend={-5}
             animDelay={800}
           />
 
           <MetricRow
-            icon="happy"
+            icon="sparkles"
             label="Satisfaction"
             value={averages.satisfaction.toFixed(1)}
             numericValue={averages.satisfaction}
             maxValue={10}
             color={COLORS.satisfaction}
             bgColor={COLORS.satisfactionBg}
-            subtitle="mood score"
+            trend={3}
             animDelay={900}
           />
 
@@ -488,11 +469,11 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
             maxValue={100}
             color={COLORS.priority}
             bgColor={COLORS.priorityBg}
-            subtitle="completion rate"
+            trend={15}
             animDelay={1000}
             isLast
           />
-        </Animated.View>
+        </View>
 
       </ScrollView>
 
@@ -528,7 +509,7 @@ const styles = StyleSheet.create({
   // Header - Refined
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   weekLabelContainer: {
     flexDirection: 'row',
@@ -561,9 +542,9 @@ const styles = StyleSheet.create({
   // Score Card - Completely Redesigned
   scoreCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -573,13 +554,13 @@ const styles = StyleSheet.create({
   scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   scoreRingWrapper: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: 16,
   },
   scoreTextOverlay: {
     position: 'absolute',
@@ -587,7 +568,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -629,14 +610,14 @@ const styles = StyleSheet.create({
   dailyBreakdown: {
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingTop: 16,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingBottom: 2,
   },
   dailyBreakdownTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.textMuted,
-    marginBottom: 14,
+    marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -651,10 +632,10 @@ const styles = StyleSheet.create({
     width: 32,
   },
   dayIndicatorLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: COLORS.textMuted,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   dayIndicatorLabelToday: {
     color: COLORS.primary,
@@ -662,19 +643,19 @@ const styles = StyleSheet.create({
   },
   dayIndicatorTrack: {
     width: 4,
-    height: 36,
+    height: 28,
     backgroundColor: COLORS.border,
     borderRadius: 2,
     justifyContent: 'flex-end',
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   dayIndicatorBar: {
     width: '100%',
     borderRadius: 2,
   },
   dayIndicatorScore: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -685,9 +666,9 @@ const styles = StyleSheet.create({
   // Metrics Card - Enhanced
   metricsCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
@@ -698,10 +679,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   metricsTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.text,
   },
@@ -709,73 +690,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primaryBg,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 3,
   },
   metricsBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.primary,
   },
   metricRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border + '60',
   },
   metricRowLast: {
     borderBottomWidth: 0,
-    paddingBottom: 4,
+    paddingBottom: 2,
   },
   metricIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   metricContent: {
     flex: 1,
+    height: 34,
+    justifyContent: 'space-between',
   },
   metricHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
   metricLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
   },
   metricValue: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
   },
-  progressBarContainer: {
+  progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   progressBarBg: {
     flex: 1,
-    height: 6,
+    height: 5,
     backgroundColor: COLORS.border,
-    borderRadius: 3,
+    borderRadius: 2.5,
     overflow: 'hidden',
+  },
+  metricTrend: {
+    fontSize: 10,
+    fontWeight: '500',
+    minWidth: 45,
+    textAlign: 'right',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
-  },
-  metricSubtitle: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontWeight: '500',
+    borderRadius: 2.5,
   },
 
   // Button - Matching other screens

@@ -125,11 +125,6 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
     onDataChange({ photoUri: null });
   };
 
-  const handleSkip = () => {
-    triggerHaptic();
-    onContinue();
-  };
-
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView
@@ -213,26 +208,16 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
         </Text>
       </ScrollView>
 
-      {/* Bottom Actions */}
+      {/* Continue Button */}
       <View style={styles.buttonContainer}>
-        {data.photoUri ? (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={onContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={handleSkip}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.skipButtonText}>Skip for now</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={onContinue}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -430,20 +415,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginRight: 4,
-    letterSpacing: -0.2,
-  },
-  skipButton: {
-    backgroundColor: 'transparent',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skipButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
     letterSpacing: -0.2,
   },
 });
