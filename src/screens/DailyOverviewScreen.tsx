@@ -229,7 +229,7 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={22} color="#1F2937" />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>{dateDisplay}</Text>
@@ -270,37 +270,58 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
             {morning.completed ? (
               <View style={styles.sectionContent}>
                 {/* Sleep */}
-                <View style={styles.infoBlock}>
-                  <View style={styles.sleepList}>
-                    <View style={styles.sleepItem}>
-                      <Ionicons name="moon" size={16} color="#8B5CF6" />
-                      <Text style={styles.sleepItemLabel}>Bedtime</Text>
-                      <Text style={styles.sleepItemValue}>
+                <View style={[styles.infoBlock, styles.sleepBlock]}>
+                  <View style={styles.sleepRow}>
+                    <View style={styles.sleepTimeColumn}>
+                      <LinearGradient
+                        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                        style={styles.sleepIconRing}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.sleepIconInner}>
+                          <Ionicons name="moon" size={16} color="#7C3AED" />
+                        </View>
+                      </LinearGradient>
+                      <Text style={styles.sleepTimeValue}>
                         {formatTime(morning.bedtime.hour, morning.bedtime.minute)}
                       </Text>
+                      <Text style={styles.sleepTimeLabel}>Bedtime</Text>
                     </View>
-                    <View style={styles.sleepItem}>
-                      <Ionicons name="sunny" size={16} color="#F59E0B" />
-                      <Text style={styles.sleepItemLabel}>Wake up</Text>
-                      <Text style={styles.sleepItemValue}>
+
+                    <View style={styles.sleepDurationCenter}>
+                      <View style={styles.sleepConnector} />
+                      <View style={styles.sleepDurationBadge}>
+                        <Ionicons name="time-outline" size={16} color="#6B7280" />
+                        <Text style={styles.sleepDurationText}>{calculateSleepDuration()}</Text>
+                      </View>
+                      <View style={styles.sleepConnector} />
+                    </View>
+
+                    <View style={styles.sleepTimeColumn}>
+                      <LinearGradient
+                        colors={['#FBBF24', '#F59E0B', '#D97706']}
+                        style={styles.sleepIconRing}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.sleepIconInner}>
+                          <Ionicons name="sunny" size={16} color="#D97706" />
+                        </View>
+                      </LinearGradient>
+                      <Text style={styles.sleepTimeValue}>
                         {formatTime(morning.wakeTime.hour, morning.wakeTime.minute)}
                       </Text>
-                    </View>
-                    <View style={styles.sleepItem}>
-                      <Ionicons name="bed-outline" size={16} color="#8B5CF6" />
-                      <Text style={styles.sleepItemLabel}>Sleep</Text>
-                      <View style={styles.sleepBadge}>
-                        <Text style={styles.sleepBadgeText}>{calculateSleepDuration()}</Text>
-                      </View>
+                      <Text style={styles.sleepTimeLabel}>Wake up</Text>
                     </View>
                   </View>
                 </View>
 
                 {/* Gratitude */}
                 {morning.gratitude && (
-                  <View style={styles.infoBlock}>
+                  <View style={[styles.infoBlock, styles.gratitudeBlock]}>
                     <View style={styles.infoHeader}>
-                      <Ionicons name="heart" size={16} color="#EC4899" />
+                      <Ionicons name="heart" size={16} color="#F59E0B" />
                       <Text style={styles.infoLabel}>Gratitude</Text>
                     </View>
                     <Text style={styles.infoText}>{morning.gratitude}</Text>
@@ -309,9 +330,9 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
 
                 {/* Priority */}
                 {morning.priority && (
-                  <View style={styles.infoBlock}>
+                  <View style={[styles.infoBlock, styles.priorityBlock]}>
                     <View style={styles.infoHeader}>
-                      <Ionicons name="flag" size={16} color="#3B82F6" />
+                      <Ionicons name="flag" size={16} color="#D97706" />
                       <Text style={styles.infoLabel}>Today's Priority</Text>
                     </View>
                     <Text style={styles.infoText}>{morning.priority}</Text>
@@ -353,32 +374,35 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
               <View style={styles.sectionContent}>
                 {/* Priority Review - only show if morning had a priority */}
                 {morning.completed && morning.priority && (
-                  <View style={[
-                    styles.infoBlock,
-                    styles.priorityReview,
-                    evening.priorityCompleted ? styles.prioritySuccess : styles.priorityMissed
-                  ]}>
-                    <View style={styles.infoHeader}>
-                      <Ionicons
-                        name={evening.priorityCompleted ? "checkmark-circle" : "close-circle"}
-                        size={16}
-                        color={evening.priorityCompleted ? "#059669" : "#EF4444"}
-                      />
-                      <Text style={styles.infoLabel}>Priority Review</Text>
-                      <View style={[
-                        styles.priorityBadge,
-                        { backgroundColor: evening.priorityCompleted ? '#D1FAE5' : '#FEE2E2' }
-                      ]}>
-                        <Text style={[
-                          styles.priorityBadgeText,
-                          { color: evening.priorityCompleted ? '#059669' : '#EF4444' }
+                  <>
+                    <View style={[
+                      styles.infoBlock,
+                      styles.priorityReview,
+                      evening.priorityCompleted ? styles.prioritySuccess : styles.priorityMissed
+                    ]}>
+                      <View style={styles.infoHeader}>
+                        <Ionicons
+                          name={evening.priorityCompleted ? "checkmark-circle" : "close-circle"}
+                          size={16}
+                          color={evening.priorityCompleted ? "#059669" : "#EF4444"}
+                        />
+                        <Text style={styles.infoLabel}>Priority Review</Text>
+                        <View style={[
+                          styles.priorityBadge,
+                          { backgroundColor: evening.priorityCompleted ? '#D1FAE5' : '#FEE2E2' }
                         ]}>
-                          {evening.priorityCompleted ? 'Achieved' : 'Missed'}
-                        </Text>
+                          <Text style={[
+                            styles.priorityBadgeText,
+                            { color: evening.priorityCompleted ? '#059669' : '#EF4444' }
+                          ]}>
+                            {evening.priorityCompleted ? 'Achieved' : 'Missed'}
+                          </Text>
+                        </View>
                       </View>
+                      <Text style={styles.priorityText}>{morning.priority}</Text>
                     </View>
-                    <Text style={styles.priorityText}>{morning.priority}</Text>
-                  </View>
+                    <View style={styles.priorityReviewDivider} />
+                  </>
                 )}
 
                 {/* Ratings */}
@@ -390,9 +414,9 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
 
                 {/* Journal */}
                 {evening.journal && (
-                  <View style={styles.infoBlock}>
+                  <View style={[styles.infoBlock, styles.journalBlock]}>
                     <View style={styles.infoHeader}>
-                      <Ionicons name="book" size={16} color="#6366F1" />
+                      <Ionicons name="book" size={16} color="#7C3AED" />
                       <Text style={styles.infoLabel}>Journal</Text>
                     </View>
                     <Text style={styles.infoText}>{evening.journal}</Text>
@@ -425,6 +449,14 @@ interface RatingBarProps {
 const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon }) => {
   const percentage = (value / 10) * 100;
 
+  // Get a lighter tint of the color for the track background
+  const getTrackColor = (c: string) => {
+    if (c === '#10B981') return '#D1FAE5'; // green tint
+    if (c === '#F59E0B') return '#FEF3C7'; // amber tint
+    if (c === '#8B5CF6') return '#EDE9FE'; // purple tint
+    return '#E5E7EB';
+  };
+
   return (
     <View style={styles.ratingBarItem}>
       <View style={styles.ratingBarHeader}>
@@ -432,7 +464,7 @@ const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon }) => {
         <Text style={styles.ratingBarLabel}>{label}</Text>
         <Text style={[styles.ratingBarValue, { color }]}>{value}</Text>
       </View>
-      <View style={styles.ratingBarTrack}>
+      <View style={[styles.ratingBarTrack, { backgroundColor: getTrackColor(color) }]}>
         <View style={[styles.ratingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
       </View>
     </View>
@@ -455,15 +487,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 14,
     backgroundColor: '#F0EEE8',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -478,203 +510,274 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   headerSpacer: {
-    width: 40,
+    width: 38,
   },
 
   // Section Card
   sectionCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 20,
-    padding: 20,
+    marginBottom: 14,
+    borderRadius: 18,
+    padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
     shadowRadius: 16,
-    elevation: 4,
+    elevation: 5,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   sectionIconRing: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    padding: 3,
+    padding: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sectionIconInner: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 43,
+    height: 43,
+    borderRadius: 21.5,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sectionTitleContainer: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 3,
     gap: 4,
   },
   completedText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#059669',
   },
 
   // Content
   sectionContent: {
-    gap: 16,
+    gap: 0,
   },
   infoBlock: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  sleepBlock: {
+    paddingTop: 4,
+  },
+  gratitudeBlock: {
+  },
+  priorityBlock: {
+    borderBottomWidth: 0,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    marginTop: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#F59E0B',
+  },
+  journalBlock: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
   },
   infoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     gap: 8,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: '#1F2937',
     flex: 1,
+    letterSpacing: -0.1,
   },
   infoText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
-    color: '#4B5563',
-    lineHeight: 22,
+    color: '#374151',
+    lineHeight: 20,
   },
 
   // Sleep
-  sleepList: {
-    gap: 12,
-  },
-  sleepItem: {
+  sleepRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  sleepItemLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginLeft: 10,
+  sleepTimeColumn: {
+    alignItems: 'center',
     flex: 1,
   },
-  sleepItemValue: {
+  sleepIconRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  sleepIconInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sleepTimeValue: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  sleepBadge: {
-    backgroundColor: '#EDE9FE',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  sleepBadgeText: {
-    fontSize: 13,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  sleepTimeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  sleepDurationCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1.2,
+  },
+  sleepConnector: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 1,
+  },
+  sleepDurationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sleepDurationText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
   },
 
   // Priority Review
   priorityReview: {
-    borderWidth: 1.5,
-    borderStyle: 'solid',
+    borderBottomWidth: 0,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderLeftWidth: 3,
+    marginBottom: 16,
+  },
+  priorityReviewDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 4,
   },
   prioritySuccess: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    borderLeftColor: '#10B981',
   },
   priorityMissed: {
     backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    borderLeftColor: '#EF4444',
   },
   priorityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   priorityBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   priorityText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
     color: '#374151',
-    lineHeight: 22,
+    lineHeight: 20,
   },
 
   // Ratings
   ratingsBlock: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    padding: 16,
-    gap: 16,
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    gap: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   ratingBarItem: {
-    gap: 8,
+    gap: 6,
   },
   ratingBarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   ratingBarLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#374151',
-    marginLeft: 10,
+    marginLeft: 8,
     flex: 1,
   },
   ratingBarValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
   },
   ratingBarTrack: {
-    height: 8,
+    height: 6,
     backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   ratingBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
   },
 
   // Empty State
   emptyState: {
-    paddingVertical: 24,
+    paddingVertical: 20,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#9CA3AF',
   },
