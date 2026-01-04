@@ -10,20 +10,36 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
+// Consistent color palette matching weekly screen
 const COLORS = {
   background: '#F7F5F2',
   card: '#FFFFFF',
-  text: '#1F2937',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  accent: '#8B5CF6',
-  green: '#059669',
-  greenBg: '#ECFDF5',
-  amber: '#D97706',
-  amberBg: '#FFFBEB',
-  red: '#DC2626',
-  redBg: '#FEF2F2',
+  text: '#1A1D21',
+  textSecondary: '#5F6368',
+  textMuted: '#9AA0A6',
+  border: '#E8EAED',
+  // Primary accent
+  primary: '#0D9488',
+  primaryLight: '#14B8A6',
+  primaryBg: '#E6F7F5',
+  // Score colors
+  excellent: '#059669',
+  good: '#10B981',
+  okay: '#F59E0B',
+  needsWork: '#EF4444',
+  // Wealth area colors
+  physical: '#059669',
+  physicalBg: '#ECFDF5',
+  social: '#8B5CF6',
+  socialBg: '#F3E8FF',
+  mental: '#3B82F6',
+  mentalBg: '#EFF6FF',
+  financial: '#D97706',
+  financialBg: '#FEF3C7',
+  time: '#EC4899',
+  timeBg: '#FCE7F3',
 };
 
 interface MonthlyTrackingOverviewContentProps {
@@ -35,18 +51,19 @@ type WealthArea = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
+  bgColor: string;
   average: number;
-  trend: number; // percentage change from last month
+  trend: number;
   weekScores: number[];
 };
 
 const generateMonthlyData = () => {
   const areas: WealthArea[] = [
-    { key: 'physical', label: 'Physical', icon: 'fitness', color: '#059669', average: 0, trend: 0, weekScores: [] },
-    { key: 'social', label: 'Social', icon: 'people', color: '#8B5CF6', average: 0, trend: 0, weekScores: [] },
-    { key: 'mental', label: 'Mental', icon: 'bulb', color: '#3B82F6', average: 0, trend: 0, weekScores: [] },
-    { key: 'financial', label: 'Financial', icon: 'wallet', color: '#D97706', average: 0, trend: 0, weekScores: [] },
-    { key: 'time', label: 'Time', icon: 'time', color: '#EC4899', average: 0, trend: 0, weekScores: [] },
+    { key: 'physical', label: 'Physical', icon: 'fitness', color: COLORS.physical, bgColor: COLORS.physicalBg, average: 0, trend: 0, weekScores: [] },
+    { key: 'social', label: 'Social', icon: 'people', color: COLORS.social, bgColor: COLORS.socialBg, average: 0, trend: 0, weekScores: [] },
+    { key: 'mental', label: 'Mental', icon: 'bulb', color: COLORS.mental, bgColor: COLORS.mentalBg, average: 0, trend: 0, weekScores: [] },
+    { key: 'financial', label: 'Financial', icon: 'wallet', color: COLORS.financial, bgColor: COLORS.financialBg, average: 0, trend: 0, weekScores: [] },
+    { key: 'time', label: 'Time', icon: 'time', color: COLORS.time, bgColor: COLORS.timeBg, average: 0, trend: 0, weekScores: [] },
   ];
 
   const weeks = 4;
@@ -56,13 +73,12 @@ const generateMonthlyData = () => {
       area.weekScores.push(Math.round(40 + Math.random() * 55) / 10);
     }
     area.average = area.weekScores.reduce((a, b) => a + b, 0) / weeks;
-    area.trend = Math.round((Math.random() - 0.4) * 30); // -12% to +18%
+    area.trend = Math.round((Math.random() - 0.4) * 30);
   });
 
   const overall = areas.reduce((sum, a) => sum + a.average, 0) / areas.length;
   const overallTrend = Math.round((Math.random() - 0.4) * 20);
 
-  // Sort by average to find best and worst
   const sorted = [...areas].sort((a, b) => b.average - a.average);
 
   return { areas, overall, overallTrend, weeks, best: sorted[0], needsFocus: sorted[sorted.length - 1] };
@@ -76,75 +92,136 @@ const getMonthName = (): string => {
   return monthNames[new Date().getMonth()];
 };
 
-// Week dots component
-const WeekDots: React.FC<{ scores: number[] }> = ({ scores }) => (
-  <View style={styles.weekDots}>
-    {scores.map((score, i) => (
-      <View
-        key={i}
-        style={[
-          styles.weekDot,
-          {
-            backgroundColor: score >= 7 ? COLORS.green : score >= 5 ? COLORS.amber : COLORS.red,
-            opacity: 0.2 + (score / 10) * 0.8,
-          }
-        ]}
-      />
-    ))}
-  </View>
-);
+// Get performance level with refined labels (matching weekly)
+const getPerformanceLevel = (score: number): { label: string; color: string } => {
+  if (score >= 8) return { label: 'Excellent', color: COLORS.excellent };
+  if (score >= 6.5) return { label: 'Good', color: COLORS.good };
+  if (score >= 5) return { label: 'Okay', color: COLORS.okay };
+  return { label: 'Needs attention', color: COLORS.needsWork };
+};
 
-// Trend badge
-const TrendBadge: React.FC<{ trend: number; size?: 'small' | 'normal' }> = ({ trend, size = 'normal' }) => {
-  const isPositive = trend > 0;
-  const isNeutral = trend === 0;
-  const color = isPositive ? COLORS.green : isNeutral ? COLORS.textMuted : COLORS.red;
-  const bg = isPositive ? COLORS.greenBg : isNeutral ? '#F3F4F6' : COLORS.redBg;
+// Circular Progress Ring Component (matching weekly)
+const ScoreRing: React.FC<{ score: number; color: string; size?: number }> = ({
+  score,
+  color,
+  size = 90
+}) => {
+  const strokeWidth = 7;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const progress = (score / 10) * circumference;
 
   return (
-    <View style={[styles.trendBadge, { backgroundColor: bg }, size === 'small' && styles.trendBadgeSmall]}>
-      {!isNeutral && (
-        <Ionicons
-          name={isPositive ? 'arrow-up' : 'arrow-down'}
-          size={size === 'small' ? 10 : 12}
-          color={color}
+    <View style={{ width: size, height: size, position: 'relative' }}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Defs>
+          <LinearGradient id="monthlyScoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0.6" />
+          </LinearGradient>
+        </Defs>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={COLORS.border}
+          strokeWidth={strokeWidth}
+          fill="transparent"
         />
-      )}
-      <Text style={[styles.trendText, { color }, size === 'small' && styles.trendTextSmall]}>
-        {isNeutral ? '—' : `${Math.abs(trend)}%`}
-      </Text>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#monthlyScoreGradient)"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${progress} ${circumference}`}
+          strokeLinecap="round"
+        />
+      </Svg>
     </View>
   );
 };
 
-// Area row component
-const AreaRow: React.FC<{ area: WealthArea; isLast: boolean }> = ({ area, isLast }) => (
-  <View style={[styles.areaRow, !isLast && styles.areaRowBorder]}>
-    <View style={[styles.areaIcon, { backgroundColor: area.color + '15' }]}>
-      <Ionicons name={area.icon} size={18} color={area.color} />
+// Area row component with progress bar (matching weekly metric style)
+const AreaRow: React.FC<{
+  area: WealthArea;
+  isLast: boolean;
+  animDelay: number;
+}> = ({ area, isLast, animDelay }) => {
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progress = Math.min(area.average / 10, 1);
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 800,
+      delay: animDelay,
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  const getTrendColor = () => {
+    if (area.trend > 0) return COLORS.excellent;
+    if (area.trend < 0) return COLORS.needsWork;
+    return COLORS.textMuted;
+  };
+
+  const getTrendLabel = () => {
+    if (area.trend === 0) return 'no change';
+    const symbol = area.trend > 0 ? '↑' : '↓';
+    return `${symbol} ${Math.abs(area.trend)}%`;
+  };
+
+  return (
+    <View style={[styles.areaRow, isLast && styles.areaRowLast]}>
+      <View style={[styles.areaIcon, { backgroundColor: area.bgColor }]}>
+        <Ionicons name={area.icon} size={16} color={area.color} />
+      </View>
+      <View style={styles.areaContent}>
+        <View style={styles.areaHeader}>
+          <Text style={styles.areaLabel}>{area.label}</Text>
+          <Text style={[styles.areaScore, { color: area.color }]}>
+            {area.average.toFixed(1)}
+          </Text>
+        </View>
+        <View style={styles.progressRow}>
+          <View style={styles.progressBarBg}>
+            <Animated.View
+              style={[
+                styles.progressBarFill,
+                { backgroundColor: area.color, width: progressWidth }
+              ]}
+            />
+          </View>
+          <Text style={[styles.trendText, { color: getTrendColor() }]}>
+            {getTrendLabel()}
+          </Text>
+        </View>
+      </View>
     </View>
-    <View style={styles.areaContent}>
-      <Text style={styles.areaLabel}>{area.label}</Text>
-      <WeekDots scores={area.weekScores} />
-    </View>
-    <View style={styles.areaStats}>
-      <Text style={[styles.areaScore, { color: area.color }]}>{area.average.toFixed(1)}</Text>
-      <TrendBadge trend={area.trend} size="small" />
-    </View>
-  </View>
-);
+  );
+};
 
 const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentProps> = ({
   onContinue,
 }) => {
   const monthName = getMonthName();
   const data = generateMonthlyData();
+  const performance = getPerformanceLevel(data.overall);
+
+  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 500,
+      duration: 300,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -156,52 +233,87 @@ const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentPro
     onContinue();
   };
 
-  const scoreColor = data.overall >= 7 ? COLORS.green : data.overall >= 5 ? COLORS.amber : COLORS.red;
-
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={{ opacity: fadeAnim }}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.monthLabelContainer}>
-              <Text style={styles.monthLabel}>{monthName}</Text>
-            </View>
-            <Text style={styles.headerTitle}>Your Month in Review</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.monthLabelContainer}>
+            <Ionicons name="calendar" size={12} color="#DB2777" style={{ marginRight: 5 }} />
+            <Text style={styles.monthLabel}>{monthName}</Text>
           </View>
+          <Text style={styles.headerTitle}>Your Month in Review</Text>
+          <Text style={styles.headerSubtitle}>Here's how you performed this month</Text>
+        </View>
 
-          {/* Overall Score Card */}
-          <View style={styles.overallCard}>
-            <View style={styles.overallMain}>
-              <Text style={styles.overallLabel}>Monthly Score</Text>
-              <View style={styles.overallScoreRow}>
-                <Text style={[styles.overallScore, { color: scoreColor }]}>
+        {/* Overall Score Card */}
+        <View style={styles.scoreCard}>
+          <View style={styles.scoreContainer}>
+            {/* Score Ring */}
+            <View style={styles.scoreRingWrapper}>
+              <ScoreRing score={data.overall} color={performance.color} size={90} />
+              <View style={styles.scoreTextOverlay}>
+                <Text style={[styles.scoreValue, { color: performance.color }]}>
                   {data.overall.toFixed(1)}
                 </Text>
-                <TrendBadge trend={data.overallTrend} />
+                <Text style={styles.scoreOutOf}>/ 10</Text>
+              </View>
+            </View>
+
+            {/* Score Info */}
+            <View style={styles.scoreInfo}>
+              <View style={[styles.performanceBadge, { backgroundColor: performance.color + '15' }]}>
+                <View style={[styles.performanceDot, { backgroundColor: performance.color }]} />
+                <Text style={[styles.performanceLabel, { color: performance.color }]}>
+                  {performance.label}
+                </Text>
+              </View>
+              <Text style={styles.scoreDescription}>
+                Average across all wealth areas
+              </Text>
+              {/* Overall trend */}
+              <View style={styles.overallTrendRow}>
+                {data.overallTrend !== 0 && (
+                  <Ionicons
+                    name={data.overallTrend > 0 ? 'trending-up' : 'trending-down'}
+                    size={14}
+                    color={data.overallTrend > 0 ? COLORS.excellent : COLORS.needsWork}
+                  />
+                )}
+                <Text style={[
+                  styles.overallTrendText,
+                  { color: data.overallTrend > 0 ? COLORS.excellent : data.overallTrend < 0 ? COLORS.needsWork : COLORS.textMuted }
+                ]}>
+                  {data.overallTrend === 0 ? 'No change' : `${Math.abs(data.overallTrend)}% vs last month`}
+                </Text>
               </View>
             </View>
           </View>
+        </View>
 
-          {/* Areas Breakdown */}
-          <View style={styles.areasCard}>
-            <View style={styles.areasHeader}>
-              <Text style={styles.areasTitle}>Wealth Areas</Text>
-              <Text style={styles.areasHint}>vs last month</Text>
+        {/* Wealth Areas Card */}
+        <View style={styles.areasCard}>
+          <View style={styles.areasHeader}>
+            <Text style={styles.areasTitle}>Wealth Areas</Text>
+            <View style={styles.areasBadge}>
+              <Ionicons name="analytics" size={10} color={COLORS.primary} />
+              <Text style={styles.areasBadgeText}>4 weeks</Text>
             </View>
-            {data.areas.map((area, index) => (
-              <AreaRow
-                key={area.key}
-                area={area}
-                isLast={index === data.areas.length - 1}
-              />
-            ))}
           </View>
-        </Animated.View>
+
+          {data.areas.map((area, index) => (
+            <AreaRow
+              key={area.key}
+              area={area}
+              isLast={index === data.areas.length - 1}
+              animDelay={400 + index * 100}
+            />
+          ))}
+        </View>
       </ScrollView>
 
       {/* Continue Button */}
@@ -209,13 +321,13 @@ const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentPro
         <TouchableOpacity
           style={styles.continueButton}
           onPress={handleContinue}
-          activeOpacity={0.9}
+          activeOpacity={0.85}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -229,177 +341,246 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
 
-  // Header
+  // Header (matching weekly)
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   monthLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#DB277712',
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 12,
+    paddingVertical: 8,
+    borderRadius: 24,
+    marginBottom: 14,
   },
   monthLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#DB2777',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: COLORS.textMuted,
   },
 
-  // Overall Card
-  overallCard: {
+  // Score Card (matching weekly)
+  scoreCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  overallMain: {
-  },
-  overallLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  overallScoreRow: {
+  scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
   },
-  overallScore: {
-    fontSize: 36,
+  scoreRingWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  scoreTextOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreValue: {
+    fontSize: 24,
     fontWeight: '700',
     letterSpacing: -1,
   },
-
-  // Trend Badge
-  trendBadge: {
+  scoreOutOf: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginTop: -2,
+  },
+  scoreInfo: {
+    flex: 1,
+  },
+  performanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 3,
+    paddingVertical: 5,
+    borderRadius: 14,
+    marginBottom: 6,
   },
-  trendBadgeSmall: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  performanceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
-  trendText: {
+  performanceLabel: {
     fontSize: 13,
     fontWeight: '600',
   },
-  trendTextSmall: {
-    fontSize: 11,
+  scoreDescription: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  overallTrendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  overallTrendText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 
-  // Areas Card
+  // Areas Card (matching weekly metrics card)
   areasCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
   },
   areasHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   areasTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.text,
   },
-  areasHint: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-
-  // Area Row
-  areaRow: {
+  areasBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    backgroundColor: COLORS.primaryBg,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 3,
   },
-  areaRowBorder: {
+  areasBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  // Area Row (matching weekly MetricRow exactly)
+  areaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.border + '60',
+  },
+  areaRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
   },
   areaIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   areaContent: {
     flex: 1,
-    gap: 6,
+    height: 34,
+    justifyContent: 'space-between',
+  },
+  areaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   areaLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.text,
   },
-  areaStats: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
   areaScore: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: '700',
   },
-
-  // Week Dots
-  weekDots: {
+  progressRow: {
     flexDirection: 'row',
-    gap: 4,
+    alignItems: 'center',
+    gap: 8,
   },
-  weekDot: {
-    width: 18,
-    height: 6,
-    borderRadius: 3,
+  progressBarBg: {
+    flex: 1,
+    height: 5,
+    backgroundColor: COLORS.border,
+    borderRadius: 2.5,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2.5,
+  },
+  trendText: {
+    fontSize: 10,
+    fontWeight: '500',
+    minWidth: 45,
+    textAlign: 'right',
   },
 
-  // Button
+  // Button (matching weekly)
   buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     paddingTop: 12,
     backgroundColor: COLORS.background,
   },
   continueButton: {
-    backgroundColor: COLORS.text,
-    borderRadius: 16,
-    paddingVertical: 18,
+    backgroundColor: '#1F2937',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   continueButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginRight: 4,
+    letterSpacing: -0.2,
   },
 });
 
