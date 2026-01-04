@@ -58,8 +58,6 @@ const MonthlyTrackingCompleteScreen: React.FC<MonthlyTrackingCompleteScreenProps
   const titleTranslateY = useRef(new Animated.Value(30)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const subtitleTranslateY = useRef(new Animated.Value(20)).current;
-  const statsOpacity = useRef(new Animated.Value(0)).current;
-  const statsScale = useRef(new Animated.Value(0.8)).current;
 
   // Confetti particles
   const confettiParticles = useRef(
@@ -307,20 +305,6 @@ const MonthlyTrackingCompleteScreen: React.FC<MonthlyTrackingCompleteScreenProps
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(200),
-      Animated.parallel([
-        Animated.timing(statsOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(statsScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 80,
-          useNativeDriver: true,
-        }),
-      ]),
     ]);
 
     // Main animation sequence
@@ -533,29 +517,13 @@ const MonthlyTrackingCompleteScreen: React.FC<MonthlyTrackingCompleteScreenProps
           >
             Great job reflecting on your month.{'\n'}Keep learning and growing!
           </Animated.Text>
-
-          {/* Stats Card */}
-          <Animated.View
-            style={[
-              styles.statsCard,
-              {
-                opacity: statsOpacity,
-                transform: [{ scale: statsScale }],
-              },
-            ]}
-          >
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>4</Text>
-              <Text style={styles.statLabel}>Reflections</Text>
-            </View>
-          </Animated.View>
         </View>
 
         {/* Bottom Accent */}
         <Animated.View
           style={[
             styles.bottomAccent,
-            { opacity: statsOpacity },
+            { opacity: subtitleOpacity },
           ]}
         >
           <Ionicons name="sparkles" size={20} color={THEME_COLORS.primaryLighter} />
@@ -655,38 +623,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     letterSpacing: -0.2,
-    marginBottom: 24,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    alignItems: 'center',
-    gap: 10,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: THEME_COLORS.primary,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   bottomAccent: {
     position: 'absolute',

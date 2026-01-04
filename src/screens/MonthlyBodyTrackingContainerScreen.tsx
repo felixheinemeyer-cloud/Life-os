@@ -23,10 +23,9 @@ import MonthlyBodyTrackingMentalContent, { MentalWellnessData } from '../compone
 import MonthlyBodyTrackingMentalLoadContent, { MentalLoadData } from '../components/tracking/MonthlyBodyTrackingMentalLoadContent';
 import MonthlyBodyTrackingMindHelpersContent, { MindHelpersData } from '../components/tracking/MonthlyBodyTrackingMindHelpersContent';
 import MonthlyBodyTrackingMindDrainsContent, { MindDrainsData } from '../components/tracking/MonthlyBodyTrackingMindDrainsContent';
-import MonthlyBodyTrackingMindStateContent, { MindStateData } from '../components/tracking/MonthlyBodyTrackingMindStateContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 11;
 
 interface MonthlyBodyTrackingContainerScreenProps {
   navigation?: {
@@ -90,11 +89,6 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
     primaryDrain: null,
   });
 
-  // Mind state data state
-  const [mindStateData, setMindStateData] = useState<MindStateData>({
-    mindState: null,
-  });
-
   // Animation value for horizontal scroll position
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -143,7 +137,6 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
         mentalLoadData,
         mindHelpersData,
         mindDrainsData,
-        mindStateData,
       });
       navigation?.goBack();
     }
@@ -282,15 +275,6 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               <MonthlyBodyTrackingMindDrainsContent
                 data={mindDrainsData}
                 onDataChange={setMindDrainsData}
-                onContinue={handleContinue}
-              />
-            </View>
-
-            {/* Step 12: Mind-Body State */}
-            <View style={styles.page}>
-              <MonthlyBodyTrackingMindStateContent
-                data={mindStateData}
-                onDataChange={setMindStateData}
                 onContinue={handleContinue}
               />
             </View>

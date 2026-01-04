@@ -185,27 +185,6 @@ const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentPro
                 <TrendBadge trend={data.overallTrend} />
               </View>
             </View>
-            <View style={styles.overallHighlights}>
-              <View style={styles.highlightItem}>
-                <Text style={styles.highlightLabel}>Best</Text>
-                <View style={styles.highlightValue}>
-                  <Ionicons name={data.best.icon} size={14} color={data.best.color} />
-                  <Text style={[styles.highlightText, { color: data.best.color }]}>
-                    {data.best.label}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.highlightDivider} />
-              <View style={styles.highlightItem}>
-                <Text style={styles.highlightLabel}>Focus</Text>
-                <View style={styles.highlightValue}>
-                  <Ionicons name={data.needsFocus.icon} size={14} color={data.needsFocus.color} />
-                  <Text style={[styles.highlightText, { color: data.needsFocus.color }]}>
-                    {data.needsFocus.label}
-                  </Text>
-                </View>
-              </View>
-            </View>
           </View>
 
           {/* Areas Breakdown */}
@@ -260,7 +239,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   monthLabelContainer: {
-    backgroundColor: COLORS.accent + '12',
+    backgroundColor: '#DB277712',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
@@ -269,7 +248,7 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.accent,
+    color: '#DB2777',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -290,7 +269,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.04)',
   },
   overallMain: {
-    marginBottom: 12,
   },
   overallLabel: {
     fontSize: 14,
@@ -307,38 +285,6 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     letterSpacing: -1,
-  },
-
-  // Highlights
-  overallHighlights: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 10,
-  },
-  highlightItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  highlightLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-  },
-  highlightValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  highlightText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  highlightDivider: {
-    width: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 12,
   },
 
   // Trend Badge
