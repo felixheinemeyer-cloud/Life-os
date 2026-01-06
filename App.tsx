@@ -13,6 +13,8 @@ import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import DailyOverviewScreen from './src/screens/DailyOverviewScreen';
+import WeeklyReviewScreen from './src/screens/WeeklyReviewScreen';
+import MonthlyReviewScreen from './src/screens/MonthlyReviewScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
@@ -26,6 +28,7 @@ import WeeklyTrackingCompleteScreen from './src/screens/WeeklyTrackingCompleteSc
 import MonthlyTrackingContainerScreen from './src/screens/MonthlyTrackingContainerScreen';
 import MonthlyTrackingCompleteScreen from './src/screens/MonthlyTrackingCompleteScreen';
 import MonthlyBodyTrackingContainerScreen from './src/screens/MonthlyBodyTrackingContainerScreen';
+import BodyCheckInReviewScreen from './src/screens/BodyCheckInReviewScreen';
 import HomeIcon from './src/components/HomeIcon';
 import BrainIcon from './src/components/BrainIcon';
 import CalendarIcon from './src/components/CalendarIcon';
@@ -135,6 +138,14 @@ const CalendarStack = () => {
     >
       <Stack.Screen name="CalendarMain" component={CalendarScreen} />
       <Stack.Screen name="DailyOverview" component={DailyOverviewScreen} />
+      <Stack.Screen name="WeeklyReview" component={WeeklyReviewScreen} />
+      <Stack.Screen name="MonthlyReview" component={MonthlyReviewScreen} />
+      <Stack.Screen name="WeeklyTracking" component={WeeklyTrackingContainerScreen} />
+      <Stack.Screen name="WeeklyTrackingComplete" component={WeeklyTrackingCompleteScreen} />
+      <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
+      <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
+      <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
+      <Stack.Screen name="BodyCheckInReview" component={BodyCheckInReviewScreen} />
     </Stack.Navigator>
   );
 };

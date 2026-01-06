@@ -37,6 +37,10 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   const weekGlowAnim = useRef(new Animated.Value(0)).current;
   const monthGlowAnim = useRef(new Animated.Value(0)).current;
 
+  // Animation values for chevron rotation
+  const weekChevronAnim = useRef(new Animated.Value(0)).current;
+  const monthChevronAnim = useRef(new Animated.Value(0)).current;
+
   // Scroll tracking for blur/fade effect
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -252,35 +256,62 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
-  // Toggle Week card with glow animation
+  // Toggle Week card with glow and chevron animation
   const toggleWeek = (): void => {
     const toValue = isWeekExpanded ? 0 : 1;
 
-    Animated.timing(weekGlowAnim, {
-      toValue,
-      duration: isWeekExpanded ? 250 : 300,
-      easing: isWeekExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
-      delay: isWeekExpanded ? 0 : 50,
-      useNativeDriver: false,
-    }).start();
+    Animated.parallel([
+      Animated.timing(weekGlowAnim, {
+        toValue,
+        duration: isWeekExpanded ? 250 : 300,
+        easing: isWeekExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
+        delay: isWeekExpanded ? 0 : 50,
+        useNativeDriver: false,
+      }),
+      Animated.timing(weekChevronAnim, {
+        toValue,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     setIsWeekExpanded(!isWeekExpanded);
   };
 
-  // Toggle Month card with glow animation
+  // Toggle Month card with glow and chevron animation
   const toggleMonth = (): void => {
     const toValue = isMonthExpanded ? 0 : 1;
 
-    Animated.timing(monthGlowAnim, {
-      toValue,
-      duration: isMonthExpanded ? 250 : 300,
-      easing: isMonthExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
-      delay: isMonthExpanded ? 0 : 50,
-      useNativeDriver: false,
-    }).start();
+    Animated.parallel([
+      Animated.timing(monthGlowAnim, {
+        toValue,
+        duration: isMonthExpanded ? 250 : 300,
+        easing: isMonthExpanded ? Easing.in(Easing.ease) : Easing.out(Easing.ease),
+        delay: isMonthExpanded ? 0 : 50,
+        useNativeDriver: false,
+      }),
+      Animated.timing(monthChevronAnim, {
+        toValue,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     setIsMonthExpanded(!isMonthExpanded);
   };
+
+  // Interpolated rotation for chevrons
+  const weekChevronRotation = weekChevronAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+
+  const monthChevronRotation = monthChevronAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
   // Interpolated shadow values for Week card (Variation A: Soft & Subtle)
   const weekShadowOpacity = weekGlowAnim.interpolate({
@@ -643,57 +674,75 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             <Text style={styles.focusSectionTitle}>Focus</Text>
 
             {/* Week Focus Item */}
-            <View style={styles.focusItem}>
+            <TouchableOpacity
+              style={styles.focusItem}
+              onPress={toggleWeek}
+              activeOpacity={0.7}
+            >
               <View style={styles.focusItemHeader}>
-                <View style={[styles.focusIconContainer, styles.focusIconWeek]}>
-                  <Ionicons name="calendar" size={18} color="#0D9488" />
-                </View>
+                <LinearGradient
+                  colors={['#5EEAD4', '#14B8A6', '#0D9488']}
+                  style={styles.focusIconGradientRing}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.focusIconInner}>
+                    <Ionicons name="calendar" size={16} color="#0D9488" />
+                  </View>
+                </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Week</Text>
+                <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
+                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                </Animated.View>
               </View>
-              <TouchableOpacity
-                style={styles.focusItemBody}
-                onPress={toggleWeek}
-                activeOpacity={0.7}
-              >
+
+              {/* Content with Preview */}
+              <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isWeekExpanded ? undefined : 3}
+                  numberOfLines={isWeekExpanded ? undefined : 2}
                 >
                   {FOCUS_CONTENT.week}
                 </Text>
-                <Text style={styles.focusReadMore}>
-                  {isWeekExpanded ? 'Show less' : 'Read more'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.focusDivider} />
 
             {/* Month Focus Item */}
-            <View style={styles.focusItem}>
+            <TouchableOpacity
+              style={styles.focusItem}
+              onPress={toggleMonth}
+              activeOpacity={0.7}
+            >
               <View style={styles.focusItemHeader}>
-                <View style={[styles.focusIconContainer, styles.focusIconMonth]}>
-                  <Ionicons name="calendar-outline" size={18} color="#8B5CF6" />
-                </View>
+                <LinearGradient
+                  colors={['#FBCFE8', '#F472B6', '#DB2777']}
+                  style={styles.focusIconGradientRing}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.focusIconInner}>
+                    <Ionicons name="calendar" size={16} color="#DB2777" />
+                  </View>
+                </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Month</Text>
+                <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
+                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                </Animated.View>
               </View>
-              <TouchableOpacity
-                style={styles.focusItemBody}
-                onPress={toggleMonth}
-                activeOpacity={0.7}
-              >
+
+              {/* Content with Preview */}
+              <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isMonthExpanded ? undefined : 3}
+                  numberOfLines={isMonthExpanded ? undefined : 2}
                 >
                   {FOCUS_CONTENT.month}
                 </Text>
-                <Text style={styles.focusReadMore}>
-                  {isMonthExpanded ? 'Show less' : 'Read more'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -1429,7 +1478,6 @@ const styles = StyleSheet.create({
   focusItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
   focusIconContainer: {
     width: 32,
@@ -1439,6 +1487,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
+  focusIconGradientRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    marginBottom: 0,
+  },
+  focusIconInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   focusIconWeek: {
     backgroundColor: '#F0FDFA',
   },
@@ -1446,13 +1512,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F3FF',
   },
   focusItemTitle: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
   },
   focusItemBody: {
-    marginLeft: 42,
+    marginTop: 16,
   },
   focusItemText: {
     fontSize: 14,
@@ -1471,7 +1538,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F3F4F6',
     marginVertical: 14,
-    marginLeft: 42,
   },
   bottomSpacer: {
     height: 40,
