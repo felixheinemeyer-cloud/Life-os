@@ -11,27 +11,43 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Theme
+// Refined Theme with better color harmony
 const COLORS = {
   background: '#F7F5F2',
   card: '#FFFFFF',
-  text: '#1F2937',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  teal: '#0D9488',
-  tealLight: '#14B8A6',
-  tealBg: '#F0FDFA',
-  // Metric colors
-  sleep: '#8B5CF6',
-  priority: '#10B981',
-  priorityNo: '#EF4444',
+  text: '#1A1D21',
+  textSecondary: '#5F6368',
+  textMuted: '#9AA0A6',
+  border: '#E8EAED',
+  // Primary accent
+  primary: '#0D9488',
+  primaryLight: '#14B8A6',
+  primaryBg: '#E6F7F5',
+  // Score colors
+  excellent: '#059669',
+  good: '#10B981',
+  okay: '#F59E0B',
+  needsWork: '#EF4444',
+  // Metric colors - harmonized palette
+  sleep: '#7C3AED',
+  sleepBg: '#F3E8FF',
   nutrition: '#059669',
+  nutritionBg: '#ECFDF5',
   energy: '#F59E0B',
+  energyBg: '#FEF3C7',
   satisfaction: '#3B82F6',
+  satisfactionBg: '#EFF6FF',
+  priority: '#10B981',
+  priorityBg: '#D1FAE5',
+  // Day indicator colors
+  dayHigh: '#10B981',
+  dayMedium: '#F59E0B',
+  dayLow: '#EF4444',
+  dayEmpty: '#E8EAED',
 };
 
 interface DayData {
@@ -121,58 +137,190 @@ const calculateAverages = (days: DayData[]) => {
   };
 };
 
-// Get performance level
-const getPerformanceLevel = (score: number): { label: string; color: string; emoji: string } => {
-  if (score >= 8) return { label: 'Excellent', color: '#059669', emoji: '🔥' };
-  if (score >= 6.5) return { label: 'Good', color: '#0D9488', emoji: '👍' };
-  if (score >= 5) return { label: 'Okay', color: '#F59E0B', emoji: '👌' };
-  return { label: 'Needs work', color: '#EF4444', emoji: '💪' };
+// Get performance level with refined labels
+const getPerformanceLevel = (score: number): { label: string; color: string; gradient: string[] } => {
+  if (score >= 8) return { label: 'Excellent', color: COLORS.excellent, gradient: ['#059669', '#10B981'] };
+  if (score >= 6.5) return { label: 'Good', color: COLORS.good, gradient: ['#10B981', '#34D399'] };
+  if (score >= 5) return { label: 'Okay', color: COLORS.okay, gradient: ['#F59E0B', '#FBBF24'] };
+  return { label: 'Needs attention', color: COLORS.needsWork, gradient: ['#EF4444', '#F87171'] };
 };
 
-// Day indicator dot
-const DayDot: React.FC<{ day: DayData }> = ({ day }) => {
-  const getColor = () => {
-    if (!day.tracked) return '#E5E7EB';
-    if (day.overallScore >= 7) return COLORS.priority;
-    if (day.overallScore >= 5) return COLORS.energy;
-    return '#EF4444';
-  };
+// Circular Progress Ring Component
+const ScoreRing: React.FC<{ score: number; color: string; size?: number }> = ({
+  score,
+  color,
+  size = 100
+}) => {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const progress = (score / 10) * circumference;
 
   return (
-    <View style={styles.dayDotContainer}>
-      <View style={[
-        styles.dayDot,
-        { backgroundColor: getColor() },
-        day.isToday && styles.dayDotToday,
-      ]}>
-        {day.isToday && <View style={styles.dayDotInner} />}
-      </View>
-      <Text style={[styles.dayDotLabel, day.isToday && styles.dayDotLabelToday]}>
-        {day.dayLetter}
-      </Text>
+    <View style={{ width: size, height: size, position: 'relative' }}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Defs>
+          <LinearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0.6" />
+          </LinearGradient>
+        </Defs>
+        {/* Background circle */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={COLORS.border}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        {/* Progress circle */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#scoreGradient)"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${progress} ${circumference}`}
+          strokeLinecap="round"
+        />
+      </Svg>
     </View>
   );
 };
 
-// Metric row
+// Minimal day indicator - slim bar with score text
+const DayIndicator: React.FC<{ day: DayData; index: number; animDelay: number }> = ({ day, index, animDelay }) => {
+  const heightAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const maxBarHeight = 28;
+  const barHeight = day.tracked ? Math.max(8, (day.overallScore / 10) * maxBarHeight) : 0;
+
+  const getColor = () => {
+    if (!day.tracked) return COLORS.dayEmpty;
+    if (day.overallScore >= 7) return COLORS.dayHigh;
+    if (day.overallScore >= 5) return COLORS.dayMedium;
+    return COLORS.dayLow;
+  };
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(heightAnim, {
+        toValue: barHeight,
+        duration: 500,
+        delay: animDelay + index * 60,
+        useNativeDriver: false,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        delay: animDelay + index * 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const color = getColor();
+
+  return (
+    <Animated.View style={[styles.dayIndicatorContainer, { opacity: opacityAnim }]}>
+      {/* Day letter */}
+      <Text style={[styles.dayIndicatorLabel, day.isToday && styles.dayIndicatorLabelToday]}>
+        {day.dayLetter}
+      </Text>
+
+      {/* Bar track with fill */}
+      <View style={styles.dayIndicatorTrack}>
+        <Animated.View
+          style={[
+            styles.dayIndicatorBar,
+            { backgroundColor: color, height: heightAnim },
+          ]}
+        />
+      </View>
+
+      {/* Score number - no circle */}
+      <Text style={[
+        styles.dayIndicatorScore,
+        { color: day.tracked ? color : COLORS.dayEmpty },
+        day.isToday && styles.dayIndicatorScoreToday,
+      ]}>
+        {day.tracked ? day.overallScore : '–'}
+      </Text>
+    </Animated.View>
+  );
+};
+
+// Enhanced Metric row with progress bar and trend
 const MetricRow: React.FC<{
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
+  numericValue: number;
+  maxValue: number;
   color: string;
-  subtitle?: string;
-}> = ({ icon, label, value, color, subtitle }) => (
-  <View style={styles.metricRow}>
-    <View style={[styles.metricIcon, { backgroundColor: color + '15' }]}>
-      <Ionicons name={icon} size={16} color={color} />
+  bgColor: string;
+  trend: number; // percentage change vs last week
+  animDelay: number;
+  isLast?: boolean;
+}> = ({ icon, label, value, numericValue, maxValue, color, bgColor, trend, animDelay, isLast }) => {
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progress = Math.min(numericValue / maxValue, 1);
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 800,
+      delay: animDelay,
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  const getTrendColor = () => {
+    if (trend > 0) return COLORS.excellent;
+    if (trend < 0) return COLORS.needsWork;
+    return COLORS.textMuted;
+  };
+
+  const getTrendLabel = () => {
+    if (trend === 0) return 'no change';
+    const symbol = trend > 0 ? '↑' : '↓';
+    return `${symbol} ${Math.abs(trend)}%`;
+  };
+
+  return (
+    <View style={[styles.metricRow, isLast && styles.metricRowLast]}>
+      <View style={[styles.metricIcon, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon} size={16} color={color} />
+      </View>
+      <View style={styles.metricContent}>
+        <View style={styles.metricHeader}>
+          <Text style={styles.metricLabel}>{label}</Text>
+          <Text style={[styles.metricValue, { color }]}>{value}</Text>
+        </View>
+        <View style={styles.progressRow}>
+          <View style={styles.progressBarBg}>
+            <Animated.View
+              style={[
+                styles.progressBarFill,
+                { backgroundColor: color, width: progressWidth }
+              ]}
+            />
+          </View>
+          <Text style={[styles.metricTrend, { color: getTrendColor() }]}>
+            {getTrendLabel()}
+          </Text>
+        </View>
+      </View>
     </View>
-    <View style={styles.metricContent}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
-    </View>
-    <Text style={[styles.metricValue, { color }]}>{value}</Text>
-  </View>
-);
+  );
+};
 
 const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps> = ({
   onContinue,
@@ -180,22 +328,16 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
   const { weekRange, days } = generateWeekData();
   const averages = calculateAverages(days);
   const performance = getPerformanceLevel(averages.overall);
+
+  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleContinue = () => {
@@ -213,82 +355,123 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Animated.View style={[styles.header, { transform: [{ translateY: slideAnim }] }]}>
+        <View style={styles.header}>
           <View style={styles.weekLabelContainer}>
+            <Ionicons name="calendar-outline" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
             <Text style={styles.weekLabel}>{weekRange}</Text>
           </View>
           <Text style={styles.headerTitle}>Your Week in Review</Text>
-        </Animated.View>
+          <Text style={styles.headerSubtitle}>Here's how you performed this week</Text>
+        </View>
 
         {/* Overall Score Card */}
         <View style={styles.scoreCard}>
-          <View style={styles.scoreHeader}>
-            <View>
-              <Text style={styles.scoreLabel}>Overall Score</Text>
-              <Text style={[styles.scoreValue, { color: performance.color }]}>
-                {averages.overall.toFixed(1)}
+          <View style={styles.scoreContainer}>
+            {/* Score Ring */}
+            <View style={styles.scoreRingWrapper}>
+              <ScoreRing score={averages.overall} color={performance.color} size={90} />
+              <View style={styles.scoreTextOverlay}>
+                <Text style={[styles.scoreValue, { color: performance.color }]}>
+                  {averages.overall.toFixed(1)}
+                </Text>
+                <Text style={styles.scoreOutOf}>/ 10</Text>
+              </View>
+            </View>
+
+            {/* Score Info */}
+            <View style={styles.scoreInfo}>
+              <View style={[styles.performanceBadge, { backgroundColor: performance.color + '15' }]}>
+                <View style={[styles.performanceDot, { backgroundColor: performance.color }]} />
+                <Text style={[styles.performanceLabel, { color: performance.color }]}>
+                  {performance.label}
+                </Text>
+              </View>
+              <Text style={styles.scoreDescription}>
+                Based on nutrition, energy & satisfaction
               </Text>
             </View>
           </View>
 
-          {/* Week dots */}
-          <View style={styles.weekDots}>
-            {days.map((day) => (
-              <DayDot key={day.dayShort} day={day} />
-            ))}
+          {/* Daily Breakdown - Refined */}
+          <View style={styles.dailyBreakdown}>
+            <Text style={styles.dailyBreakdownTitle}>Daily Breakdown</Text>
+            <View style={styles.dayIndicatorsRow}>
+              {days.map((day, index) => (
+                <DayIndicator key={day.dayShort} day={day} index={index} animDelay={400} />
+              ))}
+            </View>
           </View>
         </View>
 
         {/* Metrics Card */}
         <View style={styles.metricsCard}>
-          <Text style={styles.metricsTitle}>Weekly Averages</Text>
+          <View style={styles.metricsHeader}>
+            <Text style={styles.metricsTitle}>Weekly Averages</Text>
+            <View style={styles.metricsBadge}>
+              <Ionicons name="analytics" size={10} color={COLORS.primary} />
+              <Text style={styles.metricsBadgeText}>{days.filter(d => d.tracked).length} days</Text>
+            </View>
+          </View>
 
           <MetricRow
             icon="moon"
             label="Sleep"
             value={`${averages.sleep.toFixed(1)}h`}
+            numericValue={averages.sleep}
+            maxValue={9}
             color={COLORS.sleep}
-            subtitle="per night"
+            bgColor={COLORS.sleepBg}
+            trend={8}
+            animDelay={600}
           />
-
-          <View style={styles.metricDivider} />
 
           <MetricRow
-            icon="nutrition"
+            icon="pizza"
             label="Nutrition"
             value={averages.nutrition.toFixed(1)}
+            numericValue={averages.nutrition}
+            maxValue={10}
             color={COLORS.nutrition}
-            subtitle="out of 10"
+            bgColor={COLORS.nutritionBg}
+            trend={12}
+            animDelay={700}
           />
-
-          <View style={styles.metricDivider} />
 
           <MetricRow
             icon="flash"
             label="Energy"
             value={averages.energy.toFixed(1)}
+            numericValue={averages.energy}
+            maxValue={10}
             color={COLORS.energy}
-            subtitle="out of 10"
+            bgColor={COLORS.energyBg}
+            trend={-5}
+            animDelay={800}
           />
 
-          <View style={styles.metricDivider} />
-
           <MetricRow
-            icon="happy"
+            icon="sparkles"
             label="Satisfaction"
             value={averages.satisfaction.toFixed(1)}
+            numericValue={averages.satisfaction}
+            maxValue={10}
             color={COLORS.satisfaction}
-            subtitle="out of 10"
+            bgColor={COLORS.satisfactionBg}
+            trend={3}
+            animDelay={900}
           />
 
-          <View style={styles.metricDivider} />
-
           <MetricRow
-            icon="flag"
+            icon="checkmark-circle"
             label="Priorities"
             value={`${Math.round(averages.priorityRate)}%`}
+            numericValue={averages.priorityRate}
+            maxValue={100}
             color={COLORS.priority}
-            subtitle="completion rate"
+            bgColor={COLORS.priorityBg}
+            trend={15}
+            animDelay={1000}
+            isLast
           />
         </View>
 
@@ -299,7 +482,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
         <TouchableOpacity
           style={styles.continueButton}
           onPress={handleContinue}
-          activeOpacity={0.9}
+          activeOpacity={0.85}
         >
           <Text style={styles.continueButtonText}>Continue to Reflection</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
@@ -319,123 +502,218 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 24,
   },
 
-  // Header
+  // Header - Refined
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   weekLabelContainer: {
-    backgroundColor: COLORS.teal + '12',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryBg,
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 12,
+    paddingVertical: 8,
+    borderRadius: 24,
+    marginBottom: 14,
   },
   weekLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.teal,
-    letterSpacing: 0.5,
+    color: COLORS.primary,
+    letterSpacing: 0.3,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: COLORS.text,
     letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: COLORS.textMuted,
   },
 
-  // Score Card
+  // Score Card - Completely Redesigned
   scoreCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  scoreHeader: {
+  scoreContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  scoreLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  scoreValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: -1,
-  },
-
-  // Week dots
-  weekDots: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-  dayDotContainer: {
     alignItems: 'center',
-    gap: 4,
+    marginBottom: 14,
   },
-  dayDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  scoreRingWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  scoreTextOverlay: {
+    position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  dayDotToday: {
-    borderWidth: 2,
-    borderColor: COLORS.teal,
+  scoreValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: -1,
   },
-  dayDotInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-  },
-  dayDotLabel: {
+  scoreOutOf: {
     fontSize: 12,
     fontWeight: '500',
     color: COLORS.textMuted,
+    marginTop: -2,
   },
-  dayDotLabelToday: {
-    color: COLORS.teal,
+  scoreInfo: {
+    flex: 1,
+  },
+  performanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  performanceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  performanceLabel: {
+    fontSize: 14,
     fontWeight: '600',
   },
+  scoreDescription: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    lineHeight: 18,
+  },
 
-  // Metrics Card
+  // Daily Breakdown - Refined slim design
+  dailyBreakdown: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 12,
+    paddingBottom: 2,
+  },
+  dailyBreakdownTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  dayIndicatorsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 8,
+  },
+  dayIndicatorContainer: {
+    alignItems: 'center',
+    width: 32,
+  },
+  dayIndicatorLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginBottom: 6,
+  },
+  dayIndicatorLabelToday: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+  dayIndicatorTrack: {
+    width: 4,
+    height: 28,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  dayIndicatorBar: {
+    width: '100%',
+    borderRadius: 2,
+  },
+  dayIndicatorScore: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  dayIndicatorScoreToday: {
+    fontWeight: '700',
+  },
+
+  // Metrics Card - Enhanced
   metricsCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,
     padding: 16,
-    paddingBottom: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  metricsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   metricsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 12,
+  },
+  metricsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryBg,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 3,
+  },
+  metricsBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   metricRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border + '60',
+  },
+  metricRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
   },
   metricIcon: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -443,52 +721,73 @@ const styles = StyleSheet.create({
   },
   metricContent: {
     flex: 1,
+    height: 34,
+    justifyContent: 'space-between',
+  },
+  metricHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   metricLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
     color: COLORS.text,
   },
-  metricSubtitle: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 1,
-  },
   metricValue: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700',
   },
-  metricDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginLeft: 48,
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  progressBarBg: {
+    flex: 1,
+    height: 5,
+    backgroundColor: COLORS.border,
+    borderRadius: 2.5,
+    overflow: 'hidden',
+  },
+  metricTrend: {
+    fontSize: 10,
+    fontWeight: '500',
+    minWidth: 45,
+    textAlign: 'right',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2.5,
   },
 
-  // Button
+  // Button - Matching other screens
   buttonContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 12,
     paddingTop: 12,
     backgroundColor: COLORS.background,
   },
   continueButton: {
-    backgroundColor: COLORS.text,
+    backgroundColor: '#1F2937',
     borderRadius: 14,
     paddingVertical: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 4,
   },
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginRight: 4,
+    letterSpacing: -0.2,
   },
 });
 

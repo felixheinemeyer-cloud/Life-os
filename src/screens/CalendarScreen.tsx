@@ -158,6 +158,12 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
     '2025-12-25': { morning: true, evening: true, weekly: false, monthly: false },
     '2025-12-28': { morning: true, evening: true, weekly: true, monthly: false }, // Sunday - weekly
     '2025-12-31': { morning: true, evening: true, weekly: false, monthly: true }, // Last day - monthly
+    // January 2026
+    '2026-1-1': { morning: true, evening: true, weekly: false, monthly: false },
+    '2026-1-2': { morning: true, evening: false, weekly: false, monthly: false },
+    '2026-1-3': { morning: false, evening: true, weekly: false, monthly: false },
+    '2026-1-4': { morning: true, evening: true, weekly: false, monthly: false },
+    '2026-1-5': { morning: true, evening: true, weekly: true, monthly: false }, // Sunday - weekly
   };
 
   // Helper functions

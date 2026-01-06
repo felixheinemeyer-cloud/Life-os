@@ -11,14 +11,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 // Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
   primary: '#0EA5E9',
   primaryLight: '#38BDF8',
   primaryLighter: '#BAE6FD',
+  primaryBg: '#E0F2FE',
   gradient: ['#BAE6FD', '#38BDF8', '#0EA5E9'] as const,
-  fill: '#38BDF8',
 };
 
 export type WeightUnit = 'kg' | 'lbs';
@@ -35,6 +36,16 @@ interface MonthlyBodyTrackingMetricsContentProps {
   onContinue: () => void;
 }
 
+// Suggestion chips for common body measurements
+const MEASUREMENT_SUGGESTIONS = [
+  { label: 'Body Fat', placeholder: '18%' },
+  { label: 'Waist', placeholder: '32in' },
+  { label: 'Chest', placeholder: '40in' },
+  { label: 'Arms', placeholder: '14in' },
+  { label: 'Hips', placeholder: '38in' },
+  { label: 'Thighs', placeholder: '22in' },
+];
+
 const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsContentProps> = ({
   data,
   onDataChange,
@@ -43,9 +54,9 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
   const [isWeightFocused, setIsWeightFocused] = useState(false);
   const [isMeasurementsFocused, setIsMeasurementsFocused] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const measurementsInputRef = useRef<TextInput>(null);
 
   const handleWeightChange = (weight: string) => {
-    // Only allow numeric input with one decimal point
     const cleaned = weight.replace(/[^0-9.]/g, '');
     const parts = cleaned.split('.');
     const formatted = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned;
@@ -56,11 +67,26 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
     onDataChange({ ...data, measurements });
   };
 
+  const handleSuggestionTap = (label: string, placeholder: string) => {
+    if (Platform.OS === 'ios') {
+      Haptics.selectionAsync();
+    }
+    const newMeasurement = `${label}: ${placeholder}`;
+    const currentMeasurements = data.measurements.trim();
+
+    if (currentMeasurements) {
+      onDataChange({ ...data, measurements: `${currentMeasurements}, ${newMeasurement}` });
+    } else {
+      onDataChange({ ...data, measurements: newMeasurement });
+    }
+
+    measurementsInputRef.current?.focus();
+  };
 
   const handleMeasurementsFocus = () => {
     setIsMeasurementsFocused(true);
     setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 200, animated: true });
+      scrollViewRef.current?.scrollTo({ y: 150, animated: true });
     }, 100);
   };
 
@@ -89,7 +115,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.headerIconInner}>
-                <Ionicons name="fitness" size={28} color={THEME_COLORS.primary} />
+                <Ionicons name="fitness" size={26} color={THEME_COLORS.primary} />
               </View>
             </LinearGradient>
             <Text style={styles.headerTitle}>Body Metrics</Text>
@@ -100,9 +126,11 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
 
           {/* Weight Input Card */}
           <View style={styles.inputCard}>
-            <View style={styles.inputLabelRow}>
-              <Ionicons name="scale-outline" size={20} color={THEME_COLORS.primary} />
-              <Text style={styles.inputLabel}>Current Weight</Text>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
+                <Ionicons name="scale-outline" size={18} color={THEME_COLORS.primary} />
+              </View>
+              <Text style={styles.cardTitle}>Current Weight</Text>
             </View>
             <View style={[
               styles.weightInputContainer,
@@ -122,30 +150,51 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
             </View>
           </View>
 
-          {/* Additional Body Stats Card (Optional) */}
+          {/* Other Body Stats Card */}
           <View style={styles.inputCard}>
-            <View style={styles.inputCardHeader}>
-              <View style={styles.inputLabelRow}>
-                <Ionicons name="body-outline" size={20} color={THEME_COLORS.primary} />
-                <Text style={styles.inputLabel}>Other Body Stats</Text>
-                <View style={styles.optionalBadge}>
-                  <Text style={styles.optionalBadgeText}>Optional</Text>
-                </View>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
+                <Ionicons name="body-outline" size={18} color={THEME_COLORS.primary} />
+              </View>
+              <Text style={styles.cardTitle}>Other Body Stats</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>Optional</Text>
               </View>
             </View>
-            <Text style={styles.sectionSubtitle}>
-              Track body fat %, waist, chest, or any body stats
+
+            <Text style={styles.cardDescription}>
+              Track any additional measurements you'd like to monitor over time
             </Text>
+
+            {/* Suggestion Chips */}
+            <View style={styles.suggestionsContainer}>
+              <Text style={styles.suggestionsLabel}>Tap to add:</Text>
+              <View style={styles.suggestionsRow}>
+                {MEASUREMENT_SUGGESTIONS.map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion.label}
+                    style={styles.suggestionChip}
+                    onPress={() => handleSuggestionTap(suggestion.label, suggestion.placeholder)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.suggestionChipText}>{suggestion.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Free-form Input */}
             <View style={[
               styles.measurementsInputContainer,
               isMeasurementsFocused && styles.inputFocused
             ]}>
               <TextInput
+                ref={measurementsInputRef}
                 style={styles.measurementsInput}
-                placeholder="E.g., Body fat: 18%, Waist: 32in, Chest: 40in, Arms: 14in"
+                placeholder="Your measurements will appear here..."
                 placeholderTextColor="#9CA3AF"
                 multiline
-                numberOfLines={3}
+                numberOfLines={2}
                 value={data.measurements}
                 onChangeText={handleMeasurementsChange}
                 onFocus={handleMeasurementsFocus}
@@ -161,10 +210,10 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
           <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
-            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -192,82 +241,87 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   headerIconGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    padding: 3,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    padding: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerIconInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    letterSpacing: -0.2,
-    paddingHorizontal: 20,
   },
 
   // Input Cards
   inputCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  inputCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 0,
-  },
-  inputLabelRow: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  inputLabel: {
-    fontSize: 16,
+  cardIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  cardTitle: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.2,
+    flex: 1,
+  },
+  cardDescription: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#6B7280',
+    marginBottom: 14,
+    lineHeight: 18,
   },
   optionalBadge: {
     backgroundColor: '#F3F4F6',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 6,
-    marginLeft: 8,
   },
   optionalBadgeText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '600',
     color: '#6B7280',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -282,8 +336,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    minHeight: 64,
+    paddingVertical: 6,
   },
   inputFocused: {
     borderColor: THEME_COLORS.primary,
@@ -296,13 +349,43 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -1,
     paddingVertical: 8,
-    lineHeight: 40,
   },
   weightUnitDisplay: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#9CA3AF',
     marginLeft: 8,
+  },
+
+  // Suggestions
+  suggestionsContainer: {
+    marginBottom: 12,
+  },
+  suggestionsLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  suggestionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  suggestionChip: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  suggestionChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#4B5563',
   },
 
   // Measurements Input
@@ -311,25 +394,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
-    padding: 14,
+    padding: 12,
   },
   measurementsInput: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
     color: '#1F2937',
-    minHeight: 80,
-    letterSpacing: -0.2,
-    lineHeight: 22,
-    paddingTop: 0,
-    paddingLeft: 0,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    marginTop: -12,
-    marginBottom: 12,
-    fontStyle: 'italic',
+    minHeight: 50,
+    lineHeight: 20,
   },
 
   // Button Container

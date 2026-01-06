@@ -89,109 +89,6 @@ const calculateStats = (data: number[]) => {
   };
 };
 
-// Calculate correlation between two arrays
-const calculateCorrelation = (arr1: number[], arr2: number[], lag = 0): number => {
-  const n = arr1.length - lag;
-  if (n < 5) return 0;
-
-  const x = lag >= 0 ? arr1.slice(0, n) : arr1.slice(-lag);
-  const y = lag >= 0 ? arr2.slice(lag) : arr2.slice(0, n);
-
-  const meanX = x.reduce((a, b) => a + b, 0) / n;
-  const meanY = y.reduce((a, b) => a + b, 0) / n;
-
-  let numerator = 0;
-  let denomX = 0;
-  let denomY = 0;
-
-  for (let i = 0; i < n; i++) {
-    const dx = x[i] - meanX;
-    const dy = y[i] - meanY;
-    numerator += dx * dy;
-    denomX += dx * dx;
-    denomY += dy * dy;
-  }
-
-  const denom = Math.sqrt(denomX * denomY);
-  return denom === 0 ? 0 : numerator / denom;
-};
-
-// Generate insights based on data patterns
-const generateInsights = (data: InsightsData) => {
-  const insights: { icon: keyof typeof Ionicons.glyphMap; text: string; color: string }[] = [];
-
-  // Sleep-Energy correlation (with 1-day lag)
-  const sleepEnergyCorr = calculateCorrelation(data.sleep, data.energy, 1);
-
-  // Analyze high sleep days vs low sleep days
-  const highSleepDays = data.sleep.map((s, i) => ({ sleep: s, energy: data.energy[Math.min(i + 1, 29)] }))
-    .filter(d => d.sleep >= 7);
-  const lowSleepDays = data.sleep.map((s, i) => ({ sleep: s, energy: data.energy[Math.min(i + 1, 29)] }))
-    .filter(d => d.sleep < 7);
-
-  const avgEnergyHighSleep = highSleepDays.length > 0
-    ? highSleepDays.reduce((a, b) => a + b.energy, 0) / highSleepDays.length
-    : 0;
-  const avgEnergyLowSleep = lowSleepDays.length > 0
-    ? lowSleepDays.reduce((a, b) => a + b.energy, 0) / lowSleepDays.length
-    : 0;
-
-  if (highSleepDays.length >= 5 && avgEnergyHighSleep > avgEnergyLowSleep + 0.5) {
-    insights.push({
-      icon: 'moon',
-      text: `When you slept 7+ hours, your energy averaged ${avgEnergyHighSleep.toFixed(1)} vs ${avgEnergyLowSleep.toFixed(1)}`,
-      color: METRIC_COLORS.sleep.primary,
-    });
-  }
-
-  // Nutrition-Energy correlation
-  const nutritionEnergyCorr = calculateCorrelation(data.nutrition, data.energy, 0);
-  if (nutritionEnergyCorr > 0.3) {
-    insights.push({
-      icon: 'nutrition',
-      text: 'Your nutrition and energy levels tend to rise and fall together',
-      color: METRIC_COLORS.nutrition.primary,
-    });
-  }
-
-  // Best performing days
-  const combinedScores = data.energy.map((e, i) => ({
-    day: i + 1,
-    score: e + (data.nutrition[i] || 0),
-    sleep: data.sleep[i],
-  }));
-  const bestDays = [...combinedScores].sort((a, b) => b.score - a.score).slice(0, 5);
-  const avgSleepBestDays = bestDays.reduce((a, b) => a + b.sleep, 0) / 5;
-
-  if (avgSleepBestDays >= 7) {
-    insights.push({
-      icon: 'star',
-      text: `Your top 5 days had an average sleep of ${avgSleepBestDays.toFixed(1)} hours`,
-      color: '#F59E0B',
-    });
-  }
-
-  // Trend insights
-  const sleepStats = calculateStats(data.sleep);
-  const energyStats = calculateStats(data.energy);
-
-  if (sleepStats.trend === 'up' && energyStats.trend === 'up') {
-    insights.push({
-      icon: 'trending-up',
-      text: 'Both sleep and energy improved in the second half of the month',
-      color: '#10B981',
-    });
-  } else if (sleepStats.trend === 'down' && energyStats.trend === 'down') {
-    insights.push({
-      icon: 'alert-circle',
-      text: 'Sleep and energy both declined - consider prioritizing rest',
-      color: '#EF4444',
-    });
-  }
-
-  return insights.slice(0, 3); // Max 3 insights
-};
-
 // Combined Chart Component
 interface CombinedChartProps {
   data: InsightsData;
@@ -371,22 +268,6 @@ const CombinedChart: React.FC<CombinedChartProps> = ({ data, activeMetrics, onTo
   );
 };
 
-// Insight Card Component
-interface InsightCardProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-  color: string;
-}
-
-const InsightCard: React.FC<InsightCardProps> = ({ icon, text, color }) => (
-  <View style={styles.insightCard}>
-    <View style={[styles.insightIconContainer, { backgroundColor: `${color}15` }]}>
-      <Ionicons name={icon} size={18} color={color} />
-    </View>
-    <Text style={styles.insightText}>{text}</Text>
-  </View>
-);
-
 // Summary Stat Item
 interface SummaryStatProps {
   label: string;
@@ -424,7 +305,6 @@ const MonthlyBodyTrackingInsightsContent: React.FC<MonthlyBodyTrackingInsightsCo
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const mockData = useMemo(() => propData || generateMockData(), [propData]);
-  const insights = useMemo(() => generateInsights(mockData), [mockData]);
 
   const sleepStats = useMemo(() => calculateStats(mockData.sleep), [mockData.sleep]);
   const energyStats = useMemo(() => calculateStats(mockData.energy), [mockData.energy]);
@@ -516,15 +396,6 @@ const MonthlyBodyTrackingInsightsContent: React.FC<MonthlyBodyTrackingInsightsCo
           />
         </View>
 
-        {/* Insights Section */}
-        {insights.length > 0 && (
-          <View style={styles.insightsSection}>
-            <Text style={styles.sectionTitle}>Key Insights</Text>
-            {insights.map((insight, index) => (
-              <InsightCard key={index} {...insight} />
-            ))}
-          </View>
-        )}
       </ScrollView>
 
       {/* Continue Button */}
@@ -698,46 +569,6 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: '#E5E7EB',
     marginHorizontal: 8,
-  },
-
-  // Insights Section
-  insightsSection: {
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-    letterSpacing: -0.2,
-  },
-  insightCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  insightIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  insightText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#374151',
-    lineHeight: 18,
   },
 
   // Button Container
