@@ -9,7 +9,7 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
@@ -27,7 +27,8 @@ interface EveningTrackingRatingsContentProps {
 
 interface RatingSliderProps {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
+  customIcon?: React.ReactNode;
   value: number;
   onValueChange: (value: number) => void;
   themeColor: string;
@@ -42,6 +43,7 @@ const SLIDER_COLOR = '#1F2937';
 const RatingSlider: React.FC<RatingSliderProps> = ({
   label,
   icon,
+  customIcon,
   value,
   onValueChange,
   themeColor,
@@ -130,7 +132,7 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
   return (
     <View style={styles.sliderContainer}>
       <View style={styles.sliderHeader}>
-        <Ionicons name={icon} size={18} color={themeColor} />
+        {customIcon || <Ionicons name={icon!} size={18} color={themeColor} />}
         <Text style={[styles.sliderLabel, { color: themeColor }]}>{label}</Text>
         <Text style={[styles.valueText, { color: SLIDER_COLOR }]}>{value}/10</Text>
       </View>
@@ -201,7 +203,7 @@ const EveningTrackingRatingsContent: React.FC<EveningTrackingRatingsContentProps
         <View style={styles.slidersSection}>
           <RatingSlider
             label="Nutrition"
-            icon="pizza"
+            customIcon={<MaterialCommunityIcons name="food-apple" size={18} color="#059669" />}
             value={ratings.nutrition}
             onValueChange={(v) => handleRatingChange('nutrition', v)}
             themeColor="#059669"
@@ -214,7 +216,7 @@ const EveningTrackingRatingsContent: React.FC<EveningTrackingRatingsContentProps
             icon="flash"
             value={ratings.energy}
             onValueChange={(v) => handleRatingChange('energy', v)}
-            themeColor="#D97706"
+            themeColor="#F59E0B"
             minLabel="Drained"
             maxLabel="Energized"
           />

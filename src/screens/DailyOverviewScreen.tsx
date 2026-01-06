@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
@@ -45,6 +45,21 @@ interface EveningData {
 
 const getMockData = (dateKey: string): { morning: MorningData; evening: EveningData } => {
   const mockDatabase: { [key: string]: { morning: MorningData; evening: EveningData } } = {
+    '2025-12-28': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 45 },
+        wakeTime: { hour: 8, minute: 0 },
+        gratitude: 'Grateful for the wonderful Christmas week spent with family and the memories we created together.',
+        priority: 'Reflect on the year and start planning goals for the new year',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 8, energy: 8, satisfaction: 9 },
+        journal: 'A perfect end to the Christmas week. Spent the day reflecting on all the good moments and feeling hopeful about the year ahead.',
+      },
+    },
     '2025-12-24': {
       morning: {
         completed: true,
@@ -217,8 +232,6 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
     const displayMinute = minute.toString().padStart(2, '0');
     return `${displayHour}:${displayMinute} ${period}`;
   };
-
-  const hasAnyData = morning.completed || evening.completed;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -406,22 +419,11 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
                 )}
 
                 {/* Ratings */}
-                <View style={styles.ratingsBlock}>
-                  <RatingBar label="Nutrition" value={evening.ratings.nutrition} color="#10B981" icon="nutrition" />
+                <View style={[styles.ratingsBlock, styles.ratingsBlockNoBorder]}>
+                  <RatingBar label="Nutrition" value={evening.ratings.nutrition} color="#059669" customIcon={<MaterialCommunityIcons name="food-apple" size={16} color="#059669" />} />
                   <RatingBar label="Energy" value={evening.ratings.energy} color="#F59E0B" icon="flash" />
-                  <RatingBar label="Satisfaction" value={evening.ratings.satisfaction} color="#8B5CF6" icon="happy" />
+                  <RatingBar label="Satisfaction" value={evening.ratings.satisfaction} color="#3B82F6" icon="sparkles" />
                 </View>
-
-                {/* Journal */}
-                {evening.journal && (
-                  <View style={[styles.infoBlock, styles.journalBlock]}>
-                    <View style={styles.infoHeader}>
-                      <Ionicons name="book" size={16} color="#7C3AED" />
-                      <Text style={styles.infoLabel}>Journal</Text>
-                    </View>
-                    <Text style={styles.infoText}>{evening.journal}</Text>
-                  </View>
-                )}
               </View>
             ) : (
               <View style={styles.emptyState}>
@@ -429,6 +431,34 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
               </View>
             )}
           </View>
+
+          {/* Journal Card - Standalone */}
+          {evening.journal && (
+            <View style={styles.journalCard}>
+              <View style={styles.journalCardHeader}>
+                <LinearGradient
+                  colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                  style={styles.sectionIconRing}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.sectionIconInner}>
+                    <Ionicons name="book" size={22} color="#7C3AED" />
+                  </View>
+                </LinearGradient>
+                <View style={styles.sectionTitleContainer}>
+                  <Text style={styles.journalCardTitle}>Journal</Text>
+                  <View style={styles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.journalContentContainer}>
+                <Text style={styles.journalContentText}>{evening.journal}</Text>
+              </View>
+            </View>
+          )}
 
         </Animated.View>
 
@@ -443,24 +473,25 @@ interface RatingBarProps {
   label: string;
   value: number;
   color: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
+  customIcon?: React.ReactNode;
 }
 
-const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon }) => {
+const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon, customIcon }) => {
   const percentage = (value / 10) * 100;
 
   // Get a lighter tint of the color for the track background
   const getTrackColor = (c: string) => {
-    if (c === '#10B981') return '#D1FAE5'; // green tint
+    if (c === '#059669') return '#D1FAE5'; // green tint
     if (c === '#F59E0B') return '#FEF3C7'; // amber tint
-    if (c === '#8B5CF6') return '#EDE9FE'; // purple tint
+    if (c === '#3B82F6') return '#DBEAFE'; // blue tint
     return '#E5E7EB';
   };
 
   return (
     <View style={styles.ratingBarItem}>
       <View style={styles.ratingBarHeader}>
-        <Ionicons name={icon} size={16} color={color} />
+        {customIcon || <Ionicons name={icon!} size={16} color={color} />}
         <Text style={styles.ratingBarLabel}>{label}</Text>
         <Text style={[styles.ratingBarValue, { color }]}>{value}</Text>
       </View>
@@ -510,7 +541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
@@ -523,9 +554,9 @@ const styles = StyleSheet.create({
   sectionCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 24,
     borderRadius: 18,
-    padding: 16,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
@@ -535,8 +566,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 14,
+    marginBottom: 24,
+    paddingBottom: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -584,13 +615,13 @@ const styles = StyleSheet.create({
   },
   infoBlock: {
     backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 24,
+    paddingHorizontal: 0,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   sleepBlock: {
-    paddingTop: 4,
+    paddingTop: 0,
   },
   gratitudeBlock: {
   },
@@ -599,13 +630,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFBEB',
     borderRadius: 12,
     paddingHorizontal: 14,
-    marginTop: 16,
+    paddingVertical: 16,
+    marginTop: 24,
+    marginBottom: 0,
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
-  },
-  journalBlock: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
   },
   infoHeader: {
     flexDirection: 'row',
@@ -614,7 +643,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoLabel: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
     flex: 1,
@@ -700,13 +729,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     borderRadius: 12,
     paddingHorizontal: 14,
+    paddingVertical: 16,
     borderLeftWidth: 3,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   priorityReviewDivider: {
     height: 1,
     backgroundColor: '#E5E7EB',
-    marginHorizontal: 4,
+    marginHorizontal: 0,
   },
   prioritySuccess: {
     backgroundColor: '#F0FDF4',
@@ -736,11 +766,17 @@ const styles = StyleSheet.create({
   // Ratings
   ratingsBlock: {
     backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 0,
     gap: 18,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  ratingsBlockNoBorder: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+    marginBottom: 0,
   },
   ratingBarItem: {
     gap: 6,
@@ -815,6 +851,45 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#9CA3AF',
     textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Journal Card
+  journalCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 18,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  journalCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  journalCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  journalContentContainer: {
+    paddingTop: 0,
+    paddingHorizontal: 0,
+    marginBottom: 0,
+  },
+  journalContentText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#374151',
     lineHeight: 20,
   },
 
