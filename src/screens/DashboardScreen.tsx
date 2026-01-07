@@ -564,10 +564,14 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             {/* Header Row */}
             <View style={styles.statsHeader}>
               <Text style={styles.statsTitle}>Last 7 Days</Text>
-              <View style={styles.seeAllButton}>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => navigation?.navigate('Statistics')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.seeAllLink}>See All</Text>
                 <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-              </View>
+              </TouchableOpacity>
             </View>
 
             {/* Interactive Legend Row */}

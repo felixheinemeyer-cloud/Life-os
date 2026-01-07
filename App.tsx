@@ -17,6 +17,7 @@ import WeeklyReviewScreen from './src/screens/WeeklyReviewScreen';
 import MonthlyReviewScreen from './src/screens/MonthlyReviewScreen';
 import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
+import StatisticsScreen from './src/screens/StatisticsScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
 import MorningTrackingMindsetEntriesScreen from './src/screens/MorningTrackingMindsetEntriesScreen';
 import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigherSelfScreen';
@@ -113,6 +114,7 @@ const DashboardStack = () => {
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
       <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
+      <Stack.Screen name="Statistics" component={StatisticsScreen} />
       <Stack.Screen name="MorningTracking" component={MorningTrackingContainerScreen} />
       <Stack.Screen name="MorningTrackingMindsetEntries" component={MorningTrackingMindsetEntriesScreen} />
       <Stack.Screen name="MorningTrackingHigherSelf" component={MorningTrackingHigherSelfScreen} />
