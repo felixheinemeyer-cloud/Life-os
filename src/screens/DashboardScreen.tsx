@@ -222,8 +222,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   };
 
   const handleProfile = (): void => {
-    // TODO: Navigate to profile/settings screen
-    console.log('Navigate to Profile');
+    if (navigation) {
+      navigation.navigate('ProfileSettings');
+    } else {
+      console.log('Navigate to Profile Settings');
+    }
   };
 
   const handleStreak = (): void => {
@@ -817,7 +820,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
       {/* Fixed Header with Blur Gradient */}
       <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
         {/* Gradient Fade Background - light veil effect */}
-        <View style={styles.headerBlur}>
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
               'rgba(240, 238, 232, 0.85)',
@@ -854,7 +857,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
           </View>
 
           {/* Center: Greeting - Absolutely positioned for true center */}
-          <Text style={styles.greeting} numberOfLines={1}>
+          <Text style={styles.greeting} numberOfLines={1} pointerEvents="none">
             {getGreeting()}!
           </Text>
         </View>
@@ -993,7 +996,7 @@ const styles = StyleSheet.create({
   },
   trackingRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
     marginBottom: 12,
   },
   trackingCardTouchable: {

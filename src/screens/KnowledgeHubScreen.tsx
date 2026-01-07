@@ -1,16 +1,14 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   SafeAreaView,
   Animated,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 type VaultItem = {
@@ -18,10 +16,8 @@ type VaultItem = {
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
-  gradientColors: string[];
   iconColor: string;
   route: string;
-  itemCount: number;
 };
 
 interface KnowledgeHubScreenProps {
@@ -31,77 +27,71 @@ interface KnowledgeHubScreenProps {
 }
 
 const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) => {
-  // Vaults data - ordered as specified: Mindset, Knowledge, Media, Book, People, Love, Story
+  // Vaults data - 8 vaults in 4 rows of 2
   const vaults: VaultItem[] = [
     {
       id: '1',
-      title: 'Mindset',
-      subtitle: 'Beliefs, rules &\naffirmations',
+      title: 'Higher Self',
+      subtitle: 'Your best version &\nidentity',
       icon: 'star',
-      gradientColors: ['#F3E8FF', '#E9D5FF', '#D8B4FE'],
       iconColor: '#6366F1',
-      route: 'MindsetIdentity',
-      itemCount: 12,
+      route: 'HigherSelf',
     },
     {
       id: '2',
-      title: 'Knowledge',
-      subtitle: 'Notes, concepts &\nframeworks',
-      icon: 'bulb',
-      gradientColors: ['#CFFAFE', '#A5F3FC', '#67E8F9'],
-      iconColor: '#06B6D4',
-      route: 'KnowledgeVault',
-      itemCount: 36,
+      title: 'Mindset',
+      subtitle: 'Rules, affirmations &\nbeliefs',
+      icon: 'diamond',
+      iconColor: '#8B5CF6',
+      route: 'MindsetBeliefs',
     },
     {
       id: '3',
-      title: 'Media Vault',
-      subtitle: 'Podcasts, videos &\narticles',
-      icon: 'play-circle',
-      gradientColors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-      iconColor: '#EC4899',
-      route: 'MediaVault',
-      itemCount: 42,
+      title: 'Knowledge',
+      subtitle: 'Notes, concepts &\nframeworks',
+      icon: 'bulb',
+      iconColor: '#06B6D4',
+      route: 'KnowledgeVault',
     },
     {
       id: '4',
-      title: 'Book Vault',
-      subtitle: 'Summaries &\nhighlights',
-      icon: 'book',
-      gradientColors: ['#FEF3C7', '#FDE68A', '#FCD34D'],
-      iconColor: '#F59E0B',
-      route: 'BookVault',
-      itemCount: 18,
+      title: 'Media Vault',
+      subtitle: 'Podcasts, videos &\narticles',
+      icon: 'play-circle',
+      iconColor: '#EC4899',
+      route: 'MediaVault',
     },
     {
       id: '5',
-      title: 'People',
-      subtitle: 'Relationships &\nyour network',
-      icon: 'people',
-      gradientColors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-      iconColor: '#3B82F6',
-      route: 'PeopleCRM',
-      itemCount: 24,
+      title: 'Book Vault',
+      subtitle: 'Summaries &\nhighlights',
+      icon: 'book',
+      iconColor: '#F59E0B',
+      route: 'BookVault',
     },
     {
       id: '6',
-      title: 'Love / Dating',
-      subtitle: 'Dates & romantic\ninsights',
-      icon: 'heart',
-      gradientColors: ['#FFE4E6', '#FECDD3', '#FDA4AF'],
-      iconColor: '#F43F5E',
-      route: 'LoveDating',
-      itemCount: 8,
+      title: 'People',
+      subtitle: 'Relationships &\nyour network',
+      icon: 'people',
+      iconColor: '#3B82F6',
+      route: 'PeopleCRM',
     },
     {
       id: '7',
+      title: 'Love / Dating',
+      subtitle: 'Dates & romantic\ninsights',
+      icon: 'heart',
+      iconColor: '#F43F5E',
+      route: 'LoveDating',
+    },
+    {
+      id: '8',
       title: 'Story Bank',
       subtitle: 'Personal stories &\nanecdotes',
       icon: 'bookmark',
-      gradientColors: ['#DCFCE7', '#BBF7D0', '#86EFAC'],
       iconColor: '#16A34A',
       route: 'StoryBank',
-      itemCount: 15,
     },
   ];
 
@@ -112,34 +102,35 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
     navigation.navigate(route);
   };
 
+  // Group vaults into rows of 2
+  const rows = [];
+  for (let i = 0; i < vaults.length; i += 2) {
+    rows.push(vaults.slice(i, i + 2));
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <View style={styles.container}>
         {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.title}>Second Brain</Text>
         </View>
 
-        {/* Vaults Grid */}
+        {/* Vaults Grid - fills remaining space */}
         <View style={styles.vaultsSection}>
-          <View style={styles.vaultsGrid}>
-            {vaults.map((vault) => (
-              <VaultCard
-                key={vault.id}
-                vault={vault}
-                onPress={() => handleVaultPress(vault.route)}
-              />
-            ))}
-          </View>
+          {rows.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.vaultRow}>
+              {row.map((vault) => (
+                <VaultCard
+                  key={vault.id}
+                  vault={vault}
+                  onPress={() => handleVaultPress(vault.route)}
+                />
+              ))}
+            </View>
+          ))}
         </View>
-
-        {/* Bottom spacing */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -220,10 +211,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2', // Same as Dashboard
-  },
-  scrollContent: {
-    paddingBottom: 40,
+    backgroundColor: '#F7F5F2',
   },
 
   // Header
@@ -238,49 +226,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6B7280',
-    letterSpacing: -0.2,
   },
 
-  // Vaults Grid
+  // Vaults Grid - fills remaining space
   vaultsSection: {
-    marginTop: 8,
-    paddingHorizontal: 16, // Distance from screen edges to vault cards
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16, // Space below header
+    paddingBottom: 16, // 16px space above navigation bar
+    gap: 16, // Gap between rows
   },
-  vaultsGrid: {
+  vaultRow: {
+    flex: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12, // Gap between cards in a row
   },
   vaultCardTouchable: {
-    width: '48%',
-    marginBottom: 16,
+    flex: 1,
   },
   vaultCardWrapper: {
-    width: '100%',
+    flex: 1,
   },
   vaultCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingHorizontal: 15,
-    paddingVertical: 16,
-    minHeight: 140,
+    paddingVertical: 14,
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    position: 'relative',
   },
 
   // Vault Card Content
   vaultIconContainer: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   vaultIconCircle: {
     width: 48,
@@ -295,13 +278,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   vaultContent: {
-    flex: 1,
+    // Content stays grouped with icon at top
   },
   vaultTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: 2,
     letterSpacing: -0.3,
   },
   vaultSubtitle: {
@@ -309,12 +292,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#4B5563',
     lineHeight: 16,
-    height: 32, // Force exactly 2 lines (16 * 2)
-  },
-
-  // Bottom Spacer
-  bottomSpacer: {
-    height: 20,
   },
 });
 

@@ -100,6 +100,8 @@ import FinancialWealthOverviewScreen from './src/screens/FinancialWealthOverview
 import FinancialWealthOptionalQuestionScreen from './src/screens/FinancialWealthOptionalQuestionScreen';
 import FinancialWealthCustomQuestionScreen from './src/screens/FinancialWealthCustomQuestionScreen';
 import StreakScreen from './src/screens/StreakScreen';
+import ProfileSettingsScreen from './src/screens/ProfileSettingsScreen';
+import ProfileEditScreen from './src/screens/ProfileEditScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -129,6 +131,16 @@ const DashboardStack = () => {
       <Stack.Screen
         name="StreakDetails"
         component={StreakScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="ProfileSettings"
+        component={ProfileSettingsScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="ProfileEdit"
+        component={ProfileEditScreen}
         options={{ presentation: 'modal' }}
       />
     </Stack.Navigator>
