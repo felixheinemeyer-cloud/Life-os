@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PremiumStatsChart from '../components/PremiumStatsChart';
+import { useStreak } from '../context/StreakContext';
 
 type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
 
@@ -25,6 +26,9 @@ interface DashboardScreenProps {
 const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.Element => {
   // SafeArea insets for dynamic button positioning
   const insets = useSafeAreaInsets();
+
+  // Get streak data from context
+  const { streakData } = useStreak();
 
   // State for interactive chart legend - Nutrition is active by default
   const [activeVariable, setActiveVariable] = useState<ChartVariable>('nutrition');
@@ -44,8 +48,9 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   // Scroll tracking for blur/fade effect
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Streak count (placeholder - will be dynamic later)
-  const [streakCount] = useState(0);
+  // Streak count from context (preview mode shows 14 for testing)
+  const PREVIEW_STREAK_MODE = true;
+  const streakCount = PREVIEW_STREAK_MODE ? 14 : streakData.currentStreak;
 
   // 24h timer state (hours since last 12:00 noon Europe/Berlin)
   const [timerHours, setTimerHours] = useState(0);
@@ -222,8 +227,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   };
 
   const handleStreak = (): void => {
-    // TODO: Navigate to streak details/history screen
-    console.log('Navigate to Streak Details');
+    if (navigation) {
+      navigation.navigate('StreakDetails');
+    } else {
+      console.log('Navigate to Streak Details');
+    }
   };
 
   const handleOpenInbox = (): void => {
