@@ -104,12 +104,19 @@ const getBodyCheckInData = (year: number, month: number): BodyCheckInData | null
   return mockBodyCheckInData[`${year}-${month}`] || null;
 };
 
-const BodyCheckInReviewScreen = ({ navigation, route }: BodyCheckInReviewScreenProps): React.JSX.Element => {
-  const month = route?.params?.month || 11;
-  const year = route?.params?.year || 2025;
-  const monthName = route?.params?.monthName || 'November';
+const getMonthName = (year: number, month: number): string => {
+  return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long' });
+};
 
-  const bodyData = getBodyCheckInData(year, month);
+const BodyCheckInReviewScreen = ({ navigation, route }: BodyCheckInReviewScreenProps): React.JSX.Element => {
+  const initialMonth = route?.params?.month || 11;
+  const initialYear = route?.params?.year || 2025;
+
+  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  const [currentYear, setCurrentYear] = useState(initialYear);
+
+  const monthName = getMonthName(currentYear, currentMonth);
+  const bodyData = getBodyCheckInData(currentYear, currentMonth);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -126,6 +133,30 @@ const BodyCheckInReviewScreen = ({ navigation, route }: BodyCheckInReviewScreenP
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation?.goBack();
   };
+
+  const handlePreviousMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (currentMonth === 1) {
+      setCurrentMonth(12);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  // Check if we're at the current month (can't go forward)
+  const now = new Date();
+  const isCurrentMonth = currentMonth === now.getMonth() + 1 && currentYear === now.getFullYear();
 
   const openPhotoViewer = (photoUri: string, label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -156,13 +187,80 @@ const BodyCheckInReviewScreen = ({ navigation, route }: BodyCheckInReviewScreenP
           </View>
           <View style={styles.headerSpacer} />
         </View>
-        <View style={styles.emptyContainer}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="body-outline" size={48} color="#9CA3AF" />
+
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Body Check-in Card - Empty State */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#BAE6FD', '#38BDF8', '#0EA5E9']}
+                style={styles.sectionIconRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sectionIconInner}>
+                  <Ionicons name="body" size={22} color="#0EA5E9" />
+                </View>
+              </LinearGradient>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Body Check-In</Text>
+              </View>
+            </View>
+
+            <View style={styles.sectionContent}>
+              {/* Date Navigation */}
+              <View style={styles.emptyDateSection}>
+                <View style={styles.monthNavigationRow}>
+                  <TouchableOpacity
+                    style={styles.monthNavButton}
+                    onPress={handlePreviousMonth}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-back" size={18} color="#0EA5E9" />
+                  </TouchableOpacity>
+                  <View style={styles.dateBadge}>
+                    <Ionicons name="calendar-outline" size={14} color="#0EA5E9" />
+                    <Text style={styles.dateBadgeText}>{monthName} {currentYear}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.monthNavButton, isCurrentMonth && styles.monthNavButtonDisabled]}
+                    onPress={handleNextMonth}
+                    disabled={isCurrentMonth}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-forward" size={18} color={isCurrentMonth ? '#D1D5DB' : '#0EA5E9'} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Empty State Content */}
+              <View style={styles.emptyCardContent}>
+                <View style={styles.emptyCardIcon}>
+                  <Ionicons name="body-outline" size={32} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyCardTitle}>No check-in data</Text>
+                <Text style={styles.emptyCardSubtitle}>
+                  Complete your body check-in to see your review here
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyCardButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    // TODO: Navigate to body check-in flow
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyCardButtonText}>Complete Check-in</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-          <Text style={styles.emptyTitle}>No Body Check-In Data</Text>
-          <Text style={styles.emptySubtitle}>This body check-in hasn't been completed yet.</Text>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -215,11 +313,28 @@ const BodyCheckInReviewScreen = ({ navigation, route }: BodyCheckInReviewScreenP
             </View>
 
             <View style={styles.sectionContent}>
-              {/* Date Badge */}
+              {/* Date Badge with Navigation */}
               <View style={styles.dateBadgeContainer}>
-                <View style={styles.dateBadge}>
-                  <Ionicons name="calendar-outline" size={14} color="#0EA5E9" />
-                  <Text style={styles.dateBadgeText}>{monthName}</Text>
+                <View style={styles.monthNavigationRow}>
+                  <TouchableOpacity
+                    style={styles.monthNavButton}
+                    onPress={handlePreviousMonth}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-back" size={18} color="#0EA5E9" />
+                  </TouchableOpacity>
+                  <View style={styles.dateBadge}>
+                    <Ionicons name="calendar-outline" size={14} color="#0EA5E9" />
+                    <Text style={styles.dateBadgeText}>{monthName} {currentYear}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.monthNavButton, isCurrentMonth && styles.monthNavButtonDisabled]}
+                    onPress={handleNextMonth}
+                    disabled={isCurrentMonth}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-forward" size={18} color={isCurrentMonth ? '#D1D5DB' : '#0EA5E9'} />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -530,6 +645,75 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  emptyDateSection: {
+    alignItems: 'center',
+    paddingTop: 0,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  emptyCardContent: {
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingBottom: 32,
+  },
+  emptyCardIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  emptyCardSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  emptyCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+  },
+  emptyCardButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // Month Navigation
+  monthNavigationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  monthNavButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthNavButtonDisabled: {
+    backgroundColor: '#F9FAFB',
   },
 
   // Section Card

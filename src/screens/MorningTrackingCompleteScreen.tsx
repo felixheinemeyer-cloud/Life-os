@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useStreak } from '../context/StreakContext';
+import StreakCelebrationModal from '../components/StreakCelebrationModal';
 
 interface MorningTrackingCompleteScreenProps {
   navigation?: {
@@ -21,6 +23,10 @@ interface MorningTrackingCompleteScreenProps {
 const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps> = ({
   navigation,
 }) => {
+  const { streakData, recordCheckIn } = useStreak();
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [newStreakCount, setNewStreakCount] = useState(0);
+
   // Animation values for the icon container
   const containerScale = useRef(new Animated.Value(0)).current;
   const containerOpacity = useRef(new Animated.Value(0)).current;
@@ -235,16 +241,29 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, 1000);
 
-    // Auto-redirect after 3 seconds
-    const redirectTimer = setTimeout(() => {
-      navigation?.reset({
-        index: 0,
-        routes: [{ name: 'DashboardMain' }],
-      });
-    }, 3000);
+    // Record check-in and potentially show streak modal
+    const recordStreak = async () => {
+      const streakIncremented = await recordCheckIn();
+      if (streakIncremented) {
+        setNewStreakCount(streakData.currentStreak + 1);
+        // Show streak modal after main animation completes
+        setTimeout(() => {
+          setShowStreakModal(true);
+        }, 2500);
+      } else {
+        // No streak increment, just redirect
+        setTimeout(() => {
+          navigation?.reset({
+            index: 0,
+            routes: [{ name: 'DashboardMain' }],
+          });
+        }, 3000);
+      }
+    };
+
+    recordStreak();
 
     return () => {
-      clearTimeout(redirectTimer);
       clearTimeout(hapticTimer);
     };
   }, [navigation]);
@@ -390,6 +409,19 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
           <Ionicons name="sunny" size={24} color="#FCD34D" />
         </Animated.View>
       </View>
+
+      {/* Streak Celebration Modal */}
+      <StreakCelebrationModal
+        visible={showStreakModal}
+        streakCount={newStreakCount}
+        onClose={() => {
+          setShowStreakModal(false);
+          navigation?.reset({
+            index: 0,
+            routes: [{ name: 'DashboardMain' }],
+          });
+        }}
+      />
     </SafeAreaView>
   );
 };

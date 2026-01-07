@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MediaProvider } from './src/context/MediaContext';
 import { BookProvider } from './src/context/BookContext';
+import { StreakProvider } from './src/context/StreakContext';
 
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -98,6 +99,7 @@ import FinancialWealthQuestionsContainerScreen from './src/screens/FinancialWeal
 import FinancialWealthOverviewScreen from './src/screens/FinancialWealthOverviewScreen';
 import FinancialWealthOptionalQuestionScreen from './src/screens/FinancialWealthOptionalQuestionScreen';
 import FinancialWealthCustomQuestionScreen from './src/screens/FinancialWealthCustomQuestionScreen';
+import StreakScreen from './src/screens/StreakScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -124,6 +126,11 @@ const DashboardStack = () => {
       <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
+      <Stack.Screen
+        name="StreakDetails"
+        component={StreakScreen}
+        options={{ presentation: 'modal' }}
+      />
     </Stack.Navigator>
   );
 };
@@ -255,9 +262,10 @@ const KnowledgeStack = () => {
 const App = (): React.JSX.Element => {
   return (
     <SafeAreaProvider>
-      <MediaProvider>
-        <BookProvider>
-          <NavigationContainer>
+      <StreakProvider>
+        <MediaProvider>
+          <BookProvider>
+            <NavigationContainer>
           <StatusBar style="auto" />
           <Tab.Navigator
           initialRouteName="Dashboard"
@@ -305,8 +313,9 @@ const App = (): React.JSX.Element => {
           />
           </Tab.Navigator>
           </NavigationContainer>
-        </BookProvider>
-      </MediaProvider>
+          </BookProvider>
+        </MediaProvider>
+      </StreakProvider>
     </SafeAreaProvider>
   );
 };
