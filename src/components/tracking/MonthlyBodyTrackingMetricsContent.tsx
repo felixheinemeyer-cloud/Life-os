@@ -162,13 +162,29 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
               </View>
             </View>
 
-            <Text style={styles.cardDescription}>
-              Track any additional measurements you'd like to monitor over time
-            </Text>
+            {/* Free-form Input - Primary action */}
+            <View style={[
+              styles.measurementsInputContainer,
+              isMeasurementsFocused && styles.inputFocused
+            ]}>
+              <TextInput
+                ref={measurementsInputRef}
+                style={styles.measurementsInput}
+                placeholder="Body fat: 18%, Neck: 15in, ..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                value={data.measurements}
+                onChangeText={handleMeasurementsChange}
+                onFocus={handleMeasurementsFocus}
+                onBlur={() => setIsMeasurementsFocused(false)}
+                textAlignVertical="top"
+              />
+            </View>
 
-            {/* Suggestion Chips */}
+            {/* Quick-add Chips - Secondary helper */}
             <View style={styles.suggestionsContainer}>
-              <Text style={styles.suggestionsLabel}>Tap to add:</Text>
+              <Text style={styles.suggestionsLabel}>Quick add:</Text>
               <View style={styles.suggestionsRow}>
                 {MEASUREMENT_SUGGESTIONS.map((suggestion) => (
                   <TouchableOpacity
@@ -177,30 +193,11 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
                     onPress={() => handleSuggestionTap(suggestion.label, suggestion.placeholder)}
                     activeOpacity={0.7}
                   >
+                    <Ionicons name="add" size={14} color="#6B7280" style={styles.chipIcon} />
                     <Text style={styles.suggestionChipText}>{suggestion.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
-
-            {/* Free-form Input */}
-            <View style={[
-              styles.measurementsInputContainer,
-              isMeasurementsFocused && styles.inputFocused
-            ]}>
-              <TextInput
-                ref={measurementsInputRef}
-                style={styles.measurementsInput}
-                placeholder="Your measurements will appear here..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={2}
-                value={data.measurements}
-                onChangeText={handleMeasurementsChange}
-                onFocus={handleMeasurementsFocus}
-                onBlur={() => setIsMeasurementsFocused(false)}
-                textAlignVertical="top"
-              />
             </View>
           </View>
         </ScrollView>
@@ -306,13 +303,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     flex: 1,
   },
-  cardDescription: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    marginBottom: 14,
-    lineHeight: 18,
-  },
   optionalBadge: {
     backgroundColor: '#F3F4F6',
     paddingHorizontal: 8,
@@ -357,15 +347,34 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Suggestions
+  // Measurements Input - Primary action area
+  measurementsInputContainer: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    padding: 12,
+    marginBottom: 14,
+  },
+  measurementsInput: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#1F2937',
+    minHeight: 56,
+    lineHeight: 20,
+  },
+
+  // Quick-add Suggestions - Secondary helper
   suggestionsContainer: {
-    marginBottom: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   suggestionsLabel: {
     fontSize: 11,
     fontWeight: '500',
     color: '#9CA3AF',
-    marginBottom: 8,
+    marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
@@ -375,33 +384,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suggestionChip: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    paddingLeft: 8,
+    paddingRight: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chipIcon: {
+    marginRight: 4,
   },
   suggestionChipText: {
     fontSize: 13,
     fontWeight: '500',
     color: '#4B5563',
-  },
-
-  // Measurements Input
-  measurementsInputContainer: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    padding: 12,
-  },
-  measurementsInput: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#1F2937',
-    minHeight: 50,
-    lineHeight: 20,
   },
 
   // Button Container
