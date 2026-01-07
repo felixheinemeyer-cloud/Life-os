@@ -212,11 +212,6 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     }
   };
 
-  const handleStatistics = (): void => {
-    // TODO: Navigate to statistics screen
-    console.log('Navigate to Statistics');
-  };
-
   const handleProfile = (): void => {
     // TODO: Navigate to profile/settings screen
     console.log('Navigate to Profile');
@@ -538,10 +533,10 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             {/* Header Row */}
             <View style={styles.statsHeader}>
               <Text style={styles.statsTitle}>Last 7 Days</Text>
-              <TouchableOpacity onPress={handleStatistics} style={styles.seeAllButton}>
+              <View style={styles.seeAllButton}>
                 <Text style={styles.seeAllLink}>See All</Text>
                 <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-              </TouchableOpacity>
+              </View>
             </View>
 
             {/* Interactive Legend Row */}
@@ -557,7 +552,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     styles.legendItem,
                     activeVariable === 'nutrition' && {
                       backgroundColor: '#F0FDF4',
-                      borderColor: '#BBF7D0',
+                      borderColor: '#86EFAC',
                     },
                   ]}
                 >
@@ -565,7 +560,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Text
                     style={[
                       styles.legendLabel,
-                      activeVariable === 'nutrition' && styles.legendLabelActive,
+                      activeVariable === 'nutrition' && { color: '#059669', fontWeight: '600' },
                     ]}
                   >
                     Nutrition
@@ -584,7 +579,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     styles.legendItem,
                     activeVariable === 'energy' && {
                       backgroundColor: '#FFFBEB',
-                      borderColor: '#FDE68A',
+                      borderColor: '#FCD34D',
                     },
                   ]}
                 >
@@ -592,7 +587,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Text
                     style={[
                       styles.legendLabel,
-                      activeVariable === 'energy' && styles.legendLabelActive,
+                      activeVariable === 'energy' && { color: '#D97706', fontWeight: '600' },
                     ]}
                   >
                     Energy
@@ -611,7 +606,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     styles.legendItem,
                     activeVariable === 'satisfaction' && {
                       backgroundColor: '#EFF6FF',
-                      borderColor: '#BFDBFE',
+                      borderColor: '#93C5FD',
                     },
                   ]}
                 >
@@ -619,7 +614,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                   <Text
                     style={[
                       styles.legendLabel,
-                      activeVariable === 'satisfaction' && styles.legendLabelActive,
+                      activeVariable === 'satisfaction' && { color: '#2563EB', fontWeight: '600' },
                     ]}
                   >
                     Satisfaction
@@ -1386,8 +1381,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'transparent',
+    backgroundColor: 'transparent',
   },
   gradientDot: {
     width: 8,
@@ -1399,10 +1395,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: '#6B7280',
-  },
-  legendLabelActive: {
-    fontWeight: '600',
-    color: '#374151',
   },
   // Focus Section - Clean Design
   focusSection: {
