@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
@@ -20,6 +21,7 @@ import Svg, {
   LinearGradient,
   Stop,
 } from 'react-native-svg';
+import LinkedSparklines30DayOverviewSection from '../components/statistics/LinkedSparklines30DayOverviewSection';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -488,17 +490,14 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   // ============================================
   const renderDailyContent = () => (
     <>
-      {/* Priority Completion Section */}
-      <PriorityCompletionSection />
-
       {/* Sleep Stats Section */}
       <SleepStatsSection />
 
-      {/* Wellness Section (Nutrition, Energy, Satisfaction) */}
-      <WellnessSection />
+      {/* Priority Completion Section */}
+      <PriorityCompletionSection />
 
-      {/* Wellness Compact Section (for comparison) */}
-      <WellnessCompactSection />
+      {/* 30-Day Overview with Linked Sparklines */}
+      <LinkedSparklines30DayOverviewSection />
 
       {/* Journaling Section */}
       <JournalingSection />
@@ -833,8 +832,13 @@ const WellnessChart = ({ nutrition, energy, satisfaction, activeMetric }: Wellne
   );
 };
 
-// Single-line 30-Day Heatmap
-const SingleLineHeatmap = ({ data }: { data: PriorityDayData[] }) => {
+// Single-line 30-Day Heatmap with interactive highlighting
+interface SingleLineHeatmapProps {
+  data: PriorityDayData[];
+  activeIndex: number | null;
+}
+
+const SingleLineHeatmap = ({ data, activeIndex }: SingleLineHeatmapProps) => {
   const getStatusColor = (status: PriorityStatus) => {
     if (status === true) return '#14B8A6';
     if (status === false) return '#F87171';
@@ -843,21 +847,97 @@ const SingleLineHeatmap = ({ data }: { data: PriorityDayData[] }) => {
 
   return (
     <View style={styles.singleLineHeatmap}>
-      {data.map((day, index) => (
-        <View
-          key={index}
-          style={[
-            styles.heatmapDot,
-            { backgroundColor: getStatusColor(day.status) },
-          ]}
-        />
-      ))}
+      {data.map((day, index) => {
+        const isActive = activeIndex === index;
+        return (
+          <View
+            key={index}
+            style={[
+              styles.heatmapDot,
+              {
+                backgroundColor: getStatusColor(day.status),
+                transform: isActive ? [{ scale: 1.5 }] : [{ scale: 1 }],
+                opacity: activeIndex !== null ? (isActive ? 1 : 0.5) : 1,
+              },
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };
 
-// Priority Completion Stats Section - Ultra Compact
+// Priority Completion Stats Section - Ultra Compact with Interactive Scrubbing
 const PriorityCompletionSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions
+  const chartWidth = Dimensions.get('window').width - 32 - 32; // screen - scroll padding - card padding
+
+  // Format selected date
+  const selectedDateStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const date = PRIORITY_30_DAYS[activeIndex].date;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }, [activeIndex]);
+
+  // Get selected day's status
+  const selectedDayStatus = activeIndex !== null ? PRIORITY_30_DAYS[activeIndex].status : null;
+
+  // Get status text and color for selected day
+  const getStatusDisplay = (status: PriorityStatus) => {
+    if (status === true) return { text: 'Completed', color: '#14B8A6' };
+    if (status === false) return { text: 'Missed', color: '#F87171' };
+    return { text: 'No priority', color: '#9CA3AF' };
+  };
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 29);
+    return Math.max(0, Math.min(29, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  const isActive = activeIndex !== null;
+  const statusDisplay = isActive ? getStatusDisplay(selectedDayStatus) : null;
+
   return (
     <View style={styles.prioritySectionCard}>
       {/* Header Row */}
@@ -866,29 +946,49 @@ const PriorityCompletionSection = () => {
           <Ionicons name="flag" size={14} color="#14B8A6" />
           <Text style={styles.priorityTitle}>Priority Completion</Text>
         </View>
-        <View style={styles.streakBadge}>
-          <Ionicons name="flame" size={11} color="#F59E0B" />
-          <Text style={styles.streakBadgeText}>{PRIORITY_STATS.currentStreak}</Text>
-        </View>
+        {isActive && selectedDateStr ? (
+          <Text style={styles.prioritySelectedDate}>{selectedDateStr}</Text>
+        ) : (
+          <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={11} color="#F59E0B" />
+            <Text style={styles.streakBadgeText}>{PRIORITY_STATS.currentStreak}</Text>
+          </View>
+        )}
       </View>
 
       {/* Hero Stats Row */}
       <View style={styles.priorityStatsRow}>
-        <Text style={styles.priorityPercentage}>{PRIORITY_STATS.completionRate}%</Text>
-        <View style={styles.priorityMeta}>
-          <Text style={styles.priorityMetaText}>
-            <Text style={styles.priorityMetaHighlight}>{PRIORITY_STATS.completed}</Text> completed
-          </Text>
-          <Text style={styles.priorityMetaDivider}>·</Text>
-          <Text style={styles.priorityMetaText}>
-            <Text style={styles.priorityMetaMissed}>{PRIORITY_STATS.missed}</Text> missed
-          </Text>
-        </View>
+        {isActive && statusDisplay ? (
+          <>
+            <Text style={[styles.priorityStatusText, { color: statusDisplay.color }]}>
+              {statusDisplay.text}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.priorityPercentage}>{PRIORITY_STATS.completionRate}%</Text>
+            <View style={styles.priorityMeta}>
+              <Text style={styles.priorityMetaText}>
+                <Text style={styles.priorityMetaHighlight}>{PRIORITY_STATS.completed}</Text> completed
+              </Text>
+              <Text style={styles.priorityMetaDivider}>·</Text>
+              <Text style={styles.priorityMetaText}>
+                <Text style={styles.priorityMetaMissed}>{PRIORITY_STATS.missed}</Text> missed
+              </Text>
+            </View>
+          </>
+        )}
       </View>
 
       {/* 30-Day Heatmap */}
       <View style={styles.heatmapSection}>
-        <SingleLineHeatmap data={PRIORITY_30_DAYS} />
+        <View
+          ref={chartRef}
+          onLayout={handleLayout}
+          {...panResponder.panHandlers}
+        >
+          <SingleLineHeatmap data={PRIORITY_30_DAYS} activeIndex={activeIndex} />
+        </View>
         <View style={styles.heatmapLabels}>
           <Text style={styles.heatmapLabel}>30d ago</Text>
           <Text style={styles.heatmapLabel}>today</Text>
@@ -898,37 +998,139 @@ const PriorityCompletionSection = () => {
   );
 };
 
-// Sleep Mini Bar Chart (Sparkline)
-const SleepSparkline = ({ data }: { data: SleepDayData[] }) => {
+// Sleep Mini Bar Chart (Sparkline) with interactive scrubbing
+interface SleepSparklineProps {
+  data: SleepDayData[];
+  activeIndex: number | null;
+}
+
+const SleepSparkline = ({ data, activeIndex }: SleepSparklineProps) => {
   const maxHours = 10;
-  const barMaxHeight = 36;
+  const barMaxHeight = 52;
+  const chartWidth = Dimensions.get('window').width - 32 - 32; // screen - scroll padding - card padding
 
   const getBarHeight = (hours: number | null) => {
     if (hours === null) return 3;
     return Math.max(3, (hours / maxHours) * barMaxHeight);
   };
 
+  // Calculate y position for reference line (0h at bottom, 10h at top)
+  const getRefLineY = (hours: number) => {
+    return barMaxHeight - (hours / maxHours) * barMaxHeight;
+  };
+
   return (
     <View style={styles.sleepSparkline}>
-      {data.map((day, index) => (
-        <View
-          key={index}
-          style={[
-            styles.sleepBar,
-            {
-              height: getBarHeight(day.hours),
-              backgroundColor: day.hours === null ? '#E5E7EB' : '#8B5CF6',
-              opacity: day.hours === null ? 0.4 : 0.85,
-            },
-          ]}
-        />
-      ))}
+      {/* Reference lines */}
+      <Svg
+        width={chartWidth}
+        height={barMaxHeight}
+        style={StyleSheet.absoluteFill}
+      >
+        {[0, 5, 10].map((hours) => {
+          const y = getRefLineY(hours);
+          return (
+            <Path
+              key={hours}
+              d={`M 0 ${y.toFixed(1)} L ${chartWidth} ${y.toFixed(1)}`}
+              stroke="#D1D5DB"
+              strokeWidth={1}
+              strokeDasharray="2,6"
+              opacity={0.5}
+            />
+          );
+        })}
+      </Svg>
+
+      {/* Bars */}
+      {data.map((day, index) => {
+        const isActive = activeIndex === index;
+        const hasData = day.hours !== null;
+
+        return (
+          <View
+            key={index}
+            style={[
+              styles.sleepBar,
+              {
+                height: getBarHeight(day.hours),
+                backgroundColor: hasData ? '#8B5CF6' : '#E5E7EB',
+                opacity: hasData ? (isActive ? 1 : 0.85) : 0.4,
+                transform: isActive ? [{ scaleX: 1.4 }] : [{ scaleX: 1 }],
+              },
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };
 
-// Sleep Stats Section - Clean & Focused
+// Sleep Stats Section - Clean & Focused with Interactive Scrubbing
 const SleepStatsSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions
+  const chartWidth = Dimensions.get('window').width - 32 - 32; // screen - scroll padding - card padding
+
+  // Format selected date
+  const selectedDateStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const date = SLEEP_30_DAYS[activeIndex].date;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }, [activeIndex]);
+
+  // Get display value (selected day's hours or average)
+  const displayValue = activeIndex !== null
+    ? SLEEP_30_DAYS[activeIndex].hours
+    : SLEEP_STATS.average;
+
+  const displayLabel = activeIndex !== null ? selectedDateStr : 'average';
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 29);
+    return Math.max(0, Math.min(29, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
   return (
     <View style={styles.sleepSectionCard}>
       {/* Header Row */}
@@ -944,15 +1146,22 @@ const SleepStatsSection = () => {
 
       {/* Hero Stats Row */}
       <View style={styles.sleepStatsRow}>
-        <Text style={styles.sleepAverage}>{SLEEP_STATS.average}h</Text>
+        <Text style={styles.sleepAverage}>
+          {displayValue !== null ? `${displayValue}h` : '—'}
+        </Text>
         <View style={styles.sleepMeta}>
-          <Text style={styles.sleepMetaLight}>average</Text>
+          <Text style={styles.sleepMetaLight}>{displayLabel}</Text>
         </View>
       </View>
 
-      {/* 30-Day Sparkline */}
-      <View style={styles.sleepChartSection}>
-        <SleepSparkline data={SLEEP_30_DAYS} />
+      {/* 30-Day Sparkline with gesture handling */}
+      <View
+        ref={chartRef}
+        style={styles.sleepChartSection}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <SleepSparkline data={SLEEP_30_DAYS} activeIndex={activeIndex} />
         <View style={styles.sleepChartLabels}>
           <Text style={styles.sleepChartLabel}>30d ago</Text>
           <Text style={styles.sleepChartLabel}>today</Text>
@@ -962,19 +1171,31 @@ const SleepStatsSection = () => {
   );
 };
 
-// Journal Heatmap (single line)
-const JournalHeatmap = ({ data }: { data: JournalDayData[] }) => {
+// Journal Heatmap (single line) with interactive highlighting
+interface JournalHeatmapProps {
+  data: JournalDayData[];
+  activeIndex: number | null;
+}
+
+const JournalHeatmap = ({ data, activeIndex }: JournalHeatmapProps) => {
   return (
     <View style={styles.journalHeatmap}>
-      {data.map((day, index) => (
-        <View
-          key={index}
-          style={[
-            styles.journalDot,
-            { backgroundColor: day.journaled ? '#8B5CF6' : '#E5E7EB' },
-          ]}
-        />
-      ))}
+      {data.map((day, index) => {
+        const isActive = activeIndex === index;
+        return (
+          <View
+            key={index}
+            style={[
+              styles.journalDot,
+              {
+                backgroundColor: day.journaled ? '#8B5CF6' : '#E5E7EB',
+                transform: isActive ? [{ scale: 1.5 }] : [{ scale: 1 }],
+                opacity: activeIndex !== null ? (isActive ? 1 : 0.5) : 1,
+              },
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };
@@ -1176,8 +1397,283 @@ const WellnessCompactSection = () => {
   );
 };
 
-// Journaling Stats Section
+// ============================================
+// WELLNESS METRIC CARD (Stacked Cards Approach)
+// ============================================
+interface WellnessMetricCardProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  average: number;
+  data: { rating: number | null; date: Date }[];
+  color: string;
+  gradientId: string;
+}
+
+const WellnessMetricCard = ({ icon, label, average, data, color, gradientId }: WellnessMetricCardProps) => {
+  const chartWidth = SCREEN_WIDTH - 64;
+  const chartHeight = 48;
+  const padding = { top: 4, right: 0, bottom: 4, left: 0 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  // Calculate trend (this week vs last week)
+  const thisWeekData = data.slice(-7).filter(d => d.rating !== null);
+  const lastWeekData = data.slice(-14, -7).filter(d => d.rating !== null);
+
+  const thisWeekAvg = thisWeekData.length > 0
+    ? thisWeekData.reduce((sum, d) => sum + (d.rating || 0), 0) / thisWeekData.length
+    : 0;
+  const lastWeekAvg = lastWeekData.length > 0
+    ? lastWeekData.reduce((sum, d) => sum + (d.rating || 0), 0) / lastWeekData.length
+    : 0;
+
+  const trendPercent = lastWeekAvg > 0
+    ? Math.round(((thisWeekAvg - lastWeekAvg) / lastWeekAvg) * 100)
+    : 0;
+
+  const trendDirection = trendPercent > 2 ? 'up' : trendPercent < -2 ? 'down' : 'stable';
+  const trendIcon = trendDirection === 'up' ? 'arrow-up' : trendDirection === 'down' ? 'arrow-down' : 'remove';
+  const trendText = trendDirection === 'up'
+    ? `${trendPercent}% vs last week`
+    : trendDirection === 'down'
+    ? `${Math.abs(trendPercent)}% vs last week`
+    : 'stable vs last week';
+
+  // Interpolate missing values for smoother visualization
+  const interpolatedData = data.map((d, i) => {
+    if (d.rating !== null) return d.rating;
+
+    // Find previous valid value
+    let prevVal: number | null = null;
+    let prevIdx = i - 1;
+    while (prevIdx >= 0 && prevVal === null) {
+      prevVal = data[prevIdx].rating;
+      prevIdx--;
+    }
+
+    // Find next valid value
+    let nextVal: number | null = null;
+    let nextIdx = i + 1;
+    while (nextIdx < data.length && nextVal === null) {
+      nextVal = data[nextIdx].rating;
+      nextIdx++;
+    }
+
+    // Interpolate or use available value
+    if (prevVal !== null && nextVal !== null) {
+      const prevDist = i - (prevIdx + 1);
+      const nextDist = (nextIdx - 1) - i;
+      const totalDist = prevDist + nextDist;
+      return prevVal + ((nextVal - prevVal) * prevDist) / totalDist;
+    }
+    if (prevVal !== null) return prevVal;
+    if (nextVal !== null) return nextVal;
+    return 5; // Default fallback
+  });
+
+  // Use dynamic range based on data
+  const validRatings = data.filter(d => d.rating !== null).map(d => d.rating as number);
+  const dataMin = validRatings.length > 0 ? Math.min(...validRatings) : 1;
+  const dataMax = validRatings.length > 0 ? Math.max(...validRatings) : 10;
+  const range = dataMax - dataMin || 1;
+  const minValue = Math.max(1, dataMin - range * 0.3);
+  const maxValue = Math.min(10, dataMax + range * 0.3);
+
+  const getX = (index: number) => padding.left + (index / (data.length - 1)) * plotWidth;
+  const getY = (value: number) => {
+    const normalizedValue = Math.max(minValue, Math.min(maxValue, value));
+    return padding.top + plotHeight - ((normalizedValue - minValue) / (maxValue - minValue)) * plotHeight;
+  };
+
+  // Generate smooth path using interpolated data
+  const generatePath = () => {
+    if (interpolatedData.length === 0) return '';
+
+    let path = `M ${getX(0)} ${getY(interpolatedData[0])}`;
+
+    for (let i = 1; i < interpolatedData.length; i++) {
+      const prevX = getX(i - 1);
+      const prevY = getY(interpolatedData[i - 1]);
+      const currX = getX(i);
+      const currY = getY(interpolatedData[i]);
+
+      const cpX1 = prevX + (currX - prevX) * 0.33;
+      const cpY1 = prevY;
+      const cpX2 = prevX + (currX - prevX) * 0.67;
+      const cpY2 = currY;
+      path += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${currX} ${currY}`;
+    }
+
+    return path;
+  };
+
+  // Generate area path
+  const generateAreaPath = () => {
+    const linePath = generatePath();
+    if (!linePath) return '';
+
+    const bottomY = chartHeight - padding.bottom;
+    return `${linePath} L ${getX(data.length - 1)} ${bottomY} L ${getX(0)} ${bottomY} Z`;
+  };
+
+  return (
+    <View style={styles.metricCard}>
+      {/* Header Row */}
+      <View style={styles.metricCardHeader}>
+        <View style={styles.metricCardLeft}>
+          <View style={[styles.metricCardIconContainer, { backgroundColor: `${color}15` }]}>
+            <Ionicons name={icon} size={16} color={color} />
+          </View>
+          <Text style={styles.metricCardLabel}>{label}</Text>
+        </View>
+        <View style={styles.metricCardRight}>
+          <Text style={[styles.metricCardAverage, { color }]}>{average}</Text>
+        </View>
+      </View>
+
+      {/* Chart */}
+      <View style={styles.metricCardChart}>
+        <Svg width={chartWidth} height={chartHeight}>
+          <Defs>
+            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={color} stopOpacity="0.2" />
+              <Stop offset="100%" stopColor={color} stopOpacity="0.02" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Area fill */}
+          <Path
+            d={generateAreaPath()}
+            fill={`url(#${gradientId})`}
+          />
+
+          {/* Line */}
+          <Path
+            d={generatePath()}
+            stroke={color}
+            strokeWidth={2}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+
+      {/* Trend Row */}
+      <View style={styles.metricCardTrend}>
+        <Ionicons
+          name={trendIcon as keyof typeof Ionicons.glyphMap}
+          size={12}
+          color={trendDirection === 'up' ? '#10B981' : trendDirection === 'down' ? '#EF4444' : '#9CA3AF'}
+        />
+        <Text style={[
+          styles.metricCardTrendText,
+          {
+            color: trendDirection === 'up' ? '#10B981' : trendDirection === 'down' ? '#EF4444' : '#9CA3AF'
+          }
+        ]}>
+          {trendText}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+// Stacked Wellness Cards Section
+const WellnessStackedCardsSection = () => {
+  return (
+    <View style={styles.stackedCardsContainer}>
+      <WellnessMetricCard
+        icon="nutrition"
+        label="Nutrition"
+        average={NUTRITION_STATS.average}
+        data={NUTRITION_30_DAYS}
+        color="#10B981"
+        gradientId="nutritionCardGradient"
+      />
+      <WellnessMetricCard
+        icon="flash"
+        label="Energy"
+        average={ENERGY_STATS.average}
+        data={ENERGY_30_DAYS}
+        color="#F59E0B"
+        gradientId="energyCardGradient"
+      />
+      <WellnessMetricCard
+        icon="happy"
+        label="Mood"
+        average={SATISFACTION_STATS.average}
+        data={SATISFACTION_30_DAYS}
+        color="#3B82F6"
+        gradientId="moodCardGradient"
+      />
+    </View>
+  );
+};
+
+// Journaling Stats Section with Interactive Scrubbing
 const JournalingSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions
+  const chartWidth = Dimensions.get('window').width - 32 - 32; // screen - scroll padding - card padding
+
+  // Format selected date
+  const selectedDateStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const date = JOURNAL_30_DAYS[activeIndex].date;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }, [activeIndex]);
+
+  // Get selected day's status
+  const selectedDayJournaled = activeIndex !== null ? JOURNAL_30_DAYS[activeIndex].journaled : null;
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 29);
+    return Math.max(0, Math.min(29, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  const isActive = activeIndex !== null;
+
   return (
     <View style={styles.journalSectionCard}>
       {/* Header Row */}
@@ -1186,23 +1682,44 @@ const JournalingSection = () => {
           <Ionicons name="book" size={14} color="#8B5CF6" />
           <Text style={styles.journalTitle}>Journaling</Text>
         </View>
-        <View style={styles.journalStreakBadge}>
-          <Ionicons name="flame" size={11} color="#F59E0B" />
-          <Text style={styles.journalStreakText}>{JOURNAL_STATS.currentStreak}</Text>
-        </View>
+        {isActive && selectedDateStr ? (
+          <Text style={styles.journalSelectedDate}>{selectedDateStr}</Text>
+        ) : (
+          <View style={styles.journalStreakBadge}>
+            <Ionicons name="flame" size={11} color="#F59E0B" />
+            <Text style={styles.journalStreakText}>{JOURNAL_STATS.currentStreak}</Text>
+          </View>
+        )}
       </View>
 
       {/* Hero Stats Row */}
       <View style={styles.journalStatsRow}>
-        <Text style={styles.journalDaysCount}>{JOURNAL_STATS.journaledDays}</Text>
-        <View style={styles.journalMeta}>
-          <Text style={styles.journalMetaLight}>of {JOURNAL_STATS.total} days</Text>
-        </View>
+        {isActive ? (
+          <Text style={[
+            styles.journalStatusText,
+            { color: selectedDayJournaled ? '#8B5CF6' : '#9CA3AF' }
+          ]}>
+            {selectedDayJournaled ? 'Journaled' : 'Not journaled'}
+          </Text>
+        ) : (
+          <>
+            <Text style={styles.journalDaysCount}>{JOURNAL_STATS.journaledDays}</Text>
+            <View style={styles.journalMeta}>
+              <Text style={styles.journalMetaLight}>of {JOURNAL_STATS.total} days</Text>
+            </View>
+          </>
+        )}
       </View>
 
       {/* 30-Day Heatmap */}
       <View style={styles.journalChartSection}>
-        <JournalHeatmap data={JOURNAL_30_DAYS} />
+        <View
+          ref={chartRef}
+          onLayout={handleLayout}
+          {...panResponder.panHandlers}
+        >
+          <JournalHeatmap data={JOURNAL_30_DAYS} activeIndex={activeIndex} />
+        </View>
         <View style={styles.journalChartLabels}>
           <Text style={styles.journalChartLabel}>30d ago</Text>
           <Text style={styles.journalChartLabel}>today</Text>
@@ -1398,10 +1915,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0EEE8',
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerTitle: {
     fontSize: 18,
@@ -1468,7 +1992,7 @@ const styles = StyleSheet.create({
   },
   quickStatCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginRight: 12,
     width: 100,
@@ -1648,7 +2172,7 @@ const styles = StyleSheet.create({
   journalDayCircle: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -1678,7 +2202,7 @@ const styles = StyleSheet.create({
   heroIconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -1727,7 +2251,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 10,
     shadowColor: '#000',
@@ -1784,7 +2308,7 @@ const styles = StyleSheet.create({
   // ============================================
   prioritySectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -1798,6 +2322,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+    minHeight: 24,
   },
   priorityTitleRow: {
     flexDirection: 'row',
@@ -1824,10 +2349,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#D97706',
   },
+  prioritySelectedDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  priorityStatusText: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
   priorityStatsRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: 14,
+    minHeight: 44,
   },
   priorityPercentage: {
     fontSize: 32,
@@ -1887,7 +2423,7 @@ const styles = StyleSheet.create({
   // ============================================
   sleepSectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -1964,7 +2500,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 36,
+    height: 52,
     marginBottom: 6,
   },
   sleepBar: {
@@ -1987,7 +2523,7 @@ const styles = StyleSheet.create({
   // ============================================
   journalSectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -2001,6 +2537,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+    minHeight: 24,
   },
   journalTitleRow: {
     flexDirection: 'row',
@@ -2027,10 +2564,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#D97706',
   },
+  journalSelectedDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  journalStatusText: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
   journalStatsRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: 12,
+    minHeight: 44,
   },
   journalDaysCount: {
     fontSize: 32,
@@ -2079,7 +2627,7 @@ const styles = StyleSheet.create({
   // ============================================
   wellnessSectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -2166,7 +2714,7 @@ const styles = StyleSheet.create({
   // Compact Wellness Section - Redesigned
   wellnessCompactCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -2246,6 +2794,174 @@ const styles = StyleSheet.create({
   wellnessCompactTimeLabel: {
     fontSize: 10,
     color: '#C9CDD3',
+    fontWeight: '500',
+  },
+
+  // ============================================
+  // GROUPED DAY VIEW STYLES
+  // ============================================
+  groupedDayCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  groupedDayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  groupedDayTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  groupedDayTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  groupedDayBadge: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  groupedDayBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  groupedDaySubtitle: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginBottom: 12,
+  },
+  groupedDayLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  groupedDayLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  groupedDayLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+  },
+  groupedDayLegendText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  groupedDayScrollContent: {
+    paddingRight: 8,
+    gap: 6,
+  },
+  groupedDayCluster: {
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  groupedDayClusterToday: {
+    backgroundColor: '#F5F3FF',
+  },
+  groupedDayBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 56,
+    gap: 2,
+  },
+  groupedDayBar: {
+    width: 6,
+    borderRadius: 2,
+    minHeight: 4,
+  },
+  groupedDayLabel: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    marginTop: 6,
+  },
+  groupedDayLabelToday: {
+    color: '#6366F1',
+    fontWeight: '700',
+  },
+
+  // ============================================
+  // STACKED METRIC CARDS STYLES
+  // ============================================
+  stackedCardsContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  metricCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  metricCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  metricCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  metricCardIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricCardLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  metricCardRight: {
+    alignItems: 'flex-end',
+  },
+  metricCardAverage: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  metricCardChart: {
+    marginHorizontal: -16,
+    marginBottom: 8,
+  },
+  metricCardTrend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metricCardTrendText: {
+    fontSize: 12,
     fontWeight: '500',
   },
 });
