@@ -1107,29 +1107,47 @@ const CompactSparkline = ({ data, color }: WellnessMiniSparklineProps) => {
 };
 
 // Compact Wellness Row (horizontal layout for comparison)
-const WellnessCompactRow = ({ icon, label, data, average, color }: WellnessRowProps) => (
-  <View style={styles.wellnessCompactRow}>
-    <View style={styles.wellnessCompactLeft}>
-      <Ionicons name={icon} size={14} color={color} />
+interface WellnessCompactRowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  data: { rating: number | null }[];
+  average: number;
+  color: string;
+  lightColor: string;
+  isLast?: boolean;
+}
+
+const WellnessCompactRow = ({ icon, label, data, average, color, lightColor, isLast }: WellnessCompactRowProps) => (
+  <View style={[styles.wellnessCompactRow, !isLast && styles.wellnessCompactRowBorder]}>
+    <View style={styles.wellnessCompactMeta}>
+      <View style={[styles.wellnessCompactIconBadge, { backgroundColor: lightColor }]}>
+        <Ionicons name={icon} size={12} color={color} />
+      </View>
       <Text style={styles.wellnessCompactLabel}>{label}</Text>
-      <Text style={styles.wellnessCompactAverage}>{average}</Text>
     </View>
-    <View style={styles.wellnessCompactChart}>
-      <CompactSparkline data={data} color={color} />
+    <View style={styles.wellnessCompactRight}>
+      <View style={styles.wellnessCompactChart}>
+        <CompactSparkline data={data} color={color} />
+      </View>
+      <View style={[styles.wellnessCompactScoreBadge, { backgroundColor: lightColor }]}>
+        <Text style={[styles.wellnessCompactAverage, { color }]}>{average}</Text>
+      </View>
     </View>
   </View>
 );
 
-// Compact Wellness Section (for comparison)
+// Compact Wellness Section - Redesigned
 const WellnessCompactSection = () => {
   return (
     <View style={styles.wellnessCompactCard}>
+      {/* Compact Metric Rows */}
       <WellnessCompactRow
         icon="nutrition"
         label="Nutrition"
         data={NUTRITION_30_DAYS}
         average={NUTRITION_STATS.average}
         color="#10B981"
+        lightColor="#D1FAE5"
       />
       <WellnessCompactRow
         icon="flash"
@@ -1137,18 +1155,22 @@ const WellnessCompactSection = () => {
         data={ENERGY_30_DAYS}
         average={ENERGY_STATS.average}
         color="#F59E0B"
+        lightColor="#FEF3C7"
       />
       <WellnessCompactRow
         icon="happy"
-        label="Satisfaction"
+        label="Mood"
         data={SATISFACTION_30_DAYS}
         average={SATISFACTION_STATS.average}
         color="#3B82F6"
+        lightColor="#DBEAFE"
         isLast
       />
-      <View style={styles.wellnessCompactTimeLabels}>
-        <Text style={styles.wellnessTimeLabel}>30d ago</Text>
-        <Text style={styles.wellnessTimeLabel}>today</Text>
+
+      {/* Time Labels */}
+      <View style={styles.wellnessCompactBottomLabels}>
+        <Text style={styles.wellnessCompactTimeLabel}>30d ago</Text>
+        <Text style={styles.wellnessCompactTimeLabel}>today</Text>
       </View>
     </View>
   );
@@ -2141,7 +2163,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Compact Wellness Section (horizontal layout for comparison)
+  // Compact Wellness Section - Redesigned
   wellnessCompactCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -2156,45 +2178,75 @@ const styles = StyleSheet.create({
   wellnessCompactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
   },
-  wellnessCompactLeft: {
+  wellnessCompactRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  wellnessCompactMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 115,
-    gap: 5,
+    gap: 10,
+    minWidth: 110,
+  },
+  wellnessCompactIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   wellnessCompactLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#4B5563',
+  },
+  wellnessCompactRight: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 12,
   },
   wellnessCompactChart: {
     flex: 1,
-    marginLeft: 8,
+    maxWidth: 150,
+  },
+  wellnessCompactScoreBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    minWidth: 40,
+    alignItems: 'center',
   },
   compactSparkline: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 44,
+    height: 36,
   },
   compactBar: {
-    width: 5,
+    width: 4,
     borderRadius: 1.5,
     minHeight: 3,
   },
   wellnessCompactAverage: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#1F2937',
   },
-  wellnessCompactTimeLabels: {
+  wellnessCompactBottomLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 4,
-    marginLeft: 123,
+    paddingTop: 10,
+    marginLeft: 120,
+    marginRight: 52,
+  },
+  wellnessCompactTimeLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
+    fontWeight: '500',
   },
 });
 
