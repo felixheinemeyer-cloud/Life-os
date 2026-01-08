@@ -460,7 +460,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 <Text style={styles.weeklyCardSubtitle}>Reflect on your week</Text>
               </View>
               {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#0D9488" style={styles.weeklyChevron} />
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.weeklyChevron} />
             </View>
           </TouchableOpacity>
 
@@ -488,7 +488,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 <Text style={styles.monthlyCardSubtitle}>Review your month</Text>
               </View>
               {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#DB2777" style={styles.monthlyChevron} />
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.monthlyChevron} />
             </View>
           </TouchableOpacity>
 
@@ -516,7 +516,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                 <Text style={styles.bodyCheckInCardSubtitle}>Track your physical progress</Text>
               </View>
               {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#0EA5E9" style={styles.bodyCheckInChevron} />
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.bodyCheckInChevron} />
             </View>
           </TouchableOpacity>
 

@@ -659,7 +659,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
                   </View>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={20} color={monthlyCheckIn.isAvailable ? '#DB2777' : '#D1D5DB'} style={styles.monthlyChevron} />
+              <Ionicons name="chevron-forward" size={20} color={monthlyCheckIn.isAvailable ? '#6B7280' : '#D1D5DB'} style={styles.monthlyChevron} />
             </View>
           </TouchableOpacity>
 
@@ -702,7 +702,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
                   </View>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={20} color={bodyCheckIn.isAvailable ? '#0EA5E9' : '#D1D5DB'} style={styles.bodyCheckInChevron} />
+              <Ionicons name="chevron-forward" size={20} color={bodyCheckIn.isAvailable ? '#6B7280' : '#D1D5DB'} style={styles.bodyCheckInChevron} />
             </View>
           </TouchableOpacity>
         </View>
