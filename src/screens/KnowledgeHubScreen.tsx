@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16, // Space below header
     paddingBottom: 16, // 16px space above navigation bar
-    gap: 16, // Gap between rows
+    gap: 12, // Gap between rows
   },
   vaultRow: {
     flex: 1,
