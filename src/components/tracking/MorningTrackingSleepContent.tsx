@@ -873,14 +873,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timeCardLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
     color: '#9CA3AF',
     marginBottom: 3,
     letterSpacing: 0.3,
   },
   timeCardValue: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.4,

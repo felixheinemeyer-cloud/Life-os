@@ -77,9 +77,9 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
   const completedWealth: Record<WealthType, boolean> = {
     physical: true,
     mental: true,
-    social: false,
-    financial: false,
-    time: false,
+    social: true,
+    financial: true,
+    time: true,
   };
 
   // Animation values
@@ -623,20 +623,20 @@ const styles = StyleSheet.create({
   },
   finishButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   finishButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     marginRight: 8,

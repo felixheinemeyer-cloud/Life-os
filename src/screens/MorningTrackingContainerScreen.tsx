@@ -171,6 +171,7 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
             <View style={styles.page}>
               <MorningTrackingMindsetContent
                 onNavigate={(screen) => navigation?.navigate(screen)}
+                onContinue={handleContinue}
               />
             </View>
           </Animated.View>
