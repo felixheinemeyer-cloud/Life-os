@@ -41,7 +41,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       id: '2',
       title: 'Mindset',
       subtitle: 'Rules, affirmations &\nbeliefs',
-      icon: 'diamond',
+      icon: 'flash',
       iconColor: '#8B5CF6',
       route: 'MindsetBeliefs',
     },
