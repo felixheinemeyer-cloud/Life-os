@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Platform,
   Animated,
 } from 'react-native';
@@ -14,18 +13,18 @@ import * as Haptics from 'expo-haptics';
 
 interface MorningTrackingMindsetContentProps {
   onNavigate?: (screen: string) => void;
+  onContinue?: () => void;
 }
 
 const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps> = ({
   onNavigate,
 }) => {
-  // Scale animations for press
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = (scaleAnim: Animated.Value) => {
     Animated.spring(scaleAnim, {
-      toValue: 0.96,
+      toValue: 0.97,
       useNativeDriver: true,
       friction: 8,
       tension: 100,
@@ -50,134 +49,94 @@ const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <LinearGradient
-            colors={['#FBBF24', '#F59E0B', '#D97706']}
-            style={styles.iconGradientRing}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <LinearGradient
+          colors={['#FBBF24', '#F59E0B', '#D97706']}
+          style={styles.iconGradientRing}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.iconInnerCircle}>
+            <Ionicons name="analytics" size={28} color="#D97706" />
+          </View>
+        </LinearGradient>
+        <Text style={styles.headerTitle}>
+          Get into the right mindset
+        </Text>
+        <Text style={styles.headerSubtext}>
+          Review your vision and guiding principles
+        </Text>
+      </View>
+
+      {/* Cards Container */}
+      <View style={styles.cardsContainer}>
+        {/* Higher Self Card */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPressIn={() => handlePressIn(scale1)}
+          onPressOut={() => handlePressOut(scale1)}
+          onPress={() => handleCardPress('MorningTrackingHigherSelf')}
+          style={styles.cardTouchable}
+        >
+          <Animated.View
+            style={[
+              styles.card,
+              styles.higherSelfCard,
+              { transform: [{ scale: scale1 }] },
+            ]}
           >
-            <View style={styles.iconInnerCircle}>
-              <Ionicons name="diamond" size={28} color="#D97706" />
+            {/* Icon */}
+            <View style={[styles.cardIconCircle, styles.higherSelfIconBg]}>
+              <Ionicons name="star" size={29} color="#6366F1" />
             </View>
-          </LinearGradient>
-          <Text style={styles.headerTitle}>
-            Get into the right mindset
-          </Text>
-          <Text style={styles.headerSubtext}>
-            Review your vision and guiding principles
-          </Text>
-        </View>
 
-        {/* Feature Cards */}
-        <View style={styles.cardsContainer}>
-          {/* Higher Self Card */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => handlePressIn(scale1)}
-            onPressOut={() => handlePressOut(scale1)}
-            onPress={() => handleCardPress('MorningTrackingHigherSelf')}
+            {/* Content */}
+            <Text style={styles.cardTitle}>Higher Self</Text>
+            <Text style={styles.cardDescription}>
+              Your best version & identity
+            </Text>
+
+            {/* Arrow */}
+            <View style={styles.arrowContainer}>
+              <Ionicons name="chevron-forward" size={22} color="#D1D5DB" />
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+
+        {/* Mindset Card */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPressIn={() => handlePressIn(scale2)}
+          onPressOut={() => handlePressOut(scale2)}
+          onPress={() => handleCardPress('MorningTrackingMindsetEntries')}
+          style={styles.cardTouchable}
+        >
+          <Animated.View
+            style={[
+              styles.card,
+              styles.mindsetCard,
+              { transform: [{ scale: scale2 }] },
+            ]}
           >
-            <Animated.View
-              style={[
-                styles.featureCardWrapper,
-                {
-                  transform: [{ scale: scale1 }],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
-                style={styles.featureCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Icon */}
-                <View style={styles.iconContainer}>
-                  <View style={styles.cardIconCircle}>
-                    <Ionicons name="star" size={36} color="#6366F1" />
-                  </View>
-                </View>
+            {/* Icon */}
+            <View style={[styles.cardIconCircle, styles.mindsetIconBg]}>
+              <Ionicons name="flash" size={29} color="#8B5CF6" />
+            </View>
 
-                {/* Content */}
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>Your Best Version</Text>
-                  <Text style={styles.cardDescription} numberOfLines={2}>
-                    Review your ideal self and aspirations
-                  </Text>
-                </View>
+            {/* Content */}
+            <Text style={styles.cardTitle}>Mindset</Text>
+            <Text style={styles.cardDescription}>
+              Rules, affirmations & beliefs
+            </Text>
 
-                {/* Arrow indicator */}
-                <View style={styles.arrowContainer}>
-                  <View style={styles.arrowCircle}>
-                    <Ionicons name="chevron-forward" size={20} color="#6366F1" />
-                  </View>
-                </View>
-
-                {/* Decorative elements */}
-                <View style={[styles.decorDot, styles.dot1]} />
-                <View style={[styles.decorDot, styles.dot2]} />
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
-
-          {/* Mindset Card */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPressIn={() => handlePressIn(scale2)}
-            onPressOut={() => handlePressOut(scale2)}
-            onPress={() => handleCardPress('MorningTrackingMindsetEntries')}
-          >
-            <Animated.View
-              style={[
-                styles.featureCardWrapper,
-                {
-                  transform: [{ scale: scale2 }],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['#E0E7FF', '#C7D2FE', '#A5B4FC']}
-                style={styles.featureCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Icon */}
-                <View style={styles.iconContainer}>
-                  <View style={styles.cardIconCircle}>
-                    <Ionicons name="diamond" size={36} color="#6366F1" />
-                  </View>
-                </View>
-
-                {/* Content */}
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>Mindset</Text>
-                  <Text style={styles.cardDescription} numberOfLines={2}>
-                    Explore your beliefs and mental frameworks
-                  </Text>
-                </View>
-
-                {/* Arrow indicator */}
-                <View style={styles.arrowContainer}>
-                  <View style={styles.arrowCircle}>
-                    <Ionicons name="chevron-forward" size={20} color="#6366F1" />
-                  </View>
-                </View>
-
-                {/* Decorative elements */}
-                <View style={[styles.decorDot, styles.dot1]} />
-                <View style={[styles.decorDot, styles.dot2]} />
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            {/* Arrow */}
+            <View style={styles.arrowContainer}>
+              <Ionicons name="chevron-forward" size={22} color="#D1D5DB" />
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -186,20 +145,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
   },
 
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    paddingTop: 16,
+    marginBottom: 28,
   },
   iconGradientRing: {
     width: 64,
@@ -228,103 +181,90 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
     letterSpacing: -0.2,
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
   // Cards Container
   cardsContainer: {
-    gap: 16,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 16,
   },
 
-  // Feature Card Styles
-  featureCardWrapper: {
-    borderRadius: 24,
+  // Card Styles
+  cardTouchable: {
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 29,
+    paddingRight: 67,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    minWidth: 336,
+  },
+  higherSelfCard: {
     shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
+    shadowRadius: 14,
+    elevation: 5,
   },
-  featureCard: {
-    borderRadius: 24,
-    padding: 24,
-    minHeight: 220,
-    position: 'relative',
-    overflow: 'hidden',
+  mindsetCard: {
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 5,
   },
-  iconContainer: {
-    marginBottom: 16,
-  },
+
+  // Icon
   cardIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    marginBottom: 19,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
-  cardContent: {
-    flex: 1,
-    paddingRight: 60,
+  higherSelfIconBg: {
+    backgroundColor: '#EEF2FF',
   },
+  mindsetIconBg: {
+    backgroundColor: '#F3E8FF',
+  },
+
+  // Content
   cardTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#4338CA',
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+    marginBottom: 6,
   },
   cardDescription: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
-    lineHeight: 20,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 25,
+    letterSpacing: -0.1,
   },
+
+  // Arrow
   arrowContainer: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-  },
-  arrowCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    top: 0,
+    bottom: 0,
+    right: 29,
     justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  decorDot: {
-    position: 'absolute',
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  dot1: {
-    width: 80,
-    height: 80,
-    top: -20,
-    right: -20,
-  },
-  dot2: {
-    width: 40,
-    height: 40,
-    top: 60,
-    right: 80,
   },
 });
 

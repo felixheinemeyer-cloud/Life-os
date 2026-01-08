@@ -9,7 +9,6 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 interface MorningTrackingMindsetEntriesScreenProps {
@@ -24,7 +23,7 @@ interface BeliefEntry {
   content: string;
 }
 
-// Sample mindset entries - in a real app, these would come from state/storage
+// Sample mindset entries
 const SAMPLE_ENTRIES: BeliefEntry[] = [
   {
     id: '1',
@@ -40,7 +39,7 @@ const SAMPLE_ENTRIES: BeliefEntry[] = [
   },
   {
     id: '4',
-    content: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+    content: 'Success is not final, failure is not fatal: it is the courage to continue that counts. The road to success is always under construction. What lies behind us and what lies before us are tiny matters compared to what lies within us.',
   },
 ];
 
@@ -69,7 +68,6 @@ const MorningTrackingMindsetEntriesScreen: React.FC<MorningTrackingMindsetEntrie
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // Navigate to the complete animation screen
     navigation.navigate('MorningTrackingComplete');
   };
 
@@ -99,77 +97,61 @@ const MorningTrackingMindsetEntriesScreen: React.FC<MorningTrackingMindsetEntrie
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <LinearGradient
-              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-              style={styles.iconGradientRing}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.iconInnerCircle}>
-                <Ionicons name="diamond" size={28} color="#7C3AED" />
-              </View>
-            </LinearGradient>
-            <Text style={styles.headerTitle}>Mindset</Text>
-            <Text style={styles.headerSubtext}>
-              Your beliefs and guiding principles
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Mindset</Text>
+            <Text style={styles.subtitle}>
+              Your favorite quotes, values & guiding principles in one place
             </Text>
           </View>
 
           {/* Mindset Entries */}
           <View style={styles.entriesContainer}>
-            {entries.length === 0 ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconContainer}>
-                  <Ionicons name="diamond-outline" size={40} color="#C7D2FE" />
-                </View>
-                <Text style={styles.emptyTitle}>No mindset entries yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Add beliefs and quotes in the Mindset section
-                </Text>
-              </View>
-            ) : (
-              entries.map((entry) => {
-                const isExpanded = expandedCards.has(entry.id);
-                const isLongText = entry.content.length > 100;
+            {entries.map((entry) => {
+              const isExpanded = expandedCards.has(entry.id);
+              const isLongText = entry.content.length > 120;
 
-                return (
-                  <TouchableOpacity
-                    key={entry.id}
-                    activeOpacity={isLongText ? 0.8 : 1}
-                    onPress={() => isLongText && toggleExpand(entry.id)}
-                    style={styles.cardWrapper}
-                  >
-                    <View style={styles.card}>
-                      <View style={styles.cardAccent} />
-                      <Text
-                        style={styles.cardContent}
-                        numberOfLines={isExpanded ? undefined : 3}
+              return (
+                <TouchableOpacity
+                  key={entry.id}
+                  activeOpacity={isLongText ? 0.8 : 1}
+                  onPress={() => isLongText && toggleExpand(entry.id)}
+                  style={styles.cardWrapper}
+                >
+                  <View style={styles.card}>
+                    <View style={styles.cardAccent} />
+                    <Text
+                      style={styles.cardContent}
+                      numberOfLines={isExpanded ? undefined : 4}
+                    >
+                      {entry.content}
+                    </Text>
+                    {isLongText && !isExpanded && (
+                      <TouchableOpacity
+                        style={styles.readMoreButton}
+                        onPress={() => toggleExpand(entry.id)}
                       >
-                        {entry.content}
-                      </Text>
-                      {isLongText && (
-                        <View style={styles.expandIndicator}>
-                          <Text style={styles.expandText}>
-                            {isExpanded ? 'Show less' : 'Read more'}
-                          </Text>
-                          <Ionicons
-                            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                            size={14}
-                            color="#6366F1"
-                          />
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            )}
+                        <Text style={styles.readMoreText}>Read more</Text>
+                        <Ionicons name="chevron-down" size={14} color="#6366F1" />
+                      </TouchableOpacity>
+                    )}
+                    {isLongText && isExpanded && (
+                      <TouchableOpacity
+                        style={styles.readMoreButton}
+                        onPress={() => toggleExpand(entry.id)}
+                      >
+                        <Text style={styles.readMoreText}>Show less</Text>
+                        <Ionicons name="chevron-up" size={14} color="#6366F1" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
 
-        {/* Finish Check-in Button - Fixed at bottom */}
+        {/* Finish Check-in Button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.finishButton}
@@ -195,6 +177,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F5F2',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -219,48 +203,26 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
     paddingBottom: 24,
   },
 
-  // Header Section
-  headerSection: {
-    alignItems: 'center',
+  // Title Section
+  titleSection: {
     marginBottom: 24,
   },
-  iconGradientRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 3,
-  },
-  iconInnerCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
     color: '#1F2937',
-    textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 32,
     marginBottom: 8,
   },
-  headerSubtext: {
-    fontSize: 14,
+  subtitle: {
+    fontSize: 15,
     fontWeight: '400',
     color: '#6B7280',
-    textAlign: 'center',
+    lineHeight: 22,
     letterSpacing: -0.2,
-    lineHeight: 20,
   },
 
   // Entries Container
@@ -270,18 +232,18 @@ const styles = StyleSheet.create({
 
   // Card Styles
   cardWrapper: {
-    borderRadius: 16,
+    borderRadius: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     paddingLeft: 20,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     overflow: 'hidden',
   },
   cardAccent: {
@@ -291,54 +253,26 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 4,
     backgroundColor: '#6366F1',
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   cardContent: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
     color: '#374151',
     lineHeight: 24,
+    letterSpacing: -0.2,
   },
-  expandIndicator: {
+  readMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8,
-    gap: 2,
+    marginTop: 8,
+    gap: 4,
   },
-  expandText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6366F1',
-  },
-
-  // Empty State
-  emptyState: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 20,
-  },
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#EEF2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
+  readMoreText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
+    color: '#6366F1',
   },
 
   // Button Container
@@ -350,20 +284,20 @@ const styles = StyleSheet.create({
   },
   finishButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   finishButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     marginRight: 8,
