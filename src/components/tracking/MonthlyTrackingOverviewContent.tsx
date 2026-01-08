@@ -324,7 +324,7 @@ const MonthlyTrackingOverviewContent: React.FC<MonthlyTrackingOverviewContentPro
           activeOpacity={0.85}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </Animated.View>

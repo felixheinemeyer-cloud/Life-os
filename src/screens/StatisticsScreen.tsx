@@ -260,6 +260,190 @@ const calculateJournalStats = (data: JournalDayData[]) => {
 
 const JOURNAL_STATS = calculateJournalStats(JOURNAL_30_DAYS);
 
+// ============================================
+// WEEKLY CHECK-IN DATA (12 weeks of wealth ratings)
+// ============================================
+interface WeeklyCheckInData {
+  weekNumber: number;
+  weekStart: Date;
+  weekEnd: Date;
+  completed: boolean;
+  overallScore: number | null;
+  wealthRatings: {
+    physical: number | null;
+    social: number | null;
+    mental: number | null;
+    financial: number | null;
+    time: number | null;
+  };
+  wentWell: string;
+  improveNextWeek: string;
+}
+
+const generateLast12WeeksData = (): WeeklyCheckInData[] => {
+  const data: WeeklyCheckInData[] = [];
+  const today = new Date();
+
+  // Find the Monday of current week
+  const currentMonday = new Date(today);
+  const dayOfWeek = currentMonday.getDay();
+  const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  currentMonday.setDate(currentMonday.getDate() - diff);
+
+  // Mock wealth ratings for 12 weeks (with realistic patterns)
+  const mockWeeklyData = [
+    // Week 12 (oldest)
+    { physical: 6, social: 7, mental: 6, financial: 7, time: 6, wentWell: 'Started new exercise routine', improveNextWeek: 'Better sleep schedule' },
+    // Week 11
+    { physical: 7, social: 6, mental: 7, financial: 6, time: 7, wentWell: 'Good focus on deep work', improveNextWeek: 'More social activities' },
+    // Week 10
+    { physical: 7, social: 8, mental: 7, financial: 7, time: 6, wentWell: 'Great catch-ups with friends', improveNextWeek: 'Time management' },
+    // Week 9
+    { physical: 6, social: 7, mental: 6, financial: 8, time: 7, wentWell: 'Stuck to budget', improveNextWeek: 'Exercise consistency' },
+    // Week 8
+    { physical: 8, social: 7, mental: 8, financial: 7, time: 7, wentWell: 'Strong workout week', improveNextWeek: 'Work-life balance' },
+    // Week 7
+    { physical: 7, social: 8, mental: 7, financial: 7, time: 8, wentWell: 'Quality family time', improveNextWeek: 'Mental focus' },
+    // Week 6
+    { physical: 8, social: 6, mental: 8, financial: 8, time: 7, wentWell: 'Productive work week', improveNextWeek: 'Reconnect with friends' },
+    // Week 5
+    { physical: 7, social: 7, mental: 7, financial: 7, time: 8, wentWell: 'Balanced week overall', improveNextWeek: 'Physical activity' },
+    // Week 4 (skipped - null values)
+    null,
+    // Week 3
+    { physical: 8, social: 8, mental: 7, financial: 7, time: 7, wentWell: 'Great social connections', improveNextWeek: 'Financial planning' },
+    // Week 2
+    { physical: 7, social: 7, mental: 8, financial: 8, time: 8, wentWell: 'Clear mind and good decisions', improveNextWeek: 'Keep momentum' },
+    // Week 1 (most recent - current week)
+    { physical: 8, social: 7, mental: 8, financial: 7, time: 8, wentWell: 'Consistent routine maintained', improveNextWeek: 'More creativity time' },
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const weekStart = new Date(currentMonday);
+    weekStart.setDate(currentMonday.getDate() - (i * 7));
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const weekNum = getISOWeekNumber(weekStart);
+    const mockData = mockWeeklyData[11 - i];
+
+    if (mockData === null) {
+      // Skipped week
+      data.push({
+        weekNumber: weekNum,
+        weekStart,
+        weekEnd,
+        completed: false,
+        overallScore: null,
+        wealthRatings: {
+          physical: null,
+          social: null,
+          mental: null,
+          financial: null,
+          time: null,
+        },
+        wentWell: '',
+        improveNextWeek: '',
+      });
+    } else {
+      const ratings = mockData;
+      const validRatings = [ratings.physical, ratings.social, ratings.mental, ratings.financial, ratings.time];
+      const overallScore = Math.round((validRatings.reduce((a, b) => a + b, 0) / validRatings.length) * 10) / 10;
+
+      data.push({
+        weekNumber: weekNum,
+        weekStart,
+        weekEnd,
+        completed: true,
+        overallScore,
+        wealthRatings: {
+          physical: ratings.physical,
+          social: ratings.social,
+          mental: ratings.mental,
+          financial: ratings.financial,
+          time: ratings.time,
+        },
+        wentWell: ratings.wentWell,
+        improveNextWeek: ratings.improveNextWeek,
+      });
+    }
+  }
+
+  return data;
+};
+
+// Helper to get ISO week number
+const getISOWeekNumber = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+};
+
+const WEEKLY_12_WEEKS = generateLast12WeeksData();
+
+// Calculate weekly statistics
+const calculateWeeklyStats = (data: WeeklyCheckInData[]) => {
+  const completedWeeks = data.filter(w => w.completed);
+  const totalWeeks = data.length;
+  const completionRate = Math.round((completedWeeks.length / totalWeeks) * 100);
+
+  // Calculate averages for each wealth area
+  const physicalRatings = completedWeeks.map(w => w.wealthRatings.physical).filter((r): r is number => r !== null);
+  const socialRatings = completedWeeks.map(w => w.wealthRatings.social).filter((r): r is number => r !== null);
+  const mentalRatings = completedWeeks.map(w => w.wealthRatings.mental).filter((r): r is number => r !== null);
+  const financialRatings = completedWeeks.map(w => w.wealthRatings.financial).filter((r): r is number => r !== null);
+  const timeRatings = completedWeeks.map(w => w.wealthRatings.time).filter((r): r is number => r !== null);
+
+  const calcAvg = (arr: number[]) => arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0;
+
+  // Calculate overall score average
+  const overallScores = completedWeeks.map(w => w.overallScore).filter((s): s is number => s !== null);
+  const overallAverage = calcAvg(overallScores);
+
+  // Calculate current streak
+  let currentStreak = 0;
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].completed) {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+
+  // Calculate longest streak
+  let longestStreak = 0;
+  let tempStreak = 0;
+  for (const week of data) {
+    if (week.completed) {
+      tempStreak++;
+      longestStreak = Math.max(longestStreak, tempStreak);
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  return {
+    completedWeeks: completedWeeks.length,
+    totalWeeks,
+    completionRate,
+    averages: {
+      physical: calcAvg(physicalRatings),
+      social: calcAvg(socialRatings),
+      mental: calcAvg(mentalRatings),
+      financial: calcAvg(financialRatings),
+      time: calcAvg(timeRatings),
+      overall: overallAverage,
+    },
+    currentStreak,
+    longestStreak,
+  };
+};
+
+const WEEKLY_STATS = calculateWeeklyStats(WEEKLY_12_WEEKS);
+
 // Nutrition data for past 30 days (1-10 rating scale)
 interface NutritionDayData {
   date: Date;
@@ -508,7 +692,26 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   );
 
   // ============================================
-  // RENDER PLACEHOLDER CONTENT (Weekly/Monthly)
+  // RENDER WEEKLY CONTENT
+  // ============================================
+  const renderWeeklyContent = () => (
+    <>
+      {/* Weekly Check-in Streak Section */}
+      <WeeklyCheckInStreakSection />
+
+      {/* Overall Score Section */}
+      <WeeklyOverallScoreSection />
+
+      {/* Wealth Areas Section */}
+      <WeeklyWealthTrendsSection />
+
+      {/* Bottom spacing */}
+      <View style={styles.bottomSpacer} />
+    </>
+  );
+
+  // ============================================
+  // RENDER PLACEHOLDER CONTENT (Monthly)
   // ============================================
   const renderPlaceholderContent = (type: 'weekly' | 'monthly') => {
     const config = {
@@ -623,7 +826,7 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
         showsVerticalScrollIndicator={false}
       >
         {activeTab === 'daily' && renderDailyContent()}
-        {activeTab === 'weekly' && renderPlaceholderContent('weekly')}
+        {activeTab === 'weekly' && renderWeeklyContent()}
         {activeTab === 'monthly' && renderPlaceholderContent('monthly')}
       </ScrollView>
     </SafeAreaView>
@@ -1724,6 +1927,740 @@ const JournalingSection = () => {
           <Text style={styles.journalChartLabel}>30d ago</Text>
           <Text style={styles.journalChartLabel}>today</Text>
         </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// WEEKLY STATISTICS SECTIONS
+// ============================================
+
+// Weekly Overall Score Section - Shows 12-week trend with interactive scrubbing
+const WeeklyOverallScoreSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions
+  const chartWidth = Dimensions.get('window').width - 32 - 32;
+  const chartHeight = 60;
+
+  // Get completed weeks data for the chart
+  const chartData = WEEKLY_12_WEEKS.map(w => w.overallScore);
+
+  // Format selected week date
+  const selectedWeekStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const week = WEEKLY_12_WEEKS[activeIndex];
+    const startMonth = week.weekStart.toLocaleDateString('en-US', { month: 'short' });
+    const startDay = week.weekStart.getDate();
+    const endDay = week.weekEnd.getDate();
+    return `${startMonth} ${startDay}-${endDay}`;
+  }, [activeIndex]);
+
+  // Get display value
+  const displayValue = activeIndex !== null
+    ? WEEKLY_12_WEEKS[activeIndex].overallScore
+    : WEEKLY_STATS.averages.overall;
+
+  const displayLabel = activeIndex !== null ? selectedWeekStr : 'average';
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  // Build smooth SVG path for scores
+  const buildScorePath = () => {
+    const padding = { top: 4, bottom: 4 };
+    const plotHeight = chartHeight - padding.top - padding.bottom;
+    const xStep = chartWidth / 11;
+
+    // Interpolate null values
+    const interpolatedData = chartData.map((score, i) => {
+      if (score !== null) return score;
+      // Find nearest valid values
+      let prevVal: number | null = null;
+      for (let j = i - 1; j >= 0; j--) {
+        if (chartData[j] !== null) { prevVal = chartData[j]; break; }
+      }
+      let nextVal: number | null = null;
+      for (let j = i + 1; j < chartData.length; j++) {
+        if (chartData[j] !== null) { nextVal = chartData[j]; break; }
+      }
+      if (prevVal !== null && nextVal !== null) return (prevVal + nextVal) / 2;
+      if (prevVal !== null) return prevVal;
+      if (nextVal !== null) return nextVal;
+      return 7; // Default fallback
+    });
+
+    const scaleY = (value: number): number => {
+      const normalized = (value - 1) / (10 - 1);
+      return padding.top + plotHeight * (1 - normalized);
+    };
+
+    const points = interpolatedData.map((v, i) => ({
+      x: i * xStep,
+      y: scaleY(v),
+    }));
+
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+    }
+
+    return path;
+  };
+
+  const getXY = (index: number) => {
+    const padding = { top: 4, bottom: 4 };
+    const plotHeight = chartHeight - padding.top - padding.bottom;
+    const xStep = chartWidth / 11;
+    const score = chartData[index] ?? WEEKLY_STATS.averages.overall;
+    const normalized = (score - 1) / (10 - 1);
+    return {
+      x: index * xStep,
+      y: padding.top + plotHeight * (1 - normalized),
+    };
+  };
+
+  const linePath = buildScorePath();
+  const dot = activeIndex !== null ? getXY(activeIndex) : null;
+
+  return (
+    <View style={styles.weeklySectionCard}>
+      {/* Header Row */}
+      <View style={styles.weeklyHeader}>
+        <View style={styles.weeklyTitleRow}>
+          <Ionicons name="trophy" size={14} color="#3B82F6" />
+          <Text style={styles.weeklyTitle}>Overall Score</Text>
+        </View>
+        {activeIndex !== null && selectedWeekStr ? (
+          <Text style={styles.weeklySelectedDate}>{selectedWeekStr}</Text>
+        ) : (
+          <View style={styles.weeklyRangeBadge}>
+            <Text style={styles.weeklyRangeBadgeText}>12 weeks</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Hero Stats Row */}
+      <View style={styles.weeklyStatsRow}>
+        <Text style={styles.weeklyScoreValue}>
+          {displayValue !== null ? displayValue.toFixed(1) : '—'}
+        </Text>
+        <View style={styles.weeklyMeta}>
+          <Text style={styles.weeklyMetaLight}>{displayLabel}</Text>
+        </View>
+      </View>
+
+      {/* 12-Week Chart */}
+      <View
+        ref={chartRef}
+        style={styles.weeklyChartSection}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <Svg width={chartWidth} height={chartHeight}>
+          <Defs>
+            <LinearGradient id="weeklyScoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
+              <Stop offset="100%" stopColor="#3B82F6" stopOpacity="0.01" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Reference lines */}
+          {[1, 5, 10].map((value) => {
+            const padding = { top: 4, bottom: 4 };
+            const plotHeight = chartHeight - padding.top - padding.bottom;
+            const normalized = (value - 1) / (10 - 1);
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Path
+                key={value}
+                d={`M 0 ${y.toFixed(1)} L ${chartWidth} ${y.toFixed(1)}`}
+                stroke="#D1D5DB"
+                strokeWidth={1}
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Area fill */}
+          <Path
+            d={`${linePath} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`}
+            fill="url(#weeklyScoreGrad)"
+          />
+
+          {/* Line */}
+          <Path
+            d={linePath}
+            stroke="#3B82F6"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+
+          {/* Week dots - show missed weeks */}
+          {WEEKLY_12_WEEKS.map((week, index) => {
+            if (!week.completed) {
+              const xStep = chartWidth / 11;
+              return (
+                <Circle
+                  key={index}
+                  cx={index * xStep}
+                  cy={chartHeight / 2}
+                  r={3}
+                  fill="#E5E7EB"
+                />
+              );
+            }
+            return null;
+          })}
+
+          {/* Active dot */}
+          {dot && (
+            <Circle
+              cx={dot.x}
+              cy={dot.y}
+              r={5}
+              fill="#3B82F6"
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+        </Svg>
+
+        {/* Cursor line */}
+        {activeIndex !== null && (
+          <View
+            style={[
+              styles.weeklyCursorLine,
+              { left: (activeIndex / 11) * chartWidth },
+            ]}
+          />
+        )}
+
+        <View style={styles.weeklyChartLabels}>
+          <Text style={styles.weeklyChartLabel}>12w ago</Text>
+          <Text style={styles.weeklyChartLabel}>this week</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Weekly Check-in Streak Section
+const WeeklyCheckInStreakSection = () => {
+  return (
+    <View style={styles.weeklySectionCard}>
+      {/* Header Row */}
+      <View style={styles.weeklyHeader}>
+        <View style={styles.weeklyTitleRow}>
+          <Ionicons name="calendar-outline" size={14} color="#0D9488" />
+          <Text style={styles.weeklyTitle}>Weekly Check-ins</Text>
+        </View>
+        <View style={styles.weeklyStreakBadge}>
+          <Ionicons name="flame" size={11} color="#F59E0B" />
+          <Text style={styles.weeklyStreakText}>{WEEKLY_STATS.currentStreak}</Text>
+        </View>
+      </View>
+
+      {/* Hero Stats Row */}
+      <View style={styles.weeklyStatsRow}>
+        <Text style={styles.weeklyScoreValue}>{WEEKLY_STATS.completedWeeks}</Text>
+        <View style={styles.weeklyMeta}>
+          <Text style={styles.weeklyMetaLight}>of {WEEKLY_STATS.totalWeeks} weeks</Text>
+        </View>
+      </View>
+
+      {/* 12-Week Heatmap */}
+      <View style={styles.weeklyHeatmapSection}>
+        <View style={styles.weeklyHeatmap}>
+          {WEEKLY_12_WEEKS.map((week, index) => (
+            <View
+              key={index}
+              style={[
+                styles.weeklyHeatmapDot,
+                {
+                  backgroundColor: week.completed ? '#0D9488' : '#E5E7EB',
+                },
+              ]}
+            />
+          ))}
+        </View>
+        <View style={styles.weeklyChartLabels}>
+          <Text style={styles.weeklyChartLabel}>12w ago</Text>
+          <Text style={styles.weeklyChartLabel}>this week</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// WEEKLY WEALTH TRENDS SECTION - Linked Sparklines (like 30-Day Overview)
+// ============================================
+const WEALTH_CHART_HEIGHT = 48;
+const WEALTH_CHART_WIDTH = SCREEN_WIDTH - 64; // scroll padding (32) + card padding (32)
+const WEALTH_SECTION_GAP = 10;
+
+// Wealth Area Color Configuration
+const WEALTH_COLORS = {
+  physical: { main: '#10B981', light: '#D1FAE5' },
+  social: { main: '#8B5CF6', light: '#EDE9FE' },
+  mental: { main: '#3B82F6', light: '#DBEAFE' },
+  financial: { main: '#F59E0B', light: '#FEF3C7' },
+  time: { main: '#EC4899', light: '#FCE7F3' },
+};
+
+const WEALTH_ICONS: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+  physical: 'body',
+  social: 'people',
+  mental: 'bulb',
+  financial: 'wallet',
+  time: 'time',
+};
+
+const WEALTH_LABELS: { [key: string]: string } = {
+  physical: 'Physical',
+  social: 'Social',
+  mental: 'Mental',
+  financial: 'Financial',
+  time: 'Time',
+};
+
+// Build smooth SVG path for wealth data
+const buildWealthSmoothPath = (
+  values: (number | null)[],
+  width: number,
+  height: number
+): string => {
+  // Interpolate null values for smooth visualization
+  const interpolatedValues = values.map((v, i) => {
+    if (v !== null) return v;
+    // Find nearest valid values
+    let prevVal: number | null = null;
+    for (let j = i - 1; j >= 0; j--) {
+      if (values[j] !== null) { prevVal = values[j]; break; }
+    }
+    let nextVal: number | null = null;
+    for (let j = i + 1; j < values.length; j++) {
+      if (values[j] !== null) { nextVal = values[j]; break; }
+    }
+    if (prevVal !== null && nextVal !== null) return (prevVal + nextVal) / 2;
+    if (prevVal !== null) return prevVal;
+    if (nextVal !== null) return nextVal;
+    return 7; // Default fallback
+  });
+
+  if (interpolatedValues.length < 2) return '';
+
+  const padding = { top: 4, bottom: 4 };
+  const plotHeight = height - padding.top - padding.bottom;
+  const xStep = width / (interpolatedValues.length - 1);
+
+  const scaleY = (value: number): number => {
+    const normalized = (value - 1) / (10 - 1);
+    return padding.top + plotHeight * (1 - normalized);
+  };
+
+  const points = interpolatedValues.map((v, i) => ({
+    x: i * xStep,
+    y: scaleY(v),
+  }));
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  return path;
+};
+
+const buildWealthAreaPath = (
+  values: (number | null)[],
+  width: number,
+  height: number
+): string => {
+  const linePath = buildWealthSmoothPath(values, width, height);
+  if (!linePath) return '';
+
+  const xStep = width / (values.length - 1);
+  const lastX = (values.length - 1) * xStep;
+
+  return `${linePath} L ${lastX.toFixed(2)} ${height} L 0 ${height} Z`;
+};
+
+const getWealthXY = (
+  index: number,
+  values: (number | null)[],
+  width: number,
+  height: number
+): { x: number; y: number } => {
+  const padding = { top: 4, bottom: 4 };
+  const plotHeight = height - padding.top - padding.bottom;
+  const xStep = width / (values.length - 1);
+  const x = index * xStep;
+
+  // Get interpolated value for this index
+  let value = values[index];
+  if (value === null) {
+    let prevVal: number | null = null;
+    for (let j = index - 1; j >= 0; j--) {
+      if (values[j] !== null) { prevVal = values[j]; break; }
+    }
+    let nextVal: number | null = null;
+    for (let j = index + 1; j < values.length; j++) {
+      if (values[j] !== null) { nextVal = values[j]; break; }
+    }
+    if (prevVal !== null && nextVal !== null) value = (prevVal + nextVal) / 2;
+    else if (prevVal !== null) value = prevVal;
+    else if (nextVal !== null) value = nextVal;
+    else value = 7;
+  }
+
+  const normalized = (value - 1) / (10 - 1);
+  const y = padding.top + plotHeight * (1 - normalized);
+  return { x, y };
+};
+
+// Individual Wealth Metric Chart (similar to MetricChart in 30-Day Overview)
+interface WealthMetricChartProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  values: (number | null)[];
+  color: { main: string; light: string };
+  gradientId: string;
+  activeIndex: number | null;
+  isLast?: boolean;
+  displayValue: number;
+}
+
+const WealthMetricChart = React.memo(({
+  icon,
+  label,
+  values,
+  color,
+  gradientId,
+  activeIndex,
+  isLast,
+  displayValue,
+}: WealthMetricChartProps) => {
+  const linePath = useMemo(() => buildWealthSmoothPath(values, WEALTH_CHART_WIDTH, WEALTH_CHART_HEIGHT), [values]);
+  const areaPath = useMemo(() => buildWealthAreaPath(values, WEALTH_CHART_WIDTH, WEALTH_CHART_HEIGHT), [values]);
+
+  const dot = activeIndex !== null
+    ? getWealthXY(activeIndex, values, WEALTH_CHART_WIDTH, WEALTH_CHART_HEIGHT)
+    : null;
+
+  const isActive = activeIndex !== null;
+
+  return (
+    <View style={[styles.wealthMetricSection, !isLast && styles.wealthMetricSectionBorder]}>
+      {/* Header */}
+      <View style={styles.wealthMetricHeader}>
+        <View style={styles.wealthMetricLabelRow}>
+          <Ionicons name={icon} size={18} color={color.main} />
+          <Text style={[styles.wealthMetricLabel, { color: color.main }]}>{label}</Text>
+        </View>
+        <Text style={[styles.wealthMetricValue, { color: color.main }]}>{displayValue}</Text>
+      </View>
+
+      {/* Chart */}
+      <View style={styles.wealthChartWrapper}>
+        <Svg width={WEALTH_CHART_WIDTH} height={WEALTH_CHART_HEIGHT}>
+          <Defs>
+            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={color.main} stopOpacity={isActive ? "0.22" : "0.15"} />
+              <Stop offset="100%" stopColor={color.main} stopOpacity="0.01" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Subtle reference lines at values 1, 5, 10 */}
+          {[1, 5, 10].map((value) => {
+            const padding = { top: 4, bottom: 4 };
+            const plotHeight = WEALTH_CHART_HEIGHT - padding.top - padding.bottom;
+            const normalized = (value - 1) / (10 - 1);
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Path
+                key={value}
+                d={`M 0 ${y.toFixed(1)} L ${WEALTH_CHART_WIDTH} ${y.toFixed(1)}`}
+                stroke="#D1D5DB"
+                strokeWidth={1}
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Area fill */}
+          <Path d={areaPath} fill={`url(#${gradientId})`} />
+
+          {/* Line */}
+          <Path
+            d={linePath}
+            stroke={color.main}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+
+          {/* Active dot */}
+          {dot && (
+            <Circle
+              cx={dot.x}
+              cy={dot.y}
+              r={5}
+              fill={color.main}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+        </Svg>
+
+        {/* Cursor line */}
+        {activeIndex !== null && (
+          <View
+            style={[
+              styles.wealthCursorLine,
+              { left: (activeIndex / 11) * WEALTH_CHART_WIDTH },
+            ]}
+          />
+        )}
+      </View>
+    </View>
+  );
+});
+
+// Weekly Wealth Trends Section - All 5 wealth areas with linked sparklines
+const WeeklyWealthTrendsSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartAreaRef = useRef<View>(null);
+
+  // Extract data arrays for each wealth type
+  const physicalData = useMemo(() => WEEKLY_12_WEEKS.map(w => w.wealthRatings.physical), []);
+  const socialData = useMemo(() => WEEKLY_12_WEEKS.map(w => w.wealthRatings.social), []);
+  const mentalData = useMemo(() => WEEKLY_12_WEEKS.map(w => w.wealthRatings.mental), []);
+  const financialData = useMemo(() => WEEKLY_12_WEEKS.map(w => w.wealthRatings.financial), []);
+  const timeData = useMemo(() => WEEKLY_12_WEEKS.map(w => w.wealthRatings.time), []);
+
+  // Format selected week date
+  const selectedWeekStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const week = WEEKLY_12_WEEKS[activeIndex];
+    const startMonth = week.weekStart.toLocaleDateString('en-US', { month: 'short' });
+    const startDay = week.weekStart.getDate();
+    const endDay = week.weekEnd.getDate();
+    return `${startMonth} ${startDay}-${endDay}`;
+  }, [activeIndex]);
+
+  // Get display values (selected week's value or average)
+  const getDisplayValue = (data: (number | null)[], average: number): number => {
+    if (activeIndex === null) return average;
+    const value = data[activeIndex];
+    return value !== null ? value : average;
+  };
+
+  const physicalDisplay = getDisplayValue(physicalData, WEEKLY_STATS.averages.physical);
+  const socialDisplay = getDisplayValue(socialData, WEEKLY_STATS.averages.social);
+  const mentalDisplay = getDisplayValue(mentalData, WEEKLY_STATS.averages.mental);
+  const financialDisplay = getDisplayValue(financialData, WEEKLY_STATS.averages.financial);
+  const timeDisplay = getDisplayValue(timeData, WEEKLY_STATS.averages.time);
+
+  // Count completed weeks
+  const completedWeeks = WEEKLY_12_WEEKS.filter(w => w.completed).length;
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, WEALTH_CHART_WIDTH));
+    const index = Math.round((clampedX / WEALTH_CHART_WIDTH) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartAreaRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  return (
+    <View style={styles.wealthCard}>
+      {/* Header */}
+      <View style={styles.wealthCardHeader}>
+        <View style={styles.wealthCardTitleRow}>
+          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Text style={styles.wealthCardTitle}>12-Week Overview</Text>
+        </View>
+        {selectedWeekStr && (
+          <Text style={styles.wealthSelectedDate}>{selectedWeekStr}</Text>
+        )}
+      </View>
+
+      {/* Charts - single gesture surface */}
+      <View
+        ref={chartAreaRef}
+        style={styles.wealthChartsContainer}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <WealthMetricChart
+          icon="body"
+          label="Physical"
+          values={physicalData}
+          color={WEALTH_COLORS.physical}
+          gradientId="wealthPhysicalGrad"
+          activeIndex={activeIndex}
+          displayValue={physicalDisplay}
+        />
+
+        <WealthMetricChart
+          icon="people"
+          label="Social"
+          values={socialData}
+          color={WEALTH_COLORS.social}
+          gradientId="wealthSocialGrad"
+          activeIndex={activeIndex}
+          displayValue={socialDisplay}
+        />
+
+        <WealthMetricChart
+          icon="bulb"
+          label="Mental"
+          values={mentalData}
+          color={WEALTH_COLORS.mental}
+          gradientId="wealthMentalGrad"
+          activeIndex={activeIndex}
+          displayValue={mentalDisplay}
+        />
+
+        <WealthMetricChart
+          icon="wallet"
+          label="Financial"
+          values={financialData}
+          color={WEALTH_COLORS.financial}
+          gradientId="wealthFinancialGrad"
+          activeIndex={activeIndex}
+          displayValue={financialDisplay}
+        />
+
+        <WealthMetricChart
+          icon="time"
+          label="Time"
+          values={timeData}
+          color={WEALTH_COLORS.time}
+          gradientId="wealthTimeGrad"
+          activeIndex={activeIndex}
+          displayValue={timeDisplay}
+          isLast
+        />
+      </View>
+
+      {/* Time labels */}
+      <View style={styles.wealthTimeLabels}>
+        <Text style={styles.wealthTimeLabel}>12w ago</Text>
+        <Text style={styles.wealthTimeLabel}>This week</Text>
+      </View>
+
+      {/* Caption */}
+      <View style={styles.wealthCaptionContainer}>
+        <Text style={styles.wealthCaption}>
+          Checked in {completedWeeks} of 12 weeks
+        </Text>
       </View>
     </View>
   );
@@ -2962,6 +3899,245 @@ const styles = StyleSheet.create({
   },
   metricCardTrendText: {
     fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ============================================
+  // WEEKLY STATISTICS STYLES
+  // ============================================
+  weeklySectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  weeklyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    minHeight: 24,
+  },
+  weeklyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  weeklyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  weeklyRangeBadge: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  weeklyRangeBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  weeklyStreakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    gap: 3,
+  },
+  weeklyStreakText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D97706',
+  },
+  weeklySelectedDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  weeklyStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
+  weeklyScoreValue: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.5,
+    marginRight: 10,
+  },
+  weeklyMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 6,
+  },
+  weeklyMetaLight: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  weeklyChartSection: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  weeklyChartLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  weeklyChartLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
+    fontWeight: '500',
+  },
+  weeklyCursorLine: {
+    position: 'absolute',
+    top: 0,
+    width: 1.5,
+    height: 60,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    borderRadius: 1,
+  },
+  weeklyHeatmapSection: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  weeklyHeatmap: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  weeklyHeatmapDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+  },
+
+  // ============================================
+  // WEALTH TRENDS SECTION (Linked Sparklines Style)
+  // ============================================
+  wealthCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  wealthCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  wealthCardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  wealthCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+  },
+
+  wealthSelectedDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+
+  wealthChartsContainer: {
+    gap: 8,
+  },
+
+  wealthMetricSection: {
+    paddingBottom: 8,
+  },
+
+  wealthMetricSectionBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+
+  wealthMetricHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+
+  wealthMetricLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  wealthMetricLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+
+  wealthMetricValue: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  wealthChartWrapper: {
+    position: 'relative',
+  },
+
+  wealthCursorLine: {
+    position: 'absolute',
+    top: 0,
+    width: 1.5,
+    height: 48,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    borderRadius: 1,
+  },
+
+  wealthTimeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -8,
+  },
+
+  wealthTimeLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
+    fontWeight: '500',
+  },
+
+  wealthCaptionContainer: {
+    marginTop: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+
+  wealthCaption: {
+    fontSize: 12,
+    color: '#9CA3AF',
     fontWeight: '500',
   },
 });
