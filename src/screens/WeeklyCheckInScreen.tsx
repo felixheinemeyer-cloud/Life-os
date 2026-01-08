@@ -398,7 +398,7 @@ const WeeklyCheckInScreen: React.FC<WeeklyCheckInScreenProps> = ({ navigation })
               <Text style={styles.nextButtonText}>
                 {currentStep === CHECK_IN_QUESTIONS.length - 1 ? 'Finish' : 'Next'}
               </Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         )}
