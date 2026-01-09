@@ -261,20 +261,20 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 10: Mind Helpers */}
-            <View style={styles.page}>
-              <MonthlyBodyTrackingMindHelpersContent
-                data={mindHelpersData}
-                onDataChange={setMindHelpersData}
-                onContinue={handleContinue}
-              />
-            </View>
-
-            {/* Step 11: Mind Drains */}
+            {/* Step 10: Mind Drains (Energy Drains) */}
             <View style={styles.page}>
               <MonthlyBodyTrackingMindDrainsContent
                 data={mindDrainsData}
                 onDataChange={setMindDrainsData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 11: Mind Helpers (What Helped) */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingMindHelpersContent
+                data={mindHelpersData}
+                onDataChange={setMindHelpersData}
                 onContinue={handleContinue}
               />
             </View>

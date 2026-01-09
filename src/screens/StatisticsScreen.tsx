@@ -444,6 +444,496 @@ const calculateWeeklyStats = (data: WeeklyCheckInData[]) => {
 
 const WEEKLY_STATS = calculateWeeklyStats(WEEKLY_12_WEEKS);
 
+// ============================================
+// MONTHLY CHECK-IN DATA (12 months of weight tracking)
+// ============================================
+interface MonthlyWeightData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  weight: number | null; // in kg
+  weightUnit: 'kg' | 'lbs';
+}
+
+const generateLast12MonthsWeightData = (): MonthlyWeightData[] => {
+  const data: MonthlyWeightData[] = [];
+  const today = new Date();
+
+  // Mock weight data (realistic pattern showing gradual change)
+  const mockWeights: (number | null)[] = [
+    78.5, 78.2, 77.8, 77.5, 77.0, 76.5,  // Months 12-7 (oldest to newer)
+    76.2, 76.0, 75.5, 75.8, 75.2, 74.8   // Months 6-1 (most recent)
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      weight: mockWeights[11 - i],
+      weightUnit: 'kg',
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_WEIGHT_12_MONTHS = generateLast12MonthsWeightData();
+
+// Calculate monthly weight statistics
+const calculateMonthlyWeightStats = (data: MonthlyWeightData[]) => {
+  const validMonths = data.filter(m => m.weight !== null) as (MonthlyWeightData & { weight: number })[];
+  const total = validMonths.length;
+
+  if (total === 0) {
+    return { current: null, starting: null, change: null, min: null, max: null, average: null, total: 0 };
+  }
+
+  const weights = validMonths.map(m => m.weight);
+  const current = validMonths[validMonths.length - 1]?.weight ?? null;
+  const starting = validMonths[0]?.weight ?? null;
+  const change = current !== null && starting !== null ? current - starting : null;
+  const min = Math.min(...weights);
+  const max = Math.max(...weights);
+  const average = Math.round((weights.reduce((a, b) => a + b, 0) / total) * 10) / 10;
+
+  return {
+    current,
+    starting,
+    change,
+    min,
+    max,
+    average,
+    total,
+  };
+};
+
+const MONTHLY_WEIGHT_STATS = calculateMonthlyWeightStats(MONTHLY_WEIGHT_12_MONTHS);
+
+// ============================================
+// MONTHLY HEALTH RATINGS DATA (12 months)
+// ============================================
+interface MonthlyHealthRatingsData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  overallHealth: number | null; // 1-10
+  skinQuality: number | null; // 1-10
+}
+
+const generateLast12MonthsHealthData = (): MonthlyHealthRatingsData[] => {
+  const data: MonthlyHealthRatingsData[] = [];
+  const today = new Date();
+
+  // Mock health ratings (realistic patterns)
+  const mockOverallHealth: (number | null)[] = [
+    6, 6, 7, 7, 7, 8, 7, 8, 8, 7, 8, 8  // Gradual improvement trend
+  ];
+  const mockSkinQuality: (number | null)[] = [
+    5, 6, 5, 6, 7, 6, 7, 7, 8, 7, 7, 8  // More variable, slight improvement
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      overallHealth: mockOverallHealth[11 - i],
+      skinQuality: mockSkinQuality[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_HEALTH_12_MONTHS = generateLast12MonthsHealthData();
+
+// Calculate monthly health statistics
+const calculateMonthlyHealthStats = (data: MonthlyHealthRatingsData[]) => {
+  const validOverallHealth = data.filter(m => m.overallHealth !== null).map(m => m.overallHealth as number);
+  const validSkinQuality = data.filter(m => m.skinQuality !== null).map(m => m.skinQuality as number);
+
+  const calcStats = (values: number[]) => {
+    if (values.length === 0) return { current: null, average: null, min: null, max: null };
+    const current = values[values.length - 1];
+    const average = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return { current, average, min, max };
+  };
+
+  return {
+    overallHealth: calcStats(validOverallHealth),
+    skinQuality: calcStats(validSkinQuality),
+  };
+};
+
+const MONTHLY_HEALTH_STATS = calculateMonthlyHealthStats(MONTHLY_HEALTH_12_MONTHS);
+
+// ============================================
+// MONTHLY PHYSICAL ACTIVITY DATA (12 months)
+// ============================================
+type ActivityLevelId = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+
+interface ActivityLevelInfo {
+  id: ActivityLevelId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  numericValue: number; // 1-5 for chart positioning
+}
+
+const ACTIVITY_LEVELS: ActivityLevelInfo[] = [
+  {
+    id: 'sedentary',
+    label: 'Sedentary',
+    shortLabel: 'Sedentary',
+    description: 'Mostly sitting, minimal movement',
+    icon: 'desktop-outline',
+    numericValue: 1,
+  },
+  {
+    id: 'light',
+    label: 'Lightly Active',
+    shortLabel: 'Light',
+    description: 'Some walking and light activities',
+    icon: 'walk-outline',
+    numericValue: 2,
+  },
+  {
+    id: 'moderate',
+    label: 'Moderately Active',
+    shortLabel: 'Moderate',
+    description: 'Regular movement throughout the day',
+    icon: 'body-outline',
+    numericValue: 3,
+  },
+  {
+    id: 'active',
+    label: 'Active',
+    shortLabel: 'Active',
+    description: 'Consistent exercise and movement',
+    icon: 'bicycle-outline',
+    numericValue: 4,
+  },
+  {
+    id: 'very_active',
+    label: 'Very Active',
+    shortLabel: 'Very Active',
+    description: 'High activity most days',
+    icon: 'flame-outline',
+    numericValue: 5,
+  },
+];
+
+const getActivityLevelInfo = (id: ActivityLevelId | null): ActivityLevelInfo | null => {
+  if (!id) return null;
+  return ACTIVITY_LEVELS.find(level => level.id === id) || null;
+};
+
+interface MonthlyActivityData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  activityLevel: ActivityLevelId | null;
+}
+
+const generateLast12MonthsActivityData = (): MonthlyActivityData[] => {
+  const data: MonthlyActivityData[] = [];
+  const today = new Date();
+
+  // Mock activity levels (showing gradual improvement)
+  const mockActivityLevels: (ActivityLevelId | null)[] = [
+    'sedentary', 'light', 'light', 'moderate', 'moderate', 'moderate',
+    'active', 'active', 'moderate', 'active', 'active', 'very_active'
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      activityLevel: mockActivityLevels[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_ACTIVITY_12_MONTHS = generateLast12MonthsActivityData();
+
+// ============================================
+// MONTHLY MENTAL WELLNESS DATA (12 months)
+// ============================================
+interface MonthlyMentalWellnessData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  mentalClarity: number | null; // 1-10
+  emotionalBalance: number | null; // 1-10
+  motivation: number | null; // 1-10
+}
+
+const generateLast12MonthsMentalWellnessData = (): MonthlyMentalWellnessData[] => {
+  const data: MonthlyMentalWellnessData[] = [];
+  const today = new Date();
+
+  // Mock mental wellness ratings (realistic patterns)
+  const mockMentalClarity: (number | null)[] = [
+    5, 6, 5, 6, 7, 6, 7, 7, 8, 7, 8, 7  // Variable with slight improvement
+  ];
+  const mockEmotionalBalance: (number | null)[] = [
+    6, 5, 6, 7, 6, 7, 7, 8, 7, 8, 8, 8  // Gradual stabilization
+  ];
+  const mockMotivation: (number | null)[] = [
+    7, 6, 5, 6, 7, 8, 7, 6, 7, 8, 8, 9  // More variable, recent high
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      mentalClarity: mockMentalClarity[11 - i],
+      emotionalBalance: mockEmotionalBalance[11 - i],
+      motivation: mockMotivation[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_MENTAL_WELLNESS_12_MONTHS = generateLast12MonthsMentalWellnessData();
+
+// Calculate monthly mental wellness statistics
+const calculateMonthlyMentalWellnessStats = (data: MonthlyMentalWellnessData[]) => {
+  const validMentalClarity = data.filter(m => m.mentalClarity !== null).map(m => m.mentalClarity as number);
+  const validEmotionalBalance = data.filter(m => m.emotionalBalance !== null).map(m => m.emotionalBalance as number);
+  const validMotivation = data.filter(m => m.motivation !== null).map(m => m.motivation as number);
+
+  const calcStats = (values: number[]) => {
+    if (values.length === 0) return { current: null, average: null, min: null, max: null };
+    const current = values[values.length - 1];
+    const average = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return { current, average, min, max };
+  };
+
+  return {
+    mentalClarity: calcStats(validMentalClarity),
+    emotionalBalance: calcStats(validEmotionalBalance),
+    motivation: calcStats(validMotivation),
+  };
+};
+
+const MONTHLY_MENTAL_WELLNESS_STATS = calculateMonthlyMentalWellnessStats(MONTHLY_MENTAL_WELLNESS_12_MONTHS);
+
+// ============================================
+// MONTHLY MENTAL LOAD DATA (12 months)
+// ============================================
+type MentalLoadLevelId = 'calm' | 'manageable' | 'overloaded' | 'stressed';
+
+interface MentalLoadLevelInfo {
+  id: MentalLoadLevelId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  numericValue: number; // 1-4 for chart positioning (4=calm/best, 1=stressed/worst)
+}
+
+const MENTAL_LOAD_LEVELS: MentalLoadLevelInfo[] = [
+  {
+    id: 'stressed',
+    label: 'Constantly Stressed',
+    shortLabel: 'Stressed',
+    description: 'Reactive and overwhelmed',
+    icon: 'thunderstorm-outline',
+    numericValue: 1,
+  },
+  {
+    id: 'overloaded',
+    label: 'Mentally Overloaded',
+    shortLabel: 'Overloaded',
+    description: 'Too much on my plate',
+    icon: 'cloudy-outline',
+    numericValue: 2,
+  },
+  {
+    id: 'manageable',
+    label: 'Busy but Manageable',
+    shortLabel: 'Manageable',
+    description: 'Full schedule, but coping well',
+    icon: 'list-outline',
+    numericValue: 3,
+  },
+  {
+    id: 'calm',
+    label: 'Mostly Calm',
+    shortLabel: 'Calm',
+    description: 'Plenty of mental space',
+    icon: 'leaf-outline',
+    numericValue: 4,
+  },
+];
+
+const getMentalLoadLevelInfo = (id: MentalLoadLevelId | null): MentalLoadLevelInfo | null => {
+  if (!id) return null;
+  return MENTAL_LOAD_LEVELS.find(level => level.id === id) || null;
+};
+
+interface MonthlyMentalLoadData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  mentalLoadLevel: MentalLoadLevelId | null;
+}
+
+const generateLast12MonthsMentalLoadData = (): MonthlyMentalLoadData[] => {
+  const data: MonthlyMentalLoadData[] = [];
+  const today = new Date();
+
+  // Mock mental load levels (showing realistic fluctuation)
+  const mockMentalLoadLevels: (MentalLoadLevelId | null)[] = [
+    'overloaded', 'stressed', 'overloaded', 'manageable', 'manageable', 'calm',
+    'manageable', 'overloaded', 'manageable', 'calm', 'manageable', 'calm'
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      mentalLoadLevel: mockMentalLoadLevels[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_MENTAL_LOAD_12_MONTHS = generateLast12MonthsMentalLoadData();
+
+// ============================================
+// MONTHLY ENERGY DRAINS DATA (12 months)
+// ============================================
+type EnergyDrainId =
+  | 'work_pressure'
+  | 'social_overload'
+  | 'lack_of_structure'
+  | 'constant_notifications'
+  | 'uncertainty'
+  | 'physical_exhaustion';
+
+interface EnergyDrainInfo {
+  id: EnergyDrainId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}
+
+const ENERGY_DRAINS: EnergyDrainInfo[] = [
+  {
+    id: 'work_pressure',
+    label: 'Work / Study Pressure',
+    shortLabel: 'Work',
+    description: 'Deadlines, demands, expectations',
+    icon: 'briefcase-outline',
+    color: '#3B82F6', // Blue
+  },
+  {
+    id: 'social_overload',
+    label: 'Social Overload',
+    shortLabel: 'Social',
+    description: 'Too many interactions or obligations',
+    icon: 'people-outline',
+    color: '#8B5CF6', // Purple
+  },
+  {
+    id: 'lack_of_structure',
+    label: 'Lack of Structure',
+    shortLabel: 'Structure',
+    description: 'No routine, feeling scattered',
+    icon: 'grid-outline',
+    color: '#EC4899', // Pink
+  },
+  {
+    id: 'constant_notifications',
+    label: 'Constant Notifications',
+    shortLabel: 'Notifications',
+    description: 'Digital interruptions and distractions',
+    icon: 'notifications-outline',
+    color: '#F59E0B', // Amber
+  },
+  {
+    id: 'uncertainty',
+    label: 'Uncertainty / Worrying',
+    shortLabel: 'Uncertainty',
+    description: 'Anxious thoughts about the future',
+    icon: 'help-circle-outline',
+    color: '#10B981', // Green
+  },
+  {
+    id: 'physical_exhaustion',
+    label: 'Physical Exhaustion',
+    shortLabel: 'Exhaustion',
+    description: 'Body fatigue affecting the mind',
+    icon: 'battery-dead-outline',
+    color: '#EF4444', // Red
+  },
+];
+
+const getEnergyDrainInfo = (id: EnergyDrainId | null): EnergyDrainInfo | null => {
+  if (!id) return null;
+  return ENERGY_DRAINS.find(drain => drain.id === id) || null;
+};
+
+interface MonthlyEnergyDrainData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  primaryDrain: EnergyDrainId | null;
+}
+
+const generateLast12MonthsEnergyDrainData = (): MonthlyEnergyDrainData[] => {
+  const data: MonthlyEnergyDrainData[] = [];
+  const today = new Date();
+
+  // Mock energy drains (showing realistic patterns)
+  const mockDrains: (EnergyDrainId | null)[] = [
+    'work_pressure', 'work_pressure', 'uncertainty', 'work_pressure', 'social_overload', 'physical_exhaustion',
+    'work_pressure', 'constant_notifications', 'work_pressure', 'uncertainty', 'social_overload', 'physical_exhaustion'
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      primaryDrain: mockDrains[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_ENERGY_DRAINS_12_MONTHS = generateLast12MonthsEnergyDrainData();
+
 // Nutrition data for past 30 days (1-10 rating scale)
 interface NutritionDayData {
   date: Date;
@@ -711,6 +1201,34 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   );
 
   // ============================================
+  // RENDER MONTHLY CONTENT
+  // ============================================
+  const renderMonthlyContent = () => (
+    <>
+      {/* Monthly Weight Section */}
+      <MonthlyWeightSection />
+
+      {/* Monthly Health Ratings Section */}
+      <MonthlyHealthRatingsSection />
+
+      {/* Monthly Physical Activity Section */}
+      <MonthlyPhysicalActivitySection />
+
+      {/* Monthly Mental Wellness Section */}
+      <MonthlyMentalWellnessSection />
+
+      {/* Monthly Mental Load Section */}
+      <MonthlyMentalLoadSection />
+
+      {/* Monthly Energy Drains Section */}
+      <MonthlyEnergyDrainsSection />
+
+      {/* Bottom spacing */}
+      <View style={styles.bottomSpacer} />
+    </>
+  );
+
+  // ============================================
   // RENDER PLACEHOLDER CONTENT (Monthly)
   // ============================================
   const renderPlaceholderContent = (type: 'weekly' | 'monthly') => {
@@ -827,7 +1345,7 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
       >
         {activeTab === 'daily' && renderDailyContent()}
         {activeTab === 'weekly' && renderWeeklyContent()}
-        {activeTab === 'monthly' && renderPlaceholderContent('monthly')}
+        {activeTab === 'monthly' && renderMonthlyContent()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -2836,6 +3354,1407 @@ const JournalTracker = ({ data }: { data: boolean[] }) => (
 );
 
 // ============================================
+// MONTHLY WEIGHT SECTION
+// ============================================
+const MonthlyWeightSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions - leave space on left for y-axis labels
+  const yAxisWidth = 32;
+  const chartWidth = Dimensions.get('window').width - 32 - 32 - yAxisWidth;
+  const chartHeight = 80;
+  const padding = { top: 8, bottom: 8 };
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  // Chart data
+  const chartData = MONTHLY_WEIGHT_12_MONTHS.map(m => m.weight);
+
+  // Calculate chart scaling values (memoized)
+  const chartScale = useMemo(() => {
+    const validWeights = chartData.filter((w): w is number => w !== null);
+    const dataMin = Math.min(...validWeights);
+    const dataMax = Math.max(...validWeights);
+    // Round to nice values for display
+    const minWeight = Math.floor(dataMin) - 1;
+    const maxWeight = Math.ceil(dataMax) + 1;
+    // Use exact midpoint for visual centering (don't round)
+    const midWeight = (minWeight + maxWeight) / 2;
+    const range = maxWeight - minWeight;
+
+    return { minWeight, maxWeight, midWeight, range };
+  }, [chartData]);
+
+  // Format selected month
+  const selectedMonthStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const month = MONTHLY_WEIGHT_12_MONTHS[activeIndex];
+    return month.monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }, [activeIndex]);
+
+  // Get display value
+  const displayValue = activeIndex !== null
+    ? MONTHLY_WEIGHT_12_MONTHS[activeIndex].weight
+    : MONTHLY_WEIGHT_STATS.current;
+
+  const displayLabel = activeIndex !== null ? selectedMonthStr : 'current';
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  // Scale Y helper function
+  const scaleY = useCallback((value: number): number => {
+    const normalized = (value - chartScale.minWeight) / chartScale.range;
+    return padding.top + plotHeight * (1 - normalized);
+  }, [chartScale, plotHeight]);
+
+  // Build smooth SVG path for weights
+  const buildWeightPath = () => {
+    const xStep = chartWidth / 11;
+
+    // Interpolate null values
+    const interpolatedData = chartData.map((weight, i) => {
+      if (weight !== null) return weight;
+      let prevVal: number | null = null;
+      for (let j = i - 1; j >= 0; j--) {
+        if (chartData[j] !== null) { prevVal = chartData[j]; break; }
+      }
+      let nextVal: number | null = null;
+      for (let j = i + 1; j < chartData.length; j++) {
+        if (chartData[j] !== null) { nextVal = chartData[j]; break; }
+      }
+      if (prevVal !== null && nextVal !== null) return (prevVal + nextVal) / 2;
+      if (prevVal !== null) return prevVal;
+      if (nextVal !== null) return nextVal;
+      return MONTHLY_WEIGHT_STATS.average ?? 75;
+    });
+
+    const points = interpolatedData.map((v, i) => ({
+      x: i * xStep,
+      y: scaleY(v),
+    }));
+
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+    }
+
+    return path;
+  };
+
+  const getXY = (index: number) => {
+    const xStep = chartWidth / 11;
+    const weight = chartData[index] ?? MONTHLY_WEIGHT_STATS.average ?? 75;
+    return {
+      x: index * xStep,
+      y: scaleY(weight),
+    };
+  };
+
+  // Build area path for gradient fill
+  const buildAreaPath = () => {
+    const linePath = buildWeightPath();
+    const xStep = chartWidth / 11;
+    return `${linePath} L ${(11 * xStep).toFixed(2)} ${chartHeight} L 0 ${chartHeight} Z`;
+  };
+
+  const linePath = buildWeightPath();
+  const areaPath = buildAreaPath();
+  const dot = activeIndex !== null ? getXY(activeIndex) : null;
+
+  // Calculate change indicator
+  const changeValue = MONTHLY_WEIGHT_STATS.change;
+  const changeText = changeValue !== null
+    ? `${changeValue > 0 ? '+' : ''}${changeValue.toFixed(1)} kg`
+    : null;
+  const isPositiveChange = changeValue !== null && changeValue > 0;
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header Row */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="scale-outline" size={14} color="#0EA5E9" />
+          <Text style={styles.monthlyTitle}>Weight</Text>
+        </View>
+        {activeIndex !== null && selectedMonthStr && (
+          <Text style={styles.monthlySelectedDate}>{selectedMonthStr}</Text>
+        )}
+      </View>
+
+      {/* Hero Stats Row */}
+      <View style={styles.monthlyStatsRow}>
+        <Text style={styles.monthlyWeightValue}>
+          {displayValue !== null ? `${displayValue.toFixed(1)}` : '—'}
+        </Text>
+        <Text style={styles.monthlyWeightUnit}>kg</Text>
+        <View style={styles.monthlyMeta}>
+          <Text style={styles.monthlyMetaLight}>{displayLabel}</Text>
+        </View>
+      </View>
+
+      {/* Change Indicator - use opacity to preserve layout when scrubbing */}
+      {changeText && (
+        <View style={[styles.monthlyChangeRow, { opacity: activeIndex === null ? 1 : 0 }]}>
+          <View style={[
+            styles.monthlyChangeBadge,
+            { backgroundColor: isPositiveChange ? '#FEF2F2' : '#ECFDF5' }
+          ]}>
+            <Ionicons
+              name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
+              size={12}
+              color={isPositiveChange ? '#EF4444' : '#10B981'}
+            />
+            <Text style={[
+              styles.monthlyChangeText,
+              { color: isPositiveChange ? '#EF4444' : '#10B981' }
+            ]}>
+              {changeText}
+            </Text>
+          </View>
+          <Text style={styles.monthlyChangeLabel}>vs 12 months ago</Text>
+        </View>
+      )}
+
+      {/* 12-Month Chart with Y-Axis */}
+      <View style={styles.monthlyChartSection}>
+        <View style={styles.monthlyChartRow}>
+          {/* Y-Axis Labels (left side) - absolutely positioned for precise alignment */}
+          <View style={styles.monthlyYAxis}>
+            {[chartScale.maxWeight, chartScale.midWeight, chartScale.minWeight].map((value) => (
+              <Text
+                key={value}
+                style={[
+                  styles.monthlyYAxisLabel,
+                  { position: 'absolute', top: scaleY(value) - 6, right: 8 }
+                ]}
+              >
+                {value}
+              </Text>
+            ))}
+          </View>
+
+          {/* Chart Area */}
+          <View
+            ref={chartRef}
+            style={styles.monthlyChartArea}
+            onLayout={handleLayout}
+            {...panResponder.panHandlers}
+          >
+            <Svg width={chartWidth} height={chartHeight}>
+              <Defs>
+                <LinearGradient id="monthlyWeightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.15" />
+                  <Stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.01" />
+                </LinearGradient>
+              </Defs>
+
+              {/* Reference lines */}
+              {[chartScale.maxWeight, chartScale.midWeight, chartScale.minWeight].map((value) => {
+                const y = scaleY(value);
+                return (
+                  <Line
+                    key={value}
+                    x1={0}
+                    y1={y}
+                    x2={chartWidth}
+                    y2={y}
+                    stroke="#E5E7EB"
+                    strokeWidth={1}
+                    strokeDasharray="4,4"
+                  />
+                );
+              })}
+
+              {/* Area fill */}
+              <Path d={areaPath} fill="url(#monthlyWeightGrad)" />
+
+              {/* Line */}
+              <Path
+                d={linePath}
+                stroke="#0EA5E9"
+                strokeWidth={2.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Active dot */}
+              {dot && (
+                <>
+                  <Circle cx={dot.x} cy={dot.y} r={6} fill="#FFFFFF" />
+                  <Circle cx={dot.x} cy={dot.y} r={4} fill="#0EA5E9" />
+                </>
+              )}
+            </Svg>
+          </View>
+        </View>
+
+        {/* X-Axis Labels */}
+        <View style={styles.monthlyChartLabels}>
+          <Text style={styles.monthlyChartLabel}>
+            {MONTHLY_WEIGHT_12_MONTHS[0].monthName}
+          </Text>
+          <Text style={styles.monthlyChartLabel}>
+            {MONTHLY_WEIGHT_12_MONTHS[11].monthName}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// MONTHLY HEALTH RATINGS SECTION (Like 12-Week Overview)
+// ============================================
+const HEALTH_CHART_WIDTH = Dimensions.get('window').width - 32 - 32;
+const HEALTH_CHART_HEIGHT = 52;
+
+// Health Ratings Color Configuration (matching Weekly view pattern)
+const HEALTH_RATING_COLORS = {
+  overallHealth: { main: '#10B981', light: '#D1FAE5' }, // Emerald green - vitality
+  skinQuality: { main: '#F472B6', light: '#FCE7F3' },   // Pink - glow/radiance
+};
+
+// Mental Wellness Color Configuration
+const MENTAL_WELLNESS_COLORS = {
+  mentalClarity: { main: '#3B82F6', light: '#DBEAFE' },    // Blue - clarity/focus
+  emotionalBalance: { main: '#8B5CF6', light: '#EDE9FE' }, // Purple - emotional depth
+  motivation: { main: '#F59E0B', light: '#FEF3C7' },       // Amber - energy/drive
+};
+
+// Helper functions for health charts
+const buildHealthSmoothPath = (values: (number | null)[], width: number, height: number): string => {
+  const padding = { top: 4, bottom: 4 };
+  const plotHeight = height - padding.top - padding.bottom;
+  const xStep = width / 11;
+
+  const interpolatedData = values.map((val, i) => {
+    if (val !== null) return val;
+    let prevVal: number | null = null;
+    for (let j = i - 1; j >= 0; j--) {
+      if (values[j] !== null) { prevVal = values[j]; break; }
+    }
+    let nextVal: number | null = null;
+    for (let j = i + 1; j < values.length; j++) {
+      if (values[j] !== null) { nextVal = values[j]; break; }
+    }
+    if (prevVal !== null && nextVal !== null) return (prevVal + nextVal) / 2;
+    if (prevVal !== null) return prevVal;
+    if (nextVal !== null) return nextVal;
+    return 5;
+  });
+
+  const scaleY = (value: number): number => {
+    const normalized = (value - 1) / 9;
+    return padding.top + plotHeight * (1 - normalized);
+  };
+
+  const points = interpolatedData.map((v, i) => ({
+    x: i * xStep,
+    y: scaleY(v),
+  }));
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  return path;
+};
+
+const buildHealthAreaPath = (values: (number | null)[], width: number, height: number): string => {
+  const linePath = buildHealthSmoothPath(values, width, height);
+  const xStep = width / 11;
+  return `${linePath} L ${(11 * xStep).toFixed(2)} ${height} L 0 ${height} Z`;
+};
+
+const getHealthXY = (index: number, values: (number | null)[], width: number, height: number) => {
+  const padding = { top: 4, bottom: 4 };
+  const plotHeight = height - padding.top - padding.bottom;
+  const xStep = width / 11;
+  const value = values[index] ?? 5;
+  const normalized = (value - 1) / 9;
+  return {
+    x: index * xStep,
+    y: padding.top + plotHeight * (1 - normalized),
+  };
+};
+
+// Health Metric Chart Row Component
+interface HealthMetricChartProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  values: (number | null)[];
+  color: { main: string; light: string };
+  gradientId: string;
+  activeIndex: number | null;
+  isLast?: boolean;
+  displayValue: number | null;
+}
+
+const HealthMetricChart = React.memo(({
+  icon,
+  label,
+  values,
+  color,
+  gradientId,
+  activeIndex,
+  isLast,
+  displayValue,
+}: HealthMetricChartProps) => {
+  const linePath = useMemo(() => buildHealthSmoothPath(values, HEALTH_CHART_WIDTH, HEALTH_CHART_HEIGHT), [values]);
+  const areaPath = useMemo(() => buildHealthAreaPath(values, HEALTH_CHART_WIDTH, HEALTH_CHART_HEIGHT), [values]);
+
+  const dot = activeIndex !== null
+    ? getHealthXY(activeIndex, values, HEALTH_CHART_WIDTH, HEALTH_CHART_HEIGHT)
+    : null;
+
+  const isActive = activeIndex !== null;
+
+  return (
+    <View style={[styles.healthMetricSection, !isLast && styles.healthMetricSectionBorder]}>
+      {/* Header */}
+      <View style={styles.healthMetricHeader}>
+        <View style={styles.healthMetricLabelRow}>
+          <Ionicons name={icon} size={18} color={color.main} />
+          <Text style={[styles.healthMetricLabel, { color: color.main }]}>{label}</Text>
+        </View>
+        <Text style={[styles.healthMetricValue, { color: color.main }]}>
+          {displayValue !== null ? displayValue : '—'}
+        </Text>
+      </View>
+
+      {/* Chart */}
+      <View style={styles.healthChartWrapper}>
+        <Svg width={HEALTH_CHART_WIDTH} height={HEALTH_CHART_HEIGHT}>
+          <Defs>
+            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={color.main} stopOpacity={isActive ? "0.22" : "0.15"} />
+              <Stop offset="100%" stopColor={color.main} stopOpacity="0.01" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Subtle reference lines at values 1, 5, 10 */}
+          {[1, 5, 10].map((value) => {
+            const padding = { top: 4, bottom: 4 };
+            const plotHeight = HEALTH_CHART_HEIGHT - padding.top - padding.bottom;
+            const normalized = (value - 1) / 9;
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Path
+                key={value}
+                d={`M 0 ${y.toFixed(1)} L ${HEALTH_CHART_WIDTH} ${y.toFixed(1)}`}
+                stroke="#D1D5DB"
+                strokeWidth={1}
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Area fill */}
+          <Path d={areaPath} fill={`url(#${gradientId})`} />
+
+          {/* Line */}
+          <Path
+            d={linePath}
+            stroke={color.main}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+
+          {/* Active dot */}
+          {dot && (
+            <Circle
+              cx={dot.x}
+              cy={dot.y}
+              r={5}
+              fill={color.main}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+        </Svg>
+
+        {/* Cursor line */}
+        {activeIndex !== null && (
+          <View
+            style={[
+              styles.healthCursorLine,
+              { left: (activeIndex / 11) * HEALTH_CHART_WIDTH },
+            ]}
+          />
+        )}
+      </View>
+    </View>
+  );
+});
+
+const MonthlyHealthRatingsSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartAreaRef = useRef<View>(null);
+
+  // Chart data
+  const overallHealthData = useMemo(() => MONTHLY_HEALTH_12_MONTHS.map(m => m.overallHealth), []);
+  const skinQualityData = useMemo(() => MONTHLY_HEALTH_12_MONTHS.map(m => m.skinQuality), []);
+
+  // Format selected month
+  const selectedMonthStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const month = MONTHLY_HEALTH_12_MONTHS[activeIndex];
+    return month.monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }, [activeIndex]);
+
+  // Get display values
+  const getDisplayValue = (data: (number | null)[], fallback: number | null): number | null => {
+    if (activeIndex === null) return fallback;
+    return data[activeIndex];
+  };
+
+  const overallHealthDisplay = getDisplayValue(overallHealthData, MONTHLY_HEALTH_STATS.overallHealth.current);
+  const skinQualityDisplay = getDisplayValue(skinQualityData, MONTHLY_HEALTH_STATS.skinQuality.current);
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, HEALTH_CHART_WIDTH));
+    const index = Math.round((clampedX / HEALTH_CHART_WIDTH) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartAreaRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderMove: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Text style={styles.monthlyTitle}>Health Ratings</Text>
+        </View>
+        {selectedMonthStr && (
+          <Text style={styles.monthlySelectedDate}>{selectedMonthStr}</Text>
+        )}
+      </View>
+
+      {/* Charts - single gesture surface */}
+      <View
+        ref={chartAreaRef}
+        style={styles.healthChartsContainer}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <HealthMetricChart
+          icon="fitness"
+          label="Overall Health"
+          values={overallHealthData}
+          color={HEALTH_RATING_COLORS.overallHealth}
+          gradientId="healthOverallGrad"
+          activeIndex={activeIndex}
+          displayValue={overallHealthDisplay}
+        />
+
+        <HealthMetricChart
+          icon="sparkles"
+          label="Skin Quality"
+          values={skinQualityData}
+          color={HEALTH_RATING_COLORS.skinQuality}
+          gradientId="healthSkinGrad"
+          activeIndex={activeIndex}
+          displayValue={skinQualityDisplay}
+          isLast
+        />
+      </View>
+
+      {/* Time Labels */}
+      <View style={styles.healthTimeLabels}>
+        <Text style={styles.healthTimeLabel}>{MONTHLY_HEALTH_12_MONTHS[0].monthName}</Text>
+        <Text style={styles.healthTimeLabel}>{MONTHLY_HEALTH_12_MONTHS[11].monthName}</Text>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// MONTHLY PHYSICAL ACTIVITY SECTION (Stepped Chart)
+// ============================================
+const ACTIVITY_CHART_WIDTH = Dimensions.get('window').width - 32 - 32;
+const ACTIVITY_CHART_HEIGHT = 100;
+const ACTIVITY_Y_AXIS_WIDTH = 60;
+
+const MonthlyPhysicalActivitySection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions (accounting for y-axis)
+  const chartWidth = ACTIVITY_CHART_WIDTH - ACTIVITY_Y_AXIS_WIDTH;
+
+  // Get activity data as numeric values for the chart
+  const activityNumericData = useMemo(() =>
+    MONTHLY_ACTIVITY_12_MONTHS.map(m => {
+      const level = getActivityLevelInfo(m.activityLevel);
+      return level ? level.numericValue : null;
+    }), []);
+
+  // Format selected month
+  const selectedMonthStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const month = MONTHLY_ACTIVITY_12_MONTHS[activeIndex];
+    return month.monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }, [activeIndex]);
+
+  // Get display activity level
+  const displayActivityLevel = useMemo(() => {
+    const levelId = activeIndex !== null
+      ? MONTHLY_ACTIVITY_12_MONTHS[activeIndex].activityLevel
+      : MONTHLY_ACTIVITY_12_MONTHS[11].activityLevel; // Current (most recent)
+    return getActivityLevelInfo(levelId);
+  }, [activeIndex]);
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX - ACTIVITY_Y_AXIS_WIDTH;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderMove: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  // Scale Y for 1-5 range (activity levels)
+  const scaleY = useCallback((value: number): number => {
+    const padding = { top: 8, bottom: 8 };
+    const plotHeight = ACTIVITY_CHART_HEIGHT - padding.top - padding.bottom;
+    const normalized = (value - 1) / 4; // 1-5 scale (4 steps)
+    return padding.top + plotHeight * (1 - normalized);
+  }, []);
+
+  // Build stepped path for activity levels
+  const buildSteppedPath = () => {
+    const xStep = chartWidth / 11;
+
+    // Interpolate null values
+    const interpolatedData = activityNumericData.map((val, i) => {
+      if (val !== null) return val;
+      let prevVal: number | null = null;
+      for (let j = i - 1; j >= 0; j--) {
+        if (activityNumericData[j] !== null) { prevVal = activityNumericData[j]; break; }
+      }
+      let nextVal: number | null = null;
+      for (let j = i + 1; j < activityNumericData.length; j++) {
+        if (activityNumericData[j] !== null) { nextVal = activityNumericData[j]; break; }
+      }
+      if (prevVal !== null) return prevVal;
+      if (nextVal !== null) return nextVal;
+      return 3; // Default to moderate
+    });
+
+    const points = interpolatedData.map((v, i) => ({
+      x: i * xStep,
+      y: scaleY(v),
+    }));
+
+    // Build stepped path (horizontal then vertical)
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      // Horizontal line to next x position at current y
+      path += ` L ${next.x.toFixed(2)} ${current.y.toFixed(2)}`;
+      // Vertical line to next y position
+      path += ` L ${next.x.toFixed(2)} ${next.y.toFixed(2)}`;
+    }
+
+    return path;
+  };
+
+  // Build area path for gradient fill
+  const buildAreaPath = () => {
+    const steppedPath = buildSteppedPath();
+    const xStep = chartWidth / 11;
+    return `${steppedPath} L ${(11 * xStep).toFixed(2)} ${ACTIVITY_CHART_HEIGHT} L 0 ${ACTIVITY_CHART_HEIGHT} Z`;
+  };
+
+  const getXY = (index: number) => {
+    const xStep = chartWidth / 11;
+    const value = activityNumericData[index] ?? 3;
+    return {
+      x: index * xStep,
+      y: scaleY(value),
+    };
+  };
+
+  const steppedPath = buildSteppedPath();
+  const areaPath = buildAreaPath();
+  const dot = activeIndex !== null ? getXY(activeIndex) : null;
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="body" size={14} color="#0EA5E9" />
+          <Text style={styles.monthlyTitle}>Physical Activity</Text>
+        </View>
+        {selectedMonthStr && (
+          <Text style={styles.monthlySelectedDate}>{selectedMonthStr}</Text>
+        )}
+      </View>
+
+      {/* Current Activity Level Display */}
+      {displayActivityLevel && (
+        <View style={styles.activityLevelDisplay}>
+          <View style={styles.activityLevelIconContainer}>
+            <Ionicons name={displayActivityLevel.icon} size={20} color="#0EA5E9" />
+          </View>
+          <View style={styles.activityLevelTextContainer}>
+            <Text style={styles.activityLevelLabel}>{displayActivityLevel.label}</Text>
+            <Text style={styles.activityLevelDescription}>{displayActivityLevel.description}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Stepped Chart */}
+      <View
+        ref={chartRef}
+        style={styles.activityChartSection}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <View style={styles.activityChartRow}>
+          {/* Y-Axis Labels */}
+          <View style={styles.activityYAxis}>
+            {ACTIVITY_LEVELS.slice().reverse().map((level) => (
+              <Text
+                key={level.id}
+                style={[
+                  styles.activityYAxisLabel,
+                  { top: scaleY(level.numericValue) - 6 }
+                ]}
+              >
+                {level.shortLabel}
+              </Text>
+            ))}
+          </View>
+
+          {/* Chart */}
+          <View style={styles.activityChartArea}>
+            <Svg width={chartWidth} height={ACTIVITY_CHART_HEIGHT}>
+              <Defs>
+                <LinearGradient id="activityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.2" />
+                  <Stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.02" />
+                </LinearGradient>
+              </Defs>
+
+              {/* Reference lines for each level */}
+              {ACTIVITY_LEVELS.map((level) => {
+                const y = scaleY(level.numericValue);
+                return (
+                  <Line
+                    key={level.id}
+                    x1={0}
+                    y1={y}
+                    x2={chartWidth}
+                    y2={y}
+                    stroke="#E5E7EB"
+                    strokeWidth={1}
+                    strokeDasharray="3,6"
+                  />
+                );
+              })}
+
+              {/* Area fill */}
+              <Path d={areaPath} fill="url(#activityGrad)" />
+
+              {/* Stepped line */}
+              <Path
+                d={steppedPath}
+                stroke="#0EA5E9"
+                strokeWidth={2.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Active dot */}
+              {dot && (
+                <>
+                  <Circle cx={dot.x} cy={dot.y} r={6} fill="#FFFFFF" />
+                  <Circle cx={dot.x} cy={dot.y} r={4} fill="#0EA5E9" />
+                </>
+              )}
+            </Svg>
+
+            {/* Cursor line */}
+            {activeIndex !== null && (
+              <View
+                style={[
+                  styles.activityCursorLine,
+                  { left: (activeIndex / 11) * chartWidth },
+                ]}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* X-Axis Labels */}
+        <View style={[styles.activityTimeLabels, { marginLeft: ACTIVITY_Y_AXIS_WIDTH }]}>
+          <Text style={styles.activityTimeLabel}>{MONTHLY_ACTIVITY_12_MONTHS[0].monthName}</Text>
+          <Text style={styles.activityTimeLabel}>{MONTHLY_ACTIVITY_12_MONTHS[11].monthName}</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// MONTHLY MENTAL WELLNESS SECTION (Like Health Ratings)
+// ============================================
+const MonthlyMentalWellnessSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartAreaRef = useRef<View>(null);
+
+  // Chart data
+  const mentalClarityData = useMemo(() => MONTHLY_MENTAL_WELLNESS_12_MONTHS.map(m => m.mentalClarity), []);
+  const emotionalBalanceData = useMemo(() => MONTHLY_MENTAL_WELLNESS_12_MONTHS.map(m => m.emotionalBalance), []);
+  const motivationData = useMemo(() => MONTHLY_MENTAL_WELLNESS_12_MONTHS.map(m => m.motivation), []);
+
+  // Format selected month
+  const selectedMonthStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const month = MONTHLY_MENTAL_WELLNESS_12_MONTHS[activeIndex];
+    return month.monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }, [activeIndex]);
+
+  // Get display values
+  const getDisplayValue = (data: (number | null)[], fallback: number | null): number | null => {
+    if (activeIndex === null) return fallback;
+    return data[activeIndex];
+  };
+
+  const mentalClarityDisplay = getDisplayValue(mentalClarityData, MONTHLY_MENTAL_WELLNESS_STATS.mentalClarity.current);
+  const emotionalBalanceDisplay = getDisplayValue(emotionalBalanceData, MONTHLY_MENTAL_WELLNESS_STATS.emotionalBalance.current);
+  const motivationDisplay = getDisplayValue(motivationData, MONTHLY_MENTAL_WELLNESS_STATS.motivation.current);
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, HEALTH_CHART_WIDTH));
+    const index = Math.round((clampedX / HEALTH_CHART_WIDTH) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartAreaRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderMove: (evt) => {
+        setActiveIndex(getIndexFromX(evt.nativeEvent.pageX));
+      },
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Text style={styles.monthlyTitle}>Mental Wellness</Text>
+        </View>
+        {selectedMonthStr && (
+          <Text style={styles.monthlySelectedDate}>{selectedMonthStr}</Text>
+        )}
+      </View>
+
+      {/* Charts - single gesture surface */}
+      <View
+        ref={chartAreaRef}
+        style={styles.healthChartsContainer}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
+        <HealthMetricChart
+          icon="bulb-outline"
+          label="Mental Clarity"
+          values={mentalClarityData}
+          color={MENTAL_WELLNESS_COLORS.mentalClarity}
+          gradientId="mentalClarityGrad"
+          activeIndex={activeIndex}
+          displayValue={mentalClarityDisplay}
+        />
+
+        <HealthMetricChart
+          icon="heart-half-outline"
+          label="Emotional Balance"
+          values={emotionalBalanceData}
+          color={MENTAL_WELLNESS_COLORS.emotionalBalance}
+          gradientId="emotionalBalanceGrad"
+          activeIndex={activeIndex}
+          displayValue={emotionalBalanceDisplay}
+        />
+
+        <HealthMetricChart
+          icon="flash-outline"
+          label="Motivation"
+          values={motivationData}
+          color={MENTAL_WELLNESS_COLORS.motivation}
+          gradientId="motivationGrad"
+          activeIndex={activeIndex}
+          displayValue={motivationDisplay}
+          isLast
+        />
+      </View>
+
+      {/* Time Labels */}
+      <View style={styles.healthTimeLabels}>
+        <Text style={styles.healthTimeLabel}>{MONTHLY_MENTAL_WELLNESS_12_MONTHS[0].monthName}</Text>
+        <Text style={styles.healthTimeLabel}>{MONTHLY_MENTAL_WELLNESS_12_MONTHS[11].monthName}</Text>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// MONTHLY MENTAL LOAD SECTION (Positioned Dot Chart)
+// ============================================
+
+// Mental Load level colors (semantic)
+const MENTAL_LOAD_LEVEL_COLORS: Record<MentalLoadLevelId, string> = {
+  calm: '#10B981',       // Green - peaceful
+  manageable: '#3B82F6', // Blue - active but controlled
+  overloaded: '#F59E0B', // Amber - warning
+  stressed: '#DC2626',   // Deep red - danger
+};
+
+// Y-axis config with icons
+const MENTAL_LOAD_Y_CONFIG: { id: MentalLoadLevelId; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'calm', icon: 'leaf-outline' },
+  { id: 'manageable', icon: 'list-outline' },
+  { id: 'overloaded', icon: 'cloudy-outline' },
+  { id: 'stressed', icon: 'thunderstorm-outline' },
+];
+
+const ML_CHART_HEIGHT = 100;
+const ML_ROW_HEIGHT = 25;
+const ML_Y_AXIS_WIDTH = 32;
+const ML_DOT_PADDING = 12; // Padding on left/right so dots don't clip
+
+const MonthlyMentalLoadSection = () => {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  // Current/selected month data
+  const displayIndex = selectedIndex !== null ? selectedIndex : 11;
+  const displayMonth = MONTHLY_MENTAL_LOAD_12_MONTHS[displayIndex];
+  const displayLevel = getMentalLoadLevelInfo(displayMonth.mentalLoadLevel);
+  const displayColor = displayMonth.mentalLoadLevel
+    ? MENTAL_LOAD_LEVEL_COLORS[displayMonth.mentalLoadLevel]
+    : '#6B7280';
+
+
+  // Get Y position for a level (calm=0, manageable=1, overloaded=2, stressed=3)
+  const getYRow = (levelId: MentalLoadLevelId | null): number => {
+    if (!levelId) return 1;
+    const order: Record<MentalLoadLevelId, number> = { calm: 0, manageable: 1, overloaded: 2, stressed: 3 };
+    return order[levelId];
+  };
+
+  // Calculate chart width (with padding for dots)
+  const chartWidth = Dimensions.get('window').width - 32 - 32 - ML_Y_AXIS_WIDTH;
+  const plotWidth = chartWidth - ML_DOT_PADDING * 2;
+
+  // Get X position for a dot (with padding)
+  const getX = (index: number) => ML_DOT_PADDING + (index / 11) * plotWidth;
+
+  // Build connecting path between dots
+  const buildPath = useMemo(() => {
+    const points = MONTHLY_MENTAL_LOAD_12_MONTHS.map((month, index) => {
+      const yRow = getYRow(month.mentalLoadLevel);
+      const x = getX(index);
+      const y = yRow * ML_ROW_HEIGHT + ML_ROW_HEIGHT / 2;
+      return { x, y };
+    });
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      path += ` L ${points[i].x} ${points[i].y}`;
+    }
+    return path;
+  }, [plotWidth]);
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Text style={styles.monthlyTitle}>Mental Load</Text>
+        </View>
+        {selectedIndex !== null && (
+          <Text style={mlStyles.headerMonth}>
+            {displayMonth.monthStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+          </Text>
+        )}
+      </View>
+
+      {/* Current State Row */}
+      <View style={mlStyles.stateRow}>
+        <View style={[mlStyles.stateIconBg, { backgroundColor: displayColor + '15' }]}>
+          <Ionicons name={displayLevel?.icon || 'help'} size={18} color={displayColor} />
+        </View>
+        <View style={mlStyles.stateTextContainer}>
+          <Text style={[mlStyles.stateLabel, { color: displayColor }]}>
+            {displayLevel?.label || 'Unknown'}
+          </Text>
+          <Text style={mlStyles.stateDescription}>{displayLevel?.description || ''}</Text>
+        </View>
+      </View>
+
+      {/* Dot Chart */}
+      <View style={mlStyles.chartWrapper}>
+        {/* Y-Axis Icons */}
+        <View style={mlStyles.yAxisIcons}>
+          {MENTAL_LOAD_Y_CONFIG.map((config) => (
+            <View key={config.id} style={mlStyles.yAxisIconRow}>
+              <Ionicons
+                name={config.icon}
+                size={14}
+                color={MENTAL_LOAD_LEVEL_COLORS[config.id]}
+              />
+            </View>
+          ))}
+        </View>
+
+        {/* Chart Area with SVG */}
+        <View style={[mlStyles.chartSvgArea, { width: chartWidth }]}>
+          <Svg width={chartWidth} height={ML_CHART_HEIGHT}>
+            {/* Subtle connecting path */}
+            <Path
+              d={buildPath}
+              stroke="#E5E7EB"
+              strokeWidth={1.5}
+              fill="none"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+
+            {/* Dots */}
+            {MONTHLY_MENTAL_LOAD_12_MONTHS.map((month, index) => {
+              const levelId = month.mentalLoadLevel;
+              const color = levelId ? MENTAL_LOAD_LEVEL_COLORS[levelId] : '#D1D5DB';
+              const yRow = getYRow(levelId);
+              const cx = getX(index);
+              const cy = yRow * ML_ROW_HEIGHT + ML_ROW_HEIGHT / 2;
+              const isSelected = selectedIndex === index;
+              const isCurrent = index === 11 && selectedIndex === null;
+              const isHighlighted = isSelected || isCurrent;
+
+              return (
+                <G key={month.monthIndex}>
+                  {/* Highlight ring */}
+                  {isHighlighted && (
+                    <Circle cx={cx} cy={cy} r={11} fill={color} opacity={0.2} />
+                  )}
+                  {/* White border */}
+                  <Circle cx={cx} cy={cy} r={isHighlighted ? 7 : 5.5} fill="#FFFFFF" />
+                  {/* Colored dot */}
+                  <Circle cx={cx} cy={cy} r={isHighlighted ? 5 : 4} fill={color} />
+                </G>
+              );
+            })}
+          </Svg>
+
+          {/* Touch targets (invisible, on top) */}
+          {MONTHLY_MENTAL_LOAD_12_MONTHS.map((month, index) => {
+            const yRow = getYRow(month.mentalLoadLevel);
+            const left = getX(index) - 16;
+            const top = yRow * ML_ROW_HEIGHT + ML_ROW_HEIGHT / 2 - 16;
+
+            return (
+              <TouchableOpacity
+                key={`touch-${month.monthIndex}`}
+                onPress={() => setSelectedIndex(selectedIndex === index ? null : index)}
+                style={[mlStyles.touchTarget, { left, top }]}
+                activeOpacity={0.7}
+              />
+            );
+          })}
+        </View>
+      </View>
+
+      {/* X-Axis Labels */}
+      <View style={[mlStyles.xAxisRow, { marginLeft: ML_Y_AXIS_WIDTH, paddingHorizontal: ML_DOT_PADDING }]}>
+        {MONTHLY_MENTAL_LOAD_12_MONTHS.map((month, index) => {
+          const isActive = selectedIndex === index || (index === 11 && selectedIndex === null);
+          return (
+            <Text
+              key={month.monthIndex}
+              style={[mlStyles.xLabel, isActive && mlStyles.xLabelActive]}
+            >
+              {month.monthName.charAt(0)}
+            </Text>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+// Mental Load styles
+const mlStyles = StyleSheet.create({
+  headerMonth: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  stateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 10,
+  },
+  stateIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stateTextContainer: {
+    flex: 1,
+  },
+  stateLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: -0.3,
+  },
+  stateDescription: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 1,
+  },
+  chartWrapper: {
+    flexDirection: 'row',
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  yAxisIcons: {
+    width: ML_Y_AXIS_WIDTH,
+    height: ML_CHART_HEIGHT,
+  },
+  yAxisIconRow: {
+    height: ML_ROW_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chartSvgArea: {
+    height: ML_CHART_HEIGHT,
+    position: 'relative',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
+  },
+  touchTarget: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+  },
+  xAxisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  xLabel: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  xLabelActive: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+});
+
+// ============================================
+// MONTHLY ENERGY DRAINS SECTION (Frequency Bars)
+// ============================================
+
+const MonthlyEnergyDrainsSection = () => {
+  // Calculate frequency of each drain
+  const drainFrequency = useMemo(() => {
+    const frequency: Record<EnergyDrainId, number> = {
+      work_pressure: 0,
+      social_overload: 0,
+      lack_of_structure: 0,
+      constant_notifications: 0,
+      uncertainty: 0,
+      physical_exhaustion: 0,
+    };
+
+    MONTHLY_ENERGY_DRAINS_12_MONTHS.forEach(month => {
+      if (month.primaryDrain) {
+        frequency[month.primaryDrain]++;
+      }
+    });
+
+    return frequency;
+  }, []);
+
+  // Sort drains by frequency (most common first), filter out zeros
+  const sortedDrains = useMemo(() => {
+    return [...ENERGY_DRAINS]
+      .filter(drain => drainFrequency[drain.id] > 0)
+      .sort((a, b) => drainFrequency[b.id] - drainFrequency[a.id]);
+  }, [drainFrequency]);
+
+  // Get max frequency for scaling bars
+  const maxFrequency = useMemo(() => {
+    return Math.max(...Object.values(drainFrequency), 1);
+  }, [drainFrequency]);
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Text style={styles.monthlyTitle}>Energy Drains</Text>
+        </View>
+      </View>
+
+      {/* Ranked list with bars */}
+      <View style={edStyles.listContainer}>
+        {sortedDrains.map((drain, index) => {
+          const count = drainFrequency[drain.id];
+          const barWidth = (count / maxFrequency) * 100;
+
+          return (
+            <View
+              key={drain.id}
+              style={[
+                edStyles.listItem,
+                index === sortedDrains.length - 1 && { marginBottom: 0 },
+              ]}
+            >
+              <View style={[edStyles.listIcon, { backgroundColor: drain.color + '12' }]}>
+                <Ionicons name={drain.icon} size={14} color={drain.color} />
+              </View>
+              <Text style={edStyles.listLabel}>
+                {drain.shortLabel}
+              </Text>
+              <View style={edStyles.barTrack}>
+                <View
+                  style={[
+                    edStyles.barFill,
+                    { width: `${barWidth}%`, backgroundColor: drain.color },
+                  ]}
+                />
+              </View>
+              <Text style={edStyles.listCount}>{count}</Text>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Context footer */}
+      <Text style={edStyles.contextFooter}>times in past 12 months</Text>
+    </View>
+  );
+};
+
+// Energy Drains styles
+const edStyles = StyleSheet.create({
+  listContainer: {
+    marginTop: 12,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  listIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listLabel: {
+    width: 85,
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  barTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  listCount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    width: 20,
+    textAlign: 'right',
+  },
+  contextFooter: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 8,
+  },
+});
+
+// ============================================
 // STYLES
 // ============================================
 const styles = StyleSheet.create({
@@ -2882,7 +4801,7 @@ const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -2896,7 +4815,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 16,
   },
   segmentButtonActive: {
     backgroundColor: '#1F2937',
@@ -4138,6 +6057,255 @@ const styles = StyleSheet.create({
   wealthCaption: {
     fontSize: 12,
     color: '#9CA3AF',
+    fontWeight: '500',
+  },
+
+  // ============================================
+  // MONTHLY STATISTICS STYLES
+  // ============================================
+  monthlySectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  monthlyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    minHeight: 24,
+  },
+  monthlyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  monthlyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
+  },
+  monthlySelectedDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  monthlyStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 8,
+  },
+  monthlyWeightValue: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.5,
+  },
+  monthlyWeightUnit: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginLeft: 4,
+    marginRight: 10,
+  },
+  monthlyMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 6,
+  },
+  monthlyMetaLight: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  monthlyChangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  monthlyChangeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  monthlyChangeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  monthlyChangeLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  monthlyChartSection: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  monthlyChartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  monthlyChartArea: {
+    flex: 1,
+  },
+  monthlyYAxis: {
+    position: 'relative',
+    width: 32,
+    height: 80,
+  },
+  monthlyYAxisLabel: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  monthlyChartLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginLeft: 32,
+  },
+  monthlyChartLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
+    fontWeight: '500',
+  },
+
+  // Health Ratings Section Styles (like 12-Week Overview)
+  healthChartsContainer: {
+    gap: 8,
+  },
+  healthMetricSection: {
+    paddingBottom: 8,
+  },
+  healthMetricSectionBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  healthMetricHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  healthMetricLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  healthMetricLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  healthMetricValue: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  healthChartWrapper: {
+    position: 'relative',
+  },
+  healthCursorLine: {
+    position: 'absolute',
+    top: 0,
+    width: 1.5,
+    height: 52,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    borderRadius: 1,
+  },
+  healthTimeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -8,
+  },
+  healthTimeLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
+    fontWeight: '500',
+  },
+
+  // ============================================
+  // PHYSICAL ACTIVITY SECTION STYLES
+  // ============================================
+  activityLevelDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  activityLevelIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activityLevelTextContainer: {
+    flex: 1,
+  },
+  activityLevelLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  activityLevelDescription: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  activityChartSection: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  activityChartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activityYAxis: {
+    position: 'relative',
+    width: 60,
+    height: 100,
+  },
+  activityYAxisLabel: {
+    position: 'absolute',
+    fontSize: 9,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    right: 8,
+  },
+  activityChartArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  activityCursorLine: {
+    position: 'absolute',
+    top: 0,
+    width: 1.5,
+    height: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    borderRadius: 1,
+  },
+  activityTimeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  activityTimeLabel: {
+    fontSize: 10,
+    color: '#C9CDD3',
     fontWeight: '500',
   },
 });
