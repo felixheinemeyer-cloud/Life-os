@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Animated,
+  Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 400; // iPhone 16 Pro is ~393pt, Pro Max is ~430pt
 
 interface EveningTrackingPriorityContentProps {
   morningPriority: string;
@@ -18,6 +25,34 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
   morningPriority,
   onSelectionComplete,
 }) => {
+  const scale1 = useRef(new Animated.Value(1)).current;
+  const scale2 = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handlePressOut = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleCardPress = (completed: boolean) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onSelectionComplete(completed);
+  };
+
   return (
     <ScrollView
       style={styles.scrollView}
@@ -40,9 +75,6 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
         <Text style={styles.questionText}>
           Did you complete your priority?
         </Text>
-        <Text style={styles.questionSubtext}>
-          Reflect on your most important goal for today
-        </Text>
       </View>
 
       {/* Priority Card */}
@@ -54,30 +86,92 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
         <Text style={styles.priorityText}>{morningPriority}</Text>
       </View>
 
-      {/* Completion Toggle */}
-      <View style={styles.toggleSection}>
+      {/* Completion Cards */}
+      <View style={styles.cardsContainer}>
+        {/* Yes, I did it! Card */}
         <TouchableOpacity
-          style={styles.toggleOption}
-          onPress={() => onSelectionComplete(true)}
-          activeOpacity={0.8}
+          activeOpacity={1}
+          onPressIn={() => handlePressIn(scale1)}
+          onPressOut={() => handlePressOut(scale1)}
+          onPress={() => handleCardPress(true)}
+          style={styles.cardTouchable}
         >
-          <View style={[styles.toggleCircle, styles.toggleCircleSelected]}>
-            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-          </View>
-          <Text style={styles.toggleText}>Yes, I did it!</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={styles.chevron} />
+          <Animated.View
+            style={[
+              styles.card,
+              styles.successCard,
+              isSmallScreen && styles.cardSmall,
+              { transform: [{ scale: scale1 }] },
+            ]}
+          >
+            {/* Icon */}
+            <LinearGradient
+              colors={['#34D399', '#10B981', '#059669']}
+              style={[styles.cardIconGradientRing, isSmallScreen && styles.cardIconGradientRingSmall]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={[styles.cardIconInnerCircle, isSmallScreen && styles.cardIconInnerCircleSmall]}>
+                <Ionicons name="checkmark" size={26} color="#059669" />
+              </View>
+            </LinearGradient>
+
+            {/* Content */}
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Yes, I did it!</Text>
+              <Text style={[styles.cardDescription, isSmallScreen && styles.cardDescriptionSmall]}>
+                Celebrate your achievement
+              </Text>
+            </View>
+
+            {/* Arrow */}
+            <View style={[styles.arrowContainer, isSmallScreen && styles.arrowContainerSmall]}>
+              <Ionicons name="chevron-forward" size={22} color="#D1D5DB" />
+            </View>
+          </Animated.View>
         </TouchableOpacity>
 
+        {/* Not today Card */}
         <TouchableOpacity
-          style={styles.toggleOption}
-          onPress={() => onSelectionComplete(false)}
-          activeOpacity={0.8}
+          activeOpacity={1}
+          onPressIn={() => handlePressIn(scale2)}
+          onPressOut={() => handlePressOut(scale2)}
+          onPress={() => handleCardPress(false)}
+          style={styles.cardTouchable}
         >
-          <View style={[styles.toggleCircle, styles.toggleCircleNotSelected]}>
-            <Ionicons name="close" size={20} color="#FFFFFF" />
-          </View>
-          <Text style={styles.toggleText}>Not today</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={styles.chevron} />
+          <Animated.View
+            style={[
+              styles.card,
+              styles.notTodayCard,
+              isSmallScreen && styles.cardSmall,
+              { transform: [{ scale: scale2 }] },
+            ]}
+          >
+            {/* Icon */}
+            <LinearGradient
+              colors={['#9CA3AF', '#6B7280', '#4B5563']}
+              style={[styles.cardIconGradientRing, isSmallScreen && styles.cardIconGradientRingSmall]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={[styles.cardIconInnerCircle, isSmallScreen && styles.cardIconInnerCircleSmall]}>
+                <Ionicons name="close" size={26} color="#4B5563" />
+              </View>
+            </LinearGradient>
+
+            {/* Content */}
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Not today</Text>
+              <Text style={[styles.cardDescription, isSmallScreen && styles.cardDescriptionSmall]}>
+                Reflect and move forward
+              </Text>
+            </View>
+
+            {/* Arrow */}
+            <View style={[styles.arrowContainer, isSmallScreen && styles.arrowContainerSmall]}>
+              <Ionicons name="chevron-forward" size={22} color="#D1D5DB" />
+            </View>
+          </Animated.View>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -97,7 +191,6 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 24,
   },
   iconGradientRing: {
     width: 64,
@@ -139,7 +232,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 24,
+    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -169,47 +262,115 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // Toggle Section
-  toggleSection: {
+  // Cards Container
+  cardsContainer: {
     gap: 12,
+    paddingTop: 20,
   },
-  toggleOption: {
+
+  // Card Styles
+  cardTouchable: {
+  },
+  card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 22,
     padding: 20,
+    paddingRight: 56,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  toggleCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E5E7EB',
+  successCard: {
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  notTodayCard: {
+    shadowColor: '#6B7280',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+
+  // Icon
+  cardIconGradientRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 3,
+    marginRight: 16,
+  },
+  cardIconInnerCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  toggleCircleSelected: {
-    backgroundColor: '#7C3AED',
+
+  // Content
+  cardTextContainer: {
+    flex: 1,
   },
-  toggleCircleNotSelected: {
-    backgroundColor: '#9CA3AF',
-  },
-  toggleText: {
-    fontSize: 16,
-    fontWeight: '500',
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
+    marginBottom: 2,
   },
-  chevron: {
-    marginLeft: 'auto',
+  cardDescription: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    lineHeight: 20,
+    letterSpacing: -0.1,
+  },
+
+  // Arrow
+  arrowContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 20,
+    justifyContent: 'center',
+  },
+
+  // Small Screen Variants
+  cardSmall: {
+    padding: 18,
+    paddingRight: 50,
+    borderRadius: 18,
+    maxWidth: 280,
+  },
+  cardIconGradientRingSmall: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    marginBottom: 12,
+  },
+  cardIconInnerCircleSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  cardTitleSmall: {
+    fontSize: 17,
+    marginBottom: 2,
+  },
+  cardDescriptionSmall: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  arrowContainerSmall: {
+    right: 18,
   },
 });
 
