@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,6 +31,37 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const buttonBottom = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        const keyboardTop = e.endCoordinates.height - 80;
+        Animated.timing(buttonBottom, {
+          toValue: keyboardTop + 8,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        Animated.timing(buttonBottom, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const handleTabChange = (tab: TabType): void => {
     if (tab !== activeTab) {
@@ -40,9 +72,6 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
 
   const handleFocus = (): void => {
     setIsFocused(true);
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 120, animated: true });
-    }, 100);
   };
 
   const handleBlur = (): void => {
@@ -56,21 +85,21 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
   ];
 
   const renderTextInput = () => (
-    <View style={[styles.inputCard, isFocused && styles.inputCardFocused]}>
-      <TextInput
-        ref={textInputRef}
-        style={styles.textInput}
-        placeholder="Reflect on your day..."
-        placeholderTextColor="#9CA3AF"
-        multiline
-        numberOfLines={8}
-        value={journalText}
-        onChangeText={onJournalChange}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        textAlignVertical="top"
-      />
-    </View>
+    <TextInput
+      ref={textInputRef}
+      style={styles.freeWritingInput}
+      placeholder="Reflect on your day..."
+      placeholderTextColor="#9CA3AF"
+      multiline
+      scrollEnabled={false}
+      value={journalText}
+      onChangeText={onJournalChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      textAlignVertical="top"
+      selectionColor="#1F2937"
+      cursorColor="#1F2937"
+    />
   );
 
   const renderVoicePlaceholder = () => (
@@ -129,73 +158,83 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.container}>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        >
-          {/* Question Section */}
-          <View style={styles.questionSection}>
-            <LinearGradient
-              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-              style={styles.iconGradientRing}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {/* Question Section */}
+        <View style={styles.questionSection}>
+          <LinearGradient
+            colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+            style={styles.iconGradientRing}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name="book" size={28} color="#7C3AED" />
+            </View>
+          </LinearGradient>
+          <Text style={styles.questionText}>Journal Entry</Text>
+        </View>
+
+        {/* Segmented Control */}
+        <View style={styles.segmentedControl}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                styles.segmentButton,
+                activeTab === tab.key && styles.segmentButtonActive,
+              ]}
+              onPress={() => handleTabChange(tab.key)}
+              activeOpacity={0.7}
             >
-              <View style={styles.iconInnerCircle}>
-                <Ionicons name="book" size={28} color="#7C3AED" />
-              </View>
-            </LinearGradient>
-            <Text style={styles.questionText}>Journal Entry</Text>
-          </View>
-
-          {/* Segmented Control */}
-          <View style={styles.segmentedControl}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
+              <Ionicons
+                name={tab.icon}
+                size={18}
+                color={activeTab === tab.key ? '#6366F1' : '#6B7280'}
+              />
+              <Text
                 style={[
-                  styles.segmentButton,
-                  activeTab === tab.key && styles.segmentButtonActive,
+                  styles.segmentText,
+                  activeTab === tab.key && styles.segmentTextActive,
                 ]}
-                onPress={() => handleTabChange(tab.key)}
-                activeOpacity={0.7}
               >
-                <Ionicons
-                  name={tab.icon}
-                  size={18}
-                  color={activeTab === tab.key ? '#6366F1' : '#6B7280'}
-                />
-                <Text
-                  style={[
-                    styles.segmentText,
-                    activeTab === tab.key && styles.segmentTextActive,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          {/* Content Area */}
-          <View style={styles.contentArea}>
-            {renderContent()}
-          </View>
-        </ScrollView>
+        {/* Content Area */}
+        <View style={styles.contentArea}>
+          {renderContent()}
+        </View>
+      </ScrollView>
 
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
+      {/* Continue Button */}
+      <Animated.View
+        style={[
+          styles.buttonContainer,
+          isFocused && styles.buttonContainerFocused,
+          { bottom: buttonBottom }
+        ]}
+      >
+        {isFocused ? (
+          <TouchableOpacity
+            style={styles.roundContinueButton}
+            onPress={onContinue}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="checkmark" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
           <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
@@ -204,16 +243,13 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
             <Text style={styles.continueButtonText}>Finish Check-in</Text>
             <Ionicons name="checkmark" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+        )}
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
@@ -224,7 +260,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 300,
   },
 
   // Question Section
@@ -299,31 +335,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Input Card (Text mode)
-  inputCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  inputCardFocused: {
-    borderColor: '#6366F1',
-    shadowColor: '#6366F1',
-    shadowOpacity: 0.15,
-  },
-  textInput: {
-    fontSize: 16,
+  // Free Writing Input (Text mode)
+  freeWritingInput: {
+    flex: 1,
+    fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    minHeight: 180,
-    letterSpacing: -0.2,
-    lineHeight: 24,
+    letterSpacing: -0.1,
+    lineHeight: 30,
+    paddingHorizontal: 0,
+    paddingTop: 8,
+    minHeight: 200,
   },
 
   // Placeholder Card (Voice/Video modes)
@@ -386,10 +408,19 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerFocused: {
+    alignItems: 'flex-end',
+    paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
@@ -411,6 +442,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginRight: 6,
     letterSpacing: -0.2,
+  },
+  roundContinueButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 

@@ -36,9 +36,8 @@ interface RatingSliderProps {
   maxLabel: string;
 }
 
-const TRACK_HEIGHT = 28;
 const THUMB_SIZE = 24;
-const SLIDER_COLOR = '#1F2937';
+const THEME_COLOR = '#8B5CF6'; // Evening checkin purple
 
 const RatingSlider: React.FC<RatingSliderProps> = ({
   label,
@@ -54,10 +53,13 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
 
   const animatedValue = useRef(new Animated.Value(value)).current;
   const sliderWidthRef = useRef(SLIDER_WIDTH);
+  const sliderLeftRef = useRef(0);
+  const containerRef = useRef<View>(null);
   const valueRef = useRef(value);
   const onValueChangeRef = useRef(onValueChange);
   const isGestureActive = useRef(false);
   const lastHapticTime = useRef(0);
+  const lastValueTime = useRef(0);
 
   useEffect(() => {
     if (!isGestureActive.current) {
@@ -82,10 +84,40 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     }
   }, []);
 
-  const calculateValue = useCallback((locationX: number): number => {
-    const effectiveWidth = sliderWidthRef.current - THUMB_SIZE;
-    const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
-    return Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
+  const calculateValue = useCallback((pageX: number): number => {
+    const width = sliderWidthRef.current;
+    const left = sliderLeftRef.current;
+    if (width <= 0) return valueRef.current;
+
+    const locationX = pageX - left;
+    const clampedX = Math.max(0, Math.min(width, locationX));
+    const effectiveWidth = width - THUMB_SIZE;
+    if (effectiveWidth <= 0) return valueRef.current;
+
+    const adjustedX = Math.max(0, Math.min(effectiveWidth, clampedX - THUMB_SIZE / 2));
+    const rawValue = (adjustedX / effectiveWidth) * 9 + 1;
+    return Math.round(Math.max(1, Math.min(10, rawValue)));
+  }, []);
+
+  const updateValue = useCallback((pageX: number) => {
+    const now = Date.now();
+    // Throttle updates to prevent rapid firing
+    if (now - lastValueTime.current < 16) return;
+    lastValueTime.current = now;
+
+    const newValue = calculateValue(pageX);
+    if (newValue >= 1 && newValue <= 10 && newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      animatedValue.setValue(newValue);
+      triggerHaptic();
+      onValueChangeRef.current(newValue);
+    }
+  }, [calculateValue, triggerHaptic, animatedValue]);
+
+  const measureSlider = useCallback(() => {
+    containerRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      sliderLeftRef.current = pageX;
+    });
   }, []);
 
   const panResponder = useMemo(() => PanResponder.create({
@@ -93,23 +125,18 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event) => {
       isGestureActive.current = true;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      // Capture pageX immediately before event is recycled
+      const pageX = event.nativeEvent.pageX;
+      measureSlider();
+      setTimeout(() => {
+        if (isGestureActive.current) {
+          updateValue(pageX);
+        }
+      }, 10);
     },
     onPanResponderMove: (event) => {
       if (!isGestureActive.current) return;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      updateValue(event.nativeEvent.pageX);
     },
     onPanResponderRelease: () => {
       isGestureActive.current = false;
@@ -117,16 +144,16 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onPanResponderTerminate: () => {
       isGestureActive.current = false;
     },
-  }), [calculateValue, triggerHaptic]);
+  }), [updateValue, measureSlider]);
 
   const thumbLeft = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['4%', '96%'],
+    outputRange: [0, sliderWidth - THUMB_SIZE],
   });
 
-  const fillWidthAnimated = animatedValue.interpolate({
+  const fillWidth = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['8%', '100%'],
+    outputRange: [THUMB_SIZE, sliderWidth],
   });
 
   return (
@@ -134,24 +161,39 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
       <View style={styles.sliderHeader}>
         {customIcon || <Ionicons name={icon!} size={18} color={themeColor} />}
         <Text style={[styles.sliderLabel, { color: themeColor }]}>{label}</Text>
-        <Text style={[styles.valueText, { color: SLIDER_COLOR }]}>{value}/10</Text>
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueNumber}>{value}</Text>
+          <Text style={styles.valueSuffix}>/10</Text>
+        </View>
       </View>
 
       <View
+        ref={containerRef}
         style={styles.sliderTrackContainer}
-        onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+        onLayout={(e) => {
+          setSliderWidth(e.nativeEvent.layout.width);
+          measureSlider();
+        }}
         {...panResponder.panHandlers}
       >
         <View style={styles.sliderTrackBackground} />
         <Animated.View
-          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: '#A78BFA' }]}
+          style={[
+            styles.sliderFill,
+            { width: fillWidth, backgroundColor: THEME_COLOR },
+          ]}
         />
         <Animated.View
           style={[
             styles.sliderThumb,
-            { left: thumbLeft },
+            {
+              transform: [{ translateX: thumbLeft as unknown as number }],
+              backgroundColor: THEME_COLOR,
+            },
           ]}
-        />
+        >
+          <View style={styles.sliderThumbInner} />
+        </Animated.View>
       </View>
 
       <View style={styles.sliderLabels}>
@@ -296,7 +338,7 @@ const styles = StyleSheet.create({
 
   // Sliders Section
   slidersSection: {
-    gap: 24,
+    gap: 14,
   },
   sliderContainer: {
     backgroundColor: '#FFFFFF',
@@ -311,7 +353,7 @@ const styles = StyleSheet.create({
   sliderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     gap: 8,
   },
   sliderLabel: {
@@ -320,51 +362,73 @@ const styles = StyleSheet.create({
     flex: 1,
     letterSpacing: -0.2,
   },
-  valueText: {
-    fontSize: 14,
-    fontWeight: '600',
+  valueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  valueNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#7C3AED',
+    letterSpacing: -0.5,
+  },
+  valueSuffix: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#A78BFA',
+    marginLeft: 1,
   },
   sliderTrackContainer: {
-    height: 28,
+    height: 24,
     justifyContent: 'center',
     position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 14,
   },
   sliderTrackBackground: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 28,
-    borderRadius: 14,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#E5E7EB',
   },
   sliderFill: {
     position: 'absolute',
     left: 0,
-    height: 28,
-    borderRadius: 14,
-    minWidth: 14,
+    height: 24,
+    borderRadius: 12,
   },
   sliderThumb: {
     position: 'absolute',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginLeft: -11,
-    top: 3,
-    backgroundColor: '#E5E7EB',
-    shadowColor: '#000',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#8B5CF6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sliderThumbInner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 2,
+    borderColor: '#7C3AED',
+    overflow: 'hidden',
   },
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 4,
+    marginTop: 10,
+    paddingHorizontal: 2,
   },
   sliderMinLabel: {
     fontSize: 11,

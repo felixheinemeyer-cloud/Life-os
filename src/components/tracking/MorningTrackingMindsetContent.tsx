@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
   headerSection: {
     alignItems: 'center',
     paddingTop: 16,
-    marginBottom: 28,
   },
   iconGradientRing: {
     width: 64,
