@@ -5,17 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Keyboard,
-  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_GAP = 10;
-const HORIZONTAL_PADDING = 16;
-const CARD_WIDTH = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - CARD_GAP) / 2;
 
 // Sky blue color scheme for Monthly Body Check-In
 const THEME_COLORS = {
@@ -25,36 +19,42 @@ const THEME_COLORS = {
   gradient: ['#BAE6FD', '#38BDF8', '#0EA5E9'] as const,
 };
 
-// Mind drains options - 2x3 grid layout
+// Mind drains options
 const MIND_DRAINS = [
   {
     id: 'work_pressure',
-    label: 'Work Pressure',
+    label: 'Work / Study Pressure',
+    description: 'Deadlines, demands, expectations',
     icon: 'briefcase-outline' as const,
   },
   {
     id: 'social_overload',
     label: 'Social Overload',
+    description: 'Too many interactions or obligations',
     icon: 'people-outline' as const,
   },
   {
     id: 'lack_of_structure',
     label: 'Lack of Structure',
+    description: 'No routine, feeling scattered',
     icon: 'grid-outline' as const,
   },
   {
     id: 'constant_notifications',
-    label: 'Notifications',
+    label: 'Constant Notifications',
+    description: 'Digital interruptions and distractions',
     icon: 'notifications-outline' as const,
   },
   {
     id: 'uncertainty',
-    label: 'Uncertainty',
+    label: 'Uncertainty / Worrying',
+    description: 'Anxious thoughts about the future',
     icon: 'help-circle-outline' as const,
   },
   {
     id: 'physical_exhaustion',
-    label: 'Exhaustion',
+    label: 'Physical Exhaustion',
+    description: 'Body fatigue affecting the mind',
     icon: 'battery-dead-outline' as const,
   },
 ];
@@ -77,7 +77,7 @@ interface MonthlyBodyTrackingMindDrainsContentProps {
   onContinue: () => void;
 }
 
-// Mind Drain Card Component - Grid layout
+// Mind Drain Card Component
 interface MindDrainCardProps {
   drain: typeof MIND_DRAINS[0];
   isSelected: boolean;
@@ -98,29 +98,35 @@ const MindDrainCard: React.FC<MindDrainCardProps> = ({
       onPress={onSelect}
       activeOpacity={0.7}
     >
-      {/* Checkmark indicator in top right */}
-      {isSelected && (
-        <View style={styles.checkmarkBadge}>
-          <Ionicons name="checkmark" size={10} color="#FFFFFF" />
-        </View>
-      )}
-
       <View style={[
         styles.drainIconContainer,
         isSelected && styles.drainIconContainerSelected,
       ]}>
         <Ionicons
           name={drain.icon}
-          size={20}
+          size={21}
           color={isSelected ? '#FFFFFF' : THEME_COLORS.primary}
         />
       </View>
-      <Text style={[
-        styles.drainLabel,
-        isSelected && styles.drainLabelSelected,
-      ]} numberOfLines={1}>
-        {drain.label}
-      </Text>
+      <View style={styles.drainTextContainer}>
+        <Text style={[
+          styles.drainLabel,
+          isSelected && styles.drainLabelSelected,
+        ]}>
+          {drain.label}
+        </Text>
+        <Text style={[
+          styles.drainDescription,
+          isSelected && styles.drainDescriptionSelected,
+        ]}>
+          {drain.description}
+        </Text>
+      </View>
+      {isSelected && (
+        <View style={styles.checkmarkContainer}>
+          <Ionicons name="checkmark-circle" size={22} color={THEME_COLORS.primary} />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -147,7 +153,13 @@ const MonthlyBodyTrackingMindDrainsContent: React.FC<MonthlyBodyTrackingMindDrai
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.contentContainer}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header Section */}
         <View style={styles.headerSection}>
           <LinearGradient
@@ -166,8 +178,8 @@ const MonthlyBodyTrackingMindDrainsContent: React.FC<MonthlyBodyTrackingMindDrai
           </Text>
         </View>
 
-        {/* Mind Drains Grid - 2x3 */}
-        <View style={styles.drainsGrid}>
+        {/* Mind Drains Selection */}
+        <View style={styles.drainsSection}>
           {MIND_DRAINS.map((drain) => (
             <MindDrainCard
               key={drain.id}
@@ -177,7 +189,7 @@ const MonthlyBodyTrackingMindDrainsContent: React.FC<MonthlyBodyTrackingMindDrai
             />
           ))}
         </View>
-      </View>
+      </ScrollView>
 
       {/* Continue Button */}
       <View style={styles.buttonContainer}>
@@ -186,7 +198,7 @@ const MonthlyBodyTrackingMindDrainsContent: React.FC<MonthlyBodyTrackingMindDrai
             styles.continueButton,
             !data.primaryDrain && styles.continueButtonDisabled,
           ]}
-          onPress={data.primaryDrain ? () => { Keyboard.dismiss(); onContinue(); } : undefined}
+          onPress={data.primaryDrain ? onContinue : undefined}
           activeOpacity={data.primaryDrain ? 0.8 : 1}
           disabled={!data.primaryDrain}
         >
@@ -210,10 +222,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  contentContainer: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: HORIZONTAL_PADDING,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 80,
   },
 
   // Header Section
@@ -253,20 +268,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Mind Drains Grid - 2x3
-  drainsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: CARD_GAP,
+  // Mind Drains Selection - Balanced to fit all 6 options
+  drainsSection: {
+    gap: 7,
   },
   drainCard: {
-    width: CARD_WIDTH,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    padding: 11,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
     shadowColor: '#000',
@@ -274,45 +285,47 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
-    position: 'relative',
   },
   drainCardSelected: {
     borderColor: THEME_COLORS.primary,
-    backgroundColor: THEME_COLORS.primaryLighter + '25',
-  },
-  checkmarkBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: THEME_COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: THEME_COLORS.primaryLighter + '20',
   },
   drainIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: THEME_COLORS.primaryLighter + '50',
+    backgroundColor: THEME_COLORS.primaryLighter + '60',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginRight: 12,
   },
   drainIconContainerSelected: {
     backgroundColor: THEME_COLORS.primary,
   },
+  drainTextContainer: {
+    flex: 1,
+  },
   drainLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    textAlign: 'center',
+    marginBottom: 2,
   },
   drainLabelSelected: {
     color: THEME_COLORS.primary,
-    fontWeight: '600',
+  },
+  drainDescription: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#6B7280',
+    letterSpacing: -0.1,
+  },
+  drainDescriptionSelected: {
+    color: '#4B5563',
+  },
+  checkmarkContainer: {
+    marginLeft: 8,
   },
 
   // Button Container

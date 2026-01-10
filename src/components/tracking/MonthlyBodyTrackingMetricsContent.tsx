@@ -121,7 +121,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
   const handleMeasurementsFocus = () => {
     setIsMeasurementsFocused(true);
     setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 150, animated: true });
+      scrollViewRef.current?.scrollTo({ y: 175, animated: true });
     }, 100);
   };
 
@@ -169,6 +169,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
               style={styles.weightInput}
               placeholder="70.0"
               placeholderTextColor="#D1D5DB"
+              selectionColor="#6B7280"
               keyboardType="decimal-pad"
               value={data.weight}
               onChangeText={handleWeightChange}
@@ -201,6 +202,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
               style={styles.measurementsInput}
               placeholder="Body fat: 18%, Neck: 15in, ..."
               placeholderTextColor="#9CA3AF"
+              selectionColor="#6B7280"
               multiline
               numberOfLines={3}
               value={data.measurements}
@@ -213,7 +215,6 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
 
           {/* Quick-add Chips - Secondary helper */}
           <View style={styles.suggestionsContainer}>
-            <Text style={styles.suggestionsLabel}>Quick add:</Text>
             <View style={styles.suggestionsRow}>
               {MEASUREMENT_SUGGESTIONS.map((suggestion) => (
                 <TouchableOpacity
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 96,
+    paddingBottom: 300,
   },
 
   // Header Section
@@ -379,8 +380,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    paddingVertical: 8,
-    paddingHorizontal: 0,
+    padding: 0,
+    margin: 0,
+    height: 40,
+    lineHeight: 38,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   weightUnitDisplay: {
     fontSize: 18,

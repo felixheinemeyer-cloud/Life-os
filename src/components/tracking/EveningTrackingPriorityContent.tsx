@@ -191,6 +191,7 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
+    marginBottom: 16,
   },
   iconGradientRing: {
     width: 64,
@@ -232,7 +233,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
-    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
