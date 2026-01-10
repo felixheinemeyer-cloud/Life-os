@@ -52,6 +52,12 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   const PREVIEW_STREAK_MODE = true;
   const streakCount = PREVIEW_STREAK_MODE ? 14 : streakData.currentStreak;
 
+  // Check-in completion states (preview mode for testing UI states)
+  // In production, these would come from a context/API based on today's date
+  const PREVIEW_CHECKIN_MODE = true;
+  const [morningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
+  const [eveningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
+
   // 24h timer state (hours since last 12:00 noon Europe/Berlin)
   const [timerHours, setTimerHours] = useState(0);
 
@@ -113,6 +119,19 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     if (hour >= 5 && hour < 12) return 'Good Morning';
     if (hour >= 12 && hour < 18) return 'Good Afternoon';
     return 'Good Evening';
+  };
+
+  // Check if evening check-in is available (after 5 PM / 17:00)
+  const EVENING_CHECKIN_START_HOUR = 17; // 5 PM
+  const isEveningCheckInAvailable = (): boolean => {
+    const hour = new Date().getHours();
+    return hour >= EVENING_CHECKIN_START_HOUR;
+  };
+
+  const getHoursUntilEveningCheckIn = (): number => {
+    const hour = new Date().getHours();
+    if (hour >= EVENING_CHECKIN_START_HOUR) return 0;
+    return EVENING_CHECKIN_START_HOUR - hour;
   };
 
   // Format current date
@@ -398,17 +417,31 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               activeOpacity={0.85}
             >
               <View style={styles.trackingCard}>
-                {/* Glowing icon circle with gradient ring */}
-                <LinearGradient
-                  colors={['#FBBF24', '#F59E0B', '#D97706']}
-                  style={styles.trackingIconGradientRing}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.trackingIconInnerCircle}>
-                    <Ionicons name="sunny" size={44} color="#D97706" />
+                {morningCheckInCompleted ? (
+                  // Completed state - filled orange circle with glow
+                  <View style={styles.trackingIconCompletedMorning}>
+                    <LinearGradient
+                      colors={['#FCD34D', '#F59E0B', '#D97706']}
+                      style={styles.trackingIconFilledCircle}
+                      start={{ x: 0, y: 0.2 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name="checkmark-sharp" size={44} color="#FFFFFF" />
+                    </LinearGradient>
                   </View>
-                </LinearGradient>
+                ) : (
+                  // Available state - orange gradient ring with sun
+                  <LinearGradient
+                    colors={['#FBBF24', '#F59E0B', '#D97706']}
+                    style={styles.trackingIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.trackingIconInnerCircle}>
+                      <Ionicons name="sunny" size={44} color="#D97706" />
+                    </View>
+                  </LinearGradient>
+                )}
                 <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
               </View>
             </TouchableOpacity>
@@ -416,22 +449,46 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             {/* Evening Tracking Card */}
             <TouchableOpacity
               style={styles.trackingCardTouchable}
-              onPress={handleEveningTracking}
-              activeOpacity={0.85}
+              onPress={eveningCheckInCompleted || isEveningCheckInAvailable() ? handleEveningTracking : undefined}
+              activeOpacity={eveningCheckInCompleted || isEveningCheckInAvailable() ? 0.85 : 1}
+              disabled={!eveningCheckInCompleted && !isEveningCheckInAvailable()}
             >
               <View style={styles.trackingCard}>
-                {/* Glowing icon circle with gradient ring */}
-                <LinearGradient
-                  colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-                  style={styles.trackingIconGradientRing}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.trackingIconInnerCircle}>
-                    <Ionicons name="moon" size={44} color="#7C3AED" />
+                {/* Icon with state-dependent appearance */}
+                {eveningCheckInCompleted ? (
+                  // Completed state - filled purple circle with glow
+                  <View style={styles.trackingIconCompletedEvening}>
+                    <LinearGradient
+                      colors={['#C4B5FD', '#8B5CF6', '#7C3AED']}
+                      style={styles.trackingIconFilledCircle}
+                      start={{ x: 0, y: 0.2 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name="checkmark-sharp" size={44} color="#FFFFFF" />
+                    </LinearGradient>
                   </View>
-                </LinearGradient>
-                <Text style={styles.lightCardTitle}>Evening{'\n'}Check-In</Text>
+                ) : isEveningCheckInAvailable() ? (
+                  // Available state - purple gradient
+                  <LinearGradient
+                    colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                    style={styles.trackingIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.trackingIconInnerCircle}>
+                      <Ionicons name="moon" size={44} color="#7C3AED" />
+                    </View>
+                  </LinearGradient>
+                ) : (
+                  // Too early state - soft purple outline (maintains evening identity)
+                  <View style={styles.trackingIconInactiveRing}>
+                    <Ionicons name="moon-outline" size={44} color="#C4B5FD" />
+                  </View>
+                )}
+                <Text style={[
+                  styles.lightCardTitle,
+                  !eveningCheckInCompleted && !isEveningCheckInAvailable() && styles.lightCardTitleInactive
+                ]}>Evening{'\n'}Check-In</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -1035,6 +1092,45 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  trackingIconFilledCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trackingIconCompletedMorning: {
+    marginBottom: 16,
+    borderRadius: 44,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  trackingIconCompletedEvening: {
+    marginBottom: 16,
+    borderRadius: 44,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  trackingIconInactiveRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    borderColor: '#DDD6FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  lightCardTitleInactive: {
+    color: '#9CA3AF',
   },
   // Weekly Check-In Card Styles
   weeklyCardTouchable: {
