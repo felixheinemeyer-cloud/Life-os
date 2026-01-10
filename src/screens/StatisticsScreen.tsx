@@ -934,6 +934,135 @@ const generateLast12MonthsEnergyDrainData = (): MonthlyEnergyDrainData[] => {
 
 const MONTHLY_ENERGY_DRAINS_12_MONTHS = generateLast12MonthsEnergyDrainData();
 
+// ============================================
+// MIND HELPERS DATA (What Helped)
+// ============================================
+
+type MindHelperId =
+  | 'good_sleep'
+  | 'time_alone'
+  | 'meaningful_conversations'
+  | 'physical_movement'
+  | 'nature'
+  | 'creative_time'
+  | 'digital_breaks';
+
+interface MindHelperInfo {
+  id: MindHelperId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}
+
+const MIND_HELPERS: MindHelperInfo[] = [
+  {
+    id: 'good_sleep',
+    label: 'Good Sleep',
+    shortLabel: 'Sleep',
+    description: 'Quality rest and recovery',
+    icon: 'moon-outline',
+    color: '#6366F1', // Indigo
+  },
+  {
+    id: 'time_alone',
+    label: 'Time Alone',
+    shortLabel: 'Solitude',
+    description: 'Personal space and quiet time',
+    icon: 'person-outline',
+    color: '#3B82F6', // Blue
+  },
+  {
+    id: 'meaningful_conversations',
+    label: 'Meaningful Conversations',
+    shortLabel: 'Conversations',
+    description: 'Deep connections with others',
+    icon: 'chatbubbles-outline',
+    color: '#14B8A6', // Teal
+  },
+  {
+    id: 'physical_movement',
+    label: 'Physical Movement',
+    shortLabel: 'Movement',
+    description: 'Exercise and body activity',
+    icon: 'fitness-outline',
+    color: '#10B981', // Emerald
+  },
+  {
+    id: 'nature',
+    label: 'Time in Nature',
+    shortLabel: 'Nature',
+    description: 'Outdoor experiences',
+    icon: 'leaf-outline',
+    color: '#22C55E', // Green
+  },
+  {
+    id: 'creative_time',
+    label: 'Creative Time',
+    shortLabel: 'Creativity',
+    description: 'Artistic and creative pursuits',
+    icon: 'color-palette-outline',
+    color: '#EC4899', // Pink
+  },
+  {
+    id: 'digital_breaks',
+    label: 'Digital Breaks',
+    shortLabel: 'Unplugging',
+    description: 'Time away from screens',
+    icon: 'phone-portrait-outline',
+    color: '#F59E0B', // Amber
+  },
+];
+
+const getMindHelperInfo = (id: MindHelperId | null): MindHelperInfo | null => {
+  if (!id) return null;
+  return MIND_HELPERS.find(helper => helper.id === id) || null;
+};
+
+interface MonthlyMindHelperData {
+  monthIndex: number;
+  monthStart: Date;
+  monthName: string;
+  selectedHelpers: MindHelperId[];
+}
+
+const generateLast12MonthsMindHelperData = (): MonthlyMindHelperData[] => {
+  const data: MonthlyMindHelperData[] = [];
+  const today = new Date();
+
+  // Mock mind helpers data (realistic patterns - multiple selections per month)
+  const mockHelpers: MindHelperId[][] = [
+    ['good_sleep', 'physical_movement'],
+    ['meaningful_conversations', 'nature'],
+    ['good_sleep', 'time_alone', 'nature'],
+    ['physical_movement', 'good_sleep'],
+    ['creative_time', 'meaningful_conversations'],
+    ['good_sleep', 'digital_breaks'],
+    ['nature', 'physical_movement', 'good_sleep'],
+    ['time_alone', 'creative_time'],
+    ['good_sleep', 'meaningful_conversations', 'physical_movement'],
+    ['physical_movement', 'nature'],
+    ['good_sleep', 'time_alone'],
+    ['good_sleep', 'physical_movement', 'meaningful_conversations'],
+  ];
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    data.push({
+      monthIndex: 11 - i,
+      monthStart: date,
+      monthName,
+      selectedHelpers: mockHelpers[11 - i],
+    });
+  }
+
+  return data;
+};
+
+const MONTHLY_MIND_HELPERS_12_MONTHS = generateLast12MonthsMindHelperData();
+
 // Nutrition data for past 30 days (1-10 rating scale)
 interface NutritionDayData {
   date: Date;
@@ -1222,6 +1351,9 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
 
       {/* Monthly Energy Drains Section */}
       <MonthlyEnergyDrainsSection />
+
+      {/* Monthly Top Helpers Section (Top 3 Focus) */}
+      <MonthlyTopHelpersSection />
 
       {/* Bottom spacing */}
       <View style={styles.bottomSpacer} />
@@ -2568,10 +2700,10 @@ const WeeklyOverallScoreSection = () => {
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
 
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
 
       path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
     }
@@ -2847,10 +2979,10 @@ const buildWealthSmoothPath = (
     const p2 = points[i + 1];
     const p3 = points[Math.min(points.length - 1, i + 2)];
 
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    const cp1x = p1.x + (p2.x - p0.x) / 8;
+    const cp1y = p1.y + (p2.y - p0.y) / 8;
+    const cp2x = p2.x - (p3.x - p1.x) / 8;
+    const cp2y = p2.y - (p3.y - p1.y) / 8;
 
     path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
   }
@@ -3482,10 +3614,10 @@ const MonthlyWeightSection = () => {
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
 
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
 
       path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
     }
@@ -3528,9 +3660,26 @@ const MonthlyWeightSection = () => {
           <Ionicons name="scale-outline" size={14} color="#0EA5E9" />
           <Text style={styles.monthlyTitle}>Weight</Text>
         </View>
-        {activeIndex !== null && selectedMonthStr && (
+        {activeIndex !== null && selectedMonthStr ? (
           <Text style={styles.monthlySelectedDate}>{selectedMonthStr}</Text>
-        )}
+        ) : changeText ? (
+          <View style={[
+            styles.monthlyChangeHeaderBadge,
+            { backgroundColor: isPositiveChange ? '#FEF2F2' : '#ECFDF5' }
+          ]}>
+            <Ionicons
+              name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
+              size={11}
+              color={isPositiveChange ? '#EF4444' : '#10B981'}
+            />
+            <Text style={[
+              styles.monthlyChangeHeaderText,
+              { color: isPositiveChange ? '#EF4444' : '#10B981' }
+            ]}>
+              {changeText}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Hero Stats Row */}
@@ -3543,29 +3692,6 @@ const MonthlyWeightSection = () => {
           <Text style={styles.monthlyMetaLight}>{displayLabel}</Text>
         </View>
       </View>
-
-      {/* Change Indicator - use opacity to preserve layout when scrubbing */}
-      {changeText && (
-        <View style={[styles.monthlyChangeRow, { opacity: activeIndex === null ? 1 : 0 }]}>
-          <View style={[
-            styles.monthlyChangeBadge,
-            { backgroundColor: isPositiveChange ? '#FEF2F2' : '#ECFDF5' }
-          ]}>
-            <Ionicons
-              name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
-              size={12}
-              color={isPositiveChange ? '#EF4444' : '#10B981'}
-            />
-            <Text style={[
-              styles.monthlyChangeText,
-              { color: isPositiveChange ? '#EF4444' : '#10B981' }
-            ]}>
-              {changeText}
-            </Text>
-          </View>
-          <Text style={styles.monthlyChangeLabel}>vs 12 months ago</Text>
-        </View>
-      )}
 
       {/* 12-Month Chart with Y-Axis */}
       <View style={styles.monthlyChartSection}>
@@ -3714,10 +3840,10 @@ const buildHealthSmoothPath = (values: (number | null)[], width: number, height:
     const p2 = points[i + 1];
     const p3 = points[Math.min(points.length - 1, i + 2)];
 
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    const cp1x = p1.x + (p2.x - p0.x) / 8;
+    const cp1y = p1.y + (p2.y - p0.y) / 8;
+    const cp2x = p2.x - (p3.x - p1.x) / 8;
+    const cp2y = p2.y - (p3.y - p1.y) / 8;
 
     path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
   }
@@ -3921,7 +4047,7 @@ const MonthlyHealthRatingsSection = () => {
       {/* Header */}
       <View style={styles.monthlyHeader}>
         <View style={styles.monthlyTitleRow}>
-          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Ionicons name="analytics" size={14} color="#0EA5E9" />
           <Text style={styles.monthlyTitle}>Health Ratings</Text>
         </View>
         {selectedMonthStr && (
@@ -4299,7 +4425,7 @@ const MonthlyMentalWellnessSection = () => {
       {/* Header */}
       <View style={styles.monthlyHeader}>
         <View style={styles.monthlyTitleRow}>
-          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Ionicons name="sparkles-outline" size={14} color="#0EA5E9" />
           <Text style={styles.monthlyTitle}>Mental Wellness</Text>
         </View>
         {selectedMonthStr && (
@@ -4427,7 +4553,7 @@ const MonthlyMentalLoadSection = () => {
       {/* Header */}
       <View style={styles.monthlyHeader}>
         <View style={styles.monthlyTitleRow}>
-          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Ionicons name="pulse-outline" size={14} color="#0EA5E9" />
           <Text style={styles.monthlyTitle}>Mental Load</Text>
         </View>
         {selectedIndex !== null && (
@@ -4654,15 +4780,39 @@ const MonthlyEnergyDrainsSection = () => {
     return Math.max(...Object.values(drainFrequency), 1);
   }, [drainFrequency]);
 
+  // Generate insight message (context line for top drain)
+  const insightMessage = useMemo(() => {
+    if (sortedDrains.length === 0) return null;
+
+    const topDrain = sortedDrains[0];
+    const topCount = drainFrequency[topDrain.id];
+
+    return `Top drain in ${topCount} of 12 months`;
+  }, [sortedDrains, drainFrequency]);
+
   return (
     <View style={styles.monthlySectionCard}>
       {/* Header */}
       <View style={styles.monthlyHeader}>
         <View style={styles.monthlyTitleRow}>
-          <Ionicons name="analytics" size={14} color="#6B7280" />
+          <Ionicons name="battery-dead-outline" size={14} color="#0EA5E9" />
           <Text style={styles.monthlyTitle}>Energy Drains</Text>
         </View>
       </View>
+
+      {/* Top Drain Display */}
+      {sortedDrains.length > 0 && (
+        <View style={edStyles.topDrainDisplay}>
+          <View style={[edStyles.topDrainIcon, { backgroundColor: sortedDrains[0].color + '20' }]}>
+            <Ionicons name={sortedDrains[0].icon} size={20} color={sortedDrains[0].color} />
+          </View>
+          <View style={edStyles.topDrainTextContainer}>
+            <Text style={edStyles.topDrainLabel}>{sortedDrains[0].label}</Text>
+            <Text style={edStyles.topDrainDescription}>{sortedDrains[0].description}</Text>
+            <Text style={edStyles.topDrainContext}>{insightMessage}</Text>
+          </View>
+        </View>
+      )}
 
       {/* Ranked list with bars */}
       <View style={edStyles.listContainer}>
@@ -4697,9 +4847,6 @@ const MonthlyEnergyDrainsSection = () => {
           );
         })}
       </View>
-
-      {/* Context footer */}
-      <Text style={edStyles.contextFooter}>times in past 12 months</Text>
     </View>
   );
 };
@@ -4746,11 +4893,336 @@ const edStyles = StyleSheet.create({
     width: 20,
     textAlign: 'right',
   },
-  contextFooter: {
+  topDrainDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingBottom: 12,
+    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    gap: 12,
+  },
+  topDrainIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topDrainTextContainer: {
+    flex: 1,
+  },
+  topDrainLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  topDrainDescription: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  topDrainContext: {
     fontSize: 11,
     color: '#9CA3AF',
-    textAlign: 'right',
-    marginTop: 8,
+    marginTop: 3,
+  },
+});
+
+// ============================================
+// MONTHLY TOP HELPERS SECTION (Top 3 Focus - Option E)
+// ============================================
+
+const MonthlyTopHelpersSection = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Calculate frequency of each helper
+  const helperFrequency = useMemo(() => {
+    const frequency: Record<MindHelperId, number> = {
+      good_sleep: 0,
+      time_alone: 0,
+      meaningful_conversations: 0,
+      physical_movement: 0,
+      nature: 0,
+      creative_time: 0,
+      digital_breaks: 0,
+    };
+
+    MONTHLY_MIND_HELPERS_12_MONTHS.forEach(month => {
+      month.selectedHelpers.forEach(helperId => {
+        frequency[helperId]++;
+      });
+    });
+
+    return frequency;
+  }, []);
+
+  // Sort helpers by frequency (most common first), filter out zeros
+  const sortedHelpers = useMemo(() => {
+    return [...MIND_HELPERS]
+      .filter(helper => helperFrequency[helper.id] > 0)
+      .sort((a, b) => helperFrequency[b.id] - helperFrequency[a.id]);
+  }, [helperFrequency]);
+
+  // Get top 3 and remaining helpers
+  const top3 = sortedHelpers.slice(0, 3);
+  const remainingHelpers = sortedHelpers.slice(3);
+  const remainingCount = remainingHelpers.length;
+
+  return (
+    <View style={styles.monthlySectionCard}>
+      {/* Header */}
+      <View style={styles.monthlyHeader}>
+        <View style={styles.monthlyTitleRow}>
+          <Ionicons name="trophy-outline" size={14} color="#0EA5E9" />
+          <Text style={styles.monthlyTitle}>What Helped Most</Text>
+        </View>
+      </View>
+
+      {/* Horizontal Cards - Top 3 */}
+      <View style={thStyles.cardsRow}>
+        {top3.map((helper, index) => {
+          const count = helperFrequency[helper.id];
+          const isFirst = index === 0;
+          const isSecond = index === 1;
+          const rank = index + 1;
+
+          // Medal colors: Gold, Silver, Bronze
+          const badgeColor = isFirst ? '#F59E0B' : isSecond ? '#94A3B8' : '#CD7F32';
+
+          return (
+            <View
+              key={helper.id}
+              style={[
+                thStyles.card,
+                isFirst && thStyles.cardFirst,
+              ]}
+            >
+              {/* Rank Badge */}
+              <View style={[
+                thStyles.rankBadge,
+                { backgroundColor: badgeColor },
+                isFirst && thStyles.rankBadgeFirst,
+              ]}>
+                <Text style={thStyles.rankText}>
+                  {rank}
+                </Text>
+              </View>
+
+              {/* Icon */}
+              <View style={[
+                thStyles.iconCircle,
+                { backgroundColor: helper.color + '18' },
+                isFirst && { backgroundColor: helper.color + '25' },
+              ]}>
+                <Ionicons
+                  name={helper.icon}
+                  size={24}
+                  color={helper.color}
+                />
+              </View>
+
+              {/* Label */}
+              <Text style={[
+                thStyles.cardLabel,
+                isFirst && thStyles.cardLabelFirst,
+              ]} numberOfLines={2}>
+                {helper.shortLabel}
+              </Text>
+
+              {/* Count */}
+              <Text style={thStyles.cardCount}>
+                {count} of 12
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Expanded List */}
+      {isExpanded && remainingHelpers.length > 0 && (
+        <View style={thStyles.expandedList}>
+          {remainingHelpers.map((helper, index) => {
+            const count = helperFrequency[helper.id];
+            const rank = index + 4; // Start from 4
+
+            return (
+              <View key={helper.id} style={thStyles.expandedRow}>
+                <View style={thStyles.expandedRank}>
+                  <Text style={thStyles.expandedRankText}>{rank}</Text>
+                </View>
+                <View style={[
+                  thStyles.expandedIcon,
+                  { backgroundColor: helper.color + '15' },
+                ]}>
+                  <Ionicons name={helper.icon} size={16} color={helper.color} />
+                </View>
+                <Text style={thStyles.expandedLabel}>{helper.shortLabel}</Text>
+                <Text style={thStyles.expandedCount}>{count} of 12</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Footer - Clickable to expand/collapse */}
+      {remainingCount > 0 && (
+        <TouchableOpacity
+          style={thStyles.footerButton}
+          onPress={() => setIsExpanded(!isExpanded)}
+          activeOpacity={0.7}
+        >
+          <Text style={thStyles.footerText}>
+            {isExpanded ? 'Show less' : `+${remainingCount} more`}
+          </Text>
+          <Ionicons
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color="#9CA3AF"
+          />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+// Top Helpers styles
+const thStyles = StyleSheet.create({
+  cardsRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 10,
+  },
+  card: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 18,
+    paddingBottom: 14,
+    paddingHorizontal: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardFirst: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FCD34D',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  rankBadge: {
+    position: 'absolute',
+    top: -10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  rankBadgeFirst: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.4,
+  },
+  rankText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+    marginBottom: 4,
+    minHeight: 32,
+  },
+  cardLabelFirst: {
+    color: '#1F2937',
+    fontWeight: '700',
+  },
+  cardCount: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  expandedList: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    gap: 12,
+  },
+  expandedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  expandedRank: {
+    width: 20,
+    alignItems: 'center',
+  },
+  expandedRankText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  expandedIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  expandedLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  expandedCount: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  footerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    gap: 4,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });
 
@@ -6147,6 +6619,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     color: '#9CA3AF',
+  },
+  monthlyChangeHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 3,
+  },
+  monthlyChangeHeaderText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   monthlyChartSection: {
     paddingTop: 12,

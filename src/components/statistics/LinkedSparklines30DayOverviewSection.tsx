@@ -125,10 +125,10 @@ const buildSmoothPath = (
     const p3 = points[Math.min(points.length - 1, i + 2)];
 
     // Control points for smooth curve
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    const cp1x = p1.x + (p2.x - p0.x) / 8;
+    const cp1y = p1.y + (p2.y - p0.y) / 8;
+    const cp2x = p2.x - (p3.x - p1.x) / 8;
+    const cp2y = p2.y - (p3.y - p1.y) / 8;
 
     path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
   }
