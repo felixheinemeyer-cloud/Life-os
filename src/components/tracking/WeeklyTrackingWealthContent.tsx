@@ -125,10 +125,13 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
 
   const animatedValue = useRef(new Animated.Value(value)).current;
   const sliderWidthRef = useRef(SLIDER_WIDTH);
+  const sliderLeftRef = useRef(0);
+  const containerRef = useRef<View>(null);
   const valueRef = useRef(value);
   const onValueChangeRef = useRef(onValueChange);
   const isGestureActive = useRef(false);
   const lastHapticTime = useRef(0);
+  const lastValueTime = useRef(0);
 
   useEffect(() => {
     if (!isGestureActive.current) {
@@ -153,10 +156,39 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     }
   }, []);
 
-  const calculateValue = useCallback((locationX: number): number => {
-    const effectiveWidth = sliderWidthRef.current - THUMB_SIZE;
-    const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
-    return Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
+  const calculateValue = useCallback((pageX: number): number => {
+    const width = sliderWidthRef.current;
+    const left = sliderLeftRef.current;
+    if (width <= 0) return valueRef.current;
+
+    const locationX = pageX - left;
+    const clampedX = Math.max(0, Math.min(width, locationX));
+    const effectiveWidth = width - THUMB_SIZE;
+    if (effectiveWidth <= 0) return valueRef.current;
+
+    const adjustedX = Math.max(0, Math.min(effectiveWidth, clampedX - THUMB_SIZE / 2));
+    const rawValue = (adjustedX / effectiveWidth) * 9 + 1;
+    return Math.round(Math.max(1, Math.min(10, rawValue)));
+  }, []);
+
+  const updateValue = useCallback((pageX: number) => {
+    const now = Date.now();
+    if (now - lastValueTime.current < 16) return;
+    lastValueTime.current = now;
+
+    const newValue = calculateValue(pageX);
+    if (newValue >= 1 && newValue <= 10 && newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      animatedValue.setValue(newValue);
+      triggerHaptic();
+      onValueChangeRef.current(newValue);
+    }
+  }, [calculateValue, triggerHaptic, animatedValue]);
+
+  const measureSlider = useCallback(() => {
+    containerRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      sliderLeftRef.current = pageX;
+    });
   }, []);
 
   const panResponder = useMemo(() => PanResponder.create({
@@ -164,23 +196,17 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event) => {
       isGestureActive.current = true;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      const pageX = event.nativeEvent.pageX;
+      measureSlider();
+      setTimeout(() => {
+        if (isGestureActive.current) {
+          updateValue(pageX);
+        }
+      }, 10);
     },
     onPanResponderMove: (event) => {
       if (!isGestureActive.current) return;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      updateValue(event.nativeEvent.pageX);
     },
     onPanResponderRelease: () => {
       isGestureActive.current = false;
@@ -188,40 +214,53 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onPanResponderTerminate: () => {
       isGestureActive.current = false;
     },
-  }), [calculateValue, triggerHaptic]);
+  }), [updateValue, measureSlider]);
 
   const thumbLeft = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['4%', '96%'],
+    outputRange: [0, sliderWidth - THUMB_SIZE],
   });
 
-  const fillWidthAnimated = animatedValue.interpolate({
+  const fillWidth = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['8%', '100%'],
+    outputRange: [THUMB_SIZE, sliderWidth],
   });
 
   return (
     <View style={styles.sliderContainer}>
       <View style={styles.sliderHeader}>
-        <Text style={styles.valueText}>{value}</Text>
-        <Text style={styles.valueOutOf}>/10</Text>
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueNumber}>{value}</Text>
+          <Text style={styles.valueSuffix}>/10</Text>
+        </View>
       </View>
 
       <View
+        ref={containerRef}
         style={styles.sliderTrackContainer}
-        onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+        onLayout={(e) => {
+          setSliderWidth(e.nativeEvent.layout.width);
+          measureSlider();
+        }}
         {...panResponder.panHandlers}
       >
         <View style={styles.sliderTrackBackground} />
         <Animated.View
-          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: THEME_COLORS.fill }]}
+          style={[
+            styles.sliderFill,
+            { width: fillWidth, backgroundColor: THEME_COLORS.primary },
+          ]}
         />
         <Animated.View
           style={[
             styles.sliderThumb,
-            { left: thumbLeft },
+            {
+              transform: [{ translateX: thumbLeft as unknown as number }],
+            },
           ]}
-        />
+        >
+          <View style={styles.sliderThumbInner} />
+        </Animated.View>
       </View>
 
       <View style={styles.sliderLabels}>
@@ -264,7 +303,7 @@ const WeeklyTrackingWealthContent: React.FC<WeeklyTrackingWealthContentProps> = 
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.iconInnerCircle}>
-              <Ionicons name={config.icon} size={24} color={THEME_COLORS.primary} />
+              <Ionicons name={config.icon} size={28} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
           <Text style={styles.questionText}>
@@ -275,15 +314,13 @@ const WeeklyTrackingWealthContent: React.FC<WeeklyTrackingWealthContentProps> = 
           </Text>
         </View>
 
-        {/* Guiding Questions Card */}
-        <View style={styles.guidingCard}>
-          <Text style={styles.guidingCardTitle}>Consider...</Text>
+        {/* Consider Card */}
+        <View style={styles.considerCard}>
+          <Text style={styles.considerTitle}>CONSIDER...</Text>
           {config.guidingQuestions.map((item, index) => (
-            <View key={index} style={styles.guidingItem}>
-              <View style={styles.guidingIconContainer}>
-                <Ionicons name={item.icon} size={17} color={THEME_COLORS.primary} />
-              </View>
-              <Text style={styles.guidingText}>{item.text}</Text>
+            <View key={index} style={[styles.considerItem, index === config.guidingQuestions.length - 1 && { marginBottom: 0 }]}>
+              <Ionicons name={item.icon} size={16} color={THEME_COLORS.primaryLight} style={styles.considerIcon} />
+              <Text style={styles.considerText}>{item.text}</Text>
             </View>
           ))}
         </View>
@@ -325,7 +362,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 16,
+    paddingBottom: 80,
     flexGrow: 1,
   },
 
@@ -336,18 +373,18 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   iconGradientRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 2,
+    marginBottom: 20,
+    padding: 3,
   },
   iconInnerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -359,58 +396,48 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.5,
     lineHeight: 26,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   questionSubtext: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     textAlign: 'center',
-    letterSpacing: -0.2,
-    lineHeight: 18,
-    paddingHorizontal: 16,
   },
 
-  // Guiding Questions Card
-  guidingCard: {
+  // Consider Card
+  considerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 20,
-    paddingBottom: 4,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  guidingCardTitle: {
-    fontSize: 12,
+  considerTitle: {
+    fontSize: 11,
     fontWeight: '600',
     color: THEME_COLORS.primary,
-    textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  guidingItem: {
+  considerItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  guidingIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: `${THEME_COLORS.primaryLighter}30`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
+  considerIcon: {
+    marginRight: 12,
+    marginTop: 2,
   },
-  guidingText: {
+  considerText: {
     flex: 1,
     fontSize: 15,
     fontWeight: '400',
-    color: '#374151',
+    color: '#4B5563',
     lineHeight: 21,
   },
 
@@ -420,8 +447,8 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -430,75 +457,87 @@ const styles = StyleSheet.create({
   },
   sliderHeader: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
-  valueText: {
-    fontSize: 32,
+  valueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: THEME_COLORS.primaryLighter + '40',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  valueNumber: {
+    fontSize: 18,
     fontWeight: '700',
     color: THEME_COLORS.primary,
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
-  valueOutOf: {
-    fontSize: 16,
+  valueSuffix: {
+    fontSize: 12,
     fontWeight: '500',
-    color: '#9CA3AF',
-    marginLeft: 2,
+    color: THEME_COLORS.primaryLight,
+    marginLeft: 1,
   },
   sliderTrackContainer: {
-    height: 28,
+    height: 24,
     justifyContent: 'center',
     position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 14,
   },
   sliderTrackBackground: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 28,
-    borderRadius: 14,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#E5E7EB',
   },
   sliderFill: {
     position: 'absolute',
     left: 0,
-    height: 28,
-    borderRadius: 14,
-    minWidth: 14,
+    height: 24,
+    borderRadius: 12,
   },
   sliderThumb: {
     position: 'absolute',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginLeft: -11,
-    top: 3,
-    backgroundColor: '#FFFFFF',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: THEME_COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: THEME_COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sliderThumbInner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderWidth: 2,
     borderColor: THEME_COLORS.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    overflow: 'hidden',
   },
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 4,
+    marginTop: 10,
+    paddingHorizontal: 2,
   },
   sliderMinLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#9CA3AF',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sliderMaxLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#9CA3AF',
     textTransform: 'uppercase',
@@ -507,15 +546,18 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

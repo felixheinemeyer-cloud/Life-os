@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 20,
     paddingRight: 56,
     borderWidth: 1,
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   cardSmall: {
     padding: 18,
     paddingRight: 50,
-    borderRadius: 18,
+    borderRadius: 20,
     maxWidth: 280,
   },
   cardIconGradientRingSmall: {

@@ -224,7 +224,7 @@ const WeeklyTrackingFinancialWealthScreen: React.FC<WeeklyTrackingFinancialWealt
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.iconInnerCircle}>
-                <Ionicons name="wallet" size={24} color={THEME_COLORS.primary} />
+                <Ionicons name="wallet" size={28} color={THEME_COLORS.primary} />
               </View>
             </LinearGradient>
             <Text style={styles.questionText}>
@@ -348,18 +348,18 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   iconGradientRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 2,
+    marginBottom: 20,
+    padding: 3,
   },
   iconInnerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',

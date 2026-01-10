@@ -451,7 +451,9 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                 <Ionicons name="folder-outline" size={20} color="#EC4899" />
               </View>
               <Text style={styles.cardLabel}>Category</Text>
-              <Text style={styles.optionalLabel}>optional</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>optional</Text>
+              </View>
             </View>
             <View style={styles.chipsContainer}>
               {displayedCategories.map((category) => {
@@ -519,7 +521,9 @@ const MediaVaultNewEntryScreen: React.FC<MediaVaultNewEntryScreenProps> = ({ nav
                 <Ionicons name="apps-outline" size={20} color="#EC4899" />
               </View>
               <Text style={styles.cardLabel}>Format</Text>
-              <Text style={styles.optionalLabel}>optional</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>optional</Text>
+              </View>
             </View>
             <View style={styles.chipsContainer}>
               {MEDIA_FORMATS.map((format) => {
@@ -802,11 +806,19 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  optionalLabel: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
+  optionalBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     marginLeft: 'auto',
+  },
+  optionalBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
 
   // Input Section (for combined cards)
@@ -877,6 +889,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -885,6 +899,7 @@ const styles = StyleSheet.create({
   },
   categoryChipSelected: {
     backgroundColor: '#1F2937',
+    borderColor: '#1F2937',
   },
   categoryDot: {
     width: 8,
@@ -936,13 +951,18 @@ const styles = StyleSheet.create({
   formatChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     gap: 6,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   formatChipSelected: {
     backgroundColor: '#1F2937',
@@ -951,7 +971,7 @@ const styles = StyleSheet.create({
   formatChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
+    color: '#1F2937',
   },
   formatChipTextSelected: {
     color: '#FFFFFF',

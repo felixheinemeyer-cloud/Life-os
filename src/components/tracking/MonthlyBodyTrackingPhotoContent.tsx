@@ -142,7 +142,7 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.iconInnerCircle}>
-              <Ionicons name="camera" size={26} color={THEME_COLORS.primary} />
+              <Ionicons name="camera" size={28} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
           <Text style={styles.questionText}>Progress Photo</Text>
@@ -243,18 +243,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   iconGradientRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 2,
+    marginBottom: 20,
+    padding: 3,
   },
   iconInnerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -391,15 +391,18 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

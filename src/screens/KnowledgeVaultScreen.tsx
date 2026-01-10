@@ -476,16 +476,13 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
   // State
   const [topics, setTopics] = useState<KnowledgeTopic[]>(MOCK_TOPICS);
   const [entries, setEntries] = useState<KnowledgeEntry[]>(MOCK_ENTRIES);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const searchInputRef = useRef<TextInput>(null);
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
   const addButtonScale = useRef(new Animated.Value(1)).current;
-  const searchButtonScale = useRef(new Animated.Value(1)).current;
 
   // Computed values
   const entryCounts = topics.reduce((acc, topic) => {
@@ -523,23 +520,6 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
   }, []);
 
   // Handlers
-  const handleSearchPress = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setIsSearching(true);
-    setTimeout(() => searchInputRef.current?.focus(), 100);
-  };
-
-  const handleCloseSearch = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setIsSearching(false);
-    setSearchQuery('');
-    Keyboard.dismiss();
-  };
-
   const handleAddTopic = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -571,24 +551,6 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
     });
   };
 
-  const handleSearchPressIn = () => {
-    Animated.spring(searchButtonScale, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
-  const handleSearchPressOut = () => {
-    Animated.spring(searchButtonScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 100,
-    }).start();
-  };
-
   const handleAddPressIn = () => {
     Animated.spring(addButtonScale, {
       toValue: 0.9,
@@ -614,29 +576,46 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 72 },
+          { paddingTop: insets.top + 64 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Scrollable Title */}
-        {!isSearching && (
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>Knowledge Vault</Text>
-            <Text style={styles.subtitle}>Your personal knowledge base</Text>
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>Knowledge Vault</Text>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchBarContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchBarInput}
+              placeholder="Search"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+              </TouchableOpacity>
+            )}
           </View>
-        )}
+        </View>
 
         {topics.length > 0 ? (
           <>
             {/* Topics Section */}
             <View style={styles.topicsSection}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  {isSearching && searchQuery.trim()
-                    ? `Results for "${searchQuery}"`
-                    : 'Your Topics'}
-                </Text>
+                <Text style={styles.sectionTitle}>Your Topics</Text>
               </View>
 
               {filteredTopics.length > 0 ? (
@@ -692,69 +671,25 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
           ]}
           pointerEvents="box-none"
         >
-          {isSearching ? (
-            /* Search Mode Header */
-            <View style={styles.searchHeader}>
-              <View style={styles.searchInputContainer}>
-                <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
-                <TextInput
-                  ref={searchInputRef}
-                  style={styles.searchInput}
-                  placeholder="Search topics"
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity
-                onPress={handleCloseSearch}
-                style={styles.cancelButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            /* Normal Header */
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="chevron-back" size={24} color="#1F2937" />
-              </TouchableOpacity>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleSearchPress}
-                  onPressIn={handleSearchPressIn}
-                  onPressOut={handleSearchPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                    <Ionicons name="search" size={22} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleAddTopic}
-                  onPressIn={handleAddPressIn}
-                  onPressOut={handleAddPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
-                    <Ionicons name="add" size={24} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleAddTopic}
+              onPressIn={handleAddPressIn}
+              onPressOut={handleAddPressOut}
+            >
+              <Animated.View style={[styles.headerButton, { transform: [{ scale: addButtonScale }] }]}>
+                <Ionicons name="add" size={24} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </View>
 
@@ -819,11 +754,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -838,45 +768,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
-  },
-
-  // Search Header
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    paddingVertical: 0,
-  },
-  cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#6B7280',
   },
 
   // Scroll Content
@@ -903,6 +794,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
+  },
+
+  // Search Bar
+  searchBarContainer: {
+    marginBottom: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
   },
 
   // Topics Section
