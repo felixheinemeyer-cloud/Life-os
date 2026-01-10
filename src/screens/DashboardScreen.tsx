@@ -54,7 +54,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
   // Check-in completion states (preview mode for testing UI states)
   // In production, these would come from a context/API based on today's date
-  const PREVIEW_CHECKIN_MODE = true;
+  const PREVIEW_CHECKIN_MODE = false;
   const [morningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
   const [eveningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
 
