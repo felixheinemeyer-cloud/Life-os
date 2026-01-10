@@ -167,7 +167,7 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
@@ -175,7 +175,7 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconGradientRing: {
     width: 64,

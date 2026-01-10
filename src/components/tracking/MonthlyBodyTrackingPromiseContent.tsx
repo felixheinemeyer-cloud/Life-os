@@ -132,9 +132,6 @@ const MonthlyBodyTrackingPromiseContent: React.FC<MonthlyBodyTrackingPromiseCont
           selectionColor="#1F2937"
           cursorColor="#1F2937"
         />
-        <Text style={styles.characterCount}>
-          {data.promise.length}/150
-        </Text>
       </ScrollView>
 
       {/* Continue Button */}
@@ -148,7 +145,7 @@ const MonthlyBodyTrackingPromiseContent: React.FC<MonthlyBodyTrackingPromiseCont
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
@@ -156,7 +153,7 @@ const MonthlyBodyTrackingPromiseContent: React.FC<MonthlyBodyTrackingPromiseCont
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
@@ -185,7 +182,7 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerIconGradient: {
     width: 64,
@@ -239,13 +236,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 0,
     minHeight: 150,
-  },
-  characterCount: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    textAlign: 'right',
-    marginTop: 8,
   },
 
   // Button Container

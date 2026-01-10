@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -147,7 +148,7 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
           </LinearGradient>
           <Text style={styles.questionText}>Progress Photo</Text>
           <Text style={styles.questionSubtext}>
-            Capture your journey - photos reveal changes numbers can't show
+            Your photo will be saved to your calendar
           </Text>
         </View>
 
@@ -212,7 +213,7 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
+          onPress={() => { Keyboard.dismiss(); onContinue(); }}
           activeOpacity={0.85}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
   // Question Section - matches weekly check-in exactly
   questionSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   iconGradientRing: {
     width: 64,

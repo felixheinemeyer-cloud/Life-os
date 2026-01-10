@@ -8,6 +8,7 @@ import {
   Dimensions,
   Platform,
   Easing,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -76,6 +77,7 @@ const MonthlyTrackingContainerScreen: React.FC<MonthlyTrackingContainerScreenPro
   };
 
   const handleBack = () => {
+    Keyboard.dismiss();
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

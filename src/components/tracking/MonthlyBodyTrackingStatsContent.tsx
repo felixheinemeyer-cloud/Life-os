@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -512,7 +513,7 @@ const MonthlyBodyTrackingStatsContent: React.FC<MonthlyBodyTrackingStatsContentP
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
+          onPress={() => { Keyboard.dismiss(); onContinue(); }}
           activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
@@ -540,7 +541,7 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   headerIconGradient: {
     width: 64,

@@ -67,6 +67,17 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
     setIsFocused(false);
   };
 
+  const handleContinue = (): void => {
+    Keyboard.dismiss();
+    onContinue();
+  };
+
+  const getWordCount = (text: string): number => {
+    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  };
+
+  const wordCount = getWordCount(intentionText);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -99,25 +110,28 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
             <Text style={styles.hintText}>
               Focus on your most important priority
             </Text>
+            <Text style={[styles.wordCount, wordCount > 30 && styles.wordCountOver]}>
+              {wordCount}/30
+            </Text>
           </View>
         </View>
 
         {/* Free Writing Area */}
         <TextInput
-          ref={textInputRef}
-          style={styles.freeWritingInput}
-          placeholder="My #1 priority today is..."
-          placeholderTextColor="#9CA3AF"
-          multiline
-          scrollEnabled={false}
-          value={intentionText}
-          onChangeText={onIntentionChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          textAlignVertical="top"
-          selectionColor="#1F2937"
-          cursorColor="#1F2937"
-        />
+            ref={textInputRef}
+            style={styles.freeWritingInput}
+            placeholder="My #1 priority today is..."
+            placeholderTextColor="#9CA3AF"
+            multiline
+            scrollEnabled={false}
+            value={intentionText}
+            onChangeText={onIntentionChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            textAlignVertical="top"
+            selectionColor="#1F2937"
+            cursorColor="#1F2937"
+          />
       </ScrollView>
 
       {/* Continue Button */}
@@ -131,7 +145,7 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={handleContinue}
             activeOpacity={0.8}
           >
             <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
@@ -139,7 +153,7 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={handleContinue}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
@@ -197,6 +211,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   hintContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     borderLeftWidth: 2,
     borderLeftColor: '#9CA3AF',
     paddingLeft: 12,
@@ -204,6 +221,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   hintText: {
+    flex: 1,
     fontSize: 17,
     fontWeight: '400',
     color: '#9CA3AF',
@@ -212,6 +230,15 @@ const styles = StyleSheet.create({
   },
 
   // Free Writing Input
+  wordCount: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    lineHeight: 30,
+  },
+  wordCountOver: {
+    color: '#DC2626',
+  },
   freeWritingInput: {
     flex: 1,
     fontSize: 17,

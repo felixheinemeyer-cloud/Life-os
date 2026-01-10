@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -191,7 +192,7 @@ const MonthlyBodyTrackingExerciseContent: React.FC<MonthlyBodyTrackingExerciseCo
             styles.continueButton,
             !data.activityLevel && styles.continueButtonDisabled,
           ]}
-          onPress={data.activityLevel ? onContinue : undefined}
+          onPress={data.activityLevel ? () => { Keyboard.dismiss(); onContinue(); } : undefined}
           activeOpacity={data.activityLevel ? 0.8 : 1}
           disabled={!data.activityLevel}
         >
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerIconGradient: {
     width: 64,

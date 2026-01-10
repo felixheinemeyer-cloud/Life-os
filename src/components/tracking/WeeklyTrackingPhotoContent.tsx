@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -129,6 +130,7 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
   };
 
   const handleContinue = () => {
+    Keyboard.dismiss();
     triggerHaptic();
     onContinue();
   };
@@ -246,7 +248,7 @@ const styles = StyleSheet.create({
   // Question Section - matches reflection screen exactly
   questionSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   iconGradientRing: {
     width: 64,

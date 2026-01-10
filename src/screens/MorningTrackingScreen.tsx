@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   GestureResponderEvent,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -181,6 +182,7 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
   };
 
   const handleBack = (): void => {
+    Keyboard.dismiss();
     navigation?.goBack();
   };
 

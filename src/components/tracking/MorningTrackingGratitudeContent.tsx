@@ -129,7 +129,7 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
@@ -137,7 +137,7 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
