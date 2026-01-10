@@ -1226,6 +1226,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -1234,6 +1236,7 @@ const styles = StyleSheet.create({
   },
   categoryChipSelected: {
     backgroundColor: '#1F2937',
+    borderColor: '#1F2937',
   },
   categoryChipDot: {
     width: 8,

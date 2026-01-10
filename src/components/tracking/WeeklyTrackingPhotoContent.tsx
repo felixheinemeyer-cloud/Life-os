@@ -145,14 +145,14 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.iconInnerCircle}>
-              <Ionicons name="camera" size={26} color={THEME_COLORS.primary} />
+              <Ionicons name="camera" size={28} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
           <Text style={styles.questionText}>
             Capture Your Week
           </Text>
           <Text style={styles.questionSubtext}>
-            Take a selfie or add a favorite photo from this week
+            Your photo will be saved to your calendar
           </Text>
         </View>
 
@@ -223,7 +223,7 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
           onPress={handleContinue}
           activeOpacity={0.8}
         >
-          <Text style={styles.continueButtonText}>Finish Check-in</Text>
+          <Text style={styles.continueButtonText}>Finish</Text>
           <Ionicons name="checkmark" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 4,
+    paddingBottom: 80,
   },
 
   // Question Section - matches reflection screen exactly
@@ -248,18 +249,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   iconGradientRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 2,
+    marginBottom: 20,
+    padding: 3,
   },
   iconInnerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -271,14 +272,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.5,
     lineHeight: 28,
-    paddingHorizontal: 16,
+    marginBottom: 6,
   },
   questionSubtext: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     textAlign: 'center',
-    marginTop: 4,
   },
 
   // Photo Card - matches input card from reflection screen
@@ -396,15 +396,18 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

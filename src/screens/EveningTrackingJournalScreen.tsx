@@ -230,7 +230,7 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
               onPress={handleContinue}
               activeOpacity={0.8}
             >
-              <Text style={styles.continueButtonText}>Finish Check-in</Text>
+              <Text style={styles.continueButtonText}>Finish</Text>
               <Ionicons name="checkmark" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>

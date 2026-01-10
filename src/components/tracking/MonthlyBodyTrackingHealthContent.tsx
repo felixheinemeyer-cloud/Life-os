@@ -36,11 +36,10 @@ interface MonthlyBodyTrackingHealthContentProps {
   onContinue: () => void;
 }
 
-// Rating Slider Component with description
+// Rating Slider Component
 interface RatingSliderProps {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  description: string;
   value: number;
   onValueChange: (value: number) => void;
   themeColor: string;
@@ -51,7 +50,6 @@ interface RatingSliderProps {
 const RatingSlider: React.FC<RatingSliderProps> = ({
   label,
   icon,
-  description,
   value,
   onValueChange,
   themeColor,
@@ -62,10 +60,13 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
 
   const animatedValue = useRef(new Animated.Value(value)).current;
   const sliderWidthRef = useRef(SLIDER_WIDTH);
+  const sliderLeftRef = useRef(0);
+  const containerRef = useRef<View>(null);
   const valueRef = useRef(value);
   const onValueChangeRef = useRef(onValueChange);
   const isGestureActive = useRef(false);
   const lastHapticTime = useRef(0);
+  const lastValueTime = useRef(0);
 
   useEffect(() => {
     if (!isGestureActive.current) {
@@ -90,10 +91,39 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     }
   }, []);
 
-  const calculateValue = useCallback((locationX: number): number => {
-    const effectiveWidth = sliderWidthRef.current - THUMB_SIZE;
-    const adjustedX = Math.max(0, Math.min(effectiveWidth, locationX - THUMB_SIZE / 2));
-    return Math.round(Math.max(1, Math.min(10, (adjustedX / effectiveWidth) * 9 + 1)));
+  const calculateValue = useCallback((pageX: number): number => {
+    const width = sliderWidthRef.current;
+    const left = sliderLeftRef.current;
+    if (width <= 0) return valueRef.current;
+
+    const locationX = pageX - left;
+    const clampedX = Math.max(0, Math.min(width, locationX));
+    const effectiveWidth = width - THUMB_SIZE;
+    if (effectiveWidth <= 0) return valueRef.current;
+
+    const adjustedX = Math.max(0, Math.min(effectiveWidth, clampedX - THUMB_SIZE / 2));
+    const rawValue = (adjustedX / effectiveWidth) * 9 + 1;
+    return Math.round(Math.max(1, Math.min(10, rawValue)));
+  }, []);
+
+  const updateValue = useCallback((pageX: number) => {
+    const now = Date.now();
+    if (now - lastValueTime.current < 16) return;
+    lastValueTime.current = now;
+
+    const newValue = calculateValue(pageX);
+    if (newValue >= 1 && newValue <= 10 && newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      animatedValue.setValue(newValue);
+      triggerHaptic();
+      onValueChangeRef.current(newValue);
+    }
+  }, [calculateValue, triggerHaptic, animatedValue]);
+
+  const measureSlider = useCallback(() => {
+    containerRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      sliderLeftRef.current = pageX;
+    });
   }, []);
 
   const panResponder = useMemo(() => PanResponder.create({
@@ -101,23 +131,17 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event) => {
       isGestureActive.current = true;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      const pageX = event.nativeEvent.pageX;
+      measureSlider();
+      setTimeout(() => {
+        if (isGestureActive.current) {
+          updateValue(pageX);
+        }
+      }, 10);
     },
     onPanResponderMove: (event) => {
       if (!isGestureActive.current) return;
-      const newValue = calculateValue(event.nativeEvent.locationX);
-      animatedValue.setValue(newValue);
-      if (newValue !== valueRef.current) {
-        valueRef.current = newValue;
-        triggerHaptic();
-        onValueChangeRef.current(newValue);
-      }
+      updateValue(event.nativeEvent.pageX);
     },
     onPanResponderRelease: () => {
       isGestureActive.current = false;
@@ -125,43 +149,57 @@ const RatingSlider: React.FC<RatingSliderProps> = ({
     onPanResponderTerminate: () => {
       isGestureActive.current = false;
     },
-  }), [calculateValue, triggerHaptic]);
+  }), [updateValue, measureSlider]);
 
   const thumbLeft = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['4%', '96%'],
+    outputRange: [0, sliderWidth - THUMB_SIZE],
   });
 
-  const fillWidthAnimated = animatedValue.interpolate({
+  const fillWidth = animatedValue.interpolate({
     inputRange: [1, 10],
-    outputRange: ['8%', '100%'],
+    outputRange: [THUMB_SIZE, sliderWidth],
   });
 
   return (
     <View style={styles.sliderContainer}>
-      {/* Header: Icon + Label on left, Value on right */}
+      {/* Header: Icon + Label on left, Value pill on right */}
       <View style={styles.sliderHeader}>
         <Ionicons name={icon} size={18} color={themeColor} />
-        <Text style={styles.sliderLabel}>{label}</Text>
-        <Text style={[styles.valueText, { color: SLIDER_COLOR }]}>{value}/10</Text>
+        <Text style={[styles.sliderLabel, { color: themeColor }]}>{label}</Text>
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueNumber}>{value}</Text>
+          <Text style={styles.valueSuffix}>/10</Text>
+        </View>
       </View>
-
-      {/* Description */}
-      <Text style={styles.sliderDescription}>{description}</Text>
 
       {/* Slider Track */}
       <View
+        ref={containerRef}
         style={styles.sliderTrackContainer}
-        onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+        onLayout={(e) => {
+          setSliderWidth(e.nativeEvent.layout.width);
+          measureSlider();
+        }}
         {...panResponder.panHandlers}
       >
         <View style={styles.sliderTrackBackground} />
         <Animated.View
-          style={[styles.sliderFill, { width: fillWidthAnimated, backgroundColor: THEME_COLORS.fill }]}
+          style={[
+            styles.sliderFill,
+            { width: fillWidth, backgroundColor: THEME_COLORS.primary },
+          ]}
         />
         <Animated.View
-          style={[styles.sliderThumb, { left: thumbLeft }]}
-        />
+          style={[
+            styles.sliderThumb,
+            {
+              transform: [{ translateX: thumbLeft as unknown as number }],
+            },
+          ]}
+        >
+          <View style={styles.sliderThumbInner} />
+        </Animated.View>
       </View>
 
       {/* Min/Max Labels */}
@@ -209,7 +247,7 @@ const MonthlyBodyTrackingHealthContent: React.FC<MonthlyBodyTrackingHealthConten
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.headerIconInner}>
-              <Ionicons name="heart" size={24} color={THEME_COLORS.primary} />
+              <Ionicons name="heart" size={28} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
           <Text style={styles.headerTitle}>Health Assessment</Text>
@@ -223,7 +261,6 @@ const MonthlyBodyTrackingHealthContent: React.FC<MonthlyBodyTrackingHealthConten
           <RatingSlider
             label="Overall Health"
             icon="fitness"
-            description="1 = sick most of the month, 10 = felt great every day"
             value={data.overallHealth}
             onValueChange={handleHealthChange}
             themeColor={THEME_COLORS.primary}
@@ -234,7 +271,6 @@ const MonthlyBodyTrackingHealthContent: React.FC<MonthlyBodyTrackingHealthConten
           <RatingSlider
             label="Skin Quality"
             icon="sparkles"
-            description="Skin reflects your health, stress, and sleep quality"
             value={data.skinQuality}
             onValueChange={handleSkinChange}
             themeColor={THEME_COLORS.primary}
@@ -268,6 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 80,
   },
 
   // Header Section
@@ -276,18 +313,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerIconGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    padding: 2,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
   headerIconInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -298,14 +335,13 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     textAlign: 'center',
-    letterSpacing: -0.2,
   },
 
   // Sliders Section
@@ -314,7 +350,7 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -325,7 +361,7 @@ const styles = StyleSheet.create({
   sliderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
     gap: 8,
   },
   sliderLabel: {
@@ -333,60 +369,74 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     letterSpacing: -0.2,
-    color: '#1F2937',
   },
-  valueText: {
-    fontSize: 14,
-    fontWeight: '600',
+  valueContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: THEME_COLORS.primaryLighter + '60',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  sliderDescription: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    marginBottom: 14,
-    lineHeight: 18,
+  valueNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: THEME_COLORS.primary,
+    letterSpacing: -0.5,
+  },
+  valueSuffix: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: THEME_COLORS.primaryLight,
+    marginLeft: 1,
   },
   sliderTrackContainer: {
-    height: 28,
+    height: 24,
     justifyContent: 'center',
     position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 14,
   },
   sliderTrackBackground: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 28,
-    borderRadius: 14,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#E5E7EB',
   },
   sliderFill: {
     position: 'absolute',
     left: 0,
-    height: 28,
-    borderRadius: 14,
-    minWidth: 14,
+    height: 24,
+    borderRadius: 12,
   },
   sliderThumb: {
     position: 'absolute',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginLeft: -11,
-    top: 3,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: THEME_COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: THEME_COLORS.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sliderThumbInner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 2,
+    borderColor: THEME_COLORS.primary,
+    overflow: 'hidden',
   },
   sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    paddingHorizontal: 4,
+    marginTop: 10,
+    paddingHorizontal: 2,
   },
   sliderMinLabel: {
     fontSize: 11,
@@ -405,15 +455,18 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

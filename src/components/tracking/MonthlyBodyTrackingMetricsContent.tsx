@@ -132,7 +132,6 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        bounces={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
@@ -149,13 +148,9 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
             </View>
           </LinearGradient>
           <Text style={styles.headerTitle}>Body Metrics</Text>
-
-          {/* Hint Text */}
-          <View style={styles.hintContainer}>
-            <Text style={styles.hintText}>
-              Track your physical measurements this month
-            </Text>
-          </View>
+          <Text style={styles.headerSubtitle}>
+            Track your physical measurements this month
+          </Text>
         </View>
 
         {/* Weight Input Card */}
@@ -278,13 +273,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 300,
+    paddingBottom: 96,
   },
 
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerIconGradient: {
     width: 64,
@@ -304,28 +299,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 32,
-    marginBottom: 16,
+    marginBottom: 6,
   },
-  hintContainer: {
-    borderLeftWidth: 2,
-    borderLeftColor: '#9CA3AF',
-    paddingLeft: 12,
-    marginTop: 0,
-    alignSelf: 'stretch',
-    marginBottom: 8,
-  },
-  hintText: {
-    fontSize: 17,
+  headerSubtitle: {
+    fontSize: 14,
     fontWeight: '400',
-    color: '#9CA3AF',
-    lineHeight: 30,
-    letterSpacing: -0.1,
+    color: '#9AA0A6',
+    textAlign: 'center',
   },
 
   // Input Cards
@@ -382,7 +367,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 10,
   },
   inputFocused: {
     borderColor: THEME_COLORS.primary,
@@ -440,23 +425,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suggestionChip: {
-    backgroundColor: '#FFFFFF',
-    paddingLeft: 8,
-    paddingRight: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   chipIcon: {
-    marginRight: 4,
+    marginRight: 6,
   },
   suggestionChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#4B5563',
+    color: '#1F2937',
   },
 
   // Button Container
@@ -468,7 +457,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
   },
   buttonContainerFocused: {
     alignItems: 'flex-end',

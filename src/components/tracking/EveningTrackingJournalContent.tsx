@@ -240,7 +240,7 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
             onPress={onContinue}
             activeOpacity={0.8}
           >
-            <Text style={styles.continueButtonText}>Finish Check-in</Text>
+            <Text style={styles.continueButtonText}>Finish</Text>
             <Ionicons name="checkmark" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         )}
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   segmentedControl: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 4,
     marginBottom: 20,
     shadowColor: '#000',
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: 18,
     gap: 6,
   },
   segmentButtonActive: {
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   // Placeholder Card (Voice/Video modes)
   placeholderCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 40,
     alignItems: 'center',
     shadowColor: '#000',

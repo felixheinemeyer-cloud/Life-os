@@ -340,9 +340,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 24,
+    paddingBottom: 80,
   },
 
   // Header (matching weekly)
@@ -556,15 +556,18 @@ const styles = StyleSheet.create({
 
   // Button (matching weekly)
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: COLORS.background,
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

@@ -354,7 +354,7 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
             onPress={handleFinishCheckin}
             activeOpacity={0.8}
           >
-            <Text style={styles.finishButtonText}>Finish Check-in</Text>
+            <Text style={styles.finishButtonText}>Finish</Text>
             <Ionicons name="checkmark" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -616,10 +616,13 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
   },
   finishButton: {
     backgroundColor: '#1F2937',

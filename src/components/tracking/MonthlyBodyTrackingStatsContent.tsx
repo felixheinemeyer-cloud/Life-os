@@ -424,7 +424,6 @@ const MonthlyBodyTrackingStatsContent: React.FC<MonthlyBodyTrackingStatsContentP
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        bounces={false}
       >
         {/* Header Section */}
         <View style={styles.headerSection}>
@@ -535,7 +534,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 24,
+    paddingBottom: 88,
   },
 
   // Header Section
@@ -566,15 +565,13 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     textAlign: 'center',
-    letterSpacing: -0.2,
-    paddingHorizontal: 20,
   },
 
   // Stats Grid
@@ -693,15 +690,18 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: '#F7F5F2',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',

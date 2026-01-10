@@ -188,7 +188,7 @@ const MonthlyTrackingContainerScreen: React.FC<MonthlyTrackingContainerScreenPro
                 value={trackingData.messageToSelf}
                 onValueChange={(value) => setTrackingData(prev => ({ ...prev, messageToSelf: value }))}
                 onContinue={handleContinue}
-                buttonText="Finish Check-in"
+                buttonText="Finish"
               />
             </View>
           </Animated.View>
