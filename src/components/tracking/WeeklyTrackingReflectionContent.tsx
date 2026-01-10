@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,7 @@ interface ReflectionConfig {
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
   placeholder: string;
+  hint?: string;
 }
 
 const REFLECTION_CONFIGS: Record<ReflectionType, ReflectionConfig> = {
@@ -33,16 +35,19 @@ const REFLECTION_CONFIGS: Record<ReflectionType, ReflectionConfig> = {
     title: 'What went well for you this week?',
     icon: 'trophy',
     placeholder: 'Reflect on your wins and accomplishments...',
+    hint: 'Reflect on your wins and accomplishments',
   },
   improveNextWeek: {
     title: 'What do you want to improve or do differently next week?',
     icon: 'arrow-up-circle',
     placeholder: 'Think about areas for growth and change...',
+    hint: 'Think about areas for growth and change',
   },
   lessonLearned: {
     title: 'What did you learn this week?',
     icon: 'bulb',
     placeholder: 'Capture your insights and learnings...',
+    hint: 'Capture your insights and learnings',
   },
 };
 
@@ -62,74 +67,112 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const buttonBottom = useRef(new Animated.Value(0)).current;
 
   const config = REFLECTION_CONFIGS[reflectionType];
 
-  const handleFocus = (): void => {
-    setIsFocused(true);
-    // Scroll to show the input card at the top
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 80, animated: true });
-    }, 100);
-  };
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsFocused(true);
+        const keyboardTop = e.endCoordinates.height - 80;
+        Animated.timing(buttonBottom, {
+          toValue: keyboardTop + 8,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
 
-  const handleBlur = (): void => {
-    setIsFocused(false);
-  };
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsFocused(false);
+        Animated.timing(buttonBottom, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.container}>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        >
-          {/* Question Section */}
-          <View style={styles.questionSection}>
-            <LinearGradient
-              colors={THEME_COLORS.gradient}
-              style={styles.iconGradientRing}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.iconInnerCircle}>
-                <Ionicons name={config.icon} size={26} color={THEME_COLORS.primary} />
-              </View>
-            </LinearGradient>
-            <Text style={styles.questionText}>
-              {config.title}
-            </Text>
-          </View>
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {/* Question Section */}
+        <View style={styles.questionSection}>
+          <LinearGradient
+            colors={THEME_COLORS.gradient}
+            style={styles.iconGradientRing}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name={config.icon} size={28} color={THEME_COLORS.primary} />
+            </View>
+          </LinearGradient>
+          <Text style={styles.questionText}>
+            {config.title}
+          </Text>
 
-          {/* Text Input Card */}
-          <View style={[styles.inputCard, isFocused && styles.inputCardFocused]}>
-            <TextInput
-              ref={textInputRef}
-              style={styles.textInput}
-              placeholder={config.placeholder}
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={6}
-              value={value}
-              onChangeText={onValueChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              textAlignVertical="top"
-            />
-          </View>
-        </ScrollView>
+          {/* Hint Text */}
+          {config.hint && (
+            <View style={styles.hintContainer}>
+              <Text style={styles.hintText}>
+                {config.hint}
+              </Text>
+            </View>
+          )}
+        </View>
 
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
+        {/* Free Writing Area */}
+        <TextInput
+          ref={textInputRef}
+          style={styles.freeWritingInput}
+          placeholder="Start writing..."
+          placeholderTextColor="#9CA3AF"
+          multiline
+          scrollEnabled={false}
+          value={value}
+          onChangeText={onValueChange}
+          textAlignVertical="top"
+          selectionColor="#1F2937"
+          cursorColor="#1F2937"
+        />
+      </ScrollView>
+
+      {/* Continue Button */}
+      <Animated.View
+        style={[
+          styles.buttonContainer,
+          isFocused && styles.buttonContainerFocused,
+          { bottom: buttonBottom }
+        ]}
+      >
+        {isFocused ? (
+          <TouchableOpacity
+            style={styles.roundContinueButton}
+            onPress={onContinue}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
           <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
@@ -138,16 +181,13 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
             <Text style={styles.continueButtonText}>Continue</Text>
             <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+        )}
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
@@ -158,98 +198,117 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 24,
+    paddingBottom: 300,
   },
 
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   iconGradientRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 2,
+    marginBottom: 20,
+    padding: 3,
   },
   iconInnerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   questionText: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 28,
-    paddingHorizontal: 16,
+    lineHeight: 32,
+    marginBottom: 16,
+  },
+  hintContainer: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#9CA3AF',
+    paddingLeft: 12,
+    marginTop: 0,
+    alignSelf: 'stretch',
+  },
+  hintText: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    lineHeight: 30,
+    letterSpacing: -0.1,
   },
 
-  // Input Card
-  inputCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  inputCardFocused: {
-    borderColor: THEME_COLORS.primary,
-    shadowColor: THEME_COLORS.primary,
-    shadowOpacity: 0.15,
-  },
-  textInput: {
-    fontSize: 16,
+  // Free Writing Input
+  freeWritingInput: {
+    flex: 1,
+    fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    minHeight: 220,
-    letterSpacing: -0.2,
-    lineHeight: 24,
+    letterSpacing: -0.1,
+    lineHeight: 30,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    minHeight: 200,
   },
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 12,
+    paddingBottom: 16,
+    paddingTop: 8,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerFocused: {
+    alignItems: 'flex-end',
+    paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 6,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginRight: 4,
     letterSpacing: -0.2,
+  },
+  roundContinueButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 

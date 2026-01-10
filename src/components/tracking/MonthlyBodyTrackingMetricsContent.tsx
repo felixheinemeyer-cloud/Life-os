@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,8 +54,42 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
 }) => {
   const [isWeightFocused, setIsWeightFocused] = useState(false);
   const [isMeasurementsFocused, setIsMeasurementsFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const measurementsInputRef = useRef<TextInput>(null);
+  const buttonBottom = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsKeyboardVisible(true);
+        const keyboardTop = e.endCoordinates.height - 80;
+        Animated.timing(buttonBottom, {
+          toValue: keyboardTop + 8,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        Animated.timing(buttonBottom, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const handleWeightChange = (weight: string) => {
     const cleaned = weight.replace(/[^0-9.]/g, '');
@@ -91,137 +126,148 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoid}
-      keyboardVerticalOffset={100}
-    >
-      <View style={styles.container}>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <LinearGradient
-              colors={THEME_COLORS.gradient}
-              style={styles.headerIconGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.headerIconInner}>
-                <Ionicons name="fitness" size={26} color={THEME_COLORS.primary} />
-              </View>
-            </LinearGradient>
-            <Text style={styles.headerTitle}>Body Metrics</Text>
-            <Text style={styles.headerSubtitle}>
+    <View style={styles.container}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          <LinearGradient
+            colors={THEME_COLORS.gradient}
+            style={styles.headerIconGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.headerIconInner}>
+              <Ionicons name="fitness" size={28} color={THEME_COLORS.primary} />
+            </View>
+          </LinearGradient>
+          <Text style={styles.headerTitle}>Body Metrics</Text>
+
+          {/* Hint Text */}
+          <View style={styles.hintContainer}>
+            <Text style={styles.hintText}>
               Track your physical measurements this month
             </Text>
           </View>
+        </View>
 
-          {/* Weight Input Card */}
-          <View style={styles.inputCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
-                <Ionicons name="scale-outline" size={18} color={THEME_COLORS.primary} />
-              </View>
-              <Text style={styles.cardTitle}>Current Weight</Text>
+        {/* Weight Input Card */}
+        <View style={styles.inputCard}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
+              <Ionicons name="scale-outline" size={18} color={THEME_COLORS.primary} />
             </View>
-            <View style={[
-              styles.weightInputContainer,
-              isWeightFocused && styles.inputFocused
-            ]}>
-              <TextInput
-                style={styles.weightInput}
-                placeholder="70.0"
-                placeholderTextColor="#D1D5DB"
-                keyboardType="decimal-pad"
-                value={data.weight}
-                onChangeText={handleWeightChange}
-                onFocus={() => setIsWeightFocused(true)}
-                onBlur={() => setIsWeightFocused(false)}
-              />
-              <Text style={styles.weightUnitDisplay}>kg</Text>
+            <Text style={styles.cardTitle}>Current Weight</Text>
+          </View>
+          <View style={[
+            styles.weightInputContainer,
+            isWeightFocused && styles.inputFocused
+          ]}>
+            <TextInput
+              style={styles.weightInput}
+              placeholder="70.0"
+              placeholderTextColor="#D1D5DB"
+              keyboardType="decimal-pad"
+              value={data.weight}
+              onChangeText={handleWeightChange}
+              onFocus={() => setIsWeightFocused(true)}
+              onBlur={() => setIsWeightFocused(false)}
+            />
+            <Text style={styles.weightUnitDisplay}>kg</Text>
+          </View>
+        </View>
+
+        {/* Other Body Stats Card */}
+        <View style={styles.inputCard}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
+              <Ionicons name="body-outline" size={18} color={THEME_COLORS.primary} />
+            </View>
+            <Text style={styles.cardTitle}>Other Body Stats</Text>
+            <View style={styles.optionalBadge}>
+              <Text style={styles.optionalBadgeText}>Optional</Text>
             </View>
           </View>
 
-          {/* Other Body Stats Card */}
-          <View style={styles.inputCard}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.cardIconContainer, { backgroundColor: THEME_COLORS.primaryBg }]}>
-                <Ionicons name="body-outline" size={18} color={THEME_COLORS.primary} />
-              </View>
-              <Text style={styles.cardTitle}>Other Body Stats</Text>
-              <View style={styles.optionalBadge}>
-                <Text style={styles.optionalBadgeText}>Optional</Text>
-              </View>
-            </View>
+          {/* Free-form Input - Primary action */}
+          <View style={[
+            styles.measurementsInputContainer,
+            isMeasurementsFocused && styles.inputFocused
+          ]}>
+            <TextInput
+              ref={measurementsInputRef}
+              style={styles.measurementsInput}
+              placeholder="Body fat: 18%, Neck: 15in, ..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+              value={data.measurements}
+              onChangeText={handleMeasurementsChange}
+              onFocus={handleMeasurementsFocus}
+              onBlur={() => setIsMeasurementsFocused(false)}
+              textAlignVertical="top"
+            />
+          </View>
 
-            {/* Free-form Input - Primary action */}
-            <View style={[
-              styles.measurementsInputContainer,
-              isMeasurementsFocused && styles.inputFocused
-            ]}>
-              <TextInput
-                ref={measurementsInputRef}
-                style={styles.measurementsInput}
-                placeholder="Body fat: 18%, Neck: 15in, ..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={3}
-                value={data.measurements}
-                onChangeText={handleMeasurementsChange}
-                onFocus={handleMeasurementsFocus}
-                onBlur={() => setIsMeasurementsFocused(false)}
-                textAlignVertical="top"
-              />
-            </View>
-
-            {/* Quick-add Chips - Secondary helper */}
-            <View style={styles.suggestionsContainer}>
-              <Text style={styles.suggestionsLabel}>Quick add:</Text>
-              <View style={styles.suggestionsRow}>
-                {MEASUREMENT_SUGGESTIONS.map((suggestion) => (
-                  <TouchableOpacity
-                    key={suggestion.label}
-                    style={styles.suggestionChip}
-                    onPress={() => handleSuggestionTap(suggestion.label, suggestion.placeholder)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="add" size={14} color="#6B7280" style={styles.chipIcon} />
-                    <Text style={styles.suggestionChipText}>{suggestion.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+          {/* Quick-add Chips - Secondary helper */}
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsLabel}>Quick add:</Text>
+            <View style={styles.suggestionsRow}>
+              {MEASUREMENT_SUGGESTIONS.map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion.label}
+                  style={styles.suggestionChip}
+                  onPress={() => handleSuggestionTap(suggestion.label, suggestion.placeholder)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={14} color="#6B7280" style={styles.chipIcon} />
+                  <Text style={styles.suggestionChipText}>{suggestion.label}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </ScrollView>
+        </View>
+      </ScrollView>
 
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
+      {/* Continue Button */}
+      <Animated.View
+        style={[
+          styles.buttonContainer,
+          isKeyboardVisible && styles.buttonContainerFocused,
+          { bottom: buttonBottom }
+        ]}
+      >
+        {isKeyboardVisible ? (
+          <TouchableOpacity
+            style={styles.roundContinueButton}
+            onPress={onContinue}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
           <TouchableOpacity
             style={styles.continueButton}
             onPress={onContinue}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
             <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+        )}
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
@@ -231,45 +277,55 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingTop: 4,
+    paddingBottom: 300,
   },
 
   // Header Section
   headerSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   headerIconGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    padding: 2,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
   headerIconInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 6,
+    lineHeight: 32,
+    marginBottom: 16,
   },
-  headerSubtitle: {
-    fontSize: 14,
+  hintContainer: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#9CA3AF',
+    paddingLeft: 12,
+    marginTop: 0,
+    alignSelf: 'stretch',
+    marginBottom: 8,
+  },
+  hintText: {
+    fontSize: 17,
     fontWeight: '400',
-    color: '#6B7280',
-    textAlign: 'center',
+    color: '#9CA3AF',
+    lineHeight: 30,
+    letterSpacing: -0.1,
   },
 
   // Input Cards
@@ -405,31 +461,53 @@ const styles = StyleSheet.create({
 
   // Button Container
   buttonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 12,
+    paddingBottom: 16,
+    paddingTop: 8,
     backgroundColor: '#F7F5F2',
+  },
+  buttonContainerFocused: {
+    alignItems: 'flex-end',
+    paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: 6,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginRight: 4,
     letterSpacing: -0.2,
+  },
+  roundContinueButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 

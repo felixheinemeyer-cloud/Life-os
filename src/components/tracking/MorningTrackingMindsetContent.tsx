@@ -190,10 +190,9 @@ const styles = StyleSheet.create({
 
   // Cards Container
   cardsContainer: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-evenly',
-    paddingVertical: 16,
+    marginTop: 24,
+    gap: 24,
   },
 
   // Card Styles
