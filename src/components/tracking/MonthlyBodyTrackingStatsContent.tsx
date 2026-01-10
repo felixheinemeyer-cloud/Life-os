@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   Dimensions,
   Platform,
   Keyboard,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Line, Circle, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Circle, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 // Sky blue color scheme for Monthly Body Check-In
@@ -117,7 +118,7 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-// Metric Graph Component
+// Metric Graph Component with Scrubbing
 interface MetricGraphProps {
   data: number[];
   metric: MetricType;
@@ -125,35 +126,45 @@ interface MetricGraphProps {
 }
 
 const MetricGraph: React.FC<MetricGraphProps> = ({ data, metric, colors }) => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = screenWidth - 64;
-  const chartHeight = 160;
-  const padding = { top: 20, right: 12, bottom: 28, left: 36 };
+  const chartHeight = 140;
+  const padding = { top: 16, right: 12, bottom: 28, left: 32 };
 
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
   // Scale based on metric type
-  const getScale = () => {
+  const scale = useMemo(() => {
     if (metric === 'sleep') {
       return { min: 4, max: 10 };
     }
     return { min: 1, max: 10 };
-  };
+  }, [metric]);
 
-  const scale = getScale();
+  // Get reference line values based on scale (top, middle, bottom)
+  const referenceValues = useMemo(() => {
+    if (metric === 'sleep') {
+      return [4, 7, 10]; // For sleep (4-10 range): bottom, middle, top
+    }
+    return [1, 5, 10]; // For 1-10 range: bottom, middle, top
+  }, [metric]);
 
-  const getX = (index: number): number => {
+  const getX = useCallback((index: number): number => {
     return padding.left + (index / (data.length - 1)) * plotWidth;
-  };
+  }, [data.length, plotWidth]);
 
-  const getY = (value: number): number => {
+  const getY = useCallback((value: number): number => {
     const normalizedValue = Math.max(scale.min, Math.min(scale.max, value));
     return padding.top + plotHeight - ((normalizedValue - scale.min) / (scale.max - scale.min)) * plotHeight;
-  };
+  }, [scale, plotHeight]);
 
-  // Generate smooth path
-  const generatePath = (): string => {
+  // Generate smooth path using Catmull-Rom to Bezier conversion
+  const linePath = useMemo(() => {
     if (data.length === 0) return '';
 
     const points = data.map((value, index) => ({
@@ -161,35 +172,36 @@ const MetricGraph: React.FC<MetricGraphProps> = ({ data, metric, colors }) => {
       y: getY(value),
     }));
 
-    let path = `M ${points[0].x} ${points[0].y}`;
+    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
 
     for (let i = 0; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const tension = 0.3;
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
 
-      const cp1x = current.x + (next.x - current.x) * tension;
-      const cp1y = current.y;
-      const cp2x = next.x - (next.x - current.x) * tension;
-      const cp2y = next.y;
+      // Control points for smooth curve
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
 
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+      path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
     }
 
     return path;
-  };
+  }, [data, getX, getY]);
 
   // Generate area fill path
-  const generateAreaPath = (): string => {
-    const linePath = generatePath();
+  const areaPath = useMemo(() => {
     if (!linePath) return '';
 
     const firstX = getX(0);
     const lastX = getX(data.length - 1);
     const baseY = padding.top + plotHeight;
 
-    return `${linePath} L ${lastX} ${baseY} L ${firstX} ${baseY} Z`;
-  };
+    return `${linePath} L ${lastX.toFixed(2)} ${baseY} L ${firstX.toFixed(2)} ${baseY} Z`;
+  }, [linePath, data.length, getX, plotHeight]);
 
   const metricLabels: Record<MetricType, string> = {
     sleep: 'Sleep (hours)',
@@ -199,88 +211,173 @@ const MetricGraph: React.FC<MetricGraphProps> = ({ data, metric, colors }) => {
   };
 
   // Find min and max values for display
-  const minVal = Math.min(...data);
-  const maxVal = Math.max(...data);
-  const avgVal = data.reduce((a, b) => a + b, 0) / data.length;
+  const minVal = useMemo(() => Math.min(...data), [data]);
+  const maxVal = useMemo(() => Math.max(...data), [data]);
+
+  // Generate dates for the 30-day period (last 30 days)
+  const dates = useMemo(() => {
+    const today = new Date();
+    const dateArray: Date[] = [];
+    for (let i = data.length - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dateArray.push(date);
+    }
+    return dateArray;
+  }, [data.length]);
+
+  // Get display value (selected day's value or show min/max)
+  const displayValue = activeIndex !== null ? data[activeIndex] : null;
+
+  // Format selected date (e.g., "Jan 5")
+  const selectedDayLabel = useMemo(() => {
+    if (activeIndex === null) return null;
+    const date = dates[activeIndex];
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }, [activeIndex, dates]);
+
+  // Calculate index from x position (relative to plot area)
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX - padding.left;
+    const clampedX = Math.max(0, Math.min(relativeX, plotWidth));
+    const index = Math.round((clampedX / plotWidth) * (data.length - 1));
+    return Math.max(0, Math.min(data.length - 1, index));
+  }, [chartLayoutX, plotWidth, data.length]);
+
+  // Handle layout measurement
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        if (Platform.OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex((prevIndex) => {
+          if (prevIndex !== index && Platform.OS === 'ios') {
+            Haptics.selectionAsync();
+          }
+          return index;
+        });
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  // Get active dot position
+  const activeDot = activeIndex !== null ? {
+    x: getX(activeIndex),
+    y: getY(data[activeIndex]),
+  } : null;
+
+  // Cursor line position (relative to chart container, not SVG)
+  const cursorLineLeft = activeIndex !== null
+    ? getX(activeIndex)
+    : 0;
 
   return (
     <View style={styles.graphCard}>
       <View style={styles.graphHeader}>
         <Text style={[styles.graphTitle, { color: colors.primary }]}>{metricLabels[metric]}</Text>
         <View style={styles.graphStats}>
-          <Text style={styles.graphStatText}>
-            Min: <Text style={{ fontWeight: '600', color: colors.primary }}>{minVal.toFixed(1)}</Text>
-          </Text>
-          <Text style={styles.graphStatText}>
-            Max: <Text style={{ fontWeight: '600', color: colors.primary }}>{maxVal.toFixed(1)}</Text>
-          </Text>
+          {displayValue !== null ? (
+            <View style={styles.graphActiveStats}>
+              <Text style={styles.graphSelectedDay}>{selectedDayLabel}</Text>
+              <Text style={[styles.graphDisplayValue, { color: colors.primary }]}>
+                {displayValue.toFixed(1)}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.graphStatText}>
+                Min: <Text style={{ fontWeight: '600', color: colors.primary }}>{minVal.toFixed(1)}</Text>
+              </Text>
+              <Text style={styles.graphStatText}>
+                Max: <Text style={{ fontWeight: '600', color: colors.primary }}>{maxVal.toFixed(1)}</Text>
+              </Text>
+            </>
+          )}
         </View>
       </View>
 
-      <View style={styles.chartContainer}>
+      <View
+        ref={chartRef}
+        style={styles.chartContainer}
+        onLayout={handleLayout}
+        {...panResponder.panHandlers}
+      >
         <Svg width={chartWidth} height={chartHeight}>
           <Defs>
-            <SvgLinearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={colors.primary} stopOpacity="0.3" />
-              <Stop offset="100%" stopColor={colors.primary} stopOpacity="0.05" />
+            <SvgLinearGradient id={`areaGradient-${metric}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={colors.primary} stopOpacity={activeIndex !== null ? "0.22" : "0.15"} />
+              <Stop offset="100%" stopColor={colors.primary} stopOpacity="0.01" />
             </SvgLinearGradient>
           </Defs>
 
-          {/* Horizontal grid lines */}
-          {[0.25, 0.5, 0.75].map((ratio) => (
-            <Line
-              key={ratio}
-              x1={padding.left}
-              y1={padding.top + plotHeight * ratio}
-              x2={chartWidth - padding.right}
-              y2={padding.top + plotHeight * ratio}
-              stroke="#E5E7EB"
-              strokeWidth="1"
-              strokeDasharray="4,4"
-            />
-          ))}
-
-          {/* Baseline */}
-          <Line
-            x1={padding.left}
-            y1={padding.top + plotHeight}
-            x2={chartWidth - padding.right}
-            y2={padding.top + plotHeight}
-            stroke="#D1D5DB"
-            strokeWidth="1"
-          />
+          {/* Subtle reference lines */}
+          {referenceValues.map((value) => {
+            const y = getY(value);
+            return (
+              <Path
+                key={value}
+                d={`M ${padding.left} ${y.toFixed(1)} L ${chartWidth - padding.right} ${y.toFixed(1)}`}
+                stroke="#D1D5DB"
+                strokeWidth={1}
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
 
           {/* Area fill */}
           <Path
-            d={generateAreaPath()}
-            fill="url(#areaGradient)"
+            d={areaPath}
+            fill={`url(#areaGradient-${metric})`}
           />
 
           {/* Line */}
           <Path
-            d={generatePath()}
+            d={linePath}
             stroke={colors.primary}
-            strokeWidth="2.5"
+            strokeWidth={2}
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Data points - show every 5th point to avoid clutter */}
-          {data.map((value, index) => {
-            if (index % 5 !== 0 && index !== data.length - 1) return null;
-            return (
-              <Circle
-                key={index}
-                cx={getX(index)}
-                cy={getY(value)}
-                r={4}
-                fill="#FFFFFF"
-                stroke={colors.primary}
-                strokeWidth="2"
-              />
-            );
-          })}
+          {/* Active dot */}
+          {activeDot && (
+            <Circle
+              cx={activeDot.x}
+              cy={activeDot.y}
+              r={5}
+              fill={colors.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
 
           {/* Y-axis labels */}
           <SvgText
@@ -307,33 +404,36 @@ const MetricGraph: React.FC<MetricGraphProps> = ({ data, metric, colors }) => {
             x={padding.left}
             y={chartHeight - 8}
             fontSize="10"
-            fill="#9CA3AF"
+            fill="#C9CDD3"
             textAnchor="start"
           >
-            Day 1
-          </SvgText>
-          <SvgText
-            x={chartWidth / 2}
-            y={chartHeight - 8}
-            fontSize="10"
-            fill="#9CA3AF"
-            textAnchor="middle"
-          >
-            Day 15
+            30d ago
           </SvgText>
           <SvgText
             x={chartWidth - padding.right}
             y={chartHeight - 8}
             fontSize="10"
-            fill="#9CA3AF"
+            fill="#C9CDD3"
             textAnchor="end"
           >
-            Day 30
+            Today
           </SvgText>
         </Svg>
+
+        {/* Cursor line */}
+        {activeIndex !== null && (
+          <View
+            style={[
+              styles.cursorLine,
+              { left: cursorLineLeft, height: chartHeight - padding.bottom },
+            ]}
+          />
+        )}
       </View>
 
-      <Text style={styles.graphHint}>Tap another stat to compare</Text>
+      <Text style={styles.graphHint}>
+        {activeIndex !== null ? 'Slide to explore' : 'Tap another stat to compare'}
+      </Text>
     </View>
   );
 };
@@ -654,39 +754,64 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   graphHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   graphTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     letterSpacing: -0.3,
   },
   graphStats: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: 20,
+  },
+  graphActiveStats: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  graphSelectedDay: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#9CA3AF',
   },
   graphStatText: {
     fontSize: 12,
     color: '#6B7280',
   },
+  graphDisplayValue: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
   chartContainer: {
     alignItems: 'center',
+    position: 'relative',
+  },
+  cursorLine: {
+    position: 'absolute',
+    top: 0,
+    width: 1.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    borderRadius: 1,
   },
   graphHint: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#C9CDD3',
     textAlign: 'center',
-    marginTop: 8,
-    fontStyle: 'italic',
+    marginTop: 12,
+    fontWeight: '500',
   },
 
   // Button Container

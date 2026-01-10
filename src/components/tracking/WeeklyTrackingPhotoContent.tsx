@@ -9,6 +9,7 @@ import {
   Platform,
   Dimensions,
   Keyboard,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -137,7 +138,13 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Question Section - matches reflection screen */}
         <View style={styles.questionSection}>
           <LinearGradient
@@ -216,7 +223,7 @@ const WeeklyTrackingPhotoContent: React.FC<WeeklyTrackingPhotoContentProps> = ({
         <Text style={styles.optionalNote}>
           This step is optional
         </Text>
-      </View>
+      </ScrollView>
 
       {/* Continue Button */}
       <View style={styles.buttonContainer}>
@@ -238,11 +245,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
 
   // Question Section - matches reflection screen exactly

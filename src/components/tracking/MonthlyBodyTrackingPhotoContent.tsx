@@ -132,7 +132,8 @@ const MonthlyBodyTrackingPhotoContent: React.FC<MonthlyBodyTrackingPhotoContentP
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        bounces={false}
+        bounces={true}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Question Section - matches weekly check-in */}
         <View style={styles.questionSection}>
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
 
   // Question Section - matches weekly check-in exactly

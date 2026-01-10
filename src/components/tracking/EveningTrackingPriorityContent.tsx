@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isSmallScreen = SCREEN_WIDTH < 400; // iPhone 16 Pro is ~393pt, Pro Max is ~430pt
+const isSmallScreen = SCREEN_WIDTH < 380; // iPhone 14 Pro/15 Pro is ~393pt, iPhone 16 Pro is ~402pt
 
 interface EveningTrackingPriorityContentProps {
   morningPriority: string;
@@ -348,7 +348,6 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingRight: 50,
     borderRadius: 20,
-    maxWidth: 280,
   },
   cardIconGradientRingSmall: {
     width: 46,
