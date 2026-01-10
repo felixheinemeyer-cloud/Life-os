@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
     lineHeight: 30,
     paddingHorizontal: 0,
-    paddingTop: 8,
+    paddingTop: 0,
     minHeight: 200,
   },
 

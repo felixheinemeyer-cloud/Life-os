@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -49,6 +49,26 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
 
   // Animation value for horizontal scroll position
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Animated values for dot widths
+  const dotWidths = useRef(
+    Array.from({ length: TOTAL_STEPS }, (_, i) =>
+      new Animated.Value(i === 0 ? 20 : 8)
+    )
+  ).current;
+
+  // Animate dot widths when step changes
+  useEffect(() => {
+    const animations = dotWidths.map((dotWidth, index) =>
+      Animated.timing(dotWidth, {
+        toValue: index === currentStep ? 20 : 8,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      })
+    );
+    Animated.parallel(animations).start();
+  }, [currentStep]);
 
   const animateToStep = (step: number) => {
     Animated.timing(scrollX, {
@@ -111,14 +131,15 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
 
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
-            {Array.from({ length: TOTAL_STEPS }).map((_, index) => (
-              <View
+            {dotWidths.map((dotWidth, index) => (
+              <Animated.View
                 key={index}
                 style={[
                   styles.progressDot,
                   index <= currentStep
                     ? styles.progressDotActive
                     : styles.progressDotInactive,
+                  { width: dotWidth },
                 ]}
               />
             ))}

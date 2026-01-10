@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Keyboard,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,44 +27,48 @@ const SocialWealthCustomQuestionScreen: React.FC<SocialWealthCustomQuestionScree
 }) => {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [isFocused, setIsFocused] = useState<'question' | 'answer' | null>(null);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const questionInputRef = useRef<TextInput>(null);
   const answerInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const buttonBottom = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      setIsKeyboardVisible(true);
-    });
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setIsKeyboardVisible(false);
-    });
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setIsFocused(true);
+        const keyboardTop = e.endCoordinates.height - 80;
+        Animated.timing(buttonBottom, {
+          toValue: keyboardTop + 8,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setIsFocused(false);
+        Animated.timing(buttonBottom, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? 250 : 0,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
 
     return () => {
-      keyboardDidShowListener?.remove();
-      keyboardDidHideListener?.remove();
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
     };
   }, []);
-
-  const handleFocus = (field: 'question' | 'answer'): void => {
-    setIsFocused(field);
-    if (field === 'answer') {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: 150, animated: true });
-      }, 100);
-    }
-  };
-
-  const handleBlur = (): void => {
-    setIsFocused(null);
-  };
 
   const handleBack = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // Navigate back and signal to reopen the Go deeper menu
     navigation.navigate('SocialWealthOverview', {
       reopenGoDeeper: true
     });
@@ -76,7 +80,6 @@ const SocialWealthCustomQuestionScreen: React.FC<SocialWealthCustomQuestionScree
     }
 
     Keyboard.dismiss();
-    // Navigate back with the custom question and answer data
     navigation.navigate('SocialWealthOverview', {
       newCustomEntry: {
         question: question.trim(),
@@ -89,117 +92,133 @@ const SocialWealthCustomQuestionScreen: React.FC<SocialWealthCustomQuestionScree
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoid}
-        keyboardVerticalOffset={0}
-      >
-        <View style={[
-          styles.container,
-          isKeyboardVisible && styles.containerKeyboardVisible,
-        ]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          >
-            {/* Icon Section */}
-            <View style={styles.iconSection}>
-              <LinearGradient
-                colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
-                style={styles.iconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.iconInnerCircle}>
-                  <Ionicons name="create" size={28} color="#8B5CF6" />
-                </View>
-              </LinearGradient>
-              <Text style={styles.instructionText}>
-                Write your own reflection question
-              </Text>
-            </View>
-
-            {/* Question Input Card */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.inputLabel}>Your question</Text>
-              <View style={[styles.inputCard, isFocused === 'question' && styles.inputCardFocused]}>
-                <TextInput
-                  ref={questionInputRef}
-                  style={styles.questionInput}
-                  placeholder="Ask about your best self..."
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  numberOfLines={3}
-                  value={question}
-                  onChangeText={setQuestion}
-                  onFocus={() => handleFocus('question')}
-                  onBlur={handleBlur}
-                  textAlignVertical="top"
-                />
-              </View>
-            </View>
-
-            {/* Answer Input Card */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.inputLabel}>Your answer</Text>
-              <View style={[styles.inputCard, isFocused === 'answer' && styles.inputCardFocused]}>
-                <TextInput
-                  ref={answerInputRef}
-                  style={styles.answerInput}
-                  placeholder="Write your answer here..."
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  numberOfLines={8}
-                  value={answer}
-                  onChangeText={setAnswer}
-                  onFocus={() => handleFocus('answer')}
-                  onBlur={handleBlur}
-                  textAlignVertical="top"
-                />
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Finish Button */}
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
-            style={[
-              styles.finishButton,
-              !isButtonEnabled && styles.finishButtonDisabled,
-            ]}
-            onPress={handleFinish}
-            activeOpacity={0.8}
-            disabled={!isButtonEnabled}
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.7}
           >
-            <Text style={[
-              styles.finishButtonText,
-              !isButtonEnabled && styles.finishButtonTextDisabled,
-            ]}>
-              Finish
-            </Text>
-            <Ionicons
-              name="checkmark"
-              size={18}
-              color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
+          {/* Icon Section */}
+          <View style={styles.iconSection}>
+            <LinearGradient
+              colors={['#C4B5FD', '#A78BFA', '#8B5CF6']}
+              style={styles.iconGradientRing}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.iconInnerCircle}>
+                <Ionicons name="create" size={28} color="#8B5CF6" />
+              </View>
+            </LinearGradient>
+            <Text style={styles.titleText}>
+              Write your own reflection question
+            </Text>
+          </View>
+
+          {/* Question Input Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.inputLabel}>Question</Text>
+            <TextInput
+              ref={questionInputRef}
+              style={styles.questionInput}
+              placeholder="Ask about your best self..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              scrollEnabled={false}
+              value={question}
+              onChangeText={setQuestion}
+              textAlignVertical="top"
+              selectionColor="#1F2937"
+              cursorColor="#1F2937"
+            />
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Answer Input Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.inputLabel}>Answer</Text>
+            <TextInput
+              ref={answerInputRef}
+              style={styles.answerInput}
+              placeholder="Write your answer here..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              scrollEnabled={false}
+              value={answer}
+              onChangeText={setAnswer}
+              textAlignVertical="top"
+              selectionColor="#1F2937"
+              cursorColor="#1F2937"
+            />
+          </View>
+        </ScrollView>
+
+        {/* Finish Button */}
+        <Animated.View
+          style={[
+            styles.buttonContainer,
+            isFocused && styles.buttonContainerFocused,
+            { bottom: buttonBottom }
+          ]}
+        >
+          {isFocused ? (
+            <TouchableOpacity
+              style={[
+                styles.roundFinishButton,
+                !isButtonEnabled && styles.roundFinishButtonDisabled,
+              ]}
+              onPress={handleFinish}
+              activeOpacity={0.8}
+              disabled={!isButtonEnabled}
+            >
+              <Ionicons
+                name="checkmark"
+                size={22}
+                color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.finishButton,
+                !isButtonEnabled && styles.finishButtonDisabled,
+              ]}
+              onPress={handleFinish}
+              activeOpacity={0.8}
+              disabled={!isButtonEnabled}
+            >
+              <Text style={[
+                styles.finishButtonText,
+                !isButtonEnabled && styles.finishButtonTextDisabled,
+              ]}>
+                Finish
+              </Text>
+              <Ionicons
+                name="checkmark"
+                size={18}
+                color={isButtonEnabled ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -209,15 +228,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F5F2',
   },
-  keyboardAvoid: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#F7F5F2',
-  },
-  containerKeyboardVisible: {
-    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: 16,
@@ -245,8 +258,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 24,
-    backgroundColor: '#F7F5F2',
+    paddingBottom: 300,
   },
 
   // Icon Section
@@ -260,7 +272,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
     padding: 3,
   },
   iconInnerCircle: {
@@ -271,90 +283,114 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  instructionText: {
-    fontSize: 17,
+  titleText: {
+    fontSize: 24,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#1F2937',
     textAlign: 'center',
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
 
   // Input Sections
   sectionContainer: {
-    marginBottom: 20,
+    marginBottom: 8,
   },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  inputCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  inputCardFocused: {
-    borderColor: '#D1D5DB',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
+    color: '#1F2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+    borderLeftWidth: 2,
+    borderLeftColor: '#9CA3AF',
+    paddingLeft: 12,
   },
   questionInput: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    minHeight: 80,
-    letterSpacing: -0.2,
-    lineHeight: 24,
+    letterSpacing: -0.1,
+    lineHeight: 30,
+    minHeight: 60,
+    paddingHorizontal: 0,
   },
   answerInput: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    minHeight: 180,
-    letterSpacing: -0.2,
-    lineHeight: 24,
+    letterSpacing: -0.1,
+    lineHeight: 30,
+    minHeight: 150,
+    paddingHorizontal: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginTop: 8,
+    marginBottom: 16,
   },
 
-  // Finish Button
+  // Button Container
+  buttonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+    backgroundColor: '#F7F5F2',
+  },
+  buttonContainerFocused: {
+    alignItems: 'flex-end',
+    paddingBottom: 0,
+    backgroundColor: 'transparent',
+  },
   finishButton: {
     backgroundColor: '#1F2937',
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 18,
-    marginTop: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   finishButtonDisabled: {
     backgroundColor: '#E5E7EB',
     shadowOpacity: 0,
   },
   finishButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
   finishButtonTextDisabled: {
     color: '#9CA3AF',
+  },
+  roundFinishButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  roundFinishButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+    shadowOpacity: 0,
   },
 });
 
