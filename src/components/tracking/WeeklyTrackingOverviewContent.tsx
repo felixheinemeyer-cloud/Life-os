@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -341,6 +342,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
   }, []);
 
   const handleContinue = () => {
+    Keyboard.dismiss();
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
@@ -509,7 +511,7 @@ const styles = StyleSheet.create({
   // Header - Refined
   header: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   weekLabelContainer: {
     flexDirection: 'row',

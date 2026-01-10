@@ -242,7 +242,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
         {isKeyboardVisible ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
@@ -250,7 +250,7 @@ const MonthlyBodyTrackingMetricsContent: React.FC<MonthlyBodyTrackingMetricsCont
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
@@ -378,8 +378,9 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: '#1F2937',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
     paddingVertical: 8,
+    paddingHorizontal: 0,
   },
   weightUnitDisplay: {
     fontSize: 18,

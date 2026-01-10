@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ const EveningTrackingPriorityScreen: React.FC<EveningTrackingPriorityScreenProps
   const morningPriority = "Finish the project proposal and send it to the team";
 
   const handleBack = (): void => {
+    Keyboard.dismiss();
     navigation?.goBack();
   };
 

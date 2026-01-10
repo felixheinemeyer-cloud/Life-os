@@ -9,6 +9,7 @@ import {
   PanResponder,
   Dimensions,
   Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -172,6 +173,7 @@ const WeeklyTrackingTimeWealthScreen: React.FC<WeeklyTrackingTimeWealthScreenPro
   const financialWealth = route?.params?.financialWealth;
 
   const handleBack = (): void => {
+    Keyboard.dismiss();
     navigation?.goBack();
   };
 

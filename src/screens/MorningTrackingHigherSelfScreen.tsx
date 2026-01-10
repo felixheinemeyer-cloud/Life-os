@@ -11,6 +11,7 @@ import {
   Dimensions,
   Modal,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -174,6 +175,7 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
   };
 
   const handleBack = () => {
+    Keyboard.dismiss();
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

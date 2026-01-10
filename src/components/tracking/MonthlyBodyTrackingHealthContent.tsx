@@ -7,6 +7,7 @@ import {
   Animated,
   PanResponder,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -284,7 +285,7 @@ const MonthlyBodyTrackingHealthContent: React.FC<MonthlyBodyTrackingHealthConten
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
+          onPress={() => { Keyboard.dismiss(); onContinue(); }}
           activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continue</Text>

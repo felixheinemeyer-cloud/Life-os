@@ -9,6 +9,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +34,7 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleBack = (): void => {
+    Keyboard.dismiss();
     navigation?.goBack();
   };
 

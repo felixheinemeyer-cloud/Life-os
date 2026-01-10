@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -220,7 +221,7 @@ const MonthlyBodyTrackingMindHelpersContent: React.FC<MonthlyBodyTrackingMindHel
             styles.continueButton,
             !hasSelection && styles.continueButtonDisabled,
           ]}
-          onPress={hasSelection ? onContinue : undefined}
+          onPress={hasSelection ? () => { Keyboard.dismiss(); onContinue(); } : undefined}
           activeOpacity={hasSelection ? 0.8 : 1}
           disabled={!hasSelection}
         >
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
   // Header Section - Standard size matching other screens
   headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerIconGradient: {
     width: 64,

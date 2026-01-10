@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -72,6 +73,7 @@ const MorningTrackingMindsetEntriesScreen: React.FC<MorningTrackingMindsetEntrie
   };
 
   const handleBack = () => {
+    Keyboard.dismiss();
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

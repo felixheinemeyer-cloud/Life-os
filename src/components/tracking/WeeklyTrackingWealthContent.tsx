@@ -8,6 +8,7 @@ import {
   PanResponder,
   Dimensions,
   Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -340,7 +341,7 @@ const WeeklyTrackingWealthContent: React.FC<WeeklyTrackingWealthContentProps> = 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
+          onPress={() => { Keyboard.dismiss(); onContinue(); }}
           activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     marginTop: 0,
   },
   iconGradientRing: {

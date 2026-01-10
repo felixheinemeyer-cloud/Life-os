@@ -8,6 +8,7 @@ import {
   PanResponder,
   Dimensions,
   Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -279,7 +280,7 @@ const EveningTrackingRatingsContent: React.FC<EveningTrackingRatingsContentProps
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.continueButton}
-          onPress={onContinue}
+          onPress={() => { Keyboard.dismiss(); onContinue(); }}
           activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continue</Text>

@@ -195,7 +195,7 @@ const MonthlyTrackingReflectionContent: React.FC<MonthlyTrackingReflectionConten
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name={isFinish ? 'checkmark' : 'chevron-forward'} size={22} color="#FFFFFF" />
@@ -203,7 +203,7 @@ const MonthlyTrackingReflectionContent: React.FC<MonthlyTrackingReflectionConten
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>{buttonText}</Text>
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   iconGradientRing: {
     width: 64,

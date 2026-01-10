@@ -229,7 +229,7 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
         {isFocused ? (
           <TouchableOpacity
             style={styles.roundContinueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Ionicons name="checkmark" size={22} color="#FFFFFF" />
@@ -237,7 +237,7 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
         ) : (
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={onContinue}
+            onPress={() => { Keyboard.dismiss(); onContinue(); }}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Finish</Text>

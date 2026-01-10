@@ -9,6 +9,7 @@ import {
   PanResponder,
   Dimensions,
   Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -181,6 +182,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
   const [satisfaction, setSatisfaction] = useState(5);
 
   const handleBack = (): void => {
+    Keyboard.dismiss();
     navigation?.goBack();
   };
 
