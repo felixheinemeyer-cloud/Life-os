@@ -282,7 +282,7 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 64 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   },
   // Search Bar
   searchBarContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
 
   // Attention Banner

@@ -779,14 +779,13 @@ const styles = StyleSheet.create({
 
   // Title Section
   titleSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
