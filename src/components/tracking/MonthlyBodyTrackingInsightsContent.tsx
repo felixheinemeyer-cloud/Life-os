@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   Dimensions,
   Platform,
   Keyboard,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Line, Circle, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Line, Text as SvgText, Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -105,7 +106,29 @@ const CombinedChart: React.FC<CombinedChartProps> = ({ data, activeMetrics, onTo
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
-  const scale = { min: 3, max: 10 };
+  const scale = { min: 1, max: 10 };
+
+  // Scrubbing state
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  // Generate dates for the last 30 days
+  const dates = useMemo(() => {
+    const today = new Date();
+    const dateArray: Date[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dateArray.push(date);
+    }
+    return dateArray;
+  }, []);
+
+  // Format selected date
+  const selectedDateStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const date = dates[activeIndex];
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }, [activeIndex, dates]);
 
   const getX = (index: number): number => {
     return padding.left + (index / 29) * plotWidth;
@@ -126,140 +149,262 @@ const CombinedChart: React.FC<CombinedChartProps> = ({ data, activeMetrics, onTo
 
     let path = `M ${points[0].x} ${points[0].y}`;
 
+    // Use smoother bezier curves (matching Overview screen style)
     for (let i = 0; i < points.length - 1; i++) {
-      const current = points[i];
-      const next = points[i + 1];
-      const tension = 0.25;
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
 
-      const cp1x = current.x + (next.x - current.x) * tension;
-      const cp1y = current.y;
-      const cp2x = next.x - (next.x - current.x) * tension;
-      const cp2y = next.y;
+      // Control points for smooth curve
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
 
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
     }
 
     return path;
   };
 
+  // Convert touch X position (relative to view) to data index
+  const getIndexFromX = useCallback((locationX: number): number => {
+    // locationX is relative to the chart container view
+    // Subtract padding.left to get position relative to the plot area
+    const relativeX = locationX - padding.left;
+    const clampedX = Math.max(0, Math.min(relativeX, plotWidth));
+    const index = Math.round((clampedX / plotWidth) * 29);
+    return Math.max(0, Math.min(29, index));
+  }, [plotWidth, padding.left]);
+
+  // PanResponder for scrubbing
+  // Using locationX (relative to view) instead of pageX (absolute) for better device compatibility
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex(index);
+        if (Platform.OS === 'ios') {
+          Haptics.selectionAsync();
+        }
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex((prev) => {
+          if (prev !== index && Platform.OS === 'ios') {
+            Haptics.selectionAsync();
+          }
+          return index;
+        });
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
   return (
     <View style={styles.chartCard}>
-      {/* Legend / Toggle */}
+      {/* Legend / Toggle OR Scrubbing Info - same space, no layout shift */}
       <View style={styles.legendRow}>
-        {(Object.keys(METRIC_COLORS) as MetricType[]).map((metric) => (
-          <TouchableOpacity
-            key={metric}
-            style={[
-              styles.legendItem,
-              !activeMetrics.has(metric) && styles.legendItemInactive,
-            ]}
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.selectionAsync();
-              }
-              onToggleMetric(metric);
-            }}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.legendDot,
-                { backgroundColor: activeMetrics.has(metric) ? METRIC_COLORS[metric].primary : '#D1D5DB' },
-              ]}
-            />
-            <Text
-              style={[
-                styles.legendText,
-                { color: activeMetrics.has(metric) ? '#374151' : '#9CA3AF' },
-              ]}
-            >
-              {METRIC_COLORS[metric].name}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {activeIndex === null ? (
+          // Show legend toggles when not scrubbing
+          <>
+            {(Object.keys(METRIC_COLORS) as MetricType[]).map((metric) => (
+              <TouchableOpacity
+                key={metric}
+                style={[
+                  styles.legendItem,
+                  !activeMetrics.has(metric) && styles.legendItemInactive,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.selectionAsync();
+                  }
+                  onToggleMetric(metric);
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.legendDot,
+                    { backgroundColor: activeMetrics.has(metric) ? METRIC_COLORS[metric].primary : '#D1D5DB' },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.legendText,
+                    { color: activeMetrics.has(metric) ? '#374151' : '#9CA3AF' },
+                  ]}
+                >
+                  {METRIC_COLORS[metric].name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : (
+          // Show date and values when scrubbing
+          <View style={styles.scrubbingContent}>
+            <Text style={styles.scrubbingDate}>{selectedDateStr}</Text>
+            <View style={styles.scrubbingValues}>
+              {activeMetrics.has('sleep') && (
+                <Text style={styles.scrubbingValueText}>
+                  <Text style={{ color: METRIC_COLORS.sleep.primary, fontWeight: '600' }}>
+                    {data.sleep[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}> hrs</Text>
+                </Text>
+              )}
+              {activeMetrics.has('energy') && (
+                <Text style={styles.scrubbingValueText}>
+                  <Text style={{ color: METRIC_COLORS.energy.primary, fontWeight: '600' }}>
+                    {data.energy[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+              {activeMetrics.has('nutrition') && (
+                <Text style={styles.scrubbingValueText}>
+                  <Text style={{ color: METRIC_COLORS.nutrition.primary, fontWeight: '600' }}>
+                    {data.nutrition[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Chart */}
-      <View style={styles.chartContainer}>
+      <View
+        style={styles.chartContainer}
+        {...panResponder.panHandlers}
+      >
         <Svg width={chartWidth} height={chartHeight}>
-          <Defs>
-            {(Object.keys(METRIC_COLORS) as MetricType[]).map((metric) => (
-              <SvgLinearGradient key={metric} id={`gradient-${metric}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor={METRIC_COLORS[metric].primary} stopOpacity="0.2" />
-                <Stop offset="100%" stopColor={METRIC_COLORS[metric].primary} stopOpacity="0" />
-              </SvgLinearGradient>
-            ))}
-          </Defs>
+          {/* Horizontal grid lines at values 10, 5, 1 - matching Overview */}
+          {[10, 5, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Line
+                key={value}
+                x1={padding.left}
+                y1={y}
+                x2={chartWidth - padding.right}
+                y2={y}
+                stroke="#D1D5DB"
+                strokeWidth="1"
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
 
-          {/* Horizontal grid lines */}
-          {[0, 0.33, 0.67, 1].map((ratio, i) => (
-            <Line
-              key={ratio}
-              x1={padding.left}
-              y1={padding.top + plotHeight * ratio}
-              x2={chartWidth - padding.right}
-              y2={padding.top + plotHeight * ratio}
-              stroke="#E5E7EB"
-              strokeWidth="1"
-              strokeDasharray={i === 3 ? undefined : '3,3'}
-            />
-          ))}
-
-          {/* Y-axis labels */}
-          <SvgText x={padding.left - 8} y={padding.top + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">
-            {scale.max}
-          </SvgText>
-          <SvgText x={padding.left - 8} y={padding.top + plotHeight / 2 + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">
-            {Math.round((scale.max + scale.min) / 2)}
-          </SvgText>
-          <SvgText x={padding.left - 8} y={padding.top + plotHeight + 4} fontSize="10" fill="#9CA3AF" textAnchor="end">
-            {scale.min}
-          </SvgText>
+          {/* Y-axis labels at values 10, 5, 1 */}
+          {[10, 5, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized) + 4;
+            return (
+              <SvgText key={value} x={padding.left - 8} y={y} fontSize="10" fill="#9CA3AF" textAnchor="end">
+                {value}
+              </SvgText>
+            );
+          })}
 
           {/* Metric lines */}
           {activeMetrics.has('sleep') && (
             <Path
               d={generatePath(data.sleep)}
               stroke={METRIC_COLORS.sleep.primary}
-              strokeWidth="2.5"
+              strokeWidth={2}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity={0.9}
             />
           )}
           {activeMetrics.has('nutrition') && (
             <Path
               d={generatePath(data.nutrition)}
               stroke={METRIC_COLORS.nutrition.primary}
-              strokeWidth="2.5"
+              strokeWidth={2}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity={0.9}
             />
           )}
           {activeMetrics.has('energy') && (
             <Path
               d={generatePath(data.energy)}
               stroke={METRIC_COLORS.energy.primary}
-              strokeWidth="2.5"
+              strokeWidth={2}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity={0.9}
             />
           )}
 
-          {/* X-axis labels */}
-          <SvgText x={padding.left} y={chartHeight - 8} fontSize="10" fill="#9CA3AF" textAnchor="start">
-            Day 1
+          {/* Cursor line when scrubbing */}
+          {activeIndex !== null && (
+            <Line
+              x1={getX(activeIndex)}
+              y1={padding.top}
+              x2={getX(activeIndex)}
+              y2={padding.top + plotHeight}
+              stroke="rgba(0, 0, 0, 0.12)"
+              strokeWidth={1.5}
+            />
+          )}
+
+          {/* Dots on active metrics when scrubbing */}
+          {activeIndex !== null && activeMetrics.has('sleep') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.sleep[activeIndex])}
+              r={5}
+              fill={METRIC_COLORS.sleep.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('nutrition') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.nutrition[activeIndex])}
+              r={5}
+              fill={METRIC_COLORS.nutrition.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('energy') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.energy[activeIndex])}
+              r={5}
+              fill={METRIC_COLORS.energy.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+
+          {/* X-axis labels - matching Overview style */}
+          <SvgText x={padding.left} y={chartHeight - 8} fontSize="10" fill="#C9CDD3" textAnchor="start" fontWeight="500">
+            30d ago
           </SvgText>
-          <SvgText x={chartWidth / 2} y={chartHeight - 8} fontSize="10" fill="#9CA3AF" textAnchor="middle">
-            Day 15
-          </SvgText>
-          <SvgText x={chartWidth - padding.right} y={chartHeight - 8} fontSize="10" fill="#9CA3AF" textAnchor="end">
-            Day 30
+          <SvgText x={chartWidth - padding.right} y={chartHeight - 8} fontSize="10" fill="#C9CDD3" textAnchor="end" fontWeight="500">
+            Today
           </SvgText>
         </Svg>
       </View>
@@ -285,11 +430,14 @@ const SummaryStat: React.FC<SummaryStatProps> = ({ label, value, unit, trend, tr
 
   return (
     <View style={styles.summaryStat}>
+      {/* Label */}
       <Text style={styles.summaryLabel}>{label}</Text>
+      {/* Value */}
       <View style={styles.summaryValueRow}>
         <Text style={[styles.summaryValue, { color }]}>{value}</Text>
         <Text style={styles.summaryUnit}>{unit}</Text>
       </View>
+      {/* Trend */}
       <View style={styles.summaryTrendRow}>
         <Ionicons name={trendIcon} size={12} color={trendColor} />
         <Text style={[styles.summaryTrendText, { color: trendColor }]}>{trendValue}%</Text>
@@ -370,7 +518,7 @@ const MonthlyBodyTrackingInsightsContent: React.FC<MonthlyBodyTrackingInsightsCo
         {/* Summary Stats Row */}
         <View style={styles.summaryRow}>
           <SummaryStat
-            label="Avg Sleep"
+            label="Sleep"
             value={sleepStats.avg.toFixed(1)}
             unit="hrs"
             trend={sleepStats.trend as 'up' | 'down' | 'neutral'}
@@ -379,7 +527,7 @@ const MonthlyBodyTrackingInsightsContent: React.FC<MonthlyBodyTrackingInsightsCo
           />
           <View style={styles.summaryDivider} />
           <SummaryStat
-            label="Avg Energy"
+            label="Energy"
             value={energyStats.avg.toFixed(1)}
             unit="/10"
             trend={energyStats.trend as 'up' | 'down' | 'neutral'}
@@ -388,7 +536,7 @@ const MonthlyBodyTrackingInsightsContent: React.FC<MonthlyBodyTrackingInsightsCo
           />
           <View style={styles.summaryDivider} />
           <SummaryStat
-            label="Avg Nutrition"
+            label="Nutrition"
             value={nutritionStats.avg.toFixed(1)}
             unit="/10"
             trend={nutritionStats.trend as 'up' | 'down' | 'neutral'}
@@ -468,20 +616,22 @@ const styles = StyleSheet.create({
   // Chart Card
   chartCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 2,
   },
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     gap: 16,
     marginBottom: 12,
+    minHeight: 36,
   },
   legendItem: {
     flexDirection: 'row',
@@ -515,16 +665,37 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
+  // Scrubbing Info (replaces legend when scrubbing)
+  scrubbingContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrubbingDate: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 2,
+  },
+  scrubbingValues: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  scrubbingValueText: {
+    fontSize: 13,
+  },
+
   // Summary Row
   summaryRow: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -533,12 +704,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '500',
     color: '#6B7280',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    marginBottom: 6,
   },
   summaryValueRow: {
     flexDirection: 'row',
@@ -558,7 +727,7 @@ const styles = StyleSheet.create({
   summaryTrendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 1,
     marginTop: 4,
   },
   summaryTrendText: {
