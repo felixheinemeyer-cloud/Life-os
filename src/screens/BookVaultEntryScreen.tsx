@@ -356,7 +356,7 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
       {/* Scrollable Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isSwipingNote}
         keyboardShouldPersistTaps="handled"
@@ -584,15 +584,15 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
 
       {/* Fixed Header */}
       <View style={[styles.header, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <View style={styles.headerBlur}>
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.3, 0.7, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -603,7 +603,7 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -997,7 +997,7 @@ const SwipeableNoteCard: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -1012,8 +1012,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 100,
-    paddingBottom: 16,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -1024,6 +1023,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   headerContent: {
     flexDirection: 'row',
@@ -1066,7 +1066,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 16,
     gap: 12,
   },
@@ -1299,7 +1299,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
@@ -1342,7 +1342,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1504,7 +1504,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
   },
   optionalLabel: {
     fontSize: 13,

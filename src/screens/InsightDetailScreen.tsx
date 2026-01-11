@@ -40,7 +40,7 @@ const InsightDetailScreen = ({ navigation }: InsightDetailScreenProps): React.JS
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Today's Insight</Text>
         <View style={styles.headerSpacer} />
@@ -98,7 +98,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
     flexDirection: 'row',
@@ -219,7 +220,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 6,

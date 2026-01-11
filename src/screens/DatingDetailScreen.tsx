@@ -550,43 +550,17 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
 
   return (
     <View style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={styles.editButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil" size={20} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleMorePress}
-              onPressIn={handleMoreButtonPressIn}
-              onPressOut={handleMoreButtonPressOut}
-            >
-              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
-                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={!isSwipingCard}
-        >
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 60 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={!isSwipingCard}
+      >
           {/* Hero Section */}
           <View style={styles.heroSection}>
             {/* Avatar */}
@@ -780,16 +754,60 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             )}
           </View>
 
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
 
-        {/* Note Modal */}
-        <Modal
-          visible={noteModalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setNoteModalVisible(false)}
-        >
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={styles.editButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+            >
+              <Animated.View style={[styles.editButton, { transform: [{ scale: moreButtonScale }] }]}>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Note Modal */}
+      <Modal
+        visible={noteModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.modalContainer}
@@ -857,22 +875,36 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   backButton: {
     width: 40,
@@ -1098,7 +1130,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1303,7 +1335,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     gap: 12,
   },
   menuItemText: {

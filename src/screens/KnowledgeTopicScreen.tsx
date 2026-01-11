@@ -1126,7 +1126,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 72 },
+          { paddingTop: insets.top + 60 },
         ]}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isSwipingEntry}
@@ -1195,17 +1195,15 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
       {/* Fixed Header */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
         {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0.1)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -1258,7 +1256,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
                 style={styles.backButton}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
               </TouchableOpacity>
               <View style={styles.headerActions}>
                 {showSearch && (
@@ -1392,7 +1390,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header
@@ -1401,8 +1399,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
-    zIndex: 100,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -1410,10 +1407,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    overflow: 'hidden',
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   header: {
     paddingHorizontal: 16,
@@ -1540,7 +1537,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1651,7 +1648,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     gap: 12,
   },
   menuDivider: {
@@ -1682,7 +1679,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
     marginBottom: 12,

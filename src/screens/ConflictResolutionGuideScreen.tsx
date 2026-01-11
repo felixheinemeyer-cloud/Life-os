@@ -33,7 +33,7 @@ const ConflictResolutionGuideScreen: React.FC<ConflictResolutionGuideScreenProps
           onPress={handleBackPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Conflict Resolution</Text>
         <View style={styles.headerSpacer} />
@@ -160,7 +160,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
     flexDirection: 'row',

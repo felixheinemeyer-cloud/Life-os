@@ -4,12 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Dimensions,
   PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
   Path,
   Circle,
@@ -18,7 +19,7 @@ import Svg, {
   Text as SvgText,
   Rect,
   Defs,
-  LinearGradient,
+  LinearGradient as SvgLinearGradient,
   Stop,
 } from 'react-native-svg';
 import LinkedSparklines30DayOverviewSection from '../components/statistics/LinkedSparklines30DayOverviewSection';
@@ -1275,6 +1276,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // MAIN COMPONENT
 // ============================================
 const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Element => {
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('daily');
   const [activeMetric, setActiveMetric] = useState<MetricType>(null);
 
@@ -1431,55 +1433,79 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Statistics</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {/* Segmented Control */}
-      <View style={styles.segmentedControlContainer}>
-        <View style={styles.segmentedControl}>
-          {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => {
-            const config = TAB_CONFIG[tab];
-            const isActive = activeTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
-                onPress={() => setActiveTab(tab)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isActive ? config.activeIcon : config.icon}
-                  size={16}
-                  color={isActive ? '#FFFFFF' : '#9CA3AF'}
-                  style={styles.segmentIcon}
-                />
-                <Text style={[styles.segmentLabel, isActive && styles.segmentLabelActive]}>
-                  {config.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Scrollable Content */}
+    <View style={styles.container}>
+      {/* ScrollView - scrolls under the header */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 128 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {activeTab === 'daily' && renderDailyContent()}
         {activeTab === 'weekly' && renderWeeklyContent()}
         {activeTab === 'monthly' && renderMonthlyContent()}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent} pointerEvents="box-none">
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Statistics</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+
+          {/* Segmented Control */}
+          <View style={styles.segmentedControlContainer}>
+            <View style={styles.segmentedControl}>
+              {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => {
+                const config = TAB_CONFIG[tab];
+                const isActive = activeTab === tab;
+                return (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
+                    onPress={() => setActiveTab(tab)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={isActive ? config.activeIcon : config.icon}
+                      size={18}
+                      color={isActive ? '#FFFFFF' : '#9CA3AF'}
+                    />
+                    <Text style={[styles.segmentLabel, isActive && styles.segmentLabelActive]}>
+                      {config.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 };
 
@@ -2388,10 +2414,10 @@ const WellnessMetricCard = ({ icon, label, average, data, color, gradientId }: W
       <View style={styles.metricCardChart}>
         <Svg width={chartWidth} height={chartHeight}>
           <Defs>
-            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <SvgLinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor={color} stopOpacity="0.2" />
               <Stop offset="100%" stopColor={color} stopOpacity="0.02" />
-            </LinearGradient>
+            </SvgLinearGradient>
           </Defs>
 
           {/* Area fill */}
@@ -2762,10 +2788,10 @@ const WeeklyOverallScoreSection = () => {
       >
         <Svg width={chartWidth} height={chartHeight}>
           <Defs>
-            <LinearGradient id="weeklyScoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <SvgLinearGradient id="weeklyScoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor="#3B82F6" stopOpacity="0.15" />
               <Stop offset="100%" stopColor="#3B82F6" stopOpacity="0.01" />
-            </LinearGradient>
+            </SvgLinearGradient>
           </Defs>
 
           {/* Reference lines */}
@@ -3185,10 +3211,10 @@ const WealthMetricChart = React.memo(({
       <View style={styles.wealthChartWrapper}>
         <Svg width={WEALTH_CHART_WIDTH} height={WEALTH_CHART_HEIGHT}>
           <Defs>
-            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <SvgLinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor={color.main} stopOpacity={isActive ? "0.22" : "0.15"} />
               <Stop offset="100%" stopColor={color.main} stopOpacity="0.01" />
-            </LinearGradient>
+            </SvgLinearGradient>
           </Defs>
 
           {/* Subtle reference lines at values 1, 5, 10 */}
@@ -3432,10 +3458,10 @@ const SleepBarChart = ({ data }: { data: number[] }) => {
     <View style={styles.sleepChartContainer}>
       <Svg width={chartWidth} height={chartHeight}>
         <Defs>
-          <LinearGradient id="sleepGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <SvgLinearGradient id="sleepGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <Stop offset="0%" stopColor={COLORS.sleep.main} />
             <Stop offset="100%" stopColor={COLORS.sleep.glow} />
-          </LinearGradient>
+          </SvgLinearGradient>
         </Defs>
 
         {/* Target line at 8 hours */}
@@ -3822,10 +3848,10 @@ const MonthlyWeightSection = () => {
           >
             <Svg width={chartWidth} height={chartHeight}>
               <Defs>
-                <LinearGradient id="monthlyWeightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <SvgLinearGradient id="monthlyWeightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.15" />
                   <Stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.01" />
-                </LinearGradient>
+                </SvgLinearGradient>
               </Defs>
 
               {/* Reference lines */}
@@ -4019,10 +4045,10 @@ const HealthMetricChart = React.memo(({
       <View style={styles.healthChartWrapper}>
         <Svg width={HEALTH_CHART_WIDTH} height={HEALTH_CHART_HEIGHT}>
           <Defs>
-            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <SvgLinearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor={color.main} stopOpacity={isActive ? "0.22" : "0.15"} />
               <Stop offset="100%" stopColor={color.main} stopOpacity="0.01" />
-            </LinearGradient>
+            </SvgLinearGradient>
           </Defs>
 
           {/* Subtle reference lines at values 1, 5, 10 */}
@@ -4389,10 +4415,10 @@ const MonthlyPhysicalActivitySection = () => {
           <View style={styles.activityChartArea}>
             <Svg width={chartWidth} height={ACTIVITY_CHART_HEIGHT}>
               <Defs>
-                <LinearGradient id="activityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <SvgLinearGradient id="activityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.2" />
                   <Stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.02" />
-                </LinearGradient>
+                </SvgLinearGradient>
               </Defs>
 
               {/* Reference lines for each level */}
@@ -4778,7 +4804,7 @@ const mlStyles = StyleSheet.create({
   stateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     gap: 10,
   },
   stateIconBg: {
@@ -5332,30 +5358,55 @@ const thStyles = StyleSheet.create({
 // STYLES
 // ============================================
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
+  },
+
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
+    // Content container for header elements
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F0EEE8',
+    paddingTop: 8,
+    paddingBottom: 12,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerTitle: {
     fontSize: 18,
@@ -5370,7 +5421,6 @@ const styles = StyleSheet.create({
   // Segmented Control
   segmentedControlContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -5379,17 +5429,19 @@ const styles = StyleSheet.create({
     padding: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 1,
+    elevation: 2,
   },
   segmentButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    gap: 6,
   },
   segmentButtonActive: {
     backgroundColor: '#1F2937',
@@ -5398,7 +5450,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   segmentLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#9CA3AF',
   },
@@ -6157,7 +6209,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
   },
   wellnessCompactRowBorder: {
     borderBottomWidth: 1,
@@ -6341,7 +6393,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  metricCard: {
+  stackedMetricCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,

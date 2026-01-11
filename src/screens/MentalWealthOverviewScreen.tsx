@@ -659,7 +659,7 @@ const MentalWealthOverviewScreen: React.FC<MentalWealthOverviewScreenProps> = ({
               style={styles.backButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
             <View style={styles.headerButtons}>
               <TouchableOpacity
@@ -1368,7 +1368,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },

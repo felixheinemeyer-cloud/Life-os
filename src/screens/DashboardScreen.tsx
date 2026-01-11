@@ -1004,12 +1004,12 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(240, 238, 232, 0.85)',
-              'rgba(240, 238, 232, 0.6)',
-              'rgba(240, 238, 232, 0.3)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
               'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.3, 0.7, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -1076,6 +1076,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   headerInner: {
     paddingHorizontal: 16,
@@ -1864,7 +1865,7 @@ const styles = StyleSheet.create({
     color: '#6366F1',
   },
   emptyState: {
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -1877,7 +1878,7 @@ const styles = StyleSheet.create({
   inboxButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',

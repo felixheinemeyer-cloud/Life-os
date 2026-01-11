@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
   },
   closeButton: {
     width: 40,

@@ -645,17 +645,15 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
       {/* Fixed Header */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
         {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0.1)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.25, 0.5, 0.7, 0.85, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -677,7 +675,7 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
               style={styles.backButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={1}
@@ -706,7 +704,7 @@ const KnowledgeVaultScreen: React.FC<KnowledgeVaultScreenProps> = ({ navigation 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header
@@ -715,8 +713,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 65,
-    zIndex: 100,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -728,6 +725,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   header: {
     paddingHorizontal: 16,
@@ -1003,7 +1001,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
