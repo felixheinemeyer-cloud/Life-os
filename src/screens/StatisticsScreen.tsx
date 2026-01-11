@@ -2877,8 +2877,101 @@ const WeeklyOverallScoreSection = () => {
   );
 };
 
-// Weekly Check-in Streak Section
+// Weekly Check-in Heatmap (single line) with interactive highlighting
+interface WeeklyCheckInHeatmapProps {
+  data: WeeklyCheckInData[];
+  activeIndex: number | null;
+}
+
+const WeeklyCheckInHeatmap = ({ data, activeIndex }: WeeklyCheckInHeatmapProps) => {
+  return (
+    <View style={styles.weeklyHeatmap}>
+      {data.map((week, index) => {
+        const isActive = activeIndex === index;
+        return (
+          <View
+            key={index}
+            style={[
+              styles.weeklyHeatmapDot,
+              {
+                backgroundColor: week.completed ? '#0D9488' : '#E5E7EB',
+                transform: isActive ? [{ scale: 1.3 }] : [{ scale: 1 }],
+                opacity: activeIndex !== null ? (isActive ? 1 : 0.5) : 1,
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
+// Weekly Check-in Streak Section with Interactive Scrubbing
 const WeeklyCheckInStreakSection = () => {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [chartLayoutX, setChartLayoutX] = useState<number>(0);
+  const chartRef = useRef<View>(null);
+
+  // Chart dimensions
+  const chartWidth = Dimensions.get('window').width - 32 - 32; // screen - scroll padding - card padding
+
+  // Format selected week date
+  const selectedWeekStr = useMemo(() => {
+    if (activeIndex === null) return null;
+    const week = WEEKLY_12_WEEKS[activeIndex];
+    const startMonth = week.weekStart.toLocaleDateString('en-US', { month: 'short' });
+    const startDay = week.weekStart.getDate();
+    const endDay = week.weekEnd.getDate();
+    return `${startMonth} ${startDay}-${endDay}`;
+  }, [activeIndex]);
+
+  // Get selected week's status
+  const selectedWeekCompleted = activeIndex !== null ? WEEKLY_12_WEEKS[activeIndex].completed : null;
+
+  // Calculate index from x position
+  const getIndexFromX = useCallback((pageX: number): number => {
+    const relativeX = pageX - chartLayoutX;
+    const clampedX = Math.max(0, Math.min(relativeX, chartWidth));
+    const index = Math.round((clampedX / chartWidth) * 11);
+    return Math.max(0, Math.min(11, index));
+  }, [chartLayoutX, chartWidth]);
+
+  // Handle layout
+  const handleLayout = useCallback(() => {
+    chartRef.current?.measureInWindow((x) => {
+      setChartLayoutX(x);
+    });
+  }, []);
+
+  // PanResponder for scrubbing
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.pageX);
+        setActiveIndex(index);
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  const isActive = activeIndex !== null;
+
   return (
     <View style={styles.weeklySectionCard}>
       {/* Header Row */}
@@ -2887,34 +2980,43 @@ const WeeklyCheckInStreakSection = () => {
           <Ionicons name="calendar-outline" size={14} color="#0D9488" />
           <Text style={styles.weeklyTitle}>Weekly Check-ins</Text>
         </View>
-        <View style={styles.weeklyStreakBadge}>
-          <Ionicons name="flame" size={11} color="#F59E0B" />
-          <Text style={styles.weeklyStreakText}>{WEEKLY_STATS.currentStreak}</Text>
-        </View>
+        {isActive && selectedWeekStr ? (
+          <Text style={styles.weeklySelectedDate}>{selectedWeekStr}</Text>
+        ) : (
+          <View style={styles.weeklyStreakBadge}>
+            <Ionicons name="flame" size={11} color="#F59E0B" />
+            <Text style={styles.weeklyStreakText}>{WEEKLY_STATS.currentStreak}</Text>
+          </View>
+        )}
       </View>
 
       {/* Hero Stats Row */}
       <View style={styles.weeklyStatsRow}>
-        <Text style={styles.weeklyScoreValue}>{WEEKLY_STATS.completedWeeks}</Text>
-        <View style={styles.weeklyMeta}>
-          <Text style={styles.weeklyMetaLight}>of {WEEKLY_STATS.totalWeeks} weeks</Text>
-        </View>
+        {isActive ? (
+          <Text style={[
+            styles.weeklyStatusText,
+            { color: selectedWeekCompleted ? '#0D9488' : '#9CA3AF' }
+          ]}>
+            {selectedWeekCompleted ? 'Completed' : 'No check-in'}
+          </Text>
+        ) : (
+          <>
+            <Text style={styles.weeklyScoreValue}>{WEEKLY_STATS.completedWeeks}</Text>
+            <View style={styles.weeklyMeta}>
+              <Text style={styles.weeklyMetaLight}>of {WEEKLY_STATS.totalWeeks} weeks</Text>
+            </View>
+          </>
+        )}
       </View>
 
       {/* 12-Week Heatmap */}
       <View style={styles.weeklyHeatmapSection}>
-        <View style={styles.weeklyHeatmap}>
-          {WEEKLY_12_WEEKS.map((week, index) => (
-            <View
-              key={index}
-              style={[
-                styles.weeklyHeatmapDot,
-                {
-                  backgroundColor: week.completed ? '#0D9488' : '#E5E7EB',
-                },
-              ]}
-            />
-          ))}
+        <View
+          ref={chartRef}
+          onLayout={handleLayout}
+          {...panResponder.panHandlers}
+        >
+          <WeeklyCheckInHeatmap data={WEEKLY_12_WEEKS} activeIndex={activeIndex} />
         </View>
         <View style={styles.weeklyChartLabels}>
           <Text style={styles.weeklyChartLabel}>12w ago</Text>
@@ -6406,6 +6508,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#6B7280',
+  },
+  weeklyStatusText: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: -0.5,
   },
   weeklyStatsRow: {
     flexDirection: 'row',

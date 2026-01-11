@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Animated,
-  Easing,
   Platform,
   Dimensions,
   Modal,
@@ -15,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import Svg, { Circle, Rect } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { WealthType, WEALTH_CONFIGS } from '../components/WealthButton';
 
@@ -31,22 +30,6 @@ interface MorningTrackingHigherSelfScreenProps {
     navigate: (screen: string, params?: object) => void;
   };
 }
-
-// Calculate star points
-const createStarPath = (cx: number, cy: number, outerR: number, innerR: number, points: number) => {
-  let path = '';
-  const step = Math.PI / points;
-
-  for (let i = 0; i < 2 * points; i++) {
-    const r = i % 2 === 0 ? outerR : innerR;
-    const angle = i * step - Math.PI / 2;
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    path += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-  }
-  path += ' Z';
-  return path;
-};
 
 // Position for each wealth type on the star (5 points)
 const getWealthPosition = (index: number, centerX: number, centerY: number, radius: number) => {
@@ -203,8 +186,6 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
 
   const wealthOrder: WealthType[] = ['physical', 'mental', 'financial', 'time', 'social'];
 
-  const starPath = createStarPath(CENTER, CENTER, OUTER_RADIUS * 0.75, OUTER_RADIUS * 0.35, 5);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -261,17 +242,9 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
 
             {/* Star SVG */}
             <Svg width={STAR_SIZE} height={STAR_SIZE} style={styles.starSvg}>
-              <Defs>
-                <RadialGradient id="starGrad" cx="50%" cy="50%" rx="50%" ry="50%">
-                  <Stop offset="0%" stopColor="#C7D2FE" stopOpacity="1" />
-                  <Stop offset="100%" stopColor="#E0E7FF" stopOpacity="0.6" />
-                </RadialGradient>
-              </Defs>
               {/* Outer decorative circles */}
               <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS + 20} fill="none" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
               <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS * 0.5} fill="none" stroke="#E5E7EB" strokeWidth="1" />
-              {/* Star shape */}
-              <Path d={starPath} fill="url(#starGrad)" />
             </Svg>
 
             {/* Center Info Button */}
@@ -536,6 +509,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 80,
   },
   starWrapper: {
     width: STAR_SIZE,

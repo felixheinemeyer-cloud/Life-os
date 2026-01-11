@@ -16,7 +16,7 @@ import StreakCelebrationModal from '../components/StreakCelebrationModal';
 interface MorningTrackingCompleteScreenProps {
   navigation?: {
     navigate: (screen: string) => void;
-    reset: (state: { index: number; routes: { name: string }[] }) => void;
+    reset: (state: { index: number; routes: { name: string; params?: Record<string, unknown> }[] }) => void;
   };
 }
 
@@ -255,7 +255,7 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
         setTimeout(() => {
           navigation?.reset({
             index: 0,
-            routes: [{ name: 'DashboardMain' }],
+            routes: [{ name: 'DashboardMain', params: { morningCheckInJustCompleted: true } }],
           });
         }, 3000);
       }
@@ -418,7 +418,7 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
           setShowStreakModal(false);
           navigation?.reset({
             index: 0,
-            routes: [{ name: 'DashboardMain' }],
+            routes: [{ name: 'DashboardMain', params: { morningCheckInJustCompleted: true } }],
           });
         }}
       />
