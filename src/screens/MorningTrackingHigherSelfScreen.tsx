@@ -215,7 +215,7 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.title}>Your Best Self</Text>

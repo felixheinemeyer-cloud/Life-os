@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
 
@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
   },
   datePickerHandle: {
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   datePickerHandleBar: {

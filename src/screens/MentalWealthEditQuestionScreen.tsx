@@ -82,7 +82,7 @@ const MentalWealthEditQuestionScreen: React.FC<MentalWealthEditQuestionScreenPro
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.headerSpacer} />
         </View>

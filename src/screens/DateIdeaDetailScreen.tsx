@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,6 +23,7 @@ interface DateIdeaDetailScreenProps {
 }
 
 const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { idea } = route.params || {};
 
   // State
@@ -166,37 +167,18 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.headerButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleToggleSave}
-            style={styles.headerButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isSaved ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isSaved ? '#E11D48' : '#1F2937'}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Hero Section */}
-          <Animated.View
+    <View style={styles.container}>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 60 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Section */}
+        <Animated.View
             style={[
               styles.heroSection,
               {
@@ -329,59 +311,108 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
             ))}
           </Animated.View>
 
-          {/* Bottom Spacing */}
-          <View style={{ height: 100 }} />
-        </ScrollView>
+        {/* Bottom Spacing */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
 
-        {/* Mark as Done Button - Show for dates that aren't done yet */}
-        {!isDone && (
-          <View style={styles.bottomButtonContainer}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              activeOpacity={0.8}
-              onPress={handleMarkAsDone}
-            >
-              <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Mark as Done</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Done Button - Show for dates that are marked as done (clickable to unmark) */}
-        {isDone && (
-          <View style={styles.bottomButtonContainer}>
-            <TouchableOpacity
-              style={styles.doneButton}
-              activeOpacity={0.8}
-              onPress={handleUnmarkAsDone}
-            >
-              <Ionicons name="checkmark-circle" size={20} color="#64748B" />
-              <Text style={styles.doneButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleToggleSave}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isSaved ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isSaved ? '#E11D48' : '#1F2937'}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+
+      {/* Mark as Done Button - Show for dates that aren't done yet */}
+      {!isDone && (
+        <View style={[styles.bottomButtonContainer, { paddingBottom: insets.bottom + 16 }]}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            activeOpacity={0.8}
+            onPress={handleMarkAsDone}
+          >
+            <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.primaryButtonText}>Mark as Done</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Done Button - Show for dates that are marked as done (clickable to unmark) */}
+      {isDone && (
+        <View style={[styles.bottomButtonContainer, { paddingBottom: insets.bottom + 16 }]}>
+          <TouchableOpacity
+            style={styles.doneButton}
+            activeOpacity={0.8}
+            onPress={handleUnmarkAsDone}
+          >
+            <Ionicons name="checkmark-circle" size={20} color="#64748B" />
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
-  header: {
+
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: '#F7F5F2',
   },
   headerButton: {
     width: 40,
@@ -401,7 +432,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
   },
 
   // Hero Section
@@ -601,8 +631,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingTop: 16,
   },
   primaryButton: {
     backgroundColor: '#1F2937',

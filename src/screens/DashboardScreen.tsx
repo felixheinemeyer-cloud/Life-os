@@ -121,8 +121,8 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     return 'Good Evening';
   };
 
-  // Check if evening check-in is available (after 5 PM / 17:00)
-  const EVENING_CHECKIN_START_HOUR = 17; // 5 PM
+  // Check if evening check-in is available (now available all day)
+  const EVENING_CHECKIN_START_HOUR = 0; // Available all day
   const isEveningCheckInAvailable = (): boolean => {
     const hour = new Date().getHours();
     return hour >= EVENING_CHECKIN_START_HOUR;
@@ -884,12 +884,12 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(240, 238, 232, 0.85)',
-              'rgba(240, 238, 232, 0.6)',
-              'rgba(240, 238, 232, 0.3)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
               'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.3, 0.7, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -956,6 +956,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   headerInner: {
     paddingHorizontal: 16,
@@ -1751,7 +1752,7 @@ const styles = StyleSheet.create({
     color: '#6366F1',
   },
   emptyState: {
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -1764,7 +1765,7 @@ const styles = StyleSheet.create({
   inboxButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',

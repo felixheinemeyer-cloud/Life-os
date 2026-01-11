@@ -181,7 +181,7 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Content not found</Text>
@@ -200,7 +200,7 @@ const DatingAdviceDetailScreen: React.FC<DatingAdviceDetailScreenProps> = ({
           style={styles.backButton}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Dating Advice</Text>
         <View style={styles.headerSpacer} />

@@ -132,7 +132,7 @@ const RelationshipModeSelectionScreen: React.FC<RelationshipModeSelectionScreenP
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
   },

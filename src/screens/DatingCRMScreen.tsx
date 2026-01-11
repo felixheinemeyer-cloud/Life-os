@@ -178,7 +178,7 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 64 },
+          { paddingTop: insets.top + 60 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -255,52 +255,46 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
         </Pressable>
       </ScrollView>
 
-      {/* Fixed Header with Blur Background */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
-        {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.3, 0.7, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
-
-        {/* Header Content */}
         <Animated.View
           style={[
-            styles.header,
+            styles.headerContent,
             {
               opacity: headerOpacity,
               transform: [{ translateY: headerTranslateY }],
             },
           ]}
-          pointerEvents="box-none"
         >
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleAddPerson}
-              onPressIn={handleAddPressIn}
-              onPressOut={handleAddPressOut}
-            >
-              <Animated.View style={[styles.addButton, { transform: [{ scale: addButtonScale }] }]}>
-                <Ionicons name="add" size={24} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={handleAddPerson}
+            onPressIn={handleAddPressIn}
+            onPressOut={handleAddPressOut}
+          >
+            <Animated.View style={[styles.addButton, { transform: [{ scale: addButtonScale }] }]}>
+              <Ionicons name="add" size={24} color="#1F2937" />
+            </Animated.View>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </View>
@@ -310,16 +304,16 @@ const DatingCRMScreen: React.FC<DatingCRMScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
-  // Fixed Header
-  headerContainer: {
+
+  // Fixed Header with Gradient
+  fixedHeader: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -327,20 +321,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    overflow: 'hidden',
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 0,
-  },
-  headerTop: {
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   backButton: {
     width: 40,

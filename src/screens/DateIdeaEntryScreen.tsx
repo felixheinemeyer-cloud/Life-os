@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -65,6 +66,8 @@ const BUDGETS: { id: DateIdea['budget']; label: string; description: string }[] 
 
 // Main Component
 const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+
   // Get existing idea if editing
   const existingIdea = route?.params?.idea;
   const isEditMode = !!existingIdea;
@@ -140,10 +143,13 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
 
   return (
     <View style={styles.container}>
-      {/* Content */}
+      {/* Scrollable Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 88 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 60 },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -272,39 +278,37 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Fixed Header */}
-      <View style={styles.headerContainer} pointerEvents="box-none">
-        <View style={styles.headerBlur}>
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.95)',
-              'rgba(247, 245, 242, 0.8)',
-              'rgba(247, 245, 242, 0.4)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
             locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={handleBack}
-              style={styles.roundButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={20} color="#1F2937" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>New Date Idea</Text>
-            <TouchableOpacity
-              onPress={handleSave}
-              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
-              activeOpacity={0.7}
-              disabled={!isFormValid}
-            >
-              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.roundButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={20} color="#1F2937" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Date Idea</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+            activeOpacity={0.7}
+            disabled={!isFormValid}
+          >
+            <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -314,14 +318,16 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
-  headerContainer: {
+
+  // Fixed Header with Gradient
+  fixedHeader: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 100,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -329,25 +335,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    overflow: 'hidden',
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F5',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  headerTop: {
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   roundButton: {
     width: 40,
