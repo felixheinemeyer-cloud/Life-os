@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
-  ScrollView,
   TouchableOpacity,
+  Pressable,
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface MonthlyReviewScreenProps {
@@ -87,6 +87,7 @@ const getMonthName = (year: number, month: number): string => {
 };
 
 const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): React.JSX.Element => {
+  const insets = useSafeAreaInsets();
   const initialMonth = route?.params?.month || new Date().getMonth() + 1;
   const initialYear = route?.params?.year || new Date().getFullYear();
 
@@ -133,24 +134,14 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
 
   if (!monthlyData) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={22} color="#1F2937" />
-          </TouchableOpacity>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Monthly Check-In</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.scrollContent}
+      <View style={styles.container}>
+        {/* Scrollable Content */}
+        <Animated.ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top + 60 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Monthly Check-in Card - Empty State */}
@@ -172,31 +163,6 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
             </View>
 
             <View style={styles.sectionContent}>
-              {/* Date Navigation */}
-              <View style={styles.emptyDateSection}>
-                <View style={styles.monthNavigationRow}>
-                  <TouchableOpacity
-                    style={styles.monthNavButton}
-                    onPress={handlePreviousMonth}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-back" size={18} color="#DB2777" />
-                  </TouchableOpacity>
-                  <View style={styles.monthlyDateBadge}>
-                    <Ionicons name="calendar-outline" size={14} color="#DB2777" />
-                    <Text style={styles.monthlyDateText}>{monthName} {currentYear}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.monthNavButton, isCurrentMonth && styles.monthNavButtonDisabled]}
-                    onPress={handleNextMonth}
-                    disabled={isCurrentMonth}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-forward" size={18} color={isCurrentMonth ? '#D1D5DB' : '#DB2777'} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
               {/* Empty State Content */}
               <View style={styles.emptyCardContent}>
                 <View style={styles.emptyCardIcon}>
@@ -220,31 +186,74 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
               </View>
             </View>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </Animated.ScrollView>
+
+        {/* Fixed Header with Gradient Fade */}
+        <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+          <View style={styles.headerBlur} pointerEvents="none">
+            <LinearGradient
+              colors={[
+                'rgba(240, 238, 232, 0.95)',
+                'rgba(240, 238, 232, 0.8)',
+                'rgba(240, 238, 232, 0.4)',
+                'rgba(240, 238, 232, 0)',
+              ]}
+              locations={[0, 0.4, 0.75, 1]}
+              style={styles.headerGradient}
+            />
+          </View>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+            </TouchableOpacity>
+            <View style={styles.headerDatePicker}>
+              <View style={styles.headerDatePill}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.headerDatePillSide,
+                    pressed && styles.headerDatePillSidePressed,
+                  ]}
+                  onPress={handlePreviousMonth}
+                >
+                  <Ionicons name="chevron-back" size={16} color="#6B7280" />
+                </Pressable>
+                <View style={styles.headerDatePillCenter}>
+                  <Ionicons name="calendar-outline" size={14} color="#DB2777" />
+                  <Text style={styles.headerDateText}>{monthName} {currentYear}</Text>
+                </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.headerDatePillSide,
+                    isCurrentMonth && styles.headerDatePillSideDisabled,
+                    pressed && !isCurrentMonth && styles.headerDatePillSidePressed,
+                  ]}
+                  onPress={handleNextMonth}
+                  disabled={isCurrentMonth}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={isCurrentMonth ? '#D1D5DB' : '#6B7280'} />
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.headerSpacer} />
+          </View>
+        </View>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Monthly Check-In</Text>
-        </View>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.container}>
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 60 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
@@ -275,27 +284,6 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
             <View style={styles.sectionContent}>
               {/* Hero Score Section */}
               <View style={styles.monthlyHeroSection}>
-                <View style={styles.monthNavigationRow}>
-                  <TouchableOpacity
-                    style={styles.monthNavButton}
-                    onPress={handlePreviousMonth}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-back" size={18} color="#DB2777" />
-                  </TouchableOpacity>
-                  <View style={styles.monthlyDateBadge}>
-                    <Ionicons name="calendar-outline" size={14} color="#DB2777" />
-                    <Text style={styles.monthlyDateText}>{monthName} {currentYear}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.monthNavButton, isCurrentMonth && styles.monthNavButtonDisabled]}
-                    onPress={handleNextMonth}
-                    disabled={isCurrentMonth}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-forward" size={18} color={isCurrentMonth ? '#D1D5DB' : '#DB2777'} />
-                  </TouchableOpacity>
-                </View>
                 <View style={styles.monthlyScoreCircle}>
                   <Text style={styles.monthlyScoreNumber}>{monthlyData.overallScore.toFixed(1)}</Text>
                   <Text style={styles.monthlyScoreLabel}>Overall</Text>
@@ -350,8 +338,62 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
         </Animated.View>
 
         <View style={styles.bottomSpacer} />
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+          </TouchableOpacity>
+          <View style={styles.headerDatePicker}>
+            <View style={styles.headerDatePill}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.headerDatePillSide,
+                  pressed && styles.headerDatePillSidePressed,
+                ]}
+                onPress={handlePreviousMonth}
+              >
+                <Ionicons name="chevron-back" size={16} color="#6B7280" />
+              </Pressable>
+              <View style={styles.headerDatePillCenter}>
+                <Ionicons name="calendar-outline" size={14} color="#DB2777" />
+                <Text style={styles.headerDateText}>{monthName} {currentYear}</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.headerDatePillSide,
+                  isCurrentMonth && styles.headerDatePillSideDisabled,
+                  pressed && !isCurrentMonth && styles.headerDatePillSidePressed,
+                ]}
+                onPress={handleNextMonth}
+                disabled={isCurrentMonth}
+              >
+                <Ionicons name="chevron-forward" size={16} color={isCurrentMonth ? '#D1D5DB' : '#6B7280'} />
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+      </View>
+    </View>
   );
 };
 
@@ -401,30 +443,48 @@ const MonthlyRatingBar: React.FC<MonthlyRatingBarProps> = ({ label, value, trend
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
   },
-  container: {
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 20,
+    paddingHorizontal: 0,
   },
 
-  // Header
-  header: {
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
-    backgroundColor: '#F0EEE8',
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -434,18 +494,48 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  headerTextContainer: {
+  headerDatePicker: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
+  headerDatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerDatePillSide: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+  },
+  headerDatePillSidePressed: {
+    backgroundColor: '#F3F4F6',
+  },
+  headerDatePillSideDisabled: {
+    opacity: 0.4,
+  },
+  headerDatePillCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  headerDateText: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.2,
   },
   headerSpacer: {
-    width: 38,
+    width: 40,
   },
 
   // Empty State

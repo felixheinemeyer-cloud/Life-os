@@ -243,7 +243,7 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={styles.title}>Your Relationship</Text>
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   },
   datePickerHandle: {
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   datePickerHandleBar: {
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     paddingBottom: Platform.OS === 'ios' ? 16 : 24,
-    paddingTop: 12,
+    paddingTop: 8,
     backgroundColor: '#F7F5F2',
   },
   continueButton: {

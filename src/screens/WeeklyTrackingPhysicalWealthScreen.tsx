@@ -187,7 +187,7 @@ const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthS
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 16,
     paddingBottom: 12,
-    paddingTop: 12,
+    paddingTop: 8,
     backgroundColor: '#F7F5F2',
   },
   continueButton: {

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
   Easing,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -840,6 +840,8 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
   navigation,
   route,
 }) => {
+  const insets = useSafeAreaInsets();
+
   // Extract params with defaults
   const partnerName = route.params?.partnerName || 'Your Partner';
   const photoUri = route.params?.photoUri || null;
@@ -938,16 +940,69 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 60 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={!isSwipingCard}
+      >
+        {/* Hero Section */}
+        <HeroSection
+          photoUri={currentPhotoUri}
+          partnerName={partnerName}
+          sinceDate={sinceDate}
+          duration={duration}
+        />
+
+        {/* Date Ideas Section */}
+        <DateIdeasSection
+          navigation={navigation}
+          onSwipeStart={() => setIsSwipingCard(true)}
+          onSwipeEnd={() => setIsSwipingCard(false)}
+        />
+
+        {/* Relationship Tools Section */}
+        <RelationshipToolsSection navigation={navigation} />
+
+        {/* Partner Notes Section */}
+        <PartnerNotesSection
+          partnerName={partnerName}
+          notes={notes}
+          onAddNotePress={handleAddNotePress}
+          onEditNote={handleEditNote}
+          onDeleteNote={handleDeleteNote}
+          onSwipeStart={() => setIsSwipingCard(true)}
+          onSwipeEnd={() => setIsSwipingCard(false)}
+        />
+      </ScrollView>
+
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -962,160 +1017,137 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
             <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
           </TouchableOpacity>
         </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={!isSwipingCard}
-        >
-          {/* Hero Section */}
-          <HeroSection
-            photoUri={currentPhotoUri}
-            partnerName={partnerName}
-            sinceDate={sinceDate}
-            duration={duration}
-          />
-
-          {/* Date Ideas Section */}
-          <DateIdeasSection
-            navigation={navigation}
-            onSwipeStart={() => setIsSwipingCard(true)}
-            onSwipeEnd={() => setIsSwipingCard(false)}
-          />
-
-          {/* Relationship Tools Section */}
-          <RelationshipToolsSection navigation={navigation} />
-
-          {/* Partner Notes Section */}
-          <PartnerNotesSection
-            partnerName={partnerName}
-            notes={notes}
-            onAddNotePress={handleAddNotePress}
-            onEditNote={handleEditNote}
-            onDeleteNote={handleDeleteNote}
-            onSwipeStart={() => setIsSwipingCard(true)}
-            onSwipeEnd={() => setIsSwipingCard(false)}
-          />
-        </ScrollView>
-
-        {/* Note Modal (Add/Edit) */}
-        <Modal
-          visible={noteModalVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setNoteModalVisible(false)}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalContainer}
-          >
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                onPress={() => setNoteModalVisible(false)}
-                style={styles.roundButton}
-              >
-                <Ionicons name="close" size={20} color="#1F2937" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>
-                {editingNote ? 'Edit Note' : 'New Note'}
-              </Text>
-              <TouchableOpacity
-                onPress={handleSaveNote}
-                style={[styles.roundButton, !noteContent.trim() && styles.roundButtonDisabled]}
-                disabled={!noteContent.trim()}
-              >
-                <Ionicons name="checkmark" size={20} color={noteContent.trim() ? "#1F2937" : "#9CA3AF"} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalInputContainer}>
-              <TextInput
-                style={styles.modalTextInput}
-                placeholder="Write something you want to remember..."
-                placeholderTextColor="#9CA3AF"
-                value={noteContent}
-                onChangeText={setNoteContent}
-                multiline
-                textAlignVertical="top"
-                autoFocus
-              />
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
-
-        {/* Settings Menu Modal */}
-        <Modal
-          visible={settingsMenuVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSettingsMenuVisible(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
-            <View style={styles.dropdownModalOverlay}>
-              <View style={styles.dropdownMenu}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    if (Platform.OS === 'ios') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setSettingsMenuVisible(false);
-                    navigation.navigate('RelationshipSetup', {
-                      isEditMode: true,
-                      partnerName: partnerName,
-                      sinceDate: sinceDate,
-                      photoUri: currentPhotoUri,
-                    });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="pencil-outline" size={18} color="#6B7280" />
-                  <Text style={styles.dropdownItemText}>Edit Info</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.dropdownItem, styles.dropdownItemWithDivider]}
-                  onPress={() => {
-                    if (Platform.OS === 'ios') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setSettingsMenuVisible(false);
-                    // TODO: Switch to dating vault
-                    console.log('Switch to dating pressed');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="sync-outline" size={18} color="#6B7280" />
-                  <Text style={styles.dropdownItemText}>Switch to Dating</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
       </View>
-    </SafeAreaView>
+
+      {/* Note Modal (Add/Edit) */}
+      <Modal
+        visible={noteModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setNoteModalVisible(false)}
+              style={styles.roundButton}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {editingNote ? 'Edit Note' : 'New Note'}
+            </Text>
+            <TouchableOpacity
+              onPress={handleSaveNote}
+              style={[styles.roundButton, !noteContent.trim() && styles.roundButtonDisabled]}
+              disabled={!noteContent.trim()}
+            >
+              <Ionicons name="checkmark" size={20} color={noteContent.trim() ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalInputContainer}>
+            <TextInput
+              style={styles.modalTextInput}
+              placeholder="Write something you want to remember..."
+              placeholderTextColor="#9CA3AF"
+              value={noteContent}
+              onChangeText={setNoteContent}
+              multiline
+              textAlignVertical="top"
+              autoFocus
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Settings Menu Modal */}
+      <Modal
+        visible={settingsMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsMenuVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
+          <View style={styles.dropdownModalOverlay}>
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSettingsMenuVisible(false);
+                  navigation.navigate('RelationshipSetup', {
+                    isEditMode: true,
+                    partnerName: partnerName,
+                    sinceDate: sinceDate,
+                    photoUri: currentPhotoUri,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                <Text style={styles.dropdownItemText}>Edit Info</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.dropdownItem, styles.dropdownItemWithDivider]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setSettingsMenuVisible(false);
+                  // TODO: Switch to dating vault
+                  console.log('Switch to dating pressed');
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sync-outline" size={18} color="#6B7280" />
+                <Text style={styles.dropdownItemText}>Switch to Dating</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5F2',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
-  header: {
-    backgroundColor: '#F7F5F2',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   backButton: {
     width: 40,
@@ -1234,7 +1266,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1581,7 +1613,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1680,7 +1712,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 16,
     gap: 12,
   },

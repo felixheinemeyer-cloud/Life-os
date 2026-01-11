@@ -47,7 +47,7 @@ const LoveModePlaceholderScreen: React.FC<LoveModePlaceholderScreenProps> = ({ n
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={styles.title}>Love Mode</Text>

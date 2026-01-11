@@ -1,15 +1,15 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
-  ScrollView,
   TouchableOpacity,
+  Pressable,
   Animated,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface DailyOverviewScreenProps {
@@ -119,6 +119,96 @@ const getMockData = (dateKey: string): { morning: MorningData; evening: EveningD
         priorityCompleted: true,
         ratings: { nutrition: 8, energy: 7, satisfaction: 8 },
         journal: 'Productive Saturday! Got all my planning done and feeling ready for next week. Good balance of work and rest today.',
+      },
+    },
+    '2026-1-29': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 15 },
+        wakeTime: { hour: 7, minute: 0 },
+        gratitude: 'Grateful for the progress I made this month and the momentum building towards February.',
+        priority: 'Finalize monthly report and prepare presentation for tomorrow',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 6, satisfaction: 8 },
+        journal: 'Busy but fulfilling day. Got the monthly report done and feeling prepared for the presentation. January has been a great month overall.',
+      },
+    },
+    '2026-1-30': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 22, minute: 45 },
+        wakeTime: { hour: 6, minute: 30 },
+        gratitude: 'Thankful for my supportive team and the collaborative spirit at work.',
+        priority: 'Deliver presentation and wrap up all January projects',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 8, energy: 7, satisfaction: 9 },
+        journal: 'Presentation went really well! Got great feedback from the team. Feeling accomplished as January wraps up.',
+      },
+    },
+    '2026-1-31': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 7, minute: 15 },
+        gratitude: 'Grateful for completing another month and all the growth and learning it brought.',
+        priority: 'Reflect on January achievements and set intentions for February',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 8, satisfaction: 9 },
+        journal: 'Perfect end to January! Took time to celebrate the wins and learned from the challenges. Excited for what February will bring.',
+      },
+    },
+    '2025-11-26': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 0 },
+        wakeTime: { hour: 6, minute: 45 },
+        gratitude: 'Grateful for a productive week and the progress made on my projects.',
+        priority: 'Finish the quarterly review document before the weekend',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 6, satisfaction: 8 },
+        journal: 'Managed to complete the quarterly review ahead of schedule. Feeling accomplished and ready for a relaxing weekend.',
+      },
+    },
+    '2025-11-29': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 23, minute: 30 },
+        wakeTime: { hour: 8, minute: 0 },
+        gratitude: 'Thankful for the lazy Saturday morning and quality time with loved ones.',
+        priority: 'Plan activities for the upcoming week and organize the home office',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: false,
+        ratings: { nutrition: 8, energy: 7, satisfaction: 7 },
+        journal: 'Got distracted by a good book and didn\'t finish organizing, but it was a restful day overall. Sometimes rest is more important.',
+      },
+    },
+    '2025-11-30': {
+      morning: {
+        completed: true,
+        bedtime: { hour: 22, minute: 45 },
+        wakeTime: { hour: 7, minute: 30 },
+        gratitude: 'Grateful for the last day of November and all the memories this month brought.',
+        priority: 'Complete November reflection and set December intentions',
+      },
+      evening: {
+        completed: true,
+        priorityCompleted: true,
+        ratings: { nutrition: 7, energy: 8, satisfaction: 9 },
+        journal: 'Beautiful end to November. Spent time reflecting on the month and feeling optimistic about December. Ready for the holiday season!',
       },
     },
     '2025-12-24': {
@@ -261,8 +351,36 @@ const getMockData = (dateKey: string): { morning: MorningData; evening: EveningD
 };
 
 const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): React.JSX.Element => {
-  const dateKey = route?.params?.date || '';
-  const dateDisplay = route?.params?.dateDisplay || 'Today';
+  const insets = useSafeAreaInsets();
+  const initialDateKey = route?.params?.date || '';
+
+  // Parse initial date from route params
+  const parseInitialDate = (): Date => {
+    if (initialDateKey) {
+      const parts = initialDateKey.split('-');
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+    }
+    return new Date();
+  };
+
+  const [currentDate, setCurrentDate] = useState(parseInitialDate);
+
+  // Format date key for data lookup (YYYY-M-D format)
+  const getDateKey = (date: Date): string => {
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  };
+
+  // Format display date (e.g., "Sun, Nov 30")
+  const formatDisplayDate = (date: Date): string => {
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  const dateKey = getDateKey(currentDate);
+  const dateDisplay = formatDisplayDate(currentDate);
 
   const { morning, evening } = getMockData(dateKey);
 
@@ -276,6 +394,27 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation?.goBack();
   };
+
+  const handlePreviousDay = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const handleNextDay = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
+  };
+
+  // Check if we're at today (can't go forward)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentDateNormalized = new Date(currentDate);
+  currentDateNormalized.setHours(0, 0, 0, 0);
+  const isToday = currentDateNormalized.getTime() === today.getTime();
 
   const calculateSleepDuration = (): string => {
     const bedtimeMinutes = morning.bedtime.hour * 60 + morning.bedtime.minute;
@@ -295,25 +434,14 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>{dateDisplay}</Text>
-        </View>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.container}>
+      {/* Scrollable Content */}
+      <Animated.ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 68 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
@@ -524,8 +652,62 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
         </Animated.View>
 
         <View style={styles.bottomSpacer} />
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+
+      {/* Fixed Header with Gradient Fade */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <View style={styles.headerBlur} pointerEvents="none">
+          <LinearGradient
+            colors={[
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
+            ]}
+            locations={[0, 0.4, 0.75, 1]}
+            style={styles.headerGradient}
+          />
+        </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+          </TouchableOpacity>
+          <View style={styles.headerDatePicker}>
+            <View style={styles.headerDatePill}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.headerDatePillSide,
+                  pressed && styles.headerDatePillSidePressed,
+                ]}
+                onPress={handlePreviousDay}
+              >
+                <Ionicons name="chevron-back" size={16} color="#6B7280" />
+              </Pressable>
+              <View style={styles.headerDatePillCenter}>
+                <Ionicons name="calendar-outline" size={14} color="#F59E0B" />
+                <Text style={styles.headerDateText}>{dateDisplay}</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.headerDatePillSide,
+                  isToday && styles.headerDatePillSideDisabled,
+                  pressed && !isToday && styles.headerDatePillSidePressed,
+                ]}
+                onPress={handleNextDay}
+                disabled={isToday}
+              >
+                <Ionicons name="chevron-forward" size={16} color={isToday ? '#D1D5DB' : '#6B7280'} />
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+      </View>
+    </View>
   );
 };
 
@@ -564,30 +746,48 @@ const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon, custom
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
   },
-  container: {
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 20,
+    paddingHorizontal: 0,
   },
 
-  // Header
-  header: {
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerBlur: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    flex: 1,
+    height: 120,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 24,
-    backgroundColor: '#F0EEE8',
+    paddingBottom: 14,
   },
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -597,18 +797,48 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  headerTextContainer: {
+  headerDatePicker: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
+  headerDatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  headerDatePillSide: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+  },
+  headerDatePillSidePressed: {
+    backgroundColor: '#F3F4F6',
+  },
+  headerDatePillSideDisabled: {
+    opacity: 0.4,
+  },
+  headerDatePillCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  headerDateText: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.2,
   },
   headerSpacer: {
-    width: 38,
+    width: 40,
   },
 
   // Section Card

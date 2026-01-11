@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface CalendarScreenProps {
@@ -74,6 +74,7 @@ const mockWeeklyCheckIns: { [key: string]: { completed: boolean; score: number }
 };
 
 const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element => {
+  const insets = useSafeAreaInsets();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Mock data for tracking status
@@ -444,10 +445,17 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Scrollable Title */}
+        <View style={styles.titleSection}>
           <Text style={styles.headerTitle}>Calendar</Text>
         </View>
 
@@ -710,24 +718,51 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Fixed Header with Gradient Fade */}
+      <View style={styles.fixedHeader} pointerEvents="none">
+        <LinearGradient
+          colors={[
+            'rgba(240, 238, 232, 0.95)',
+            'rgba(240, 238, 232, 0.8)',
+            'rgba(240, 238, 232, 0.4)',
+            'rgba(240, 238, 232, 0)',
+          ]}
+          locations={[0, 0.4, 0.75, 1]}
+          style={[styles.headerGradient, { height: insets.top + 20 }]}
+        />
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F0EEE8',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
   },
-  header: {
-    backgroundColor: '#F0EEE8',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+
+  // Fixed Header with Gradient
+  fixedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerGradient: {
+    // height set dynamically based on insets
+  },
+
+  titleSection: {
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 8,
+    marginBottom: 8,
   },
   headerTitle: {
     fontSize: 28,
@@ -814,7 +849,7 @@ const styles = StyleSheet.create({
   dayCell: {
     width: '14.28%', // 100% / 7 days
     paddingHorizontal: 2,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
   },
   dayCellContent: {
     flex: 1,

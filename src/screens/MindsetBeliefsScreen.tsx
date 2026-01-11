@@ -265,15 +265,15 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
       {/* Fixed Header with Blur Background */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
         {/* Gradient Fade Background */}
-        <View style={styles.headerBlur}>
+        <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
-              'rgba(247, 245, 242, 0.85)',
-              'rgba(247, 245, 242, 0.6)',
-              'rgba(247, 245, 242, 0.3)',
-              'rgba(247, 245, 242, 0)',
+              'rgba(240, 238, 232, 0.95)',
+              'rgba(240, 238, 232, 0.8)',
+              'rgba(240, 238, 232, 0.4)',
+              'rgba(240, 238, 232, 0)',
             ]}
-            locations={[0, 0.3, 0.7, 1]}
+            locations={[0, 0.4, 0.75, 1]}
             style={styles.headerGradient}
           />
         </View>
@@ -326,7 +326,7 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
                 style={styles.backButton}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-back" size={24} color="#1F2937" />
+                <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
               </TouchableOpacity>
               <View style={styles.headerButtons}>
                 <TouchableOpacity
@@ -663,7 +663,7 @@ const BeliefCard: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   // Fixed Header
   headerContainer: {
@@ -671,8 +671,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    paddingBottom: 16,
-    zIndex: 100,
+    zIndex: 10,
   },
   headerBlur: {
     position: 'absolute',
@@ -684,6 +683,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flex: 1,
+    height: 120,
   },
   header: {
     paddingHorizontal: 16,

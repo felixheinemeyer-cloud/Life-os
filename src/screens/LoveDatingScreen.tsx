@@ -27,7 +27,7 @@ const LoveDatingScreen: React.FC<LoveDatingScreenProps> = ({ navigation }) => {
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={28} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={styles.title}>Love / Dating</Text>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F3F5',

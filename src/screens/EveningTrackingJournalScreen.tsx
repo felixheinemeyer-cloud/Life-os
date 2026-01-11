@@ -155,7 +155,7 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={24} color="#1F2937" />
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
             {/* Progress Indicator */}
             <View style={styles.progressContainer}>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 8,
     borderRadius: 10,
     gap: 6,

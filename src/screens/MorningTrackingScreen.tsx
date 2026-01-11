@@ -206,7 +206,7 @@ const MorningTrackingScreen: React.FC<MorningTrackingScreenProps> = ({ navigatio
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={24} color="#1F2937" />
+            <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   totalSleepCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    paddingVertical: 12,
+    paddingTop: 8, paddingBottom: 12,
     paddingHorizontal: 20,
     alignItems: 'center',
     marginBottom: 16,
