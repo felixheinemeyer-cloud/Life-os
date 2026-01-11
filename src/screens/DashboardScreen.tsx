@@ -54,7 +54,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
   // Check-in completion states (preview mode for testing UI states)
   // In production, these would come from a context/API based on today's date
-  const PREVIEW_CHECKIN_MODE = true;
+  const PREVIEW_CHECKIN_MODE = false;
   const [morningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
   const [eveningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
 
@@ -453,7 +453,10 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               activeOpacity={eveningCheckInCompleted || isEveningCheckInAvailable() ? 0.85 : 1}
               disabled={!eveningCheckInCompleted && !isEveningCheckInAvailable()}
             >
-              <View style={styles.trackingCard}>
+              <View style={[
+                styles.trackingCard,
+                !eveningCheckInCompleted && !isEveningCheckInAvailable() && styles.trackingCardLocked
+              ]}>
                 {/* Icon with state-dependent appearance */}
                 {eveningCheckInCompleted ? (
                   // Completed state - filled purple circle with glow
@@ -480,15 +483,25 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
                     </View>
                   </LinearGradient>
                 ) : (
-                  // Too early state - soft purple outline (maintains evening identity)
-                  <View style={styles.trackingIconInactiveRing}>
-                    <Ionicons name="moon-outline" size={44} color="#C4B5FD" />
-                  </View>
+                  // Locked state - same ring structure as Morning, muted colors
+                  <LinearGradient
+                    colors={['#E9E5FF', '#DDD6FE', '#C4B5FD']}
+                    style={styles.trackingIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.trackingIconInnerCircle}>
+                      <Ionicons name="moon" size={44} color="#B4A7DE" />
+                    </View>
+                  </LinearGradient>
                 )}
-                <Text style={[
-                  styles.lightCardTitle,
-                  !eveningCheckInCompleted && !isEveningCheckInAvailable() && styles.lightCardTitleInactive
-                ]}>Evening{'\n'}Check-In</Text>
+                {!eveningCheckInCompleted && !isEveningCheckInAvailable() ? (
+                  <Text style={[styles.lightCardTitle, styles.lightCardTitleLocked]}>
+                    Evening{'\n'}<Text style={styles.timeInTitle}>in {getHoursUntilEveningCheckIn()}h</Text>
+                  </Text>
+                ) : (
+                  <Text style={styles.lightCardTitle}>Evening{'\n'}Check-In</Text>
+                )}
               </View>
             </TouchableOpacity>
           </View>
@@ -1128,6 +1141,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
+  },
+  // Locked Evening Card Styles
+  trackingCardLocked: {
+    backgroundColor: '#FDFCFE',
+  },
+  lightCardTitleLocked: {
+    color: '#A8A8B3',
+  },
+  timeInTitle: {
+    color: '#9D8EC9',
+    fontWeight: '500',
   },
   lightCardTitleInactive: {
     color: '#9CA3AF',
