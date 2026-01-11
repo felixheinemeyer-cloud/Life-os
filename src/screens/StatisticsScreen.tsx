@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   PanResponder,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1280,6 +1281,16 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   const [activeTab, setActiveTab] = useState<TabType>('daily');
   const [activeMetric, setActiveMetric] = useState<MetricType>(null);
 
+  // Scroll tracking for title fade
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Title fade out on scroll
+  const titleOpacity = scrollY.interpolate({
+    inputRange: [0, 25],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
   const handleBack = () => {
     if (navigation) {
       navigation.goBack();
@@ -1435,18 +1446,23 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
   return (
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 128 },
+          { paddingTop: insets.top + 132 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
       >
         {activeTab === 'daily' && renderDailyContent()}
         {activeTab === 'weekly' && renderWeeklyContent()}
         {activeTab === 'monthly' && renderMonthlyContent()}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Fixed Header with Gradient Fade */}
       <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
@@ -1473,7 +1489,7 @@ const StatisticsScreen = ({ navigation }: StatisticsScreenProps): React.JSX.Elem
             >
               <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Statistics</Text>
+            <Animated.Text style={[styles.headerTitle, { opacity: titleOpacity }]}>Statistics</Animated.Text>
             <View style={styles.headerSpacer} />
           </View>
 
@@ -5391,7 +5407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 16,
   },
   backButton: {
     width: 40,
@@ -5401,10 +5417,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },
@@ -5421,12 +5437,15 @@ const styles = StyleSheet.create({
   // Segmented Control
   segmentedControlContainer: {
     paddingHorizontal: 16,
+    marginBottom: 16,
   },
   segmentedControl: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,

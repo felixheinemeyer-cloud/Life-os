@@ -214,16 +214,39 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
         keyboardDismissMode="on-drag"
       >
         <Pressable onPress={() => Keyboard.dismiss()}>
-          {/* Scrollable Title - hidden during search */}
-          {!isSearching && (
-            <View style={styles.scrollableTitle}>
-              <Text style={styles.title}>Mindset</Text>
-              <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
+          {/* Scrollable Title */}
+          <View style={styles.scrollableTitle}>
+            <Text style={styles.title}>Mindset</Text>
+            <Text style={styles.subtitle}>Your favorite quotes, values & guiding principles in one place</Text>
+          </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchBarContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+              <TextInput
+                ref={searchInputRef}
+                style={styles.searchBarInput}
+                placeholder="Search"
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+                </TouchableOpacity>
+              )}
             </View>
-          )}
+          </View>
 
           {/* Search Results Label */}
-          {isSearching && searchQuery.trim() && (
+          {searchQuery.trim() && (
             <Text style={styles.searchResultsLabel}>
               {filteredEntries.length === 0
                 ? 'No results'
@@ -289,69 +312,25 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
           ]}
           pointerEvents="box-none"
         >
-          {isSearching ? (
-            /* Search Mode Header */
-            <View style={styles.searchHeader}>
-              <View style={styles.searchInputContainer}>
-                <Ionicons name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
-                <TextInput
-                  ref={searchInputRef}
-                  style={styles.searchInput}
-                  placeholder="Search entries"
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
-                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity
-                onPress={handleCloseSearch}
-                style={styles.cancelButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            /* Normal Header */
-            <View style={styles.headerTop}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
-              </TouchableOpacity>
-              <View style={styles.headerButtons}>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleSearchPress}
-                  onPressIn={handleSearchPressIn}
-                  onPressOut={handleSearchPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: searchButtonScale }] }]}>
-                    <Ionicons name="search" size={22} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleAddPress}
-                  onPressIn={handleFabPressIn}
-                  onPressOut={handleFabPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: fabScale }] }]}>
-                    <Ionicons name="add" size={24} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleAddPress}
+              onPressIn={handleFabPressIn}
+              onPressOut={handleFabPressOut}
+            >
+              <Animated.View style={[styles.headerButton, { transform: [{ scale: fabScale }] }]}>
+                <Ionicons name="add" size={24} color="#1F2937" />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </View>
 
@@ -809,6 +788,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
     letterSpacing: -0.2,
+  },
+  searchBarContainer: {
+    marginBottom: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchBarInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
   },
   searchResultsLabel: {
     fontSize: 14,
