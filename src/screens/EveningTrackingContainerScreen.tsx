@@ -24,7 +24,7 @@ const TOTAL_STEPS = 3;
 interface EveningTrackingContainerScreenProps {
   navigation?: {
     goBack: () => void;
-    navigate: (screen: string) => void;
+    navigate: (screen: string, params?: Record<string, unknown>) => void;
   };
 }
 
@@ -110,7 +110,10 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
     } else {
       // Final step - go to completion screen
       console.log('Evening tracking complete:', trackingData);
-      navigation?.navigate('EveningTrackingComplete');
+      navigation?.navigate('EveningTrackingComplete', {
+        priorityCompleted: trackingData.priorityCompleted,
+        morningPriority: trackingData.morningPriority,
+      });
     }
   };
 

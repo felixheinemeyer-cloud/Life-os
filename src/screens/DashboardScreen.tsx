@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,17 +13,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PremiumStatsChart from '../components/PremiumStatsChart';
+import TodaysPriorityCard from '../components/dashboard/TodaysPriorityCard';
 import { useStreak } from '../context/StreakContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
+
+type PriorityStatus = 'pending' | 'completed' | 'not_completed';
 
 interface DashboardScreenProps {
   navigation?: {
     navigate: (screen: string) => void;
   };
+  route?: {
+    params?: {
+      morningCheckInJustCompleted?: boolean;
+      eveningCheckInJustCompleted?: boolean;
+      priorityCompleted?: boolean;
+      morningPriority?: string;
+    };
+  };
 }
 
-const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.Element => {
+const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): React.JSX.Element => {
   // SafeArea insets for dynamic button positioning
   const insets = useSafeAreaInsets();
 
@@ -48,15 +60,25 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
   // Scroll tracking for blur/fade effect
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  // Animation values for check-in completion
+  const morningAnimPlayed = useRef(false);
+  const eveningAnimPlayed = useRef(false);
+  const morningScale = useRef(new Animated.Value(1)).current;
+  const eveningScale = useRef(new Animated.Value(1)).current;
+
   // Streak count from context (preview mode shows 14 for testing)
   const PREVIEW_STREAK_MODE = true;
   const streakCount = PREVIEW_STREAK_MODE ? 14 : streakData.currentStreak;
 
-  // Check-in completion states (preview mode for testing UI states)
-  // In production, these would come from a context/API based on today's date
-  const PREVIEW_CHECKIN_MODE = false;
-  const [morningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
-  const [eveningCheckInCompleted] = useState(PREVIEW_CHECKIN_MODE ? true : false);
+  // Check-in completion states
+  // Start as false, will be set to true when returning from MorningTrackingCompleteScreen
+  // Resets on app reload (no persistence)
+  const [morningCheckInCompleted, setMorningCheckInCompleted] = useState(false);
+  const [eveningCheckInCompleted, setEveningCheckInCompleted] = useState(false);
+
+  // Today's priority state (from morning check-in)
+  const [todaysPriority, setTodaysPriority] = useState<string | null>(null);
+  const [priorityStatus, setPriorityStatus] = useState<PriorityStatus>('pending');
 
   // 24h timer state (hours since last 12:00 noon Europe/Berlin)
   const [timerHours, setTimerHours] = useState(0);
@@ -123,7 +145,9 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
 
   // Check if evening check-in is available (after 5 PM / 17:00)
   const EVENING_CHECKIN_START_HOUR = 17; // 5 PM
+  const TESTING_MODE = true; // TODO: Remove after testing
   const isEveningCheckInAvailable = (): boolean => {
+    if (TESTING_MODE) return true; // Bypass time check for testing
     const hour = new Date().getHours();
     return hour >= EVENING_CHECKIN_START_HOUR;
   };
@@ -199,6 +223,70 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, []);
+
+  // Check for check-in completion from navigation params
+  useFocusEffect(
+    useCallback(() => {
+      if (route?.params?.morningCheckInJustCompleted) {
+        setMorningCheckInCompleted(true);
+        setTodaysPriority("Finish the project proposal and send it to the team"); // Mock priority
+      }
+      if (route?.params?.eveningCheckInJustCompleted) {
+        setEveningCheckInCompleted(true);
+        // Restore morning check-in state (since evening check-in implies morning was completed)
+        setMorningCheckInCompleted(true);
+        if (route?.params?.morningPriority) {
+          setTodaysPriority(route.params.morningPriority);
+        }
+        // Update priority status based on evening check-in result
+        if (route?.params?.priorityCompleted !== undefined) {
+          setPriorityStatus(route.params.priorityCompleted ? 'completed' : 'not_completed');
+        }
+      }
+    }, [route?.params?.morningCheckInJustCompleted, route?.params?.eveningCheckInJustCompleted, route?.params?.priorityCompleted, route?.params?.morningPriority])
+  );
+
+  // Animation trigger for Morning Check-in completion
+  useEffect(() => {
+    if (morningCheckInCompleted && !morningAnimPlayed.current) {
+      morningAnimPlayed.current = true;
+
+      // Start at smaller scale for more dramatic entrance
+      morningScale.setValue(0.7);
+
+      // Delay to ensure screen transition is fully complete
+      const timer = setTimeout(() => {
+        Animated.spring(morningScale, {
+          toValue: 1,
+          friction: 4, // Lower friction = more visible bounce
+          tension: 35, // Low tension = slow, elegant animation
+          useNativeDriver: true,
+        }).start();
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [morningCheckInCompleted]);
+
+  // Animation trigger for Evening Check-in completion
+  useEffect(() => {
+    if (eveningCheckInCompleted && !eveningAnimPlayed.current) {
+      eveningAnimPlayed.current = true;
+
+      eveningScale.setValue(0.7);
+
+      const timer = setTimeout(() => {
+        Animated.spring(eveningScale, {
+          toValue: 1,
+          friction: 4, // Lower friction = more visible bounce
+          tension: 35,
+          useNativeDriver: true,
+        }).start();
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [eveningCheckInCompleted]);
 
   const handleMorningTracking = (): void => {
     if (navigation) {
@@ -418,17 +506,22 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
             >
               <View style={styles.trackingCard}>
                 {morningCheckInCompleted ? (
-                  // Completed state - filled orange circle with glow
-                  <View style={styles.trackingIconCompletedMorning}>
+                  // Completed state - green ring with sun icon (success transformation)
+                  <Animated.View style={[
+                    styles.trackingIconCompletedRingWrapper,
+                    { transform: [{ scale: morningScale }] }
+                  ]}>
                     <LinearGradient
-                      colors={['#FCD34D', '#F59E0B', '#D97706']}
-                      style={styles.trackingIconFilledCircle}
-                      start={{ x: 0, y: 0.2 }}
+                      colors={['#34D399', '#10B981', '#059669']}
+                      style={styles.trackingIconGradientRing}
+                      start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Ionicons name="checkmark-sharp" size={44} color="#FFFFFF" />
+                      <View style={styles.trackingIconInnerCircle}>
+                        <Ionicons name="sunny" size={44} color="#059669" />
+                      </View>
                     </LinearGradient>
-                  </View>
+                  </Animated.View>
                 ) : (
                   // Available state - orange gradient ring with sun
                   <LinearGradient
@@ -459,17 +552,22 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               ]}>
                 {/* Icon with state-dependent appearance */}
                 {eveningCheckInCompleted ? (
-                  // Completed state - filled purple circle with glow
-                  <View style={styles.trackingIconCompletedEvening}>
+                  // Completed state - green ring with moon icon (success transformation)
+                  <Animated.View style={[
+                    styles.trackingIconCompletedRingWrapper,
+                    { transform: [{ scale: eveningScale }] }
+                  ]}>
                     <LinearGradient
-                      colors={['#C4B5FD', '#8B5CF6', '#7C3AED']}
-                      style={styles.trackingIconFilledCircle}
-                      start={{ x: 0, y: 0.2 }}
+                      colors={['#34D399', '#10B981', '#059669']}
+                      style={styles.trackingIconGradientRing}
+                      start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Ionicons name="checkmark-sharp" size={44} color="#FFFFFF" />
+                      <View style={styles.trackingIconInnerCircle}>
+                        <Ionicons name="moon" size={44} color="#059669" />
+                      </View>
                     </LinearGradient>
-                  </View>
+                  </Animated.View>
                 ) : isEveningCheckInAvailable() ? (
                   // Available state - purple gradient
                   <LinearGradient
@@ -505,6 +603,15 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
               </View>
             </TouchableOpacity>
           </View>
+
+          {/* Today's Priority Card - Display Only */}
+          {todaysPriority && (
+            <TodaysPriorityCard
+              priority={todaysPriority}
+              morningCheckInCompleted={morningCheckInCompleted}
+              status={priorityStatus}
+            />
+          )}
 
           {/* Weekly Check-In Card */}
           <TouchableOpacity
@@ -1106,30 +1213,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trackingIconFilledCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trackingIconCompletedMorning: {
-    marginBottom: 16,
-    borderRadius: 44,
-    shadowColor: '#F59E0B',
+  trackingIconCompletedRingWrapper: {
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 8,
-  },
-  trackingIconCompletedEvening: {
-    marginBottom: 16,
-    borderRadius: 44,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
+    elevation: 6,
   },
   trackingIconInactiveRing: {
     width: 88,

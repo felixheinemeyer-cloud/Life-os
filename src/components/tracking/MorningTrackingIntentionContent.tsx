@@ -72,12 +72,6 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
     onContinue();
   };
 
-  const getWordCount = (text: string): number => {
-    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-  };
-
-  const wordCount = getWordCount(intentionText);
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -109,9 +103,6 @@ const MorningTrackingIntentionContent: React.FC<MorningTrackingIntentionContentP
           <View style={styles.hintContainer}>
             <Text style={styles.hintText}>
               Focus on your most important priority
-            </Text>
-            <Text style={[styles.wordCount, wordCount > 30 && styles.wordCountOver]}>
-              {wordCount}/30
             </Text>
           </View>
         </View>
@@ -230,15 +221,6 @@ const styles = StyleSheet.create({
   },
 
   // Free Writing Input
-  wordCount: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#9CA3AF',
-    lineHeight: 30,
-  },
-  wordCountOver: {
-    color: '#DC2626',
-  },
   freeWritingInput: {
     flex: 1,
     fontSize: 17,

@@ -17,7 +17,13 @@ import StreakCelebrationModal from '../components/StreakCelebrationModal';
 interface EveningTrackingCompleteScreenProps {
   navigation?: {
     navigate: (screen: string) => void;
-    reset: (state: { index: number; routes: { name: string }[] }) => void;
+    reset: (state: { index: number; routes: { name: string; params?: Record<string, unknown> }[] }) => void;
+  };
+  route?: {
+    params?: {
+      priorityCompleted?: boolean;
+      morningPriority?: string;
+    };
   };
 }
 
@@ -25,7 +31,11 @@ const { width } = Dimensions.get('window');
 
 const EveningTrackingCompleteScreen: React.FC<EveningTrackingCompleteScreenProps> = ({
   navigation,
+  route,
 }) => {
+  // Get params from route
+  const priorityCompleted = route?.params?.priorityCompleted;
+  const morningPriority = route?.params?.morningPriority;
   const { streakData, recordCheckIn } = useStreak();
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [newStreakCount, setNewStreakCount] = useState(0);
@@ -258,7 +268,7 @@ const EveningTrackingCompleteScreen: React.FC<EveningTrackingCompleteScreenProps
         setTimeout(() => {
           navigation?.reset({
             index: 0,
-            routes: [{ name: 'DashboardMain' }],
+            routes: [{ name: 'DashboardMain', params: { eveningCheckInJustCompleted: true, priorityCompleted, morningPriority } }],
           });
         }, 3000);
       }
@@ -420,7 +430,7 @@ const EveningTrackingCompleteScreen: React.FC<EveningTrackingCompleteScreenProps
           setShowStreakModal(false);
           navigation?.reset({
             index: 0,
-            routes: [{ name: 'DashboardMain' }],
+            routes: [{ name: 'DashboardMain', params: { eveningCheckInJustCompleted: true, priorityCompleted, morningPriority } }],
           });
         }}
       />
