@@ -477,9 +477,11 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
+    position: 'relative',
   },
   backButton: {
     width: 40,
@@ -495,7 +497,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerDatePicker: {
-    flex: 1,
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

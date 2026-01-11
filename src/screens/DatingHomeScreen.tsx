@@ -883,11 +883,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 8,
   },
   titleContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   backButton: {
@@ -941,7 +941,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
 
   // Contacts Section
   peopleList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     gap: 10,
   },
   personCard: {
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
   dateIdeasSubtitle: {
@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
 
   // Advice Section
   adviceList: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     gap: 10,
   },
   adviceCard: {

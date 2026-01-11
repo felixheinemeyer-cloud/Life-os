@@ -377,6 +377,13 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
     extrapolate: 'clamp',
   });
 
+  // Greeting fade out on scroll
+  const greetingOpacity = scrollY.interpolate({
+    inputRange: [0, 25],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
   // Mock data for 7-day statistics (ready for API integration)
   const weekStatistics = {
     nutrition: [6, 7, 8, 7, 6, 8, 9],
@@ -931,9 +938,11 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps = {}): React.JSX.E
           </View>
 
           {/* Center: Greeting - Absolutely positioned for true center */}
-          <Text style={styles.greeting} numberOfLines={1} pointerEvents="none">
-            {getGreeting()}!
-          </Text>
+          <Animated.View style={[styles.greetingContainer, { opacity: greetingOpacity }]} pointerEvents="none">
+            <Text style={styles.greeting} numberOfLines={1}>
+              {getGreeting()}!
+            </Text>
+          </Animated.View>
         </View>
       </View>
     </View>
@@ -1008,12 +1017,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, // 16px from screen edges (matches Dashboard cards and Knowledge Hub)
   },
 
-  greeting: {
+  greetingContainer: {
     position: 'absolute',
-    top: 16,
+    top: 8,
     left: 0,
     right: 0,
-    fontSize: 19,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
@@ -1031,46 +1045,48 @@ const styles = StyleSheet.create({
     minWidth: 64,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   streakNumber: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   profileButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   actionsSection: {
     paddingHorizontal: 16, // Distance from screen edges to cards (matches Knowledge Hub)
   },
   trackingRow: {
     flexDirection: 'row',
+    alignItems: 'stretch',
     gap: 12,
     marginBottom: 12,
   },
