@@ -450,7 +450,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 16 },
+          { paddingTop: insets.top + 14 },
         ]}
         showsVerticalScrollIndicator={false}
       >

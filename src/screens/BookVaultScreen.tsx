@@ -460,6 +460,7 @@ const styles = StyleSheet.create({
   },
   searchBarInput: {
     flex: 1,
+    height: '100%',
     fontSize: 16,
     fontWeight: '400',
     color: '#1F2937',

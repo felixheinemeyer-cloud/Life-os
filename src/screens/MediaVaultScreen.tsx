@@ -703,7 +703,7 @@ const MediaVaultScreen: React.FC<MediaVaultScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 64 },
         ]}
         showsVerticalScrollIndicator={false}
       >
