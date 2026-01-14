@@ -48,6 +48,8 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // State for expandable focus cards
   const [isWeekExpanded, setIsWeekExpanded] = useState(false);
   const [isMonthExpanded, setIsMonthExpanded] = useState(false);
+  const [weekNeedsExpansion, setWeekNeedsExpansion] = useState<boolean | null>(null);
+  const [monthNeedsExpansion, setMonthNeedsExpansion] = useState<boolean | null>(null);
 
   // Animation values for card glow
   const weekGlowAnim = useRef(new Animated.Value(0)).current;
@@ -371,6 +373,8 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   // Toggle Week card with glow and chevron animation
   const toggleWeek = (): void => {
+    if (weekNeedsExpansion !== true) return;
+
     const toValue = isWeekExpanded ? 0 : 1;
 
     Animated.parallel([
@@ -394,6 +398,8 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   // Toggle Month card with glow and chevron animation
   const toggleMonth = (): void => {
+    if (monthNeedsExpansion !== true) return;
+
     const toValue = isMonthExpanded ? 0 : 1;
 
     Animated.parallel([
@@ -482,7 +488,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // Focus content texts
   const FOCUS_CONTENT = {
     week: "Complete all daily routines, maintain consistent sleep schedule, and hit gym targets 4x. Focus on deep work sessions and minimize evening screen time for better recovery.",
-    month: "Establish sustainable habits, review and adjust quarterly goals, and build momentum in key focus areas. Prioritize long-term health metrics and professional development milestones.",
+    month: "Establish sustainable habits, review and adjust quarterly goals, and build momentum in key focus areas. Prioritize long-term health metrics and professional development.",
   };
 
   return (
@@ -885,16 +891,23 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                   </View>
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Week</Text>
-                <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
-                </Animated.View>
+                {weekNeedsExpansion === true && (
+                  <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
+                    <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  </Animated.View>
+                )}
               </View>
 
               {/* Content with Preview */}
               <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isWeekExpanded ? undefined : 2}
+                  numberOfLines={weekNeedsExpansion === null ? undefined : (isWeekExpanded ? undefined : 3)}
+                  onTextLayout={(e) => {
+                    if (weekNeedsExpansion === null) {
+                      setWeekNeedsExpansion(e.nativeEvent.lines.length > 3);
+                    }
+                  }}
                 >
                   {FOCUS_CONTENT.week}
                 </Text>
@@ -922,16 +935,23 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                   </View>
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Month</Text>
-                <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
-                </Animated.View>
+                {monthNeedsExpansion === true && (
+                  <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
+                    <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  </Animated.View>
+                )}
               </View>
 
               {/* Content with Preview */}
               <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isMonthExpanded ? undefined : 2}
+                  numberOfLines={monthNeedsExpansion === null ? undefined : (isMonthExpanded ? undefined : 3)}
+                  onTextLayout={(e) => {
+                    if (monthNeedsExpansion === null) {
+                      setMonthNeedsExpansion(e.nativeEvent.lines.length > 3);
+                    }
+                  }}
                 >
                   {FOCUS_CONTENT.month}
                 </Text>

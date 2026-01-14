@@ -265,7 +265,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
 
           <RatingSlider
             label="Emotional Balance"
-            icon="leaf"
+            icon="swap-horizontal"
             value={data.emotionalBalance}
             onValueChange={(v) => handleRatingChange('emotionalBalance', v)}
             themeColor={THEME_COLORS.primary}

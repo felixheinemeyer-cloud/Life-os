@@ -10,7 +10,7 @@ import {
   Animated,
   Keyboard,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
@@ -246,7 +246,7 @@ const EveningTrackingRatingsContent: React.FC<EveningTrackingRatingsContentProps
         <View style={styles.slidersSection}>
           <RatingSlider
             label="Nutrition"
-            customIcon={<MaterialCommunityIcons name="food-apple" size={18} color="#059669" />}
+            icon="leaf"
             value={ratings.nutrition}
             onValueChange={(v) => handleRatingChange('nutrition', v)}
             themeColor="#059669"
