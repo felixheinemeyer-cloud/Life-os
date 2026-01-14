@@ -18,6 +18,7 @@ import MonthlyBodyTrackingInsightsContent from '../components/tracking/MonthlyBo
 import MonthlyBodyTrackingMetricsContent, { BodyMetricsData } from '../components/tracking/MonthlyBodyTrackingMetricsContent';
 import MonthlyBodyTrackingHealthContent, { HealthRatingsData } from '../components/tracking/MonthlyBodyTrackingHealthContent';
 import MonthlyBodyTrackingExerciseContent, { PhysicalActivityData } from '../components/tracking/MonthlyBodyTrackingExerciseContent';
+import MonthlyBodyTrackingHealthNotesContent, { HealthNotesData } from '../components/tracking/MonthlyBodyTrackingHealthNotesContent';
 import MonthlyBodyTrackingPhotoContent, { ProgressPhotoData } from '../components/tracking/MonthlyBodyTrackingPhotoContent';
 import MonthlyBodyTrackingPromiseContent, { BodyPromiseData } from '../components/tracking/MonthlyBodyTrackingPromiseContent';
 import MonthlyBodyTrackingMentalContent, { MentalWellnessData } from '../components/tracking/MonthlyBodyTrackingMentalContent';
@@ -26,7 +27,7 @@ import MonthlyBodyTrackingMindHelpersContent, { MindHelpersData } from '../compo
 import MonthlyBodyTrackingMindDrainsContent, { MindDrainsData } from '../components/tracking/MonthlyBodyTrackingMindDrainsContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 12;
 
 interface MonthlyBodyTrackingContainerScreenProps {
   navigation?: {
@@ -56,6 +57,11 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
   // Physical activity data state
   const [physicalActivityData, setPhysicalActivityData] = useState<PhysicalActivityData>({
     activityLevel: null,
+  });
+
+  // Health notes data state
+  const [healthNotesData, setHealthNotesData] = useState<HealthNotesData>({
+    notes: '',
   });
 
   // Progress photo data state
@@ -153,6 +159,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
         bodyMetrics,
         healthRatings,
         physicalActivityData,
+        healthNotesData,
         progressPhotoData,
         bodyPromiseData,
         mentalWellnessData,
@@ -241,14 +248,23 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 5: 30-Day Insights - Sleep, Energy, Nutrition */}
+            {/* Step 5: Health Notes */}
+            <View style={styles.page}>
+              <MonthlyBodyTrackingHealthNotesContent
+                data={healthNotesData}
+                onDataChange={setHealthNotesData}
+                onContinue={handleContinue}
+              />
+            </View>
+
+            {/* Step 6: 30-Day Insights - Sleep, Energy, Nutrition */}
             <View style={styles.page}>
               <MonthlyBodyTrackingInsightsContent
                 onContinue={handleContinue}
               />
             </View>
 
-            {/* Step 6: Progress Photo */}
+            {/* Step 7: Progress Photo */}
             <View style={styles.page}>
               <MonthlyBodyTrackingPhotoContent
                 data={progressPhotoData}
@@ -257,7 +273,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 7: Body Promise */}
+            {/* Step 8: Body Promise */}
             <View style={styles.page}>
               <MonthlyBodyTrackingPromiseContent
                 data={bodyPromiseData}
@@ -266,7 +282,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 8: Mental Wellness */}
+            {/* Step 9: Mental Wellness */}
             <View style={styles.page}>
               <MonthlyBodyTrackingMentalContent
                 data={mentalWellnessData}
@@ -275,7 +291,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 9: Mental Load */}
+            {/* Step 10: Mental Load */}
             <View style={styles.page}>
               <MonthlyBodyTrackingMentalLoadContent
                 data={mentalLoadData}
@@ -284,7 +300,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 10: Mind Drains (Energy Drains) */}
+            {/* Step 11: Mind Drains (Energy Drains) */}
             <View style={styles.page}>
               <MonthlyBodyTrackingMindDrainsContent
                 data={mindDrainsData}
@@ -293,7 +309,7 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
               />
             </View>
 
-            {/* Step 11: Mind Helpers (What Helped) */}
+            {/* Step 12: Mind Helpers (What Helped) */}
             <View style={styles.page}>
               <MonthlyBodyTrackingMindHelpersContent
                 data={mindHelpersData}

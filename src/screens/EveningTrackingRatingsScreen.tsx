@@ -239,7 +239,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
           <View style={styles.slidersSection}>
             <RatingSlider
               label="Nutrition"
-              icon="pizza"
+              icon="leaf"
               value={nutrition}
               onValueChange={setNutrition}
               themeColor="#059669"

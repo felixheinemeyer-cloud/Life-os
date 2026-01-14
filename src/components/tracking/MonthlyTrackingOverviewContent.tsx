@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 // Consistent color palette matching weekly screen
 const COLORS = {
@@ -30,17 +31,17 @@ const COLORS = {
   good: '#10B981',
   okay: '#F59E0B',
   needsWork: '#EF4444',
-  // Wealth area colors
+  // Wealth area colors (matching WEALTH_CONFIGS)
   physical: '#059669',
-  physicalBg: '#ECFDF5',
+  physicalBg: '#D1FAE5',
   social: '#8B5CF6',
-  socialBg: '#F3E8FF',
+  socialBg: '#EDE9FE',
   mental: '#3B82F6',
-  mentalBg: '#EFF6FF',
-  financial: '#D97706',
-  financialBg: '#FEF3C7',
-  time: '#EC4899',
-  timeBg: '#FCE7F3',
+  mentalBg: '#DBEAFE',
+  financial: '#EAB308',
+  financialBg: '#FEF9C3',
+  time: '#FB923C',
+  timeBg: '#FFEDD5',
 };
 
 interface MonthlyTrackingOverviewContentProps {
@@ -63,7 +64,7 @@ const generateMonthlyData = () => {
     { key: 'physical', label: 'Physical', icon: 'fitness', color: COLORS.physical, bgColor: COLORS.physicalBg, average: 0, trend: 0, weekScores: [] },
     { key: 'social', label: 'Social', icon: 'people', color: COLORS.social, bgColor: COLORS.socialBg, average: 0, trend: 0, weekScores: [] },
     { key: 'mental', label: 'Mental', icon: 'bulb', color: COLORS.mental, bgColor: COLORS.mentalBg, average: 0, trend: 0, weekScores: [] },
-    { key: 'financial', label: 'Financial', icon: 'wallet', color: COLORS.financial, bgColor: COLORS.financialBg, average: 0, trend: 0, weekScores: [] },
+    { key: 'financial', label: 'Financial', icon: 'bar-chart', color: COLORS.financial, bgColor: COLORS.financialBg, average: 0, trend: 0, weekScores: [] },
     { key: 'time', label: 'Time', icon: 'time', color: COLORS.time, bgColor: COLORS.timeBg, average: 0, trend: 0, weekScores: [] },
   ];
 
@@ -181,9 +182,14 @@ const AreaRow: React.FC<{
 
   return (
     <View style={[styles.areaRow, isLast && styles.areaRowLast]}>
-      <View style={[styles.areaIcon, { backgroundColor: area.bgColor }]}>
-        <Ionicons name={area.icon} size={16} color={area.color} />
-      </View>
+      <ExpoLinearGradient
+        colors={['#FFFFFF', '#F5F5F5']}
+        style={[styles.areaIconContainer, { borderColor: area.color }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name={area.icon} size={17} color={area.color} />
+      </ExpoLinearGradient>
       <View style={styles.areaContent}>
         <View style={styles.areaHeader}>
           <Text style={styles.areaLabel}>{area.label}</Text>
@@ -494,10 +500,10 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  // Area Row (matching weekly MetricRow exactly)
+  // Area Row (matching HigherSelfScreen icon style)
   areaRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border + '60',
@@ -506,13 +512,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingBottom: 2,
   },
-  areaIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+  areaIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
     marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   areaContent: {
     flex: 1,

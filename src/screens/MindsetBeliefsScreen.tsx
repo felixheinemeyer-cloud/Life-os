@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   },
   // Scrollable Title
   scrollableTitle: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

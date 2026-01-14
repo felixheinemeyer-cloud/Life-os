@@ -428,7 +428,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
           />
 
           <MetricRow
-            icon="pizza"
+            icon="leaf"
             label="Nutrition"
             value={averages.nutrition.toFixed(1)}
             numericValue={averages.nutrition}

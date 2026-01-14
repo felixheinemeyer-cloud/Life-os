@@ -95,16 +95,9 @@ const StatCard: React.FC<StatCardProps> = ({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <LinearGradient
-        colors={colors.gradient}
-        style={styles.statIconGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.statIconInner}>
-          <Ionicons name={icon} size={18} color={colors.primary} />
-        </View>
-      </LinearGradient>
+      <View style={[styles.statIconContainer, { backgroundColor: colors.light + '30' }]}>
+        <Ionicons name={icon} size={18} color={colors.primary} />
+      </View>
       <Text style={styles.statTitle}>{title}</Text>
       <View style={styles.statValueRow}>
         <Text style={[styles.statValue, { color: colors.primary }]}>{value}</Text>
@@ -560,7 +553,7 @@ const MonthlyBodyTrackingStatsContent: React.FC<MonthlyBodyTrackingStatsContentP
             />
             <StatCard
               title="Nutrition"
-              icon="nutrition"
+              icon="leaf"
               value={nutritionStats.avg.toFixed(1)}
               unit="/10"
               trend={nutritionStats.trend as 'up' | 'down' | 'neutral'}
@@ -584,7 +577,7 @@ const MonthlyBodyTrackingStatsContent: React.FC<MonthlyBodyTrackingStatsContentP
             />
             <StatCard
               title="Satisfaction"
-              icon="happy"
+              icon="sparkles"
               value={satisfactionStats.avg.toFixed(1)}
               unit="/10"
               trend={satisfactionStats.trend as 'up' | 'down' | 'neutral'}
@@ -697,22 +690,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  statIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    padding: 2,
+  statIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  statIconInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   statTitle: {
     fontSize: 12,
