@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,399 @@ import {
   SafeAreaView,
   Animated,
   Easing,
+  Dimensions,
+  Platform,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PremiumStatsChart from '../components/PremiumStatsChart';
+import * as Haptics from 'expo-haptics';
+import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
 import TodaysPriorityCard from '../components/dashboard/TodaysPriorityCard';
 import { useStreak } from '../context/StreakContext';
 import { useFocusEffect } from '@react-navigation/native';
 
-type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Chart metric colors matching Body Overview
+const CHART_METRIC_COLORS = {
+  nutrition: { primary: '#10B981', light: '#A7F3D0', name: 'Nutrition' },
+  energy: { primary: '#F59E0B', light: '#FDE68A', name: 'Energy' },
+  satisfaction: { primary: '#3B82F6', light: '#93C5FD', name: 'Satisfaction' },
+};
+
+type ChartMetricType = 'nutrition' | 'energy' | 'satisfaction';
+
+interface ChartData {
+  nutrition: number[];
+  energy: number[];
+  satisfaction: number[];
+}
+
+// Weekly Chart Component (matching Body Overview style)
+interface WeeklyChartProps {
+  data: ChartData;
+  activeMetrics: Set<ChartMetricType>;
+  onToggleMetric: (metric: ChartMetricType) => void;
+}
+
+const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggleMetric }) => {
+  const chartWidth = SCREEN_WIDTH - 64;
+  const chartHeight = 180;
+  const padding = { top: 16, right: 12, bottom: 32, left: 32 };
+
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  const scale = { min: 1, max: 10 };
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const getX = (index: number): number => {
+    return padding.left + (index / 6) * plotWidth;
+  };
+
+  const getY = (value: number): number => {
+    const normalizedValue = Math.max(scale.min, Math.min(scale.max, value));
+    return padding.top + plotHeight - ((normalizedValue - scale.min) / (scale.max - scale.min)) * plotHeight;
+  };
+
+  const generatePath = (values: number[]): string => {
+    if (values.length === 0) return '';
+
+    const points = values.map((value, index) => ({
+      x: getX(index),
+      y: getY(value),
+    }));
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
+
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+
+    return path;
+  };
+
+  const getIndexFromX = useCallback((locationX: number): number => {
+    const relativeX = locationX - padding.left;
+    const clampedX = Math.max(0, Math.min(relativeX, plotWidth));
+    const index = Math.round((clampedX / plotWidth) * 6);
+    return Math.max(0, Math.min(6, index));
+  }, [plotWidth, padding.left]);
+
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex(index);
+        if (Platform.OS === 'ios') {
+          Haptics.selectionAsync();
+        }
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex((prev) => {
+          if (prev !== index && Platform.OS === 'ios') {
+            Haptics.selectionAsync();
+          }
+          return index;
+        });
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  return (
+    <View>
+      {/* Legend / Toggle */}
+      <View style={weeklyChartStyles.chartLegendRow}>
+        {activeIndex === null ? (
+          <>
+            {(Object.keys(CHART_METRIC_COLORS) as ChartMetricType[]).map((metric) => (
+              <TouchableOpacity
+                key={metric}
+                style={[
+                  weeklyChartStyles.chartLegendItem,
+                  !activeMetrics.has(metric) && weeklyChartStyles.chartLegendItemInactive,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.selectionAsync();
+                  }
+                  onToggleMetric(metric);
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    weeklyChartStyles.chartLegendDot,
+                    { backgroundColor: activeMetrics.has(metric) ? CHART_METRIC_COLORS[metric].primary : '#D1D5DB' },
+                  ]}
+                />
+                <Text
+                  style={[
+                    weeklyChartStyles.chartLegendText,
+                    { color: activeMetrics.has(metric) ? '#374151' : '#9CA3AF' },
+                  ]}
+                >
+                  {CHART_METRIC_COLORS[metric].name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : (
+          <View style={weeklyChartStyles.chartScrubbingContent}>
+            <Text style={weeklyChartStyles.chartScrubbingDate}>{dayLabels[activeIndex]}</Text>
+            <View style={weeklyChartStyles.chartScrubbingValues}>
+              {activeMetrics.has('nutrition') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.nutrition.primary, fontWeight: '600' }}>
+                    {data.nutrition[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+              {activeMetrics.has('energy') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.energy.primary, fontWeight: '600' }}>
+                    {data.energy[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+              {activeMetrics.has('satisfaction') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.satisfaction.primary, fontWeight: '600' }}>
+                    {data.satisfaction[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Chart */}
+      <View
+        style={weeklyChartStyles.chartContainer}
+        {...panResponder.panHandlers}
+      >
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* Horizontal grid lines */}
+          {[10, 7, 4, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Line
+                key={value}
+                x1={padding.left}
+                y1={y}
+                x2={chartWidth - padding.right}
+                y2={y}
+                stroke="#D1D5DB"
+                strokeWidth="1"
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Y-axis labels */}
+          {[10, 7, 4, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized) + 4;
+            return (
+              <SvgText key={value} x={padding.left - 8} y={y} fontSize="10" fill="#9CA3AF" textAnchor="end">
+                {value}
+              </SvgText>
+            );
+          })}
+
+          {/* Metric lines */}
+          {activeMetrics.has('nutrition') && (
+            <Path
+              d={generatePath(data.nutrition)}
+              stroke={CHART_METRIC_COLORS.nutrition.primary}
+              strokeWidth={2}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {activeMetrics.has('energy') && (
+            <Path
+              d={generatePath(data.energy)}
+              stroke={CHART_METRIC_COLORS.energy.primary}
+              strokeWidth={2}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {activeMetrics.has('satisfaction') && (
+            <Path
+              d={generatePath(data.satisfaction)}
+              stroke={CHART_METRIC_COLORS.satisfaction.primary}
+              strokeWidth={2}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Cursor line when scrubbing */}
+          {activeIndex !== null && (
+            <Line
+              x1={getX(activeIndex)}
+              y1={padding.top}
+              x2={getX(activeIndex)}
+              y2={padding.top + plotHeight}
+              stroke="rgba(0, 0, 0, 0.12)"
+              strokeWidth={1.5}
+            />
+          )}
+
+          {/* Dots on active metrics when scrubbing */}
+          {activeIndex !== null && activeMetrics.has('nutrition') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.nutrition[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.nutrition.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('energy') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.energy[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.energy.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('satisfaction') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.satisfaction[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.satisfaction.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
+
+          {/* X-axis day labels */}
+          {dayLabels.map((day, index) => (
+            <SvgText
+              key={day}
+              x={getX(index)}
+              y={chartHeight - 8}
+              fontSize="10"
+              fill="#C9CDD3"
+              textAnchor="middle"
+              fontWeight="500"
+            >
+              {day}
+            </SvgText>
+          ))}
+        </Svg>
+      </View>
+
+      <Text style={weeklyChartStyles.chartHint}>Tap metrics to show/hide</Text>
+    </View>
+  );
+};
+
+// Styles for WeeklyChart component
+const weeklyChartStyles = StyleSheet.create({
+  chartLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    minHeight: 36,
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  chartLegendItemInactive: {
+    opacity: 0.6,
+  },
+  chartLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  chartLegendText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  chartScrubbingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chartScrubbingDate: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  chartScrubbingValues: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chartScrubbingValueText: {
+    fontSize: 13,
+  },
+  chartContainer: {
+    alignItems: 'center',
+    marginLeft: -10, // Offset to visually center the plot area (left padding 32 > right padding 12)
+  },
+  chartHint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+});
 
 type PriorityStatus = 'pending' | 'completed' | 'not_completed';
 
@@ -42,8 +425,22 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // Get streak data from context
   const { streakData } = useStreak();
 
-  // State for interactive chart legend - Nutrition is active by default
-  const [activeVariable, setActiveVariable] = useState<ChartVariable>('nutrition');
+  // State for interactive chart - all metrics active by default
+  const [activeChartMetrics, setActiveChartMetrics] = useState<Set<ChartMetricType>>(new Set(['nutrition', 'energy', 'satisfaction']));
+
+  const handleToggleChartMetric = useCallback((metric: ChartMetricType) => {
+    setActiveChartMetrics((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(metric)) {
+        if (newSet.size > 1) {
+          newSet.delete(metric);
+        }
+      } else {
+        newSet.add(metric);
+      }
+      return newSet;
+    });
+  }, []);
 
   // State for expandable focus cards
   const [isWeekExpanded, setIsWeekExpanded] = useState(false);
@@ -359,15 +756,6 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
       navigation.navigate('InsightDetail');
     } else {
       console.log('Navigate to Insight Detail');
-    }
-  };
-
-  const handleLegendPress = (variable: ChartVariable): void => {
-    // Toggle behavior: tap same variable to return to all active
-    if (activeVariable === variable) {
-      setActiveVariable(null);
-    } else {
-      setActiveVariable(variable);
     }
   };
 
@@ -775,94 +1163,11 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               </TouchableOpacity>
             </View>
 
-            {/* Interactive Legend Row */}
-            <View style={styles.statsLegend}>
-              {/* Nutrition Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('nutrition')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'nutrition' && {
-                      backgroundColor: '#F0FDF4',
-                      borderColor: '#86EFAC',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#10B981' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'nutrition' && { color: '#059669', fontWeight: '600' },
-                    ]}
-                  >
-                    Nutrition
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Energy Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('energy')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'energy' && {
-                      backgroundColor: '#FFFBEB',
-                      borderColor: '#FCD34D',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#F59E0B' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'energy' && { color: '#D97706', fontWeight: '600' },
-                    ]}
-                  >
-                    Energy
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Satisfaction Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('satisfaction')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'satisfaction' && {
-                      backgroundColor: '#EFF6FF',
-                      borderColor: '#93C5FD',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#3B82F6' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'satisfaction' && { color: '#2563EB', fontWeight: '600' },
-                    ]}
-                  >
-                    Satisfaction
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Premium Custom Chart */}
-            <PremiumStatsChart
+            {/* Weekly Chart */}
+            <WeeklyChart
               data={weekStatistics}
-              activeVariable={activeVariable}
+              activeMetrics={activeChartMetrics}
+              onToggleMetric={handleToggleChartMetric}
             />
           </View>
         </View>
@@ -1635,7 +1940,7 @@ const styles = StyleSheet.create({
   },
   statisticsPreviewCard: {
     borderRadius: 20,
-    padding: 24,
+    padding: 16,
     marginBottom: 0,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -1674,38 +1979,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginRight: 2,
   },
-  statsLegend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 4,
-    gap: 6,
-  },
-  legendButton: {
-    // Touchable wrapper for legend items
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
-  },
-  gradientDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  legendLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
   // Focus Section - Clean Design
   focusSection: {
     paddingHorizontal: 16,
@@ -1714,7 +1987,7 @@ const styles = StyleSheet.create({
   focusCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.04)',
   },
