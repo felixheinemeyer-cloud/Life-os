@@ -424,11 +424,11 @@ const WeeklyCheckInScreen: React.FC<WeeklyCheckInScreenProps> = ({ navigation })
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   header: {
     flexDirection: 'row',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   headerButton: {
     width: 40,
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     gap: 12,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   skipButton: {
     flex: 1,

@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 16,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   buttonContainerKeyboard: {
     backgroundColor: 'transparent',

@@ -206,11 +206,11 @@ const PhysicalWealthOptionalQuestionScreen = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   header: {
     paddingHorizontal: 16,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   buttonContainerFocused: {
     alignItems: 'flex-end',

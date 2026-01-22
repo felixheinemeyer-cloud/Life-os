@@ -204,16 +204,16 @@ const PhysicalWealthQuestionsContainerScreen: React.FC<PhysicalWealthQuestionsCo
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header - Fixed
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,

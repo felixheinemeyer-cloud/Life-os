@@ -16,7 +16,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 // Consistent color palette matching weekly screen
 const COLORS = {
-  background: '#F7F5F2',
+  background: '#F0EEE8',
   card: '#FFFFFF',
   text: '#1A1D21',
   textSecondary: '#5F6368',

@@ -195,7 +195,7 @@ const StreakScreen: React.FC<StreakScreenProps> = ({ navigation }) => {
           {/* Month Navigation */}
           <View style={styles.monthNavigation}>
             <TouchableOpacity onPress={goToPreviousMonth} style={styles.navButton}>
-              <Ionicons name="chevron-back" size={20} color="#6B7280" />
+              <Ionicons name="chevron-back" size={24} color="#6B7280" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
 
             <View style={styles.monthYearContainer}>
@@ -204,7 +204,7 @@ const StreakScreen: React.FC<StreakScreenProps> = ({ navigation }) => {
             </View>
 
             <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              <Ionicons name="chevron-forward" size={24} color="#6B7280" style={{ marginLeft: 2 }} />
             </TouchableOpacity>
           </View>
 
@@ -422,15 +422,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },

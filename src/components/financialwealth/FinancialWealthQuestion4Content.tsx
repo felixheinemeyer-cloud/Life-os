@@ -162,7 +162,7 @@ const FinancialWealthQuestion4Content: React.FC<FinancialWealthQuestion4ContentP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   buttonContainerFocused: {
     alignItems: 'flex-end',
