@@ -191,12 +191,6 @@ const DATE_IDEAS: DateIdea[] = [
 
 const RELATIONSHIP_TOOLS: RelationshipTool[] = [
   {
-    id: '1',
-    title: 'Weekly check-in ritual',
-    description: 'A simple practice to stay connected and aligned',
-    icon: 'calendar-outline',
-  },
-  {
     id: '2',
     title: 'Conflict resolution guide',
     description: 'Navigate disagreements with empathy and understanding',
@@ -566,10 +560,7 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    if (tool.id === '1') {
-      // Weekly check-in ritual
-      navigation?.navigate('WeeklyCheckIn');
-    } else if (tool.id === '2') {
+    if (tool.id === '2') {
       // Conflict resolution guide
       navigation?.navigate('ConflictResolutionGuide');
     }
@@ -1496,7 +1487,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
@@ -1613,7 +1604,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1712,7 +1703,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     gap: 12,
   },

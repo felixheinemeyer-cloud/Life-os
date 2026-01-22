@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8, paddingBottom: 12,
+    paddingTop: 16, paddingBottom: 4,
   },
   closeButton: {
     width: 40,
