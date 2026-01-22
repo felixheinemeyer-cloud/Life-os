@@ -568,7 +568,7 @@ const MonthlyTrackingCompleteScreen: React.FC<MonthlyTrackingCompleteScreenProps
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,

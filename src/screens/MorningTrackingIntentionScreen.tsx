@@ -139,14 +139,14 @@ const MorningTrackingIntentionScreen: React.FC<MorningTrackingIntentionScreenPro
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   keyboardAvoid: {
     flex: 1,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   continueButton: {
     backgroundColor: '#1F2937',

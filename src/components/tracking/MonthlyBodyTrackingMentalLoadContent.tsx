@@ -203,7 +203,7 @@ const MonthlyBodyTrackingMentalLoadContent: React.FC<MonthlyBodyTrackingMentalLo
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,

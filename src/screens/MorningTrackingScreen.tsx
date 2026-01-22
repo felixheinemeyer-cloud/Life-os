@@ -551,11 +551,11 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollContent: {
     flexGrow: 1,
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,

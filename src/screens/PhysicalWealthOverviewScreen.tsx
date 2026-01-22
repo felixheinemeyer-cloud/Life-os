@@ -1121,11 +1121,11 @@ const SwipeableCard: React.FC<{
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -1506,7 +1506,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingHorizontal: 16,
     paddingBottom: 40,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   sheetSectionTitle: {
     fontSize: 15,
