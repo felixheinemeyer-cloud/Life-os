@@ -3,14 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Platform,
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -66,8 +65,6 @@ const BUDGETS: { id: DateIdea['budget']; label: string; description: string }[] 
 
 // Main Component
 const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, route }) => {
-  const insets = useSafeAreaInsets();
-
   // Get existing idea if editing
   const existingIdea = route?.params?.idea;
   const isEditMode = !!existingIdea;
@@ -96,7 +93,7 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
     const ideaData: DateIdea = {
       id: isEditMode ? existingIdea.id : `custom_${Date.now()}`,
       title: title.trim(),
-      description: description.trim() || title.trim(),
+      description: description.trim(),
       icon: CUSTOM_ICON,
       category: CUSTOM_CATEGORY,
       duration: selectedDuration,
@@ -142,210 +139,195 @@ const DateIdeaEntryScreen: React.FC<DateIdeaEntryScreenProps> = ({ navigation, r
   };
 
   return (
-    <View style={styles.container}>
-      {/* Scrollable Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 60 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Title Card */}
-        <View style={[styles.card, isTitleFocused && styles.cardFocused]}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="create-outline" size={20} color="#E11D48" />
-            </View>
-            <Text style={styles.cardLabel}>Title</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.roundButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>New Date Idea</Text>
+            <TouchableOpacity
+              onPress={handleSave}
+              style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
+              activeOpacity={0.7}
+              disabled={!isFormValid}
+            >
+              <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter a title for your date idea..."
-            placeholderTextColor="#9CA3AF"
-            value={title}
-            onChangeText={setTitle}
-            onFocus={() => setIsTitleFocused(true)}
-            onBlur={() => setIsTitleFocused(false)}
-            autoCapitalize="sentences"
-            returnKeyType="next"
-          />
         </View>
 
-        {/* Description Card */}
-        <View style={[styles.card, isDescriptionFocused && styles.cardFocused]}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="document-text-outline" size={20} color="#E11D48" />
+        {/* Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Title Card */}
+          <View style={[styles.card, isTitleFocused && styles.cardFocused]}>
+            <View style={styles.cardLabelRow}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="create-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.cardLabel}>Title</Text>
             </View>
-            <Text style={styles.cardLabel}>Description</Text>
-            <Text style={styles.optionalLabel}>optional</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter a title for your date idea..."
+              placeholderTextColor="#9CA3AF"
+              value={title}
+              onChangeText={setTitle}
+              onFocus={() => setIsTitleFocused(true)}
+              onBlur={() => setIsTitleFocused(false)}
+              autoCapitalize="sentences"
+              returnKeyType="next"
+            />
           </View>
-          <TextInput
-            style={[styles.textInput, styles.textInputMultiline]}
-            placeholder="Add a brief description..."
-            placeholderTextColor="#9CA3AF"
-            value={description}
-            onChangeText={setDescription}
-            onFocus={() => setIsDescriptionFocused(true)}
-            onBlur={() => setIsDescriptionFocused(false)}
-            autoCapitalize="sentences"
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
 
-        {/* Duration Card */}
-        <View style={styles.card}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="time-outline" size={20} color="#E11D48" />
+          {/* Description Card */}
+          <View style={[styles.card, isDescriptionFocused && styles.cardFocused]}>
+            <View style={styles.cardLabelRow}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="document-text-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.cardLabel}>Description</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>optional</Text>
+              </View>
             </View>
-            <Text style={styles.cardLabel}>Duration</Text>
-            <Text style={styles.optionalLabel}>optional</Text>
+            <TextInput
+              style={[styles.textInput, styles.textInputMultiline]}
+              placeholder="Add a brief description..."
+              placeholderTextColor="#9CA3AF"
+              value={description}
+              onChangeText={setDescription}
+              onFocus={() => setIsDescriptionFocused(true)}
+              onBlur={() => setIsDescriptionFocused(false)}
+              autoCapitalize="sentences"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
           </View>
-          <View style={styles.chipRow}>
-            {DURATIONS.map(duration => (
-              <TouchableOpacity
-                key={duration.id}
-                style={[
-                  styles.durationChip,
-                  selectedDuration === duration.id && styles.chipSelected,
-                ]}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSelectedDuration(duration.id);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text
+
+          {/* Duration Card */}
+          <View style={styles.card}>
+            <View style={styles.cardLabelRow}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="time-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.cardLabel}>Duration</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>optional</Text>
+              </View>
+            </View>
+            <View style={styles.chipsContainer}>
+              {DURATIONS.map(duration => (
+                <TouchableOpacity
+                  key={duration.id}
                   style={[
-                    styles.durationChipText,
-                    selectedDuration === duration.id && styles.chipTextSelected,
+                    styles.chip,
+                    selectedDuration === duration.id && styles.chipSelected,
                   ]}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSelectedDuration(duration.id);
+                  }}
+                  activeOpacity={0.7}
                 >
-                  {duration.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Budget Card */}
-        <View style={styles.card}>
-          <View style={styles.cardLabelRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="wallet-outline" size={20} color="#E11D48" />
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedDuration === duration.id && styles.chipTextSelected,
+                    ]}
+                  >
+                    {duration.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            <Text style={styles.cardLabel}>Budget</Text>
-            <Text style={styles.optionalLabel}>optional</Text>
           </View>
-          <View style={styles.budgetGrid}>
-            {BUDGETS.map(budget => (
-              <TouchableOpacity
-                key={budget.id}
-                style={[
-                  styles.budgetOption,
-                  selectedBudget === budget.id && styles.budgetOptionSelected,
-                ]}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSelectedBudget(budget.id);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text
+
+          {/* Budget Card */}
+          <View style={styles.card}>
+            <View style={styles.cardLabelRow}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="wallet-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.cardLabel}>Budget</Text>
+              <View style={styles.optionalBadge}>
+                <Text style={styles.optionalBadgeText}>optional</Text>
+              </View>
+            </View>
+            <View style={styles.chipsContainer}>
+              {BUDGETS.map(budget => (
+                <TouchableOpacity
+                  key={budget.id}
                   style={[
-                    styles.budgetLabel,
-                    selectedBudget === budget.id && styles.budgetLabelSelected,
+                    styles.budgetChip,
+                    selectedBudget === budget.id && styles.chipSelected,
                   ]}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSelectedBudget(budget.id);
+                  }}
+                  activeOpacity={0.7}
                 >
-                  {budget.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedBudget === budget.id && styles.chipTextSelected,
+                    ]}
+                  >
+                    {budget.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
 
-        {/* Bottom Spacer */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-
-      {/* Fixed Header with Gradient Fade */}
-      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <View style={styles.headerBlur} pointerEvents="none">
-          <LinearGradient
-            colors={[
-              'rgba(240, 238, 232, 0.95)',
-              'rgba(240, 238, 232, 0.8)',
-              'rgba(240, 238, 232, 0.4)',
-              'rgba(240, 238, 232, 0)',
-            ]}
-            locations={[0, 0.4, 0.75, 1]}
-            style={styles.headerGradient}
-          />
-        </View>
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.roundButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close" size={20} color="#1F2937" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Date Idea</Text>
-          <TouchableOpacity
-            onPress={handleSave}
-            style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}
-            activeOpacity={0.7}
-            disabled={!isFormValid}
-          >
-            <Ionicons name="checkmark" size={20} color={isFormValid ? "#1F2937" : "#9CA3AF"} />
-          </TouchableOpacity>
-        </View>
+          {/* Bottom Spacer */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5F2',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F0EEE8',
+    backgroundColor: '#F7F5F2',
   },
-
-  // Fixed Header with Gradient
-  fixedHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  headerGradient: {
-    flex: 1,
-    height: 120,
-  },
-  headerContent: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
   },
   roundButton: {
     width: 40,
@@ -367,9 +349,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1F2937',
-    letterSpacing: -0.3,
     flex: 1,
     textAlign: 'center',
   },
@@ -378,59 +359,32 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 40,
-  },
-
-  // Preview
-  previewContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  previewIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  previewIconInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-    textAlign: 'center',
   },
 
   // Card Styles
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   cardFocused: {
-    borderColor: '#D1D5DB',
+    borderColor: '#E5E7EB',
+    shadowOpacity: 0.1,
   },
   cardLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
     gap: 10,
   },
   iconCircle: {
@@ -447,97 +401,85 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  requiredLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#E11D48',
+  optionalBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     marginLeft: 'auto',
   },
-  optionalLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginLeft: 'auto',
+  optionalBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
 
   // Text Input
   textInput: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '400',
     color: '#1F2937',
-    paddingVertical: 0,
+    paddingTop: 4,
+    paddingBottom: 0,
+    paddingHorizontal: 0,
   },
   textInputMultiline: {
-    minHeight: 60,
+    minHeight: 22,
     lineHeight: 22,
   },
 
-  // Chips
-  chipRow: {
+  // Chips Container
+  chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  chipSelected: {
-    backgroundColor: '#1F2937',
-    borderColor: 'transparent',
-  },
-  chipTextSelected: {
-    color: '#FFFFFF',
-  },
-  durationChip: {
+
+  // Chips
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
   },
-  durationChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-
-  // Budget
-  budgetGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  budgetOption: {
+  budgetChip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    gap: 6,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
   },
-  budgetOptionSelected: {
+  chipSelected: {
     backgroundColor: '#1F2937',
-    borderColor: 'transparent',
+    borderColor: '#1F2937',
   },
-  budgetLabel: {
-    fontSize: 13,
+  chipText: {
+    fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
   },
-  budgetLabelSelected: {
+  chipTextSelected: {
     color: '#FFFFFF',
   },
 
