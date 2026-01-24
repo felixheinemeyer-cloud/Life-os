@@ -582,7 +582,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             cx={center}
             cy={center}
             r={radius}
-            stroke="#E5E7EB"
+            stroke="#D1D5DB"
             strokeWidth={strokeWidth}
             fill="none"
           />

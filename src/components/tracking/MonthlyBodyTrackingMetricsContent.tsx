@@ -300,8 +300,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,

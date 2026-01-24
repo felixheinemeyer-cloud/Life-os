@@ -216,7 +216,6 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 32,
     marginBottom: 8,
   },
   questionSubtext: {
@@ -225,7 +224,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     letterSpacing: -0.2,
-    lineHeight: 20,
   },
 
   // Priority Card

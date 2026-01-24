@@ -328,12 +328,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   questionText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 28,
+    lineHeight: 32,
     marginBottom: 4,
   },
 
