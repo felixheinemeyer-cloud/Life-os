@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import EveningTrackingPriorityContent from '../components/tracking/EveningTrackingPriorityContent';
 import EveningTrackingRatingsContent from '../components/tracking/EveningTrackingRatingsContent';
 import EveningTrackingJournalContent from '../components/tracking/EveningTrackingJournalContent';
+import EveningTrackingNudgeContent from '../components/tracking/EveningTrackingNudgeContent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOTAL_STEPS = 3;
@@ -25,6 +26,11 @@ interface EveningTrackingContainerScreenProps {
   navigation?: {
     goBack: () => void;
     navigate: (screen: string, params?: Record<string, unknown>) => void;
+  };
+  route?: {
+    params?: {
+      morningCheckInCompleted?: boolean;
+    };
   };
 }
 
@@ -42,7 +48,11 @@ interface TrackingData {
 
 const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenProps> = ({
   navigation,
+  route,
 }) => {
+  // Check if morning check-in was completed (passed from Dashboard)
+  const morningCheckInCompleted = route?.params?.morningCheckInCompleted ?? false;
+
   const [currentStep, setCurrentStep] = useState(0);
   const [trackingData, setTrackingData] = useState<TrackingData>({
     priorityCompleted: null,
@@ -131,6 +141,25 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
     animateToStep(newStep);
   };
 
+  // Nudge handlers (when morning check-in not completed)
+  const handleDoMorningFirst = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Navigate to Morning Tracking
+    navigation?.navigate('MorningTracking');
+  };
+
+  const handleContinueAnyway = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Skip to ratings step (step 1), bypassing priority
+    const newStep = 1;
+    setCurrentStep(newStep);
+    animateToStep(newStep);
+  };
+
   const updateTrackingData = <K extends keyof TrackingData>(key: K, value: TrackingData[K]) => {
     setTrackingData((prev) => ({
       ...prev,
@@ -181,12 +210,19 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
               },
             ]}
           >
-            {/* Step 1: Priority */}
+            {/* Step 1: Nudge (if morning not done) or Priority */}
             <View style={styles.page}>
-              <EveningTrackingPriorityContent
-                morningPriority={trackingData.morningPriority}
-                onSelectionComplete={handlePrioritySelection}
-              />
+              {morningCheckInCompleted ? (
+                <EveningTrackingPriorityContent
+                  morningPriority={trackingData.morningPriority}
+                  onSelectionComplete={handlePrioritySelection}
+                />
+              ) : (
+                <EveningTrackingNudgeContent
+                  onDoMorningFirst={handleDoMorningFirst}
+                  onContinueAnyway={handleContinueAnyway}
+                />
+              )}
             </View>
 
             {/* Step 2: Ratings */}

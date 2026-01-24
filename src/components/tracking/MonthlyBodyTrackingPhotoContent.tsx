@@ -273,10 +273,9 @@ const styles = StyleSheet.create({
   questionSubtext: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     textAlign: 'center',
     marginTop: 4,
-    paddingHorizontal: 16,
   },
 
   // Photo Card - matches weekly check-in card style

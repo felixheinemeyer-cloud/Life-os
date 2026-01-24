@@ -247,7 +247,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
             <Path
               d={generatePath(data.nutrition)}
               stroke={CHART_METRIC_COLORS.nutrition.primary}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -257,7 +257,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
             <Path
               d={generatePath(data.energy)}
               stroke={CHART_METRIC_COLORS.energy.primary}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -267,7 +267,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
             <Path
               d={generatePath(data.satisfaction)}
               stroke={CHART_METRIC_COLORS.satisfaction.primary}
-              strokeWidth={2}
+              strokeWidth={2.5}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -294,7 +294,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
               r={5}
               fill={CHART_METRIC_COLORS.nutrition.primary}
               stroke="#FFFFFF"
-              strokeWidth={2}
+              strokeWidth={2.5}
             />
           )}
           {activeIndex !== null && activeMetrics.has('energy') && (
@@ -304,7 +304,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
               r={5}
               fill={CHART_METRIC_COLORS.energy.primary}
               stroke="#FFFFFF"
-              strokeWidth={2}
+              strokeWidth={2.5}
             />
           )}
           {activeIndex !== null && activeMetrics.has('satisfaction') && (
@@ -314,7 +314,7 @@ const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggle
               r={5}
               fill={CHART_METRIC_COLORS.satisfaction.primary}
               stroke="#FFFFFF"
-              strokeWidth={2}
+              strokeWidth={2.5}
             />
           )}
 
@@ -697,7 +697,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   const handleEveningTracking = (): void => {
     if (navigation) {
-      navigation.navigate('EveningTracking');
+      navigation.navigate('EveningTracking', { morningCheckInCompleted });
     } else {
       console.log('Navigate to Evening Tracking');
     }
@@ -905,23 +905,38 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               onPress={handleMorningTracking}
               activeOpacity={0.85}
             >
-              <View style={styles.trackingCard}>
+              <View style={morningCheckInCompleted ? styles.trackingCardCompleted : styles.trackingCard}>
                 {morningCheckInCompleted ? (
-                  // Completed state - green ring with sun icon (success transformation)
+                  // Completed state - custom checkmark with sun badge
                   <Animated.View style={[
                     styles.trackingIconCompletedRingWrapper,
                     { transform: [{ scale: morningScale }] }
                   ]}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.trackingIconGradientRing}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.trackingIconInnerCircle}>
-                        <Ionicons name="sunny" size={44} color="#059669" />
+                    <View style={styles.completedIconContainer}>
+                      <LinearGradient
+                        colors={['#FBBF24', '#F59E0B', '#D97706']}
+                        style={styles.trackingIconGradientRingCompleted}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.trackingIconInnerCircleCompleted}>
+                          {/* Custom thick rounded checkmark */}
+                          <Svg width={40} height={40} viewBox="0 0 24 24">
+                            <Path
+                              d="M4 12.5L9.5 18L20 6"
+                              stroke="#D97706"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </Svg>
+                        </View>
+                      </LinearGradient>
+                      <View style={styles.iconBadgeMorningCompleted}>
+                        <Ionicons name="sunny" size={18} color="#D97706" />
                       </View>
-                    </LinearGradient>
+                    </View>
                   </Animated.View>
                 ) : (
                   // Available state - orange gradient ring with sun
@@ -936,41 +951,55 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                     </View>
                   </LinearGradient>
                 )}
-                <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
+                {morningCheckInCompleted ? (
+                  <Text style={[styles.lightCardTitle, styles.lightCardTitleCompleted]}>Ready for{'\n'}the Day</Text>
+                ) : (
+                  <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
+                )}
               </View>
             </TouchableOpacity>
 
             {/* Evening Tracking Card */}
             <TouchableOpacity
               style={styles.trackingCardTouchable}
-              onPress={eveningCheckInCompleted || isEveningCheckInAvailable() ? handleEveningTracking : undefined}
-              activeOpacity={eveningCheckInCompleted || isEveningCheckInAvailable() ? 0.85 : 1}
-              disabled={!eveningCheckInCompleted && !isEveningCheckInAvailable()}
+              onPress={handleEveningTracking}
+              activeOpacity={0.85}
             >
-              <View style={[
-                styles.trackingCard,
-                !eveningCheckInCompleted && !isEveningCheckInAvailable() && styles.trackingCardLocked
-              ]}>
-                {/* Icon with state-dependent appearance */}
+              <View style={eveningCheckInCompleted ? styles.trackingCardCompleted : styles.trackingCard}>
                 {eveningCheckInCompleted ? (
-                  // Completed state - green ring with moon icon (success transformation)
+                  // Completed state - custom checkmark with moon badge
                   <Animated.View style={[
                     styles.trackingIconCompletedRingWrapper,
                     { transform: [{ scale: eveningScale }] }
                   ]}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.trackingIconGradientRing}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.trackingIconInnerCircle}>
-                        <Ionicons name="moon" size={44} color="#059669" />
+                    <View style={styles.completedIconContainer}>
+                      <LinearGradient
+                        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                        style={styles.trackingIconGradientRingCompleted}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.trackingIconInnerCircleCompleted}>
+                          {/* Custom thick rounded checkmark */}
+                          <Svg width={40} height={40} viewBox="0 0 24 24">
+                            <Path
+                              d="M4 12.5L9.5 18L20 6"
+                              stroke="#7C3AED"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </Svg>
+                        </View>
+                      </LinearGradient>
+                      <View style={styles.iconBadgeEveningCompleted}>
+                        <Ionicons name="moon" size={18} color="#7C3AED" />
                       </View>
-                    </LinearGradient>
+                    </View>
                   </Animated.View>
-                ) : isEveningCheckInAvailable() ? (
-                  // Available state - purple gradient
+                ) : (
+                  // Default state - purple gradient
                   <LinearGradient
                     colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
                     style={styles.trackingIconGradientRing}
@@ -981,23 +1010,9 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                       <Ionicons name="moon" size={44} color="#7C3AED" />
                     </View>
                   </LinearGradient>
-                ) : (
-                  // Locked state - same ring structure as Morning, muted colors
-                  <LinearGradient
-                    colors={['#E9E5FF', '#DDD6FE', '#C4B5FD']}
-                    style={styles.trackingIconGradientRing}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={styles.trackingIconInnerCircle}>
-                      <Ionicons name="moon" size={44} color="#B4A7DE" />
-                    </View>
-                  </LinearGradient>
                 )}
-                {!eveningCheckInCompleted && !isEveningCheckInAvailable() ? (
-                  <Text style={[styles.lightCardTitle, styles.lightCardTitleLocked]}>
-                    Evening{'\n'}<Text style={styles.timeInTitle}>in {getHoursUntilEveningCheckIn()}h</Text>
-                  </Text>
+                {eveningCheckInCompleted ? (
+                  <Text style={[styles.lightCardTitle, styles.lightCardTitleCompleted]}>Done for{'\n'}the Day</Text>
                 ) : (
                   <Text style={styles.lightCardTitle}>Evening{'\n'}Check-In</Text>
                 )}
@@ -1377,6 +1392,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
           </Animated.View>
         </View>
       </View>
+
     </View>
   );
 };
@@ -1538,6 +1554,16 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
+  trackingCardCompleted: {
+    aspectRatio: 1,
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0EEE8',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
   trackingIconGradientRing: {
     width: 88,
     height: 88,
@@ -1547,6 +1573,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  trackingIconGradientRingCompleted: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trackingIconInnerCircle: {
     width: 82,
     height: 82,
@@ -1555,12 +1589,139 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  trackingIconInnerCircleCompleted: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trackingIconCompletedRingWrapper: {
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+  },
+  // Completed icon ring (no gradient, just border)
+  completedIconRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0EEE8',
+    marginBottom: 16,
+    position: 'relative',
+  },
+  // Badge for sun/moon indicator
+  iconBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
+  iconBadgeCompleted: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
+  completedIconContainer: {
+    position: 'relative',
+    width: 88,
+    height: 88,
+    marginBottom: 16,
+  },
+  iconBadgeMorningCompleted: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEveningCompleted: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
+  },
+  iconBadgeMorning: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEvening: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
+  },
+  iconBadgeMorningTransparent: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEveningTransparent: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
   },
   trackingIconInactiveRing: {
     width: 88,
@@ -1579,6 +1740,9 @@ const styles = StyleSheet.create({
   },
   lightCardTitleLocked: {
     color: '#A8A8B3',
+  },
+  lightCardTitleCompleted: {
+    color: '#9CA3AF',
   },
   timeInTitle: {
     color: '#9D8EC9',
@@ -2205,6 +2369,7 @@ const styles = StyleSheet.create({
     color: '#6366F1',
     letterSpacing: -0.1,
   },
+
 });
 
 export default DashboardScreen;
