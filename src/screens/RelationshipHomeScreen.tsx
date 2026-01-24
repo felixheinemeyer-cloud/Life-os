@@ -259,52 +259,62 @@ const HeroSection: React.FC<{
   duration: DurationStats;
 }> = ({ photoUri, partnerName, sinceDate, duration }) => (
   <View style={styles.heroSection}>
-    {/* Unified Card with photo and info */}
-    <View style={styles.heroCard}>
-      <View style={styles.heroCardContent}>
-        {/* Left: Avatar */}
-        <View style={styles.photoContainer}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
-          ) : (
-            <LinearGradient
-              colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-              style={styles.heroPhotoPlaceholder}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.heroIconCircle}>
-                <Ionicons name="heart" size={28} color="#E11D48" />
-              </View>
-            </LinearGradient>
-          )}
-        </View>
+    {/* Photo Container */}
+    <View style={styles.heroPhotoContainer}>
+      {/* Background Photo or Placeholder */}
+      {photoUri ? (
+        <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
+      ) : (
+        <LinearGradient
+          colors={['#FFF1F2', '#FECDD3', '#FDA4AF']}
+          style={styles.heroPhotoPlaceholder}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.heroPlaceholderIconContainer}>
+            <Ionicons name="heart" size={64} color="rgba(225, 29, 72, 0.3)" />
+          </View>
+        </LinearGradient>
+      )}
 
-        {/* Right: Info */}
-        <View style={styles.heroInfoSection}>
-          {/* Partner Name */}
+      {/* Gradient Overlay for better text readability */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.15)']}
+        style={styles.heroGradientOverlay}
+        locations={[0, 0.5, 1]}
+      />
+    </View>
+
+    {/* Info Card - positioned to overlap and extend beyond photo */}
+    <View style={styles.heroInfoCard}>
+      <View style={styles.heroInfoRow}>
+        {/* Left: Name & Since Date */}
+        <View style={styles.heroInfoLeft}>
           <Text style={styles.partnerName}>{partnerName}</Text>
-
-          {/* Since Date - Simple text */}
           <View style={styles.sinceRow}>
             <Ionicons name="heart" size={10} color="#E11D48" />
-            <Text style={styles.sinceText}>Since {formatDate(sinceDate)}</Text>
+            <Text style={styles.sinceText}>{formatDate(sinceDate)}</Text>
           </View>
+        </View>
 
-          {/* Divider */}
-          <View style={styles.heroInfoDivider} />
+        {/* Divider */}
+        <View style={styles.heroInfoDivider} />
 
-          {/* Duration - Inline elegant display */}
-          <View style={styles.durationRow}>
-            <View style={styles.durationItem}>
-              <Text style={styles.durationNumber}>{duration.years}</Text>
-              <Text style={styles.durationLabel}>years</Text>
-            </View>
-            <Text style={styles.durationDot}>•</Text>
-            <View style={styles.durationItem}>
-              <Text style={styles.durationNumber}>{duration.months}</Text>
-              <Text style={styles.durationLabel}>months</Text>
-            </View>
+        {/* Right: Duration Stats */}
+        <View style={styles.durationRow}>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.years}</Text>
+            <Text style={styles.durationLabel}>years</Text>
+          </View>
+          <Text style={styles.durationDot}>•</Text>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.months}</Text>
+            <Text style={styles.durationLabel}>months</Text>
+          </View>
+          <Text style={styles.durationDot}>•</Text>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.days}</Text>
+            <Text style={styles.durationLabel}>days</Text>
           </View>
         </View>
       </View>
@@ -1238,34 +1248,18 @@ const styles = StyleSheet.create({
   // Hero Section
   heroSection: {
     marginBottom: 48,
+    marginHorizontal: 8,
   },
-  heroCard: {
-    backgroundColor: '#FFFFFF',
+  heroPhotoContainer: {
+    height: 346,
     borderRadius: 24,
-    paddingVertical: 16,
-    paddingLeft: 16,
-    paddingRight: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 4,
-  },
-  heroCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  photoContainer: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
     overflow: 'hidden',
-    shadowColor: '#E11D48',
-    shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowRadius: 24,
+    elevation: 8,
   },
   heroPhoto: {
     width: '100%',
@@ -1278,78 +1272,87 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  heroIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#E11D48',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+  heroPlaceholderIconContainer: {
+    position: 'absolute',
+    top: '35%',
   },
-  heroInfoSection: {
-    flex: 1,
+  heroGradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 180,
+  },
+  heroInfoCard: {
+    marginTop: -38,
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  heroInfoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  heroInfoLeft: {
+    flex: 1,
   },
   partnerName: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
-    textAlign: 'center',
+    marginBottom: 8,
   },
   sinceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 5,
   },
   sinceText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#E11D48',
     letterSpacing: -0.2,
   },
   heroInfoDivider: {
-    height: 1,
-    backgroundColor: 'rgba(225, 29, 72, 0.08)',
-    marginVertical: 12,
-    marginRight: 8,
-    alignSelf: 'stretch',
+    width: 1,
+    height: 36,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    marginHorizontal: 14,
   },
   durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    gap: 8,
   },
   durationItem: {
     alignItems: 'center',
   },
   durationNumber: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   durationLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: '#6B7280',
     marginTop: 2,
     textTransform: 'lowercase',
   },
   durationDot: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '400',
     color: '#D1D5DB',
-    marginTop: -6,
+    marginTop: -3,
   },
 
   // Quick Action Buttons
