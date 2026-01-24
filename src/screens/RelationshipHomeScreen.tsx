@@ -259,53 +259,54 @@ const HeroSection: React.FC<{
   duration: DurationStats;
 }> = ({ photoUri, partnerName, sinceDate, duration }) => (
   <View style={styles.heroSection}>
-    {/* Avatar */}
-    <View style={styles.photoCard}>
-      {photoUri ? (
-        <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
-      ) : (
-        <LinearGradient
-          colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-          style={styles.heroPhotoPlaceholder}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.heroIconCircle}>
-            <Ionicons name="heart" size={44} color="#E11D48" />
+    {/* Unified Card with photo and info */}
+    <View style={styles.heroCard}>
+      <View style={styles.heroCardContent}>
+        {/* Left: Avatar */}
+        <View style={styles.photoContainer}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
+          ) : (
+            <LinearGradient
+              colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+              style={styles.heroPhotoPlaceholder}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.heroIconCircle}>
+                <Ionicons name="heart" size={28} color="#E11D48" />
+              </View>
+            </LinearGradient>
+          )}
+        </View>
+
+        {/* Right: Info */}
+        <View style={styles.heroInfoSection}>
+          {/* Partner Name */}
+          <Text style={styles.partnerName}>{partnerName}</Text>
+
+          {/* Since Date - Simple text */}
+          <View style={styles.sinceRow}>
+            <Ionicons name="heart" size={10} color="#E11D48" />
+            <Text style={styles.sinceText}>Since {formatDate(sinceDate)}</Text>
           </View>
-        </LinearGradient>
-      )}
-    </View>
 
-    {/* Partner Name */}
-    <Text style={styles.partnerName}>{partnerName}</Text>
+          {/* Divider */}
+          <View style={styles.heroInfoDivider} />
 
-    {/* Anniversary Badge */}
-    <View style={styles.anniversaryBadge}>
-      <Ionicons name="heart" size={12} color="#E11D48" />
-      <Text style={styles.anniversaryText}>Since {formatDate(sinceDate)}</Text>
-    </View>
-
-    {/* Duration Stats - 4 Section Card */}
-    <View style={styles.durationContainer}>
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.years}</Text>
-        <Text style={styles.durationLabel}>years</Text>
-      </View>
-      <View style={styles.durationDivider} />
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.months}</Text>
-        <Text style={styles.durationLabel}>months</Text>
-      </View>
-      <View style={styles.durationDivider} />
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.weeks}</Text>
-        <Text style={styles.durationLabel}>weeks</Text>
-      </View>
-      <View style={styles.durationDivider} />
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.days}</Text>
-        <Text style={styles.durationLabel}>days</Text>
+          {/* Duration - Inline elegant display */}
+          <View style={styles.durationRow}>
+            <View style={styles.durationItem}>
+              <Text style={styles.durationNumber}>{duration.years}</Text>
+              <Text style={styles.durationLabel}>years</Text>
+            </View>
+            <Text style={styles.durationDot}>•</Text>
+            <View style={styles.durationItem}>
+              <Text style={styles.durationNumber}>{duration.months}</Text>
+              <Text style={styles.durationLabel}>months</Text>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   </View>
@@ -993,7 +994,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -1236,22 +1237,35 @@ const styles = StyleSheet.create({
 
   // Hero Section
   heroSection: {
-    alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 48,
   },
-  photoCard: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    overflow: 'hidden',
-    marginBottom: 20,
-    shadowColor: '#E11D48',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+  heroCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingVertical: 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
     shadowRadius: 24,
-    elevation: 8,
-    borderWidth: 5,
-    borderColor: '#FFFFFF',
+    elevation: 4,
+  },
+  heroCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  photoContainer: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    overflow: 'hidden',
+    shadowColor: '#E11D48',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
   heroPhoto: {
     width: '100%',
@@ -1265,64 +1279,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroIconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 3,
   },
+  heroInfoSection: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   partnerName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  anniversaryBadge: {
+  sinceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 241, 242, 0.8)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(225, 29, 72, 0.1)',
+    justifyContent: 'center',
+    gap: 5,
   },
-  anniversaryText: {
+  sinceText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#E11D48',
     letterSpacing: -0.2,
   },
-  durationContainer: {
+  heroInfoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(225, 29, 72, 0.08)',
+    marginVertical: 12,
+    marginRight: 8,
+    alignSelf: 'stretch',
+  },
+  durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    justifyContent: 'center',
+    gap: 12,
   },
-  durationStat: {
+  durationItem: {
     alignItems: 'center',
-    paddingHorizontal: 14,
   },
   durationNumber: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#E11D48',
+    color: '#1F2937',
     letterSpacing: -0.5,
   },
   durationLabel: {
@@ -1332,10 +1345,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textTransform: 'lowercase',
   },
-  durationDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#F3F4F6',
+  durationDot: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#D1D5DB',
+    marginTop: -6,
   },
 
   // Quick Action Buttons
