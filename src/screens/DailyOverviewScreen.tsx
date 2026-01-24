@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 interface DailyOverviewScreenProps {
   navigation?: {
     goBack: () => void;
+    navigate: (screen: string, params?: object) => void;
   };
   route?: {
     params?: {
@@ -409,6 +410,19 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
     setCurrentDate(newDate);
   };
 
+  const handleMorningCheckin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation?.navigate('MorningTracking', { date: dateKey });
+  };
+
+  const handleEveningCheckin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation?.navigate('EveningTracking', {
+      morningCheckInCompleted: morning.completed,
+      date: dateKey
+    });
+  };
+
   // Check if we're at today (can't go forward)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -543,7 +557,21 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Morning reflection wasn't recorded</Text>
+                <View style={styles.emptyStateIcon}>
+                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyStateTitle}>No review data</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Morning reflection wasn't recorded
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={handleMorningCheckin}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyStateButtonText}>Complete Check-in</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -616,7 +644,21 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Evening reflection wasn't recorded</Text>
+                <View style={styles.emptyStateIcon}>
+                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyStateTitle}>No review data</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Evening reflection wasn't recorded
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={handleEveningCheckin}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyStateButtonText}>Complete Check-in</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -1129,10 +1171,44 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 13,
-    fontWeight: '500',
+  emptyStateIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
     color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 24,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+    marginTop: 16,
+  },
+  emptyStateButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   // No Data
