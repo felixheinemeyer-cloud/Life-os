@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 32,
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 24,
   },
   heroIconCircle: {
     width: 80,
