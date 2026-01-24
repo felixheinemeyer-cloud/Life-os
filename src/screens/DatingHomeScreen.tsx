@@ -558,9 +558,12 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
   return (
     <View style={[styles.section, styles.dateIdeasSection]}>
       <View style={styles.dateIdeasHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Date Ideas</Text>
-          <Text style={styles.dateIdeasSubtitle}>First date inspiration</Text>
+        <View style={styles.dateIdeasTitleRow}>
+          <View style={styles.sectionAccent} />
+          <View>
+            <Text style={styles.sectionTitle}>Date Ideas</Text>
+            <Text style={styles.dateIdeasSubtitle}>First date inspiration</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
           <Text style={styles.seeAllText}>See All</Text>
@@ -696,20 +699,22 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         scrollEnabled={!isSwipingCard}
       >
-          {/* Scrollable Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Dating</Text>
-          </View>
           {/* Contacts Section */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Contacts</Text>
+            <View style={styles.contactsSectionHeader}>
+              <View style={styles.contactsTitleRow}>
+                <View style={styles.sectionAccent} />
+                <View>
+                  <Text style={styles.sectionTitle}>Your Connections</Text>
+                  <Text style={styles.sectionSubtitle}>People you're getting to know</Text>
+                </View>
+              </View>
               <TouchableOpacity
                 style={styles.seeAllButton}
                 onPress={handleSeeAllCRM}
@@ -736,7 +741,10 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                   >
                     <Text style={styles.personInitials}>{person.initials}</Text>
                   </LinearGradient>
-                  <Text style={styles.personName}>{person.name}</Text>
+                  <View style={styles.personInfo}>
+                    <Text style={styles.personName}>{person.name}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -751,8 +759,14 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
 
           {/* Dating Advice Section */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Advice</Text>
+            <View style={styles.adviceSectionHeader}>
+              <View style={styles.adviceTitleRow}>
+                <View style={styles.sectionAccent} />
+                <View>
+                  <Text style={styles.sectionTitle}>Dating Wisdom</Text>
+                  <Text style={styles.sectionSubtitle}>Tips for meaningful connections</Text>
+                </View>
+              </View>
             </View>
 
             <View style={styles.adviceList}>
@@ -761,16 +775,16 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                   key={item.id}
                   style={styles.adviceCard}
                   onPress={() => handleAdvicePress(item)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
                   <View style={styles.adviceIconCircle}>
-                    <Ionicons name={item.icon} size={20} color="#BE123C" />
+                    <Ionicons name={item.icon} size={22} color="#E11D48" />
                   </View>
                   <View style={styles.adviceContent}>
                     <Text style={styles.adviceTitle}>{item.title}</Text>
                     <Text style={styles.adviceDescription}>{item.description}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+                  <Ionicons name="chevron-forward" size={20} color="#6B7280" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -886,10 +900,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  titleContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
   backButton: {
     width: 40,
     height: 40,
@@ -898,10 +908,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },
@@ -913,18 +923,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.5,
   },
   scrollView: {
     flex: 1,
@@ -935,78 +939,94 @@ const styles = StyleSheet.create({
 
   // Section Common
   section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 28,
     paddingHorizontal: 16,
-    marginBottom: 16,
+  },
+  sectionAccent: {
+    width: 4,
+    height: 40,
+    backgroundColor: '#E11D48',
+    borderRadius: 2,
+    marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
   },
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   seeAllText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginRight: 3,
-    letterSpacing: -0.1,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginRight: 2,
   },
 
   // Contacts Section
+  contactsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  contactsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   peopleList: {
-    paddingHorizontal: 16,
     gap: 10,
   },
   personCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingTop: 8, paddingBottom: 12,
-    paddingHorizontal: 14,
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   personAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   personInitials: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#BE123C',
+    color: '#E11D48',
+  },
+  personInfo: {
+    flex: 1,
   },
   personName: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
   },
@@ -1014,6 +1034,7 @@ const styles = StyleSheet.create({
   // Date Ideas Section - Carousel
   dateIdeasSection: {
     marginBottom: 40,
+    paddingHorizontal: 0,
   },
   dateIdeasHeader: {
     flexDirection: 'row',
@@ -1021,6 +1042,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 16,
     marginBottom: 16,
+  },
+  dateIdeasTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
   dateIdeasSubtitle: {
     fontSize: 14,
@@ -1135,45 +1161,56 @@ const styles = StyleSheet.create({
   },
 
   // Advice Section
+  adviceSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  adviceTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   adviceList: {
-    paddingHorizontal: 16,
-    gap: 10,
+    gap: 12,
   },
   adviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   adviceIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   adviceContent: {
     flex: 1,
   },
   adviceTitle: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   adviceDescription: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#9CA3AF',
+    color: '#6B7280',
+    lineHeight: 18,
   },
 
   // Dropdown Modal
@@ -1186,7 +1223,8 @@ const styles = StyleSheet.create({
     top: 116,
     right: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 20,
+    paddingVertical: 6,
     minWidth: 200,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -1197,7 +1235,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     gap: 12,
   },
