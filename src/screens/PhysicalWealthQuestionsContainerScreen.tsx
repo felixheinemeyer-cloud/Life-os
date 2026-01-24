@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2937',
   },
   progressDotInactive: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
 
   // Content - Horizontal Paging

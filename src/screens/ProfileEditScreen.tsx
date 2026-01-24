@@ -251,7 +251,9 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({ navigation }) => 
                   <Ionicons name="calendar-outline" size={20} color="#6366F1" />
                 </View>
                 <Text style={styles.cardLabel}>Birthday</Text>
-                <Text style={styles.optionalLabel}>optional</Text>
+                <View style={styles.optionalBadge}>
+                  <Text style={styles.optionalBadgeText}>optional</Text>
+                </View>
               </View>
               <TextInput
                 style={styles.textInput}
@@ -262,14 +264,6 @@ const ProfileEditScreen: React.FC<ProfileEditScreenProps> = ({ navigation }) => 
                 returnKeyType="done"
               />
             </View>
-          </View>
-
-          {/* Info Note */}
-          <View style={styles.infoNote}>
-            <Ionicons name="information-circle-outline" size={18} color="#9CA3AF" />
-            <Text style={styles.infoNoteText}>
-              Your profile information is stored locally on your device and never shared.
-            </Text>
           </View>
 
           <View style={styles.bottomSpacer} />
@@ -293,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8, paddingBottom: 12,
+    paddingTop: 16, paddingBottom: 12,
   },
   closeButton: {
     width: 40,
@@ -428,11 +422,19 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     letterSpacing: -0.2,
   },
-  optionalLabel: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#9CA3AF',
+  optionalBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
     marginLeft: 'auto',
+  },
+  optionalBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   textInput: {
     fontSize: 17,
@@ -446,22 +448,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F3F4F6',
     marginVertical: 16,
-  },
-  // Info Note
-  infoNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'rgba(156, 163, 175, 0.1)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-  },
-  infoNoteText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    lineHeight: 18,
   },
   // Bottom Spacer
   bottomSpacer: {

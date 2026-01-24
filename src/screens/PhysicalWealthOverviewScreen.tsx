@@ -1247,14 +1247,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '400',
     color: '#6B7280',
     letterSpacing: -0.2,
   },

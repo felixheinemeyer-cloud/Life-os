@@ -217,6 +217,10 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
     Alert.alert('Rate App', 'Thank you for your support! App Store link coming soon.');
   };
 
+  const handleGiveFeedback = () => {
+    Linking.openURL('mailto:feedback@lifeosapp.com?subject=Life OS Feedback');
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Log Out',
@@ -325,6 +329,27 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
             </TouchableOpacity>
           </Animated.View>
 
+          {/* Feedback Section */}
+          <SettingsSection title="Feedback">
+            <SettingsItem
+              icon="chatbubble-outline"
+              iconColor="#10B981"
+              iconBackground="#D1FAE5"
+              label="Give Feedback"
+              description="Help us improve Life OS"
+              onPress={handleGiveFeedback}
+            />
+            <View style={styles.separator} />
+            <SettingsItem
+              icon="star-outline"
+              iconColor="#FBBF24"
+              iconBackground="#FEF3C7"
+              label="Rate Life OS"
+              description="Help us with a review"
+              onPress={handleRateApp}
+            />
+          </SettingsSection>
+
           {/* Preferences Section */}
           <SettingsSection title="Preferences">
             <SettingsItem
@@ -387,15 +412,6 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
               label="App Version"
               rightElement={<Text style={styles.versionText}>1.0.0</Text>}
               showChevron={false}
-            />
-            <View style={styles.separator} />
-            <SettingsItem
-              icon="star-outline"
-              iconColor="#FBBF24"
-              iconBackground="#FEF3C7"
-              label="Rate Life OS"
-              description="Help us with a review"
-              onPress={handleRateApp}
             />
             <View style={styles.separator} />
             <SettingsItem
