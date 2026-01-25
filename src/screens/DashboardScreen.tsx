@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,15 @@ import {
   SafeAreaView,
   Animated,
   Easing,
+  Dimensions,
+  Platform,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PremiumStatsChart from '../components/PremiumStatsChart';
+import * as Haptics from 'expo-haptics';
+import Svg, { Path, Line, Circle, Text as SvgText } from 'react-native-svg';
 import TodaysPriorityCard from '../components/dashboard/TodaysPriorityCard';
 import SwipeableCheckInCard from '../components/dashboard/SwipeableCheckInCard';
 import NotificationBell from '../components/notifications/NotificationBell';
@@ -21,7 +25,386 @@ import { useStreak } from '../context/StreakContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useFocusEffect } from '@react-navigation/native';
 
-type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Chart metric colors matching Body Overview
+const CHART_METRIC_COLORS = {
+  nutrition: { primary: '#10B981', light: '#A7F3D0', name: 'Nutrition' },
+  energy: { primary: '#F59E0B', light: '#FDE68A', name: 'Energy' },
+  satisfaction: { primary: '#3B82F6', light: '#93C5FD', name: 'Satisfaction' },
+};
+
+type ChartMetricType = 'nutrition' | 'energy' | 'satisfaction';
+
+interface ChartData {
+  nutrition: number[];
+  energy: number[];
+  satisfaction: number[];
+}
+
+// Weekly Chart Component (matching Body Overview style)
+interface WeeklyChartProps {
+  data: ChartData;
+  activeMetrics: Set<ChartMetricType>;
+  onToggleMetric: (metric: ChartMetricType) => void;
+}
+
+const WeeklyChart: React.FC<WeeklyChartProps> = ({ data, activeMetrics, onToggleMetric }) => {
+  const chartWidth = SCREEN_WIDTH - 64;
+  const chartHeight = 180;
+  const padding = { top: 16, right: 12, bottom: 32, left: 32 };
+
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  const scale = { min: 1, max: 10 };
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const getX = (index: number): number => {
+    return padding.left + (index / 6) * plotWidth;
+  };
+
+  const getY = (value: number): number => {
+    const normalizedValue = Math.max(scale.min, Math.min(scale.max, value));
+    return padding.top + plotHeight - ((normalizedValue - scale.min) / (scale.max - scale.min)) * plotHeight;
+  };
+
+  const generatePath = (values: number[]): string => {
+    if (values.length === 0) return '';
+
+    const points = values.map((value, index) => ({
+      x: getX(index),
+      y: getY(value),
+    }));
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 8;
+      const cp1y = p1.y + (p2.y - p0.y) / 8;
+      const cp2x = p2.x - (p3.x - p1.x) / 8;
+      const cp2y = p2.y - (p3.y - p1.y) / 8;
+
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+
+    return path;
+  };
+
+  const getIndexFromX = useCallback((locationX: number): number => {
+    const relativeX = locationX - padding.left;
+    const clampedX = Math.max(0, Math.min(relativeX, plotWidth));
+    const index = Math.round((clampedX / plotWidth) * 6);
+    return Math.max(0, Math.min(6, index));
+  }, [plotWidth, padding.left]);
+
+  const panResponder = useMemo(() => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+
+      onPanResponderGrant: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex(index);
+        if (Platform.OS === 'ios') {
+          Haptics.selectionAsync();
+        }
+      },
+
+      onPanResponderMove: (evt) => {
+        const index = getIndexFromX(evt.nativeEvent.locationX);
+        setActiveIndex((prev) => {
+          if (prev !== index && Platform.OS === 'ios') {
+            Haptics.selectionAsync();
+          }
+          return index;
+        });
+      },
+
+      onPanResponderRelease: () => {
+        setActiveIndex(null);
+      },
+
+      onPanResponderTerminate: () => {
+        setActiveIndex(null);
+      },
+    });
+  }, [getIndexFromX]);
+
+  return (
+    <View>
+      {/* Legend / Toggle */}
+      <View style={weeklyChartStyles.chartLegendRow}>
+        {activeIndex === null ? (
+          <>
+            {(Object.keys(CHART_METRIC_COLORS) as ChartMetricType[]).map((metric) => (
+              <TouchableOpacity
+                key={metric}
+                style={[
+                  weeklyChartStyles.chartLegendItem,
+                  !activeMetrics.has(metric) && weeklyChartStyles.chartLegendItemInactive,
+                ]}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.selectionAsync();
+                  }
+                  onToggleMetric(metric);
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    weeklyChartStyles.chartLegendDot,
+                    { backgroundColor: activeMetrics.has(metric) ? CHART_METRIC_COLORS[metric].primary : '#D1D5DB' },
+                  ]}
+                />
+                <Text
+                  style={[
+                    weeklyChartStyles.chartLegendText,
+                    { color: activeMetrics.has(metric) ? '#374151' : '#9CA3AF' },
+                  ]}
+                >
+                  {CHART_METRIC_COLORS[metric].name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : (
+          <View style={weeklyChartStyles.chartScrubbingContent}>
+            <Text style={weeklyChartStyles.chartScrubbingDate}>{dayLabels[activeIndex]}</Text>
+            <View style={weeklyChartStyles.chartScrubbingValues}>
+              {activeMetrics.has('nutrition') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.nutrition.primary, fontWeight: '600' }}>
+                    {data.nutrition[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+              {activeMetrics.has('energy') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.energy.primary, fontWeight: '600' }}>
+                    {data.energy[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+              {activeMetrics.has('satisfaction') && (
+                <Text style={weeklyChartStyles.chartScrubbingValueText}>
+                  <Text style={{ color: CHART_METRIC_COLORS.satisfaction.primary, fontWeight: '600' }}>
+                    {data.satisfaction[activeIndex].toFixed(1)}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF' }}>/10</Text>
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Chart */}
+      <View
+        style={weeklyChartStyles.chartContainer}
+        {...panResponder.panHandlers}
+      >
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* Horizontal grid lines */}
+          {[10, 7, 4, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized);
+            return (
+              <Line
+                key={value}
+                x1={padding.left}
+                y1={y}
+                x2={chartWidth - padding.right}
+                y2={y}
+                stroke="#D1D5DB"
+                strokeWidth="1"
+                strokeDasharray="2,6"
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Y-axis labels */}
+          {[10, 7, 4, 1].map((value) => {
+            const normalized = (value - scale.min) / (scale.max - scale.min);
+            const y = padding.top + plotHeight * (1 - normalized) + 4;
+            return (
+              <SvgText key={value} x={padding.left - 8} y={y} fontSize="10" fill="#9CA3AF" textAnchor="end">
+                {value}
+              </SvgText>
+            );
+          })}
+
+          {/* Metric lines */}
+          {activeMetrics.has('nutrition') && (
+            <Path
+              d={generatePath(data.nutrition)}
+              stroke={CHART_METRIC_COLORS.nutrition.primary}
+              strokeWidth={2.5}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {activeMetrics.has('energy') && (
+            <Path
+              d={generatePath(data.energy)}
+              stroke={CHART_METRIC_COLORS.energy.primary}
+              strokeWidth={2.5}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {activeMetrics.has('satisfaction') && (
+            <Path
+              d={generatePath(data.satisfaction)}
+              stroke={CHART_METRIC_COLORS.satisfaction.primary}
+              strokeWidth={2.5}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Cursor line when scrubbing */}
+          {activeIndex !== null && (
+            <Line
+              x1={getX(activeIndex)}
+              y1={padding.top}
+              x2={getX(activeIndex)}
+              y2={padding.top + plotHeight}
+              stroke="rgba(0, 0, 0, 0.12)"
+              strokeWidth={1.5}
+            />
+          )}
+
+          {/* Dots on active metrics when scrubbing */}
+          {activeIndex !== null && activeMetrics.has('nutrition') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.nutrition[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.nutrition.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2.5}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('energy') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.energy[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.energy.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2.5}
+            />
+          )}
+          {activeIndex !== null && activeMetrics.has('satisfaction') && (
+            <Circle
+              cx={getX(activeIndex)}
+              cy={getY(data.satisfaction[activeIndex])}
+              r={5}
+              fill={CHART_METRIC_COLORS.satisfaction.primary}
+              stroke="#FFFFFF"
+              strokeWidth={2.5}
+            />
+          )}
+
+          {/* X-axis day labels */}
+          {dayLabels.map((day, index) => (
+            <SvgText
+              key={day}
+              x={getX(index)}
+              y={chartHeight - 8}
+              fontSize="10"
+              fill="#C9CDD3"
+              textAnchor="middle"
+              fontWeight="500"
+            >
+              {day}
+            </SvgText>
+          ))}
+        </Svg>
+      </View>
+
+      <Text style={weeklyChartStyles.chartHint}>Tap metrics to show/hide</Text>
+    </View>
+  );
+};
+
+// Styles for WeeklyChart component
+const weeklyChartStyles = StyleSheet.create({
+  chartLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    minHeight: 36,
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+  },
+  chartLegendItemInactive: {
+    opacity: 0.6,
+  },
+  chartLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  chartLegendText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  chartScrubbingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chartScrubbingDate: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  chartScrubbingValues: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chartScrubbingValueText: {
+    fontSize: 13,
+  },
+  chartContainer: {
+    alignItems: 'center',
+    marginLeft: -10, // Offset to visually center the plot area (left padding 32 > right padding 12)
+  },
+  chartHint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+});
 
 type PriorityStatus = 'pending' | 'completed' | 'not_completed';
 
@@ -62,6 +445,8 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // State for expandable focus cards
   const [isWeekExpanded, setIsWeekExpanded] = useState(false);
   const [isMonthExpanded, setIsMonthExpanded] = useState(false);
+  const [weekNeedsExpansion, setWeekNeedsExpansion] = useState<boolean | null>(null);
+  const [monthNeedsExpansion, setMonthNeedsExpansion] = useState<boolean | null>(null);
 
   // Animation values for card glow
   const weekGlowAnim = useRef(new Animated.Value(0)).current;
@@ -276,7 +661,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   const handleEveningTracking = (): void => {
     if (navigation) {
-      navigation.navigate('EveningTracking');
+      navigation.navigate('EveningTracking', { morningCheckInCompleted });
     } else {
       console.log('Navigate to Evening Tracking');
     }
@@ -330,17 +715,10 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
     }
   };
 
-  const handleLegendPress = (variable: ChartVariable): void => {
-    // Toggle behavior: tap same variable to return to all active
-    if (activeVariable === variable) {
-      setActiveVariable(null);
-    } else {
-      setActiveVariable(variable);
-    }
-  };
-
   // Toggle Week card with glow and chevron animation
   const toggleWeek = (): void => {
+    if (weekNeedsExpansion !== true) return;
+
     const toValue = isWeekExpanded ? 0 : 1;
 
     Animated.parallel([
@@ -364,6 +742,8 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   // Toggle Month card with glow and chevron animation
   const toggleMonth = (): void => {
+    if (monthNeedsExpansion !== true) return;
+
     const toValue = isMonthExpanded ? 0 : 1;
 
     Animated.parallel([
@@ -435,6 +815,13 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
     extrapolate: 'clamp',
   });
 
+  // Greeting fade out on scroll
+  const greetingOpacity = scrollY.interpolate({
+    inputRange: [0, 25],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
   // Mock data for 7-day statistics (ready for API integration)
   const weekStatistics = {
     nutrition: [6, 7, 8, 7, 6, 8, 9],
@@ -445,7 +832,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // Focus content texts
   const FOCUS_CONTENT = {
     week: "Complete all daily routines, maintain consistent sleep schedule, and hit gym targets 4x. Focus on deep work sessions and minimize evening screen time for better recovery.",
-    month: "Establish sustainable habits, review and adjust quarterly goals, and build momentum in key focus areas. Prioritize long-term health metrics and professional development milestones.",
+    month: "Establish sustainable habits, review and adjust quarterly goals, and build momentum in key focus areas. Prioritize long-term health metrics and professional development.",
   };
 
   return (
@@ -474,23 +861,38 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               onPress={handleMorningTracking}
               activeOpacity={0.85}
             >
-              <View style={styles.trackingCard}>
+              <View style={morningCheckInCompleted ? styles.trackingCardCompleted : styles.trackingCard}>
                 {morningCheckInCompleted ? (
-                  // Completed state - green ring with sun icon (success transformation)
+                  // Completed state - custom checkmark with sun badge
                   <Animated.View style={[
                     styles.trackingIconCompletedRingWrapper,
                     { transform: [{ scale: morningScale }] }
                   ]}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.trackingIconGradientRing}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.trackingIconInnerCircle}>
-                        <Ionicons name="sunny" size={44} color="#059669" />
+                    <View style={styles.completedIconContainer}>
+                      <LinearGradient
+                        colors={['#FBBF24', '#F59E0B', '#D97706']}
+                        style={styles.trackingIconGradientRingCompleted}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.trackingIconInnerCircleCompleted}>
+                          {/* Custom thick rounded checkmark */}
+                          <Svg width={40} height={40} viewBox="0 0 24 24">
+                            <Path
+                              d="M4 12.5L9.5 18L20 6"
+                              stroke="#D97706"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </Svg>
+                        </View>
+                      </LinearGradient>
+                      <View style={styles.iconBadgeMorningCompleted}>
+                        <Ionicons name="sunny" size={18} color="#D97706" />
                       </View>
-                    </LinearGradient>
+                    </View>
                   </Animated.View>
                 ) : (
                   // Available state - orange gradient ring with sun
@@ -505,41 +907,55 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                     </View>
                   </LinearGradient>
                 )}
-                <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
+                {morningCheckInCompleted ? (
+                  <Text style={[styles.lightCardTitle, styles.lightCardTitleCompleted]}>Ready for{'\n'}the Day</Text>
+                ) : (
+                  <Text style={styles.lightCardTitle}>Morning{'\n'}Check-In</Text>
+                )}
               </View>
             </TouchableOpacity>
 
             {/* Evening Tracking Card */}
             <TouchableOpacity
               style={styles.trackingCardTouchable}
-              onPress={eveningCheckInCompleted || isEveningCheckInAvailable() ? handleEveningTracking : undefined}
-              activeOpacity={eveningCheckInCompleted || isEveningCheckInAvailable() ? 0.85 : 1}
-              disabled={!eveningCheckInCompleted && !isEveningCheckInAvailable()}
+              onPress={handleEveningTracking}
+              activeOpacity={0.85}
             >
-              <View style={[
-                styles.trackingCard,
-                !eveningCheckInCompleted && !isEveningCheckInAvailable() && styles.trackingCardLocked
-              ]}>
-                {/* Icon with state-dependent appearance */}
+              <View style={eveningCheckInCompleted ? styles.trackingCardCompleted : styles.trackingCard}>
                 {eveningCheckInCompleted ? (
-                  // Completed state - green ring with moon icon (success transformation)
+                  // Completed state - custom checkmark with moon badge
                   <Animated.View style={[
                     styles.trackingIconCompletedRingWrapper,
                     { transform: [{ scale: eveningScale }] }
                   ]}>
-                    <LinearGradient
-                      colors={['#34D399', '#10B981', '#059669']}
-                      style={styles.trackingIconGradientRing}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <View style={styles.trackingIconInnerCircle}>
-                        <Ionicons name="moon" size={44} color="#059669" />
+                    <View style={styles.completedIconContainer}>
+                      <LinearGradient
+                        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+                        style={styles.trackingIconGradientRingCompleted}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.trackingIconInnerCircleCompleted}>
+                          {/* Custom thick rounded checkmark */}
+                          <Svg width={40} height={40} viewBox="0 0 24 24">
+                            <Path
+                              d="M4 12.5L9.5 18L20 6"
+                              stroke="#7C3AED"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </Svg>
+                        </View>
+                      </LinearGradient>
+                      <View style={styles.iconBadgeEveningCompleted}>
+                        <Ionicons name="moon" size={18} color="#7C3AED" />
                       </View>
-                    </LinearGradient>
+                    </View>
                   </Animated.View>
-                ) : isEveningCheckInAvailable() ? (
-                  // Available state - purple gradient
+                ) : (
+                  // Default state - purple gradient
                   <LinearGradient
                     colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
                     style={styles.trackingIconGradientRing}
@@ -550,23 +966,9 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                       <Ionicons name="moon" size={44} color="#7C3AED" />
                     </View>
                   </LinearGradient>
-                ) : (
-                  // Locked state - same ring structure as Morning, muted colors
-                  <LinearGradient
-                    colors={['#E9E5FF', '#DDD6FE', '#C4B5FD']}
-                    style={styles.trackingIconGradientRing}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={styles.trackingIconInnerCircle}>
-                      <Ionicons name="moon" size={44} color="#B4A7DE" />
-                    </View>
-                  </LinearGradient>
                 )}
-                {!eveningCheckInCompleted && !isEveningCheckInAvailable() ? (
-                  <Text style={[styles.lightCardTitle, styles.lightCardTitleLocked]}>
-                    Evening{'\n'}<Text style={styles.timeInTitle}>in {getHoursUntilEveningCheckIn()}h</Text>
-                  </Text>
+                {eveningCheckInCompleted ? (
+                  <Text style={[styles.lightCardTitle, styles.lightCardTitleCompleted]}>Done for{'\n'}the Day</Text>
                 ) : (
                   <Text style={styles.lightCardTitle}>Evening{'\n'}Check-In</Text>
                 )}
@@ -766,94 +1168,11 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               </TouchableOpacity>
             </View>
 
-            {/* Interactive Legend Row */}
-            <View style={styles.statsLegend}>
-              {/* Nutrition Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('nutrition')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'nutrition' && {
-                      backgroundColor: '#F0FDF4',
-                      borderColor: '#86EFAC',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#10B981' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'nutrition' && { color: '#059669', fontWeight: '600' },
-                    ]}
-                  >
-                    Nutrition
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Energy Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('energy')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'energy' && {
-                      backgroundColor: '#FFFBEB',
-                      borderColor: '#FCD34D',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#F59E0B' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'energy' && { color: '#D97706', fontWeight: '600' },
-                    ]}
-                  >
-                    Energy
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Satisfaction Button */}
-              <TouchableOpacity
-                style={styles.legendButton}
-                onPress={() => handleLegendPress('satisfaction')}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.legendItem,
-                    activeVariable === 'satisfaction' && {
-                      backgroundColor: '#EFF6FF',
-                      borderColor: '#93C5FD',
-                    },
-                  ]}
-                >
-                  <View style={[styles.gradientDot, { backgroundColor: '#3B82F6' }]} />
-                  <Text
-                    style={[
-                      styles.legendLabel,
-                      activeVariable === 'satisfaction' && { color: '#2563EB', fontWeight: '600' },
-                    ]}
-                  >
-                    Satisfaction
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Premium Custom Chart */}
-            <PremiumStatsChart
+            {/* Weekly Chart */}
+            <WeeklyChart
               data={weekStatistics}
-              activeVariable={activeVariable}
+              activeMetrics={activeChartMetrics}
+              onToggleMetric={handleToggleChartMetric}
             />
           </View>
         </View>
@@ -882,16 +1201,23 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                   </View>
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Week</Text>
-                <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={18} color="#D1D5DB" />
-                </Animated.View>
+                {weekNeedsExpansion === true && (
+                  <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
+                    <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  </Animated.View>
+                )}
               </View>
 
               {/* Content with Preview */}
               <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isWeekExpanded ? undefined : 2}
+                  numberOfLines={weekNeedsExpansion === null ? undefined : (isWeekExpanded ? undefined : 3)}
+                  onTextLayout={(e) => {
+                    if (weekNeedsExpansion === null) {
+                      setWeekNeedsExpansion(e.nativeEvent.lines.length > 3);
+                    }
+                  }}
                 >
                   {FOCUS_CONTENT.week}
                 </Text>
@@ -919,16 +1245,23 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                   </View>
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Month</Text>
-                <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={18} color="#D1D5DB" />
-                </Animated.View>
+                {monthNeedsExpansion === true && (
+                  <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
+                    <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  </Animated.View>
+                )}
               </View>
 
               {/* Content with Preview */}
               <View style={styles.focusItemBody}>
                 <Text
                   style={styles.focusItemText}
-                  numberOfLines={isMonthExpanded ? undefined : 2}
+                  numberOfLines={monthNeedsExpansion === null ? undefined : (isMonthExpanded ? undefined : 3)}
+                  onTextLayout={(e) => {
+                    if (monthNeedsExpansion === null) {
+                      setMonthNeedsExpansion(e.nativeEvent.lines.length > 3);
+                    }
+                  }}
                 >
                   {FOCUS_CONTENT.month}
                 </Text>
@@ -987,9 +1320,11 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
           </View>
 
           {/* Center: Greeting - Absolutely positioned for true center */}
-          <Text style={styles.greeting} numberOfLines={1} pointerEvents="none">
-            {getGreeting()}!
-          </Text>
+          <Animated.View style={[styles.greetingContainer, { opacity: greetingOpacity }]} pointerEvents="none">
+            <Text style={styles.greeting} numberOfLines={1}>
+              {getGreeting()}!
+            </Text>
+          </Animated.View>
         </View>
       </View>
 
@@ -1070,12 +1405,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, // 16px from screen edges (matches Dashboard cards and Knowledge Hub)
   },
 
-  greeting: {
+  greetingContainer: {
     position: 'absolute',
-    top: 16,
+    top: 8,
     left: 0,
     right: 0,
-    fontSize: 19,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
@@ -1093,46 +1433,48 @@ const styles = StyleSheet.create({
     minWidth: 64,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   streakNumber: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   profileButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   actionsSection: {
     paddingHorizontal: 16, // Distance from screen edges to cards (matches Knowledge Hub)
   },
   trackingRow: {
     flexDirection: 'row',
+    alignItems: 'stretch',
     gap: 12,
     marginBottom: 12,
   },
@@ -1152,6 +1494,16 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
+  trackingCardCompleted: {
+    aspectRatio: 1,
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0EEE8',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
   trackingIconGradientRing: {
     width: 88,
     height: 88,
@@ -1161,6 +1513,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  trackingIconGradientRingCompleted: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trackingIconInnerCircle: {
     width: 82,
     height: 82,
@@ -1169,12 +1529,139 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  trackingIconInnerCircleCompleted: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trackingIconCompletedRingWrapper: {
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+  },
+  // Completed icon ring (no gradient, just border)
+  completedIconRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0EEE8',
+    marginBottom: 16,
+    position: 'relative',
+  },
+  // Badge for sun/moon indicator
+  iconBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
+  iconBadgeCompleted: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+  },
+  completedIconContainer: {
+    position: 'relative',
+    width: 88,
+    height: 88,
+    marginBottom: 16,
+  },
+  iconBadgeMorningCompleted: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEveningCompleted: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F0EEE8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
+  },
+  iconBadgeMorning: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEvening: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
+  },
+  iconBadgeMorningTransparent: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  iconBadgeEveningTransparent: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
   },
   trackingIconInactiveRing: {
     width: 88,
@@ -1193,6 +1680,9 @@ const styles = StyleSheet.create({
   },
   lightCardTitleLocked: {
     color: '#A8A8B3',
+  },
+  lightCardTitleCompleted: {
+    color: '#9CA3AF',
   },
   timeInTitle: {
     color: '#9D8EC9',
@@ -1549,9 +2039,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -1566,7 +2056,7 @@ const styles = StyleSheet.create({
   },
   statisticsPreviewCard: {
     borderRadius: 20,
-    padding: 24,
+    padding: 16,
     marginBottom: 0,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -1592,7 +2082,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
@@ -1605,38 +2095,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginRight: 2,
   },
-  statsLegend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 4,
-    gap: 6,
-  },
-  legendButton: {
-    // Touchable wrapper for legend items
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
-  },
-  gradientDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  legendLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
   // Focus Section - Clean Design
   focusSection: {
     paddingHorizontal: 16,
@@ -1645,7 +2103,7 @@ const styles = StyleSheet.create({
   focusCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.04)',
   },

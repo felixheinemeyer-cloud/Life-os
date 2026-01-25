@@ -22,15 +22,21 @@ interface DateIdeaDetailScreenProps {
   route: any;
 }
 
+// Default color for custom date ideas (matches "My Ideas" theme)
+const DEFAULT_IDEA_COLOR = '#0D9488';
+
 const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { idea } = route.params || {};
+
+  // Detect if this is a custom idea (custom ideas don't have a color property)
+  const isCustomIdea = !idea.color;
+  const ideaColor = idea.color || DEFAULT_IDEA_COLOR;
 
   // State
   const [isSaved, setIsSaved] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [completedChallenges, setCompletedChallenges] = useState<Set<string>>(new Set());
-  const [notes, setNotes] = useState('');
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -40,14 +46,12 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
   useEffect(() => {
     const loadStatus = async () => {
       try {
-        // Load saved status
         const savedStored = await AsyncStorage.getItem(SAVED_IDEAS_STORAGE_KEY);
         if (savedStored) {
           const savedIdeas = new Set(JSON.parse(savedStored));
           setIsSaved(savedIdeas.has(idea.id));
         }
 
-        // Load done status
         const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
         if (doneStored) {
           const doneIdeas = new Set(JSON.parse(doneStored));
@@ -125,13 +129,10 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     }
 
     try {
-      // Add to done ideas
       const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
       const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
       doneIdeas.add(idea.id);
       await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
-
-      // Keep in liked ideas (don't remove)
       setIsDone(true);
     } catch (error) {
       console.error('Error marking date as done:', error);
@@ -144,12 +145,10 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     }
 
     try {
-      // Remove from done ideas
       const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
       const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
       doneIdeas.delete(idea.id);
       await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
-
       setIsDone(false);
     } catch (error) {
       console.error('Error unmarking date as done:', error);
@@ -179,137 +178,192 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
       >
         {/* Hero Section */}
         <Animated.View
-            style={[
-              styles.heroSection,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
+          style={[
+            styles.heroSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[`${ideaColor}15`, `${ideaColor}05`]}
+            style={styles.heroGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <LinearGradient
-              colors={[`${idea.color}15`, `${idea.color}05`]}
-              style={styles.heroGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={[styles.heroIconCircle, { backgroundColor: `${idea.color}20` }]}>
-                <Ionicons name={idea.icon} size={48} color={idea.color} />
-              </View>
-            </LinearGradient>
-            <Text style={styles.title}>{idea.title}</Text>
+            <View style={[styles.heroIconCircle, { backgroundColor: `${ideaColor}20` }]}>
+              <Ionicons name={idea.icon} size={40} color={ideaColor} />
+            </View>
+          </LinearGradient>
+          <Text style={styles.title}>{idea.title}</Text>
+          {!isCustomIdea && idea.tagline && (
             <Text style={styles.tagline}>{idea.tagline}</Text>
-          </Animated.View>
+          )}
+        </Animated.View>
 
-          {/* Quick Info Pills */}
-          <Animated.View
-            style={[
-              styles.quickInfoSection,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
+        {/* Quick Info Pills */}
+        <Animated.View
+          style={[
+            styles.quickInfoSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          {idea.duration && (
             <View style={styles.infoPill}>
-              <Ionicons name="time-outline" size={16} color="#6B7280" />
+              <Ionicons name="time-outline" size={14} color="#6B7280" />
               <Text style={styles.infoPillText}>{idea.duration}</Text>
             </View>
+          )}
+          {idea.budget && (
             <View style={styles.infoPill}>
-              <Ionicons name="wallet-outline" size={16} color="#6B7280" />
+              <Ionicons name="wallet-outline" size={14} color="#6B7280" />
               <Text style={styles.infoPillText}>{getBudgetDisplay(idea.budget)}</Text>
             </View>
+          )}
+          {!isCustomIdea && idea.bestTime && (
             <View style={styles.infoPill}>
-              <Ionicons name="sunny-outline" size={16} color="#6B7280" />
+              <Ionicons name="sunny-outline" size={14} color="#6B7280" />
               <Text style={styles.infoPillText}>{idea.bestTime}</Text>
             </View>
-          </Animated.View>
+          )}
+        </Animated.View>
 
-          {/* Description Card */}
+        {/* Custom Idea Cards */}
+        {isCustomIdea && idea.description && (
           <Animated.View
             style={[
-              styles.card,
+              styles.sectionCard,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
               },
             ]}
           >
-            <View style={styles.cardHeader}>
-              <Ionicons name="sparkles" size={20} color="#E11D48" />
-              <Text style={styles.cardTitle}>Why this date is special</Text>
-            </View>
-            <Text style={styles.descriptionText}>{idea.description}</Text>
-          </Animated.View>
-
-          {/* Steps Section */}
-          <Animated.View
-            style={[
-              styles.card,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.cardHeader}>
-              <Ionicons name="list-outline" size={20} color="#E11D48" />
-              <Text style={styles.cardTitle}>How to make it happen</Text>
-            </View>
-            {idea?.steps?.map((step: string, index: number) => (
-              <View key={index} style={styles.stepItem}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{index + 1}</Text>
-                </View>
-                <Text style={styles.stepText}>{step}</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconCircle, { backgroundColor: `${ideaColor}15` }]}>
+                <Ionicons name="document-text-outline" size={22} color={ideaColor} />
               </View>
-            ))}
-          </Animated.View>
-
-          {/* Challenges Section */}
-          <Animated.View
-            style={[
-              styles.card,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.cardHeader}>
-              <Ionicons name="trophy-outline" size={20} color="#E11D48" />
-              <Text style={styles.cardTitle}>Fun challenges</Text>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Description</Text>
+              </View>
             </View>
-            <Text style={styles.challengesSubtitle}>
-              Complete these to make the date extra memorable
-            </Text>
-            {idea?.challenges?.map((challenge: any) => (
-              <TouchableOpacity
-                key={challenge.id}
-                style={[
-                  styles.challengeItem,
-                  completedChallenges.has(challenge.id) && styles.challengeItemCompleted,
-                ]}
-                onPress={() => handleToggleChallenge(challenge.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.challengeCheckbox,
-                  completedChallenges.has(challenge.id) && styles.challengeCheckboxCompleted,
-                ]}>
-                  {completedChallenges.has(challenge.id) && (
-                    <Ionicons name="checkmark" size={18} color="#E11D48" />
-                  )}
-                </View>
-                <View style={styles.challengeContent}>
-                  <Text style={styles.challengeTitle}>
-                    {challenge.title}
-                  </Text>
-                  <Text style={styles.challengeDescription}>{challenge.description}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            <View style={styles.sectionContent}>
+              <Text style={styles.descriptionText}>{idea.description}</Text>
+            </View>
           </Animated.View>
+        )}
+
+        {/* Pre-built Idea Cards */}
+        {!isCustomIdea && (
+          <>
+            {/* Description Card */}
+            <Animated.View
+              style={[
+                styles.sectionCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIconCircle}>
+                  <Ionicons name="sparkles" size={22} color="#E11D48" />
+                </View>
+                <View style={styles.sectionTitleContainer}>
+                  <Text style={styles.sectionTitle}>Why this date is special</Text>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.descriptionText}>{idea.description}</Text>
+              </View>
+            </Animated.View>
+
+            {/* Steps Section */}
+            <Animated.View
+              style={[
+                styles.sectionCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIconCircle}>
+                  <Ionicons name="list" size={22} color="#E11D48" />
+                </View>
+                <View style={styles.sectionTitleContainer}>
+                  <Text style={styles.sectionTitle}>How to make it happen</Text>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                {idea?.steps?.map((step: string, index: number) => (
+                  <View key={index} style={[styles.stepItem, index === 0 && styles.stepItemFirst, index === idea.steps.length - 1 && styles.stepItemLast]}>
+                    <View style={styles.stepNumber}>
+                      <Text style={styles.stepNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.stepText}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+
+            {/* Challenges Section */}
+            <Animated.View
+              style={[
+                styles.sectionCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIconCircle}>
+                  <Ionicons name="trophy" size={22} color="#E11D48" />
+                </View>
+                <View style={styles.sectionTitleContainer}>
+                  <Text style={styles.sectionTitle}>Fun challenges</Text>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.challengesSubtitle}>
+                  Complete these to make the date extra memorable
+                </Text>
+                {idea?.challenges?.map((challenge: any, index: number) => (
+                  <TouchableOpacity
+                    key={challenge.id}
+                    style={[
+                      styles.challengeItem,
+                      completedChallenges.has(challenge.id) && styles.challengeItemCompleted,
+                      index === idea.challenges.length - 1 && styles.challengeItemLast,
+                    ]}
+                    onPress={() => handleToggleChallenge(challenge.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.challengeCheckbox,
+                      completedChallenges.has(challenge.id) && styles.challengeCheckboxCompleted,
+                    ]}>
+                      {completedChallenges.has(challenge.id) && (
+                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      )}
+                    </View>
+                    <View style={styles.challengeContent}>
+                      <Text style={styles.challengeTitle}>{challenge.title}</Text>
+                      <Text style={styles.challengeDescription}>{challenge.description}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
+          </>
+        )}
 
         {/* Bottom Spacing */}
         <View style={{ height: 100 }} />
@@ -351,29 +405,29 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
         </View>
       </View>
 
-      {/* Mark as Done Button - Show for dates that aren't done yet */}
+      {/* Mark as Done Button */}
       {!isDone && (
-        <View style={[styles.bottomButtonContainer, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[styles.bottomButtonContainer, { bottom: 16 }]}>
           <TouchableOpacity
             style={styles.primaryButton}
             activeOpacity={0.8}
             onPress={handleMarkAsDone}
           >
-            <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
             <Text style={styles.primaryButtonText}>Mark as Done</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Done Button - Show for dates that are marked as done (clickable to unmark) */}
+      {/* Done Button */}
       {isDone && (
-        <View style={[styles.bottomButtonContainer, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[styles.bottomButtonContainer, { bottom: 16 }]}>
           <TouchableOpacity
             style={styles.doneButton}
             activeOpacity={0.8}
             onPress={handleUnmarkAsDone}
           >
-            <Ionicons name="checkmark-circle" size={20} color="#64748B" />
+            <Ionicons name="checkmark-circle" size={18} color="#64748B" />
             <Text style={styles.doneButtonText}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -421,11 +475,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   scrollView: {
     flex: 1,
@@ -437,42 +493,37 @@ const styles = StyleSheet.create({
   // Hero Section
   heroSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   heroGradient: {
     width: '100%',
-    borderRadius: 24,
-    paddingVertical: 40,
+    borderRadius: 18,
+    paddingVertical: 32,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   heroIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
     paddingHorizontal: 24,
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
     paddingHorizontal: 32,
   },
 
@@ -480,7 +531,7 @@ const styles = StyleSheet.create({
   quickInfoSection: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 24,
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
@@ -493,116 +544,146 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#E5E7EB',
   },
   infoPillText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#6B7280',
   },
-  difficultyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
 
-  // Card Styles
-  card: {
+  // Section Card (matching WeeklyReview)
+  sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
     marginBottom: 16,
+    borderRadius: 18,
+    padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 5,
   },
-  cardHeader: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+  sectionIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitleContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
+  },
+  sectionContent: {
+    gap: 0,
   },
   descriptionText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
-    color: '#4B5563',
-    lineHeight: 22,
+    color: '#374151',
+    lineHeight: 20,
   },
 
   // Steps Section
   stepItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB60',
     gap: 12,
   },
+  stepItemFirst: {
+    paddingTop: 0,
+  },
+  stepItemLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
   },
   stepNumberText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#E11D48',
   },
   stepText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '400',
     color: '#374151',
-    lineHeight: 22,
-    paddingTop: 2,
+    lineHeight: 20,
+    paddingTop: 3,
   },
 
   // Challenges Section
   challengesSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9CA3AF',
     marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   challengeItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 14,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     marginBottom: 10,
-    gap: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    gap: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   challengeItemCompleted: {
     backgroundColor: '#FFF1F2',
     borderColor: '#FECDD3',
   },
+  challengeItemLast: {
+    marginBottom: 0,
+  },
   challengeCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
-    backgroundColor: '#FFFFFF',
+    marginTop: 1,
+    backgroundColor: '#FAFAFA',
   },
   challengeCheckboxCompleted: {
     borderColor: '#E11D48',
+    backgroundColor: '#E11D48',
   },
   challengeContent: {
     flex: 1,
@@ -611,11 +692,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: 3,
     letterSpacing: -0.2,
-  },
-  challengeTitleCompleted: {
-    color: '#E11D48',
   },
   challengeDescription: {
     fontSize: 13,
@@ -627,25 +705,23 @@ const styles = StyleSheet.create({
   // Bottom Action Button
   bottomButtonContainer: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   primaryButton: {
     backgroundColor: '#1F2937',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   primaryButtonText: {
     fontSize: 16,
@@ -656,13 +732,13 @@ const styles = StyleSheet.create({
   doneButton: {
     backgroundColor: '#F1F5F9',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   doneButtonText: {
     fontSize: 16,

@@ -265,7 +265,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
 
           <RatingSlider
             label="Emotional Balance"
-            icon="leaf"
+            icon="swap-horizontal"
             value={data.emotionalBalance}
             onValueChange={(v) => handleRatingChange('emotionalBalance', v)}
             themeColor={THEME_COLORS.primary}
@@ -303,7 +303,7 @@ const MonthlyBodyTrackingMentalContent: React.FC<MonthlyBodyTrackingMentalConten
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -337,8 +337,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   questionText: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,

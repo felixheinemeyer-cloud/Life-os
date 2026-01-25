@@ -7,7 +7,7 @@ import {
   Pressable,
   Animated,
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 interface DailyOverviewScreenProps {
   navigation?: {
     goBack: () => void;
+    navigate: (screen: string, params?: object) => void;
   };
   route?: {
     params?: {
@@ -409,6 +410,19 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
     setCurrentDate(newDate);
   };
 
+  const handleMorningCheckin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation?.navigate('MorningTracking', { date: dateKey });
+  };
+
+  const handleEveningCheckin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation?.navigate('EveningTracking', {
+      morningCheckInCompleted: morning.completed,
+      date: dateKey
+    });
+  };
+
   // Check if we're at today (can't go forward)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -440,7 +454,7 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 68 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -543,7 +557,21 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Morning reflection wasn't recorded</Text>
+                <View style={styles.emptyStateIcon}>
+                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyStateTitle}>No review data</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Morning reflection wasn't recorded
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={handleMorningCheckin}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyStateButtonText}>Complete Check-in</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -609,14 +637,28 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
 
                 {/* Ratings */}
                 <View style={[styles.ratingsBlock, styles.ratingsBlockNoBorder]}>
-                  <RatingBar label="Nutrition" value={evening.ratings.nutrition} color="#059669" customIcon={<MaterialCommunityIcons name="food-apple" size={16} color="#059669" />} />
-                  <RatingBar label="Energy" value={evening.ratings.energy} color="#F59E0B" icon="flash" />
-                  <RatingBar label="Satisfaction" value={evening.ratings.satisfaction} color="#3B82F6" icon="sparkles" />
+                  <RatingBar label="Nutrition" value={evening.ratings.nutrition} color="#059669" bgColor="#ECFDF5" icon="leaf" />
+                  <RatingBar label="Energy" value={evening.ratings.energy} color="#F59E0B" bgColor="#FEF3C7" icon="flash" />
+                  <RatingBar label="Satisfaction" value={evening.ratings.satisfaction} color="#3B82F6" bgColor="#EFF6FF" icon="sparkles" isLast />
                 </View>
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Evening reflection wasn't recorded</Text>
+                <View style={styles.emptyStateIcon}>
+                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
+                </View>
+                <Text style={styles.emptyStateTitle}>No review data</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Evening reflection wasn't recorded
+                </Text>
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={handleEveningCheckin}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="create-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.emptyStateButtonText}>Complete Check-in</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -716,30 +758,28 @@ interface RatingBarProps {
   label: string;
   value: number;
   color: string;
+  bgColor: string;
   icon?: keyof typeof Ionicons.glyphMap;
   customIcon?: React.ReactNode;
+  isLast?: boolean;
 }
 
-const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, icon, customIcon }) => {
+const RatingBar: React.FC<RatingBarProps> = ({ label, value, color, bgColor, icon, customIcon, isLast }) => {
   const percentage = (value / 10) * 100;
 
-  // Get a lighter tint of the color for the track background
-  const getTrackColor = (c: string) => {
-    if (c === '#059669') return '#D1FAE5'; // green tint
-    if (c === '#F59E0B') return '#FEF3C7'; // amber tint
-    if (c === '#3B82F6') return '#DBEAFE'; // blue tint
-    return '#E5E7EB';
-  };
-
   return (
-    <View style={styles.ratingBarItem}>
-      <View style={styles.ratingBarHeader}>
+    <View style={[styles.ratingBarItem, isLast && styles.ratingBarItemLast]}>
+      <View style={[styles.ratingBarIcon, { backgroundColor: bgColor }]}>
         {customIcon || <Ionicons name={icon!} size={16} color={color} />}
-        <Text style={styles.ratingBarLabel}>{label}</Text>
-        <Text style={[styles.ratingBarValue, { color }]}>{value}</Text>
       </View>
-      <View style={[styles.ratingBarTrack, { backgroundColor: getTrackColor(color) }]}>
-        <View style={[styles.ratingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
+      <View style={styles.ratingBarContent}>
+        <View style={styles.ratingBarHeader}>
+          <Text style={styles.ratingBarLabel}>{label}</Text>
+          <Text style={[styles.ratingBarValue, { color }]}>{value}</Text>
+        </View>
+        <View style={styles.ratingBarTrack}>
+          <View style={[styles.ratingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
+        </View>
       </View>
     </View>
   );
@@ -780,9 +820,11 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
+    position: 'relative',
   },
   backButton: {
     width: 40,
@@ -791,14 +833,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerDatePicker: {
-    flex: 1,
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -806,13 +853,16 @@ const styles = StyleSheet.create({
   headerDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerDatePillSide: {
     paddingHorizontal: 14,
@@ -847,7 +897,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 24,
     borderRadius: 18,
-    padding: 24,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
@@ -857,8 +907,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 24,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -906,7 +956,7 @@ const styles = StyleSheet.create({
   },
   infoBlock: {
     backgroundColor: 'transparent',
-    paddingVertical: 24,
+    paddingVertical: 16,
     paddingHorizontal: 0,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -922,7 +972,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 16,
-    marginTop: 24,
+    marginTop: 16,
     marginBottom: 0,
     borderLeftWidth: 3,
     borderLeftColor: '#F59E0B',
@@ -1022,7 +1072,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 16,
     borderLeftWidth: 3,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   priorityReviewDivider: {
     height: 1,
@@ -1057,10 +1107,9 @@ const styles = StyleSheet.create({
   // Ratings
   ratingsBlock: {
     backgroundColor: 'transparent',
-    paddingTop: 24,
-    paddingBottom: 24,
+    paddingTop: 4,
+    paddingBottom: 16,
     paddingHorizontal: 0,
-    gap: 18,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -1070,32 +1119,51 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   ratingBarItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB60',
+  },
+  ratingBarItemLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
+  },
+  ratingBarIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  ratingBarContent: {
+    flex: 1,
     gap: 6,
   },
   ratingBarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   ratingBarLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#374151',
-    marginLeft: 8,
-    flex: 1,
   },
   ratingBarValue: {
     fontSize: 14,
     fontWeight: '700',
   },
   ratingBarTrack: {
-    height: 6,
+    height: 4,
     backgroundColor: '#E5E7EB',
-    borderRadius: 3,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   ratingBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2,
   },
 
   // Empty State
@@ -1103,10 +1171,44 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 13,
-    fontWeight: '500',
+  emptyStateIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
     color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 24,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+    marginTop: 16,
+  },
+  emptyStateButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   // No Data
@@ -1151,7 +1253,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 24,
     borderRadius: 18,
-    padding: 24,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
@@ -1161,8 +1263,8 @@ const styles = StyleSheet.create({
   journalCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 24,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },

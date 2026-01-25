@@ -18,7 +18,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Refined Theme with better color harmony
 const COLORS = {
-  background: '#F7F5F2',
+  background: '#F0EEE8',
   card: '#FFFFFF',
   text: '#1A1D21',
   textSecondary: '#5F6368',
@@ -428,7 +428,7 @@ const WeeklyTrackingOverviewContent: React.FC<WeeklyTrackingOverviewContentProps
           />
 
           <MetricRow
-            icon="pizza"
+            icon="leaf"
             label="Nutrition"
             value={averages.nutrition.toFixed(1)}
             numericValue={averages.nutrition}

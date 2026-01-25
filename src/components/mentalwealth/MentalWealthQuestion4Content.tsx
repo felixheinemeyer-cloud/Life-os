@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   containerKeyboardVisible: {
     backgroundColor: 'transparent',
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 24,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Question Section

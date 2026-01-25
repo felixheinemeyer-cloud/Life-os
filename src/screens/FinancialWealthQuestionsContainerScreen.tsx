@@ -205,16 +205,16 @@ const FinancialWealthQuestionsContainerScreen: React.FC<FinancialWealthQuestions
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header - Fixed
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -227,13 +227,13 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2937',
   },
   progressDotInactive: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
 
   // Content - Horizontal Paging

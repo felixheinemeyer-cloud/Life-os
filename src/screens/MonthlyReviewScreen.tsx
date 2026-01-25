@@ -11,6 +11,58 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+
+// Score rating helper
+const getScoreRating = (score: number): { label: string; color: string } => {
+  if (score >= 8) return { label: 'Excellent', color: '#059669' };
+  if (score >= 6.5) return { label: 'Good', color: '#10B981' };
+  if (score >= 5) return { label: 'Okay', color: '#F59E0B' };
+  return { label: 'Needs Work', color: '#EF4444' };
+};
+
+// Circular Progress Ring Component
+const ScoreRing: React.FC<{ score: number; color: string; size?: number }> = ({
+  score,
+  color,
+  size = 90
+}) => {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const progress = (score / 10) * circumference;
+
+  return (
+    <View style={{ width: size, height: size, position: 'relative' }}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Defs>
+          <SvgLinearGradient id="monthlyScoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0.6" />
+          </SvgLinearGradient>
+        </Defs>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#E8EAED"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#monthlyScoreGradient)"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${progress} ${circumference}`}
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
+};
 
 interface MonthlyReviewScreenProps {
   navigation?: {
@@ -29,6 +81,8 @@ interface MonthlyData {
   completed: boolean;
   monthName: string;
   overallScore: number;
+  overallTrend: number;
+  weeksTracked: number;
   wealthAverages: {
     physical: { score: number; trend: number };
     social: { score: number; trend: number };
@@ -48,6 +102,8 @@ const mockMonthlyData: { [key: string]: MonthlyData } = {
     completed: true,
     monthName: 'November',
     overallScore: 7.1,
+    overallTrend: 5,
+    weeksTracked: 4,
     wealthAverages: {
       physical: { score: 7.2, trend: 5 },
       social: { score: 7.0, trend: -3 },
@@ -64,6 +120,8 @@ const mockMonthlyData: { [key: string]: MonthlyData } = {
     completed: true,
     monthName: 'December',
     overallScore: 7.6,
+    overallTrend: 7,
+    weeksTracked: 4,
     wealthAverages: {
       physical: { score: 7.5, trend: 4 },
       social: { score: 8.2, trend: 17 },
@@ -140,7 +198,7 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: insets.top + 60 },
+            { paddingTop: insets.top + 72 },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -252,12 +310,12 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
-          {/* Monthly Check-in Card */}
+          {/* Monthly Summary Card */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <LinearGradient
@@ -271,35 +329,118 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
                 </View>
               </LinearGradient>
               <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>Monthly Check-in</Text>
-                {monthlyData.completed && (
-                  <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                    <Text style={styles.completedText}>Completed</Text>
-                  </View>
-                )}
+                <Text style={styles.sectionTitle}>Monthly Summary</Text>
               </View>
             </View>
 
             <View style={styles.sectionContent}>
-              {/* Hero Score Section */}
-              <View style={styles.monthlyHeroSection}>
-                <View style={styles.monthlyScoreCircle}>
-                  <Text style={styles.monthlyScoreNumber}>{monthlyData.overallScore.toFixed(1)}</Text>
-                  <Text style={styles.monthlyScoreLabel}>Overall</Text>
+              {/* Score Section */}
+              <View style={styles.scoreSection}>
+                <View style={styles.scoreContainer}>
+                  <View style={styles.scoreRingWrapper}>
+                    <ScoreRing score={monthlyData.overallScore} color={getScoreRating(monthlyData.overallScore).color} size={90} />
+                    <View style={styles.scoreTextOverlay}>
+                      <Text style={[styles.scoreValue, { color: getScoreRating(monthlyData.overallScore).color }]}>
+                        {monthlyData.overallScore.toFixed(1)}
+                      </Text>
+                      <Text style={styles.scoreOutOf}>/ 10</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.scoreInfo}>
+                    <View style={[styles.performanceBadge, { backgroundColor: getScoreRating(monthlyData.overallScore).color + '15' }]}>
+                      <View style={[styles.performanceDot, { backgroundColor: getScoreRating(monthlyData.overallScore).color }]} />
+                      <Text style={[styles.performanceLabel, { color: getScoreRating(monthlyData.overallScore).color }]}>
+                        {getScoreRating(monthlyData.overallScore).label}
+                      </Text>
+                    </View>
+                    <Text style={styles.scoreDescription}>
+                      Average across all wealth areas
+                    </Text>
+                    <View style={styles.overallTrendRow}>
+                      {monthlyData.overallTrend !== 0 && (
+                        <Ionicons
+                          name={monthlyData.overallTrend > 0 ? 'trending-up' : 'trending-down'}
+                          size={14}
+                          color={monthlyData.overallTrend > 0 ? '#059669' : '#EF4444'}
+                        />
+                      )}
+                      <Text style={[
+                        styles.overallTrendText,
+                        { color: monthlyData.overallTrend > 0 ? '#059669' : monthlyData.overallTrend < 0 ? '#EF4444' : '#9AA0A6' }
+                      ]}>
+                        {monthlyData.overallTrend === 0 ? 'No change' : `${Math.abs(monthlyData.overallTrend)}% vs last month`}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
 
-              {/* Wealth Rating Bars with Trends */}
-              <View style={styles.monthlyRatingsBlock}>
-                <MonthlyRatingBar label="Physical" value={monthlyData.wealthAverages.physical.score} trend={monthlyData.wealthAverages.physical.trend} color="#10B981" icon="fitness" />
-                <MonthlyRatingBar label="Social" value={monthlyData.wealthAverages.social.score} trend={monthlyData.wealthAverages.social.trend} color="#8B5CF6" icon="people" />
-                <MonthlyRatingBar label="Mental" value={monthlyData.wealthAverages.mental.score} trend={monthlyData.wealthAverages.mental.trend} color="#3B82F6" icon="bulb" />
-                <MonthlyRatingBar label="Financial" value={monthlyData.wealthAverages.financial.score} trend={monthlyData.wealthAverages.financial.trend} color="#F59E0B" icon="wallet" />
-                <MonthlyRatingBar label="Time" value={monthlyData.wealthAverages.time.score} trend={monthlyData.wealthAverages.time.trend} color="#EC4899" icon="time" />
-              </View>
+              {/* Wealth Areas Section */}
+              <View style={styles.wealthAreasSection}>
+                <View style={styles.wealthAreasHeader}>
+                  <Text style={styles.wealthAreasTitle}>Wealth Areas</Text>
+                </View>
 
-              {/* Reflections */}
+                <WealthAreaRow
+                  icon="fitness"
+                  label="Physical"
+                  value={monthlyData.wealthAverages.physical.score}
+                  color="#059669"
+                  trend={monthlyData.wealthAverages.physical.trend}
+                />
+                <WealthAreaRow
+                  icon="people"
+                  label="Social"
+                  value={monthlyData.wealthAverages.social.score}
+                  color="#8B5CF6"
+                  trend={monthlyData.wealthAverages.social.trend}
+                />
+                <WealthAreaRow
+                  icon="bulb"
+                  label="Mental"
+                  value={monthlyData.wealthAverages.mental.score}
+                  color="#3B82F6"
+                  trend={monthlyData.wealthAverages.mental.trend}
+                />
+                <WealthAreaRow
+                  icon="bar-chart"
+                  label="Financial"
+                  value={monthlyData.wealthAverages.financial.score}
+                  color="#EAB308"
+                  trend={monthlyData.wealthAverages.financial.trend}
+                />
+                <WealthAreaRow
+                  icon="time"
+                  label="Time"
+                  value={monthlyData.wealthAverages.time.score}
+                  color="#FB923C"
+                  trend={monthlyData.wealthAverages.time.trend}
+                  isLast
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Monthly Reflection Card */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#FBCFE8', '#F472B6', '#DB2777']}
+                style={styles.sectionIconRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sectionIconInner}>
+                  <Ionicons name="calendar" size={22} color="#DB2777" />
+                </View>
+              </LinearGradient>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Monthly Reflection</Text>
+              </View>
+            </View>
+
+            <View style={styles.sectionContent}>
               <View style={styles.monthlyReflectionsContainer}>
                 <View style={styles.monthlyReflectionItem}>
                   <View style={styles.infoHeader}>
@@ -397,46 +538,75 @@ const MonthlyReviewScreen = ({ navigation, route }: MonthlyReviewScreenProps): R
   );
 };
 
-// Monthly Rating Bar Component (with trend badge)
-interface MonthlyRatingBarProps {
+// Wealth Area Row Component (matching Weekly Averages style)
+interface WealthAreaRowProps {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: number;
-  trend: number;
   color: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  trend: number;
+  isLast?: boolean;
 }
 
-const MonthlyRatingBar: React.FC<MonthlyRatingBarProps> = ({ label, value, trend, color, icon }) => {
-  const percentage = (value / 10) * 100;
+const WealthAreaRow: React.FC<WealthAreaRowProps> = ({
+  icon,
+  label,
+  value,
+  color,
+  trend,
+  isLast,
+}) => {
+  const progress = Math.min(value / 10, 1);
 
-  const getTrackColor = (c: string) => {
-    if (c === '#10B981') return '#D1FAE5';
+  const getBgColor = (c: string) => {
+    if (c === '#059669') return '#D1FAE5';
     if (c === '#8B5CF6') return '#EDE9FE';
     if (c === '#3B82F6') return '#DBEAFE';
-    if (c === '#F59E0B') return '#FEF3C7';
-    if (c === '#EC4899') return '#FCE7F3';
+    if (c === '#EAB308') return '#FEF9C3';
+    if (c === '#FB923C') return '#FFEDD5';
     return '#E5E7EB';
   };
 
+  const getTrendColor = () => {
+    if (trend > 0) return '#059669';
+    if (trend < 0) return '#EF4444';
+    return '#9CA3AF';
+  };
+
+  const getTrendLabel = () => {
+    if (trend === 0) return 'no change';
+    const symbol = trend > 0 ? '↑' : '↓';
+    return `${symbol} ${Math.abs(trend)}%`;
+  };
+
   return (
-    <View style={styles.monthlyRatingBarItem}>
-      <View style={styles.monthlyRatingBarHeader}>
+    <View style={[styles.wealthAreaRow, isLast && styles.wealthAreaRowLast]}>
+      <LinearGradient
+        colors={['#FFFFFF', '#F5F5F5']}
+        style={[styles.wealthAreaIconContainer, { borderColor: color }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <Ionicons name={icon} size={16} color={color} />
-        <Text style={styles.monthlyRatingBarLabel}>{label}</Text>
-        <View style={[styles.trendBadge, { backgroundColor: trend >= 0 ? '#D1FAE5' : '#FEE2E2' }]}>
-          <Ionicons
-            name={trend >= 0 ? 'arrow-up' : 'arrow-down'}
-            size={10}
-            color={trend >= 0 ? '#059669' : '#EF4444'}
-          />
-          <Text style={[styles.trendText, { color: trend >= 0 ? '#059669' : '#EF4444' }]}>
-            {Math.abs(trend)}%
+      </LinearGradient>
+      <View style={styles.wealthAreaContent}>
+        <View style={styles.wealthAreaHeader}>
+          <Text style={styles.wealthAreaLabel}>{label}</Text>
+          <Text style={[styles.wealthAreaValue, { color }]}>{value.toFixed(1)}</Text>
+        </View>
+        <View style={styles.wealthAreaProgressRow}>
+          <View style={styles.wealthAreaProgressBg}>
+            <View
+              style={[
+                styles.wealthAreaProgressFill,
+                { backgroundColor: color, width: `${progress * 100}%` }
+              ]}
+            />
+          </View>
+          <Text style={[styles.wealthAreaTrend, { color: getTrendColor() }]}>
+            {getTrendLabel()}
           </Text>
         </View>
-        <Text style={[styles.monthlyRatingBarValue, { color }]}>{value.toFixed(1)}</Text>
-      </View>
-      <View style={[styles.monthlyRatingBarTrack, { backgroundColor: getTrackColor(color) }]}>
-        <View style={[styles.monthlyRatingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -477,9 +647,11 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
+    position: 'relative',
   },
   backButton: {
     width: 40,
@@ -503,13 +675,16 @@ const styles = StyleSheet.create({
   headerDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerDatePillSide: {
     paddingHorizontal: 14,
@@ -641,10 +816,9 @@ const styles = StyleSheet.create({
   sectionCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: 8,
     marginBottom: 24,
     borderRadius: 18,
-    padding: 24,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.10,
@@ -654,8 +828,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 24,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -698,6 +872,175 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     gap: 0,
+  },
+
+  // Score Section (matching Weekly)
+  scoreSection: {
+    paddingBottom: 16,
+    marginBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scoreRingWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  scoreTextOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: -1,
+  },
+  scoreOutOf: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9AA0A6',
+    marginTop: -2,
+  },
+  scoreInfo: {
+    flex: 1,
+  },
+  performanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  performanceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  performanceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scoreDescription: {
+    fontSize: 13,
+    color: '#9AA0A6',
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  overallTrendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  overallTrendText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Wealth Areas Section (matching Weekly Averages)
+  wealthAreasSection: {
+    paddingTop: 16,
+    paddingBottom: 0,
+    marginBottom: 0,
+  },
+  wealthAreasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  wealthAreasTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  wealthAreasBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDF2F8',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 3,
+  },
+  wealthAreasBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#DB2777',
+  },
+  wealthAreaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EAED60',
+  },
+  wealthAreaRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
+  },
+  wealthAreaIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  wealthAreaContent: {
+    flex: 1,
+    height: 34,
+    justifyContent: 'space-between',
+  },
+  wealthAreaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  wealthAreaLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  wealthAreaValue: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  wealthAreaProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  wealthAreaProgressBg: {
+    flex: 1,
+    height: 5,
+    backgroundColor: '#E8EAED',
+    borderRadius: 2.5,
+    overflow: 'hidden',
+  },
+  wealthAreaProgressFill: {
+    height: '100%',
+    borderRadius: 2.5,
+  },
+  wealthAreaTrend: {
+    fontSize: 10,
+    fontWeight: '500',
+    minWidth: 45,
+    textAlign: 'right',
   },
 
   // Info Block
@@ -817,10 +1160,11 @@ const styles = StyleSheet.create({
   monthlyReflectionsContainer: {
     borderTopWidth: 0,
     borderTopColor: '#E5E7EB',
-    marginBottom: -24,
+    marginTop: -16,
+    marginBottom: -16,
   },
   monthlyReflectionItem: {
-    paddingVertical: 24,
+    paddingVertical: 16,
   },
   monthlyReflectionDivider: {
     height: 1,

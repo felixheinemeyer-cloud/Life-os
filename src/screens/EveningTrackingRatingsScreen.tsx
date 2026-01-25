@@ -239,7 +239,7 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
           <View style={styles.slidersSection}>
             <RatingSlider
               label="Nutrition"
-              icon="pizza"
+              icon="leaf"
               value={nutrition}
               onValueChange={setNutrition}
               themeColor="#059669"
@@ -289,11 +289,11 @@ const EveningTrackingRatingsScreen: React.FC<EveningTrackingRatingsScreenProps> 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   continueButton: {
     backgroundColor: '#1F2937',

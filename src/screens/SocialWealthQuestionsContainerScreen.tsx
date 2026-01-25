@@ -205,16 +205,16 @@ const SocialWealthQuestionsContainerScreen: React.FC<SocialWealthQuestionsContai
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header - Fixed
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2937',
   },
   progressDotInactive: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
 
   // Content - Horizontal Paging

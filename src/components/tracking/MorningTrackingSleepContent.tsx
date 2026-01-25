@@ -582,7 +582,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
             cx={center}
             cy={center}
             r={radius}
-            stroke="#E5E7EB"
+            stroke="#D1D5DB"
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -819,7 +819,7 @@ const CircularSleepSlider: React.FC<CircularSleepSliderProps> = ({ bedtime, wake
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollContent: {
     flexGrow: 1,

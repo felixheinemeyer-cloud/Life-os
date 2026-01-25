@@ -450,7 +450,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 16 },
+          { paddingTop: insets.top + 14 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -468,7 +468,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
               onPress={goToPreviousMonth}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={20} color="#6B7280" />
+              <Ionicons name="chevron-back" size={24} color="#6B7280" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
 
             <View style={styles.monthYearContainer}>
@@ -481,7 +481,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps): React.JSX.Element 
               onPress={goToNextMonth}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              <Ionicons name="chevron-forward" size={24} color="#6B7280" style={{ marginLeft: 2 }} />
             </TouchableOpacity>
           </View>
 
@@ -783,7 +783,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 16,
     marginBottom: 24,
-    padding: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 11,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
@@ -797,17 +799,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },

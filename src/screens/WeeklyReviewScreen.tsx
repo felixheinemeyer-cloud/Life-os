@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system/legacy';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -253,10 +254,62 @@ const getWeeklyData = (weekNumber: number): WeeklyData | null => {
 
 const getScoreRating = (score: number): { label: string; color: string } => {
   if (score >= 8) return { label: 'Excellent', color: '#059669' };
-  if (score >= 7) return { label: 'Good', color: '#059669' };
+  if (score >= 7) return { label: 'Good', color: '#10B981' };
   if (score >= 6) return { label: 'Okay', color: '#F59E0B' };
   if (score >= 5) return { label: 'Fair', color: '#F59E0B' };
   return { label: 'Needs Work', color: '#EF4444' };
+};
+
+// Circular Progress Ring Component
+const ScoreRing: React.FC<{ score: number; color: string; size?: number }> = ({
+  score,
+  color,
+  size = 90
+}) => {
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const progress = (score / 10) * circumference;
+
+  return (
+    <View style={{ width: size, height: size, position: 'relative' }}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Defs>
+          <SvgLinearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={color} stopOpacity="1" />
+            <Stop offset="100%" stopColor={color} stopOpacity="0.6" />
+          </SvgLinearGradient>
+        </Defs>
+        {/* Background circle */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#E8EAED"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        {/* Progress circle */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#scoreGradient)"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${progress} ${circumference}`}
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
+};
+
+// Get day bar color based on score
+const getDayBarColor = (score: number): string => {
+  if (score >= 7) return '#10B981';
+  if (score >= 5) return '#F59E0B';
+  return '#EF4444';
 };
 
 // Helper to get approximate date range for any week number (ISO week)
@@ -390,7 +443,7 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: insets.top + 60 },
+            { paddingTop: insets.top + 72 },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -504,7 +557,7 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -523,56 +576,57 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
                 </View>
               </LinearGradient>
               <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>Weekly Check-in</Text>
-                {weeklyData.completed && (
-                  <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                    <Text style={styles.completedText}>Completed</Text>
-                  </View>
-                )}
+                <Text style={styles.sectionTitle}>Weekly Summary</Text>
               </View>
             </View>
 
             <View style={styles.sectionContent}>
               {/* Weekly Overview Section */}
               <View style={styles.weeklyOverviewSection}>
-                <View style={styles.weeklyOverviewTop}>
-                  {/* Circular Score */}
-                  <View style={styles.circularScoreContainer}>
-                    <View style={styles.circularScoreRing}>
-                      <View style={styles.circularScoreInner}>
-                        <Text style={styles.circularScoreNumber}>{weeklyData.overallScore.toFixed(1)}</Text>
-                        <Text style={styles.circularScoreMax}>/ 10</Text>
-                      </View>
+                <View style={styles.scoreContainer}>
+                  {/* Score Ring */}
+                  <View style={styles.scoreRingWrapper}>
+                    <ScoreRing score={weeklyData.overallScore} color={getScoreRating(weeklyData.overallScore).color} size={90} />
+                    <View style={styles.scoreTextOverlay}>
+                      <Text style={[styles.scoreValue, { color: getScoreRating(weeklyData.overallScore).color }]}>
+                        {weeklyData.overallScore.toFixed(1)}
+                      </Text>
+                      <Text style={styles.scoreOutOf}>/ 10</Text>
                     </View>
                   </View>
-                  {/* Rating Badge and Description */}
-                  <View style={styles.weeklyOverviewInfo}>
-                    <View style={[styles.ratingBadge, { backgroundColor: getScoreRating(weeklyData.overallScore).color + '20' }]}>
-                      <View style={[styles.ratingBadgeDot, { backgroundColor: getScoreRating(weeklyData.overallScore).color }]} />
-                      <Text style={[styles.ratingBadgeText, { color: getScoreRating(weeklyData.overallScore).color }]}>
+
+                  {/* Score Info */}
+                  <View style={styles.scoreInfo}>
+                    <View style={[styles.performanceBadge, { backgroundColor: getScoreRating(weeklyData.overallScore).color + '15' }]}>
+                      <View style={[styles.performanceDot, { backgroundColor: getScoreRating(weeklyData.overallScore).color }]} />
+                      <Text style={[styles.performanceLabel, { color: getScoreRating(weeklyData.overallScore).color }]}>
                         {getScoreRating(weeklyData.overallScore).label}
                       </Text>
                     </View>
-                    <Text style={styles.weeklyOverviewDescription}>
+                    <Text style={styles.scoreDescription}>
                       Based on nutrition, energy & satisfaction
                     </Text>
                   </View>
                 </View>
 
-                {/* Daily Breakdown */}
-                <View style={styles.dailyBreakdownSection}>
+                {/* Daily Breakdown - Refined */}
+                <View style={styles.dailyBreakdown}>
                   <Text style={styles.dailyBreakdownTitle}>Daily Breakdown</Text>
-                  <View style={styles.dailyBreakdownBars}>
-                    {weeklyData.dailyBreakdown.map((day, index) => (
-                      <View key={index} style={styles.dailyBarContainer}>
-                        <Text style={styles.dailyBarDay}>{day.day}</Text>
-                        <View style={styles.dailyBarWrapper}>
-                          <View style={[styles.dailyBar, { height: `${(day.score / 10) * 100}%` }]} />
+                  <View style={styles.dayIndicatorsRow}>
+                    {weeklyData.dailyBreakdown.map((day, index) => {
+                      const barColor = getDayBarColor(day.score);
+                      const maxBarHeight = 28;
+                      const barHeight = Math.max(8, (day.score / 10) * maxBarHeight);
+                      return (
+                        <View key={index} style={styles.dayIndicatorContainer}>
+                          <Text style={styles.dayIndicatorLabel}>{day.day}</Text>
+                          <View style={styles.dayIndicatorTrack}>
+                            <View style={[styles.dayIndicatorBar, { backgroundColor: barColor, height: barHeight }]} />
+                          </View>
+                          <Text style={[styles.dayIndicatorScore, { color: barColor }]}>{day.score}</Text>
                         </View>
-                        <Text style={styles.dailyBarScore}>{day.score}</Text>
-                      </View>
-                    ))}
+                      );
+                    })}
                   </View>
                 </View>
               </View>
@@ -581,10 +635,6 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
               <View style={styles.weeklyAveragesSection}>
                 <View style={styles.weeklyAveragesHeader}>
                   <Text style={styles.weeklyAveragesTitle}>Weekly Averages</Text>
-                  <View style={styles.weeklyAveragesBadge}>
-                    <Ionicons name="analytics" size={10} color="#0D9488" />
-                    <Text style={styles.weeklyAveragesBadgeText}>{weeklyData.weeklyAverages.trackedDays} days</Text>
-                  </View>
                 </View>
 
                 <AverageMetricRow
@@ -598,7 +648,7 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
                   trend={weeklyData.weeklyAverages.sleepTrend}
                 />
                 <AverageMetricRow
-                  icon="pizza"
+                  icon="leaf"
                   label="Nutrition"
                   value={weeklyData.weeklyAverages.nutrition.toFixed(1)}
                   numericValue={weeklyData.weeklyAverages.nutrition}
@@ -639,22 +689,43 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
                   isLast
                 />
               </View>
+            </View>
+          </View>
 
+          {/* Weekly Reflection Card */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['#5EEAD4', '#14B8A6', '#0D9488']}
+                style={styles.sectionIconRing}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sectionIconInner}>
+                  <Ionicons name="calendar" size={22} color="#0D9488" />
+                </View>
+              </LinearGradient>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Weekly Reflection</Text>
+              </View>
+            </View>
+
+            <View style={styles.sectionContent}>
               {/* Wealth Rating Bars */}
               <View style={styles.weeklyRatingsBlock}>
                 <Text style={styles.wealthRatingsTitle}>Wealth Ratings</Text>
-                <WeeklyRatingBar label="Physical" value={weeklyData.wealthRatings.physical} color="#10B981" icon="fitness" />
+                <WeeklyRatingBar label="Physical" value={weeklyData.wealthRatings.physical} color="#059669" icon="fitness" />
                 <WeeklyRatingBar label="Social" value={weeklyData.wealthRatings.social} color="#8B5CF6" icon="people" />
                 <WeeklyRatingBar label="Mental" value={weeklyData.wealthRatings.mental} color="#3B82F6" icon="bulb" />
-                <WeeklyRatingBar label="Financial" value={weeklyData.wealthRatings.financial} color="#F59E0B" icon="wallet" />
-                <WeeklyRatingBar label="Time" value={weeklyData.wealthRatings.time} color="#EC4899" icon="time" />
+                <WeeklyRatingBar label="Financial" value={weeklyData.wealthRatings.financial} color="#EAB308" icon="bar-chart" />
+                <WeeklyRatingBar label="Time" value={weeklyData.wealthRatings.time} color="#FB923C" icon="time" isLast />
               </View>
 
               {/* Reflections */}
               <View style={styles.weeklyReflectionsContainer}>
                 <View style={styles.weeklyReflectionItem}>
                   <View style={styles.infoHeader}>
-                    <Ionicons name="checkmark-circle" size={16} color="#0D9488" />
+                    <Ionicons name="trophy" size={16} color="#0D9488" />
                     <Text style={styles.infoLabel}>What went well</Text>
                   </View>
                   <Text style={styles.infoText}>{weeklyData.wentWell}</Text>
@@ -662,7 +733,7 @@ const WeeklyReviewScreen = ({ navigation, route }: WeeklyReviewScreenProps): Rea
                 <View style={styles.weeklyReflectionDivider} />
                 <View style={styles.weeklyReflectionItem}>
                   <View style={styles.infoHeader}>
-                    <Ionicons name="arrow-forward-circle" size={16} color="#0D9488" />
+                    <Ionicons name="arrow-up-circle" size={16} color="#0D9488" />
                     <Text style={styles.infoLabel}>Focus for next week</Text>
                   </View>
                   <Text style={styles.infoText}>{weeklyData.improveNextWeek}</Text>
@@ -869,35 +940,38 @@ const AverageMetricRow: React.FC<AverageMetricRowProps> = ({
   );
 };
 
-// Weekly Rating Bar Component
+// Weekly Rating Bar Component (matching Monthly tracking design)
 interface WeeklyRatingBarProps {
   label: string;
   value: number;
   color: string;
   icon: keyof typeof Ionicons.glyphMap;
+  isLast?: boolean;
 }
 
-const WeeklyRatingBar: React.FC<WeeklyRatingBarProps> = ({ label, value, color, icon }) => {
+const WeeklyRatingBar: React.FC<WeeklyRatingBarProps> = ({ label, value, color, icon, isLast }) => {
   const percentage = (value / 10) * 100;
 
-  const getTrackColor = (c: string) => {
-    if (c === '#10B981') return '#D1FAE5';
-    if (c === '#8B5CF6') return '#EDE9FE';
-    if (c === '#3B82F6') return '#DBEAFE';
-    if (c === '#F59E0B') return '#FEF3C7';
-    if (c === '#EC4899') return '#FCE7F3';
-    return '#E5E7EB';
-  };
-
   return (
-    <View style={styles.weeklyRatingBarItem}>
-      <View style={styles.weeklyRatingBarHeader}>
+    <View style={[styles.wealthRatingRow, isLast && styles.wealthRatingRowLast]}>
+      <LinearGradient
+        colors={['#FFFFFF', '#F5F5F5']}
+        style={[styles.wealthRatingIconContainer, { borderColor: color }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <Ionicons name={icon} size={16} color={color} />
-        <Text style={styles.weeklyRatingBarLabel}>{label}</Text>
-        <Text style={[styles.weeklyRatingBarValue, { color }]}>{value}</Text>
-      </View>
-      <View style={[styles.weeklyRatingBarTrack, { backgroundColor: getTrackColor(color) }]}>
-        <View style={[styles.weeklyRatingBarFill, { width: `${percentage}%`, backgroundColor: color }]} />
+      </LinearGradient>
+      <View style={styles.wealthRatingContent}>
+        <View style={styles.wealthRatingHeader}>
+          <Text style={styles.wealthRatingLabel}>{label}</Text>
+          <Text style={[styles.wealthRatingValue, { color }]}>{value}</Text>
+        </View>
+        <View style={styles.wealthRatingProgressRow}>
+          <View style={styles.wealthRatingProgressBg}>
+            <View style={[styles.wealthRatingProgressFill, { width: `${percentage}%`, backgroundColor: color }]} />
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -938,9 +1012,11 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 14,
+    position: 'relative',
   },
   backButton: {
     width: 40,
@@ -949,11 +1025,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerTextContainer: {
     flex: 1,
@@ -974,13 +1052,16 @@ const styles = StyleSheet.create({
   headerDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   headerDatePillSide: {
     paddingHorizontal: 14,
@@ -1086,7 +1167,6 @@ const styles = StyleSheet.create({
   sectionCard: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
-    marginTop: 8,
     marginBottom: 24,
     borderRadius: 18,
     padding: 16,
@@ -1099,8 +1179,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingBottom: 24,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
@@ -1166,126 +1246,121 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Weekly Overview Section
+  // Weekly Overview Section - Redesigned to match WeeklyTrackingOverviewContent
   weeklyOverviewSection: {
-    paddingBottom: 24,
-    marginBottom: 24,
+    paddingBottom: 16,
+    marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  weeklyOverviewTop: {
+  scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingBottom: 16,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  circularScoreContainer: {
+  scoreRingWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
   },
-  circularScoreRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 6,
-    borderColor: '#0D9488',
-    backgroundColor: '#FFFFFF',
+  scoreTextOverlay: {
+    position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  circularScoreInner: {
-    alignItems: 'center',
-  },
-  circularScoreNumber: {
+  scoreValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#0D9488',
-    letterSpacing: -0.5,
+    letterSpacing: -1,
   },
-  circularScoreMax: {
+  scoreOutOf: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: '#9AA0A6',
     marginTop: -2,
   },
-  weeklyOverviewInfo: {
+  scoreInfo: {
     flex: 1,
   },
-  ratingBadge: {
+  performanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 8,
   },
-  ratingBadgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+  performanceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
-  ratingBadgeText: {
+  performanceLabel: {
     fontSize: 14,
     fontWeight: '600',
   },
-  weeklyOverviewDescription: {
+  scoreDescription: {
     fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
+    color: '#9AA0A6',
     lineHeight: 18,
   },
-  dailyBreakdownSection: {
-    paddingTop: 12,
+  // Daily Breakdown - Refined slim design
+  dailyBreakdown: {
+    paddingBottom: 2,
   },
   dailyBreakdownTitle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: '#9AA0A6',
+    marginBottom: 10,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    letterSpacing: 0.8,
   },
-  dailyBreakdownBars: {
+  dayIndicatorsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    paddingHorizontal: 8,
   },
-  dailyBarContainer: {
+  dayIndicatorContainer: {
     alignItems: 'center',
-    flex: 1,
+    width: 32,
   },
-  dailyBarDay: {
-    fontSize: 12,
+  dayIndicatorLabel: {
+    fontSize: 10,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#9AA0A6',
     marginBottom: 6,
   },
-  dailyBarWrapper: {
-    width: 8,
-    height: 60,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+  dayIndicatorTrack: {
+    width: 4,
+    height: 28,
+    backgroundColor: '#E8EAED',
+    borderRadius: 2,
     justifyContent: 'flex-end',
     overflow: 'hidden',
+    marginBottom: 4,
   },
-  dailyBar: {
+  dayIndicatorBar: {
     width: '100%',
-    backgroundColor: '#F59E0B',
-    borderRadius: 4,
+    borderRadius: 2,
   },
-  dailyBarScore: {
+  dayIndicatorScore: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#F59E0B',
-    marginTop: 6,
+    textAlign: 'center',
   },
 
   // Weekly Averages Section
   weeklyAveragesSection: {
-    paddingBottom: 24,
-    marginBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingBottom: 0,
+    marginBottom: 0,
   },
   weeklyAveragesHeader: {
     flexDirection: 'row',
@@ -1315,7 +1390,7 @@ const styles = StyleSheet.create({
   avgMetricRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB60',
   },
@@ -1373,11 +1448,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Weekly Ratings
+  // Weekly Ratings (matching Monthly tracking design)
   weeklyRatingsBlock: {
-    gap: 18,
     paddingTop: 0,
-    paddingBottom: 24,
+    paddingBottom: 16,
     marginBottom: 0,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -1386,35 +1460,65 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
-    marginBottom: 6,
+    marginBottom: 12,
   },
-  weeklyRatingBarItem: {
+  wealthRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EAED60',
+  },
+  wealthRatingRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 2,
+  },
+  wealthRatingIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  wealthRatingContent: {
+    flex: 1,
     gap: 6,
   },
-  weeklyRatingBarHeader: {
+  wealthRatingHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  weeklyRatingBarLabel: {
+  wealthRatingLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginLeft: 10,
-    flex: 1,
+    fontWeight: '600',
+    color: '#1F2937',
   },
-  weeklyRatingBarValue: {
+  wealthRatingValue: {
     fontSize: 15,
     fontWeight: '700',
   },
-  weeklyRatingBarTrack: {
-    height: 6,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 3,
+  wealthRatingProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  wealthRatingProgressBg: {
+    flex: 1,
+    height: 5,
+    backgroundColor: '#E8EAED',
+    borderRadius: 2.5,
     overflow: 'hidden',
   },
-  weeklyRatingBarFill: {
+  wealthRatingProgressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2.5,
   },
 
   // Weekly Reflections
@@ -1424,7 +1528,7 @@ const styles = StyleSheet.create({
     marginBottom: -16,
   },
   weeklyReflectionItem: {
-    paddingVertical: 24,
+    paddingVertical: 16,
   },
   weeklyReflectionDivider: {
     height: 1,
@@ -1433,9 +1537,9 @@ const styles = StyleSheet.create({
 
   // Weekly Selfie
   weeklySelfieContainerBottom: {
-    marginTop: 24,
+    marginTop: 16,
     marginBottom: 0,
-    paddingTop: 24,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },

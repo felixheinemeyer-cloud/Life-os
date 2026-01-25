@@ -252,7 +252,7 @@ const EveningTrackingJournalContent: React.FC<EveningTrackingJournalContentProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   scrollView: {
     flex: 1,
@@ -286,12 +286,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   questionText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 28,
+    lineHeight: 32,
   },
 
   // Segmented Control
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   buttonContainerFocused: {
     alignItems: 'flex-end',

@@ -249,7 +249,7 @@ const MentalWealthIntroAnimationScreen: React.FC<MentalWealthIntroAnimationScree
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   content: {
     flex: 1,

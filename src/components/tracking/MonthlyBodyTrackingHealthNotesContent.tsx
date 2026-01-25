@@ -4,39 +4,57 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
+  Animated,
   ScrollView,
+  TextInput,
   Platform,
   Keyboard,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface MorningTrackingGratitudeContentProps {
-  gratitudeText: string;
-  onGratitudeChange: (value: string) => void;
+// Sky blue color scheme for Monthly Body Check-In
+const THEME_COLORS = {
+  primary: '#0EA5E9',
+  primaryLight: '#38BDF8',
+  primaryLighter: '#BAE6FD',
+  gradient: ['#BAE6FD', '#38BDF8', '#0EA5E9'] as const,
+};
+
+export interface HealthNotesData {
+  notes: string;
+}
+
+interface MonthlyBodyTrackingHealthNotesContentProps {
+  data: HealthNotesData;
+  onDataChange: (data: HealthNotesData) => void;
   onContinue: () => void;
 }
 
-const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentProps> = ({
-  gratitudeText,
-  onGratitudeChange,
+const MonthlyBodyTrackingHealthNotesContent: React.FC<MonthlyBodyTrackingHealthNotesContentProps> = ({
+  data,
+  onDataChange,
   onContinue,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const textInputRef = useRef<TextInput>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const buttonBottom = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
-        // Position button 8px above keyboard (subtract safe area/tab bar offset)
+        setIsFocused(true);
         const keyboardTop = e.endCoordinates.height - 80;
-        setKeyboardHeight(e.endCoordinates.height);
         Animated.timing(buttonBottom, {
           toValue: keyboardTop + 8,
           duration: Platform.OS === 'ios' ? 250 : 0,
@@ -48,7 +66,7 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
     const keyboardWillHide = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
-        setKeyboardHeight(0);
+        setIsFocused(false);
         Animated.timing(buttonBottom, {
           toValue: 0,
           duration: Platform.OS === 'ios' ? 250 : 0,
@@ -63,16 +81,12 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
     };
   }, []);
 
-  const handleFocus = (): void => {
-    setIsFocused(true);
-  };
-
-  const handleBlur = (): void => {
-    setIsFocused(false);
+  const handleTextChange = (text: string) => {
+    onDataChange({ notes: text });
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -82,36 +96,38 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
-        {/* Question Section */}
-        <View style={styles.questionSection}>
+        {/* Header Section */}
+        <View style={styles.headerSection}>
           <LinearGradient
-            colors={['#FBBF24', '#F59E0B', '#D97706']}
-            style={styles.iconGradientRing}
+            colors={THEME_COLORS.gradient}
+            style={styles.headerIconGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.iconInnerCircle}>
-              <Ionicons name="heart" size={28} color="#D97706" />
+            <View style={styles.headerIconInner}>
+              <Ionicons name="document-text" size={28} color={THEME_COLORS.primary} />
             </View>
           </LinearGradient>
-          <Text style={styles.questionText}>
-            What are you thankful for today?
-          </Text>
-          <View style={styles.divider} />
+          <Text style={styles.headerTitle}>Health Notes</Text>
+
+          {/* Hint Text */}
+          <View style={styles.hintContainer}>
+            <Text style={styles.hintText}>
+              Describe your overall health and activity this month
+            </Text>
+          </View>
         </View>
 
         {/* Free Writing Area */}
         <TextInput
-          ref={textInputRef}
           style={styles.freeWritingInput}
-          placeholder="Write something you're grateful for..."
+          placeholder="Start writing..."
           placeholderTextColor="#9CA3AF"
+          value={data.notes}
+          onChangeText={handleTextChange}
           multiline
           scrollEnabled={false}
-          value={gratitudeText}
-          onChangeText={onGratitudeChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          maxLength={500}
           textAlignVertical="top"
           selectionColor="#1F2937"
           cursorColor="#1F2937"
@@ -145,7 +161,7 @@ const MorningTrackingGratitudeContent: React.FC<MorningTrackingGratitudeContentP
           </TouchableOpacity>
         )}
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -159,25 +175,25 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 4,
     paddingBottom: 300,
   },
 
-  // Question Section
-  questionSection: {
+  // Header Section
+  headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  iconGradientRing: {
+  headerIconGradient: {
     width: 64,
     height: 64,
     borderRadius: 32,
+    padding: 3,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    padding: 3,
   },
-  iconInnerCircle: {
+  headerIconInner: {
     width: 58,
     height: 58,
     borderRadius: 29,
@@ -185,20 +201,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  questionText: {
+  headerTitle: {
     fontSize: 24,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
     lineHeight: 32,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  divider: {
-    width: 60,
-    height: 2,
-    backgroundColor: '#9CA3AF',
-    borderRadius: 1,
+  hintContainer: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#9CA3AF',
+    paddingLeft: 12,
+    marginTop: 0,
+    alignSelf: 'stretch',
+  },
+  hintText: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#9CA3AF',
+    lineHeight: 30,
+    letterSpacing: -0.1,
   },
 
   // Free Writing Input
@@ -211,7 +235,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     paddingHorizontal: 0,
     paddingTop: 0,
-    minHeight: 200,
+    minHeight: 150,
   },
 
   // Button Container
@@ -223,7 +247,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: '#F0EEE8',
   },
   buttonContainerFocused: {
     alignItems: 'flex-end',
@@ -238,6 +261,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     shadowColor: '#1F2937',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
@@ -248,7 +272,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginRight: 6,
     letterSpacing: -0.2,
   },
   roundContinueButton: {
@@ -266,4 +289,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MorningTrackingGratitudeContent;
+export default MonthlyBodyTrackingHealthNotesContent;

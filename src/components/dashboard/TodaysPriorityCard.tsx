@@ -97,9 +97,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardCompleted: {
-    backgroundColor: '#F0FDF4',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.12,
+    backgroundColor: '#FFFFFF',
   },
   cardNotCompleted: {
     backgroundColor: '#FFFFFF',

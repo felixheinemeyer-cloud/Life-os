@@ -41,6 +41,7 @@ interface RelationshipHomeScreenProps {
 }
 
 interface DurationStats {
+  years: number;
   months: number;
   weeks: number;
   days: number;
@@ -191,12 +192,6 @@ const DATE_IDEAS: DateIdea[] = [
 
 const RELATIONSHIP_TOOLS: RelationshipTool[] = [
   {
-    id: '1',
-    title: 'Weekly check-in ritual',
-    description: 'A simple practice to stay connected and aligned',
-    icon: 'calendar-outline',
-  },
-  {
     id: '2',
     title: 'Conflict resolution guide',
     description: 'Navigate disagreements with empathy and understanding',
@@ -210,12 +205,41 @@ const calculateDuration = (sinceDate: Date): DurationStats => {
   const diffTime = Math.abs(now.getTime() - sinceDate.getTime());
   const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-  const months = Math.floor(totalDays / 30);
-  const remainingAfterMonths = totalDays % 30;
+  const years = Math.floor(totalDays / 365);
+  const remainingAfterYears = totalDays % 365;
+  const months = Math.floor(remainingAfterYears / 30);
+  const remainingAfterMonths = remainingAfterYears % 30;
   const weeks = Math.floor(remainingAfterMonths / 7);
   const days = remainingAfterMonths % 7;
 
-  return { months, weeks, days };
+  return { years, months, weeks, days };
+};
+
+// Format duration as human-readable string (e.g., "3 years & 1 month" or "1,127 days together")
+const formatDurationHuman = (sinceDate: Date): { primary: string; secondary: string } => {
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - sinceDate.getTime());
+  const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  const years = Math.floor(totalDays / 365);
+  const remainingDaysAfterYears = totalDays % 365;
+  const months = Math.floor(remainingDaysAfterYears / 30);
+
+  let primary = '';
+
+  if (years > 0 && months > 0) {
+    primary = `${years} ${years === 1 ? 'year' : 'years'} & ${months} ${months === 1 ? 'month' : 'months'}`;
+  } else if (years > 0) {
+    primary = `${years} ${years === 1 ? 'year' : 'years'}`;
+  } else if (months > 0) {
+    primary = `${months} ${months === 1 ? 'month' : 'months'}`;
+  } else {
+    primary = `${totalDays} ${totalDays === 1 ? 'day' : 'days'}`;
+  }
+
+  const secondary = `${totalDays.toLocaleString()} days of love`;
+
+  return { primary, secondary };
 };
 
 const formatDate = (date: Date): string => {
@@ -235,47 +259,64 @@ const HeroSection: React.FC<{
   duration: DurationStats;
 }> = ({ photoUri, partnerName, sinceDate, duration }) => (
   <View style={styles.heroSection}>
-    {/* Photo Card */}
-    <View style={styles.photoCard}>
+    {/* Photo Container */}
+    <View style={styles.heroPhotoContainer}>
+      {/* Background Photo or Placeholder */}
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.heroPhoto} />
       ) : (
         <LinearGradient
-          colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+          colors={['#FFF1F2', '#FECDD3', '#FDA4AF']}
           style={styles.heroPhotoPlaceholder}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={styles.heroIconCircle}>
-            <Ionicons name="heart" size={32} color="#E11D48" />
+          <View style={styles.heroPlaceholderIconContainer}>
+            <Ionicons name="heart" size={64} color="rgba(225, 29, 72, 0.3)" />
           </View>
         </LinearGradient>
       )}
+
+      {/* Gradient Overlay for better text readability */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0, 0, 0, 0.03)', 'rgba(0, 0, 0, 0.15)']}
+        style={styles.heroGradientOverlay}
+        locations={[0, 0.5, 1]}
+      />
     </View>
 
-    {/* Partner Name */}
-    <Text style={styles.partnerName}>{partnerName}</Text>
+    {/* Info Card - positioned to overlap and extend beyond photo */}
+    <View style={styles.heroInfoCard}>
+      <View style={styles.heroInfoRow}>
+        {/* Left: Name & Since Date */}
+        <View style={styles.heroInfoLeft}>
+          <Text style={styles.partnerName}>{partnerName}</Text>
+          <View style={styles.sinceRow}>
+            <Ionicons name="heart" size={10} color="#E11D48" />
+            <Text style={styles.sinceText}>{formatDate(sinceDate)}</Text>
+          </View>
+        </View>
 
-    {/* Together Since */}
-    <Text style={styles.togetherSince}>
-      Together since {formatDate(sinceDate)}
-    </Text>
+        {/* Divider */}
+        <View style={styles.heroInfoDivider} />
 
-    {/* Duration Stats */}
-    <View style={styles.durationContainer}>
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.months}</Text>
-        <Text style={styles.durationLabel}>months</Text>
-      </View>
-      <View style={styles.durationDivider} />
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.weeks}</Text>
-        <Text style={styles.durationLabel}>weeks</Text>
-      </View>
-      <View style={styles.durationDivider} />
-      <View style={styles.durationStat}>
-        <Text style={styles.durationNumber}>{duration.days}</Text>
-        <Text style={styles.durationLabel}>days</Text>
+        {/* Right: Duration Stats */}
+        <View style={styles.durationRow}>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.years}</Text>
+            <Text style={styles.durationLabel}>years</Text>
+          </View>
+          <Text style={styles.durationDot}>•</Text>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.months}</Text>
+            <Text style={styles.durationLabel}>months</Text>
+          </View>
+          <Text style={styles.durationDot}>•</Text>
+          <View style={styles.durationItem}>
+            <Text style={styles.durationNumber}>{duration.days}</Text>
+            <Text style={styles.durationLabel}>days</Text>
+          </View>
+        </View>
       </View>
     </View>
   </View>
@@ -464,9 +505,12 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
   return (
     <View style={[styles.section, styles.dateIdeasSection]}>
       <View style={styles.dateIdeasHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Date Ideas</Text>
-          <Text style={styles.dateIdeasSubtitle}>Weekly Inspiration</Text>
+        <View style={styles.dateIdeasTitleRow}>
+          <View style={styles.dateIdeasAccent} />
+          <View>
+            <Text style={styles.sectionTitle}>This Week's Spark</Text>
+            <Text style={styles.dateIdeasSubtitle}>Curated moments for two</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
           <Text style={styles.seeAllText}>See All</Text>
@@ -566,10 +610,7 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    if (tool.id === '1') {
-      // Weekly check-in ritual
-      navigation?.navigate('WeeklyCheckIn');
-    } else if (tool.id === '2') {
+    if (tool.id === '2') {
       // Conflict resolution guide
       navigation?.navigate('ConflictResolutionGuide');
     }
@@ -578,12 +619,15 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
   return (
     <View style={styles.section}>
       <View style={styles.toolsSectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Relationship Tools</Text>
-          <Text style={styles.toolsSectionSubtitle}>Resources to grow together</Text>
+        <View style={styles.toolsSectionTitleRow}>
+          <View style={styles.toolsSectionAccent} />
+          <View>
+            <Text style={styles.sectionTitle}>Grow Together</Text>
+            <Text style={styles.toolsSectionSubtitle}>Resources for your relationship</Text>
+          </View>
         </View>
         <View style={styles.toolsTimerPill}>
-          <Ionicons name="hourglass-outline" size={16} color="#1F2937" />
+          <Ionicons name="hourglass-outline" size={16} color="#E11D48" />
           <Text style={styles.toolsTimerText}>{daysUntilUpdate}d</Text>
         </View>
       </View>
@@ -601,7 +645,7 @@ const RelationshipToolsSection: React.FC<{ navigation?: any }> = ({ navigation }
             <Text style={styles.toolTitle}>{tool.title}</Text>
             <Text style={styles.toolDescription}>{tool.description}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          <Ionicons name="chevron-forward" size={20} color="#6B7280" />
         </TouchableOpacity>
       ))}
     </View>
@@ -806,20 +850,34 @@ const PartnerNotesSection: React.FC<{
   onSwipeEnd: () => void;
 }> = ({ partnerName, notes, onAddNotePress, onEditNote, onDeleteNote, onSwipeStart, onSwipeEnd }) => (
   <View style={styles.section}>
-    <Text style={styles.sectionTitle}>Notes about {partnerName}</Text>
-    <Text style={styles.sectionSubtitle}>Little things you don't want to forget</Text>
+    <View style={styles.notesSectionHeader}>
+      <View style={styles.notesSectionTitleRow}>
+        <View style={styles.notesSectionAccent} />
+        <View>
+          <Text style={styles.sectionTitle}>Little Things About {partnerName}</Text>
+          <Text style={styles.sectionSubtitle}>Memories you want to keep</Text>
+        </View>
+      </View>
+    </View>
 
     {/* Add New Note Button */}
-    <TouchableOpacity
-      style={styles.addNoteCard}
-      onPress={onAddNotePress}
-      activeOpacity={0.7}
+    <LinearGradient
+      colors={['#FFFFFF', '#FFFBFB']}
+      style={styles.addNoteCardGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
-      <Text style={styles.addNotePlaceholder}>Add a note...</Text>
-      <View style={styles.addNoteButton}>
-        <Ionicons name="add" size={20} color="#E11D48" />
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.addNoteCardInner}
+        onPress={onAddNotePress}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.addNotePlaceholder}>Add a note...</Text>
+        <View style={styles.addNoteButton}>
+          <Ionicons name="add" size={18} color="#E11D48" />
+        </View>
+      </TouchableOpacity>
+    </LinearGradient>
 
     {/* Existing Notes */}
     {notes.map((note) => (
@@ -946,7 +1004,7 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: insets.top + 72 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -1157,10 +1215,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },
@@ -1172,10 +1230,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
   },
@@ -1189,20 +1247,19 @@ const styles = StyleSheet.create({
 
   // Hero Section
   heroSection: {
-    alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 48,
+    marginHorizontal: 8,
   },
-  photoCard: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+  heroPhotoContainer: {
+    height: 346,
+    borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: 14,
-    shadowColor: '#E11D48',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 6,
+    backgroundColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
   heroPhoto: {
     width: '100%',
@@ -1215,85 +1272,127 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  heroIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  heroPlaceholderIconContainer: {
+    position: 'absolute',
+    top: '35%',
   },
-  photoOverlayGradient: {
+  heroGradientOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 180,
   },
-  editPhotoButton: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  heroInfoCard: {
+    marginTop: -38,
+    marginHorizontal: 16,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 2,
-    borderColor: '#F7F5F2',
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  heroInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heroInfoLeft: {
+    flex: 1,
   },
   partnerName: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  togetherSince: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-  durationContainer: {
+  sinceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+  },
+  sinceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E11D48',
+    letterSpacing: -0.2,
+  },
+  heroInfoDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    marginHorizontal: 14,
+  },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  durationItem: {
+    alignItems: 'center',
+  },
+  durationNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.4,
+  },
+  durationLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 2,
+    textTransform: 'lowercase',
+  },
+  durationDot: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#D1D5DB',
+    marginTop: -3,
+  },
+
+  // Quick Action Buttons
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    width: '100%',
+  },
+  quickActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingTop: 8, paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
-  durationStat: {
+  quickActionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 14,
   },
-  durationNumber: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#E11D48',
-    letterSpacing: -0.5,
-  },
-  durationLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  durationDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#E5E7EB',
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    letterSpacing: -0.2,
   },
 
   // Section Common
@@ -1324,6 +1423,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
+  dateIdeasTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  dateIdeasAccent: {
+    width: 4,
+    height: 40,
+    backgroundColor: '#E11D48',
+    borderRadius: 2,
+    marginTop: 2,
+  },
   dateIdeasSubtitle: {
     fontSize: 14,
     fontWeight: '400',
@@ -1334,22 +1445,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   seeAllText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginRight: 3,
-    letterSpacing: -0.1,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginRight: 2,
   },
   carouselContainer: {
     height: 240,
@@ -1465,25 +1573,36 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
+  toolsSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  toolsSectionAccent: {
+    width: 4,
+    height: 40,
+    backgroundColor: '#E11D48',
+    borderRadius: 2,
+    marginTop: 2,
+  },
   toolsSectionSubtitle: {
     fontSize: 14,
     fontWeight: '400',
     color: '#6B7280',
+    marginTop: 2,
   },
   toolsTimerPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 2,
   },
   toolsTimerText: {
@@ -1496,19 +1615,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 2,
   },
   toolIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1529,6 +1648,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#6B7280',
     lineHeight: 18,
+  },
+  toolChevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // Partner Notes Section - Swipeable Cards
@@ -1606,6 +1733,46 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 24,
   },
+  notesSectionHeader: {
+    marginBottom: 0,
+  },
+  notesSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  notesSectionAccent: {
+    width: 4,
+    height: 40,
+    backgroundColor: '#E11D48',
+    borderRadius: 2,
+    marginTop: 2,
+  },
+  addNoteCardGradient: {
+    borderRadius: 18,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addNoteCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 14,
+    paddingRight: 10,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  addNoteIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   addNoteCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1613,7 +1780,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1624,7 +1791,7 @@ const styles = StyleSheet.create({
   addNotePlaceholder: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '400',
+    fontWeight: '500',
     color: '#9CA3AF',
   },
   addNoteButton: {
@@ -1712,7 +1879,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     gap: 12,
   },

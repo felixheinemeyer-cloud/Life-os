@@ -14,16 +14,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isSmallScreen = SCREEN_WIDTH < 380; // iPhone 14 Pro/15 Pro is ~393pt, iPhone 16 Pro is ~402pt
+const isSmallScreen = SCREEN_WIDTH < 380;
 
-interface EveningTrackingPriorityContentProps {
-  morningPriority: string;
-  onSelectionComplete: (completed: boolean) => void;
+interface EveningTrackingNudgeContentProps {
+  onDoMorningFirst: () => void;
+  onContinueAnyway: () => void;
 }
 
-const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentProps> = ({
-  morningPriority,
-  onSelectionComplete,
+const EveningTrackingNudgeContent: React.FC<EveningTrackingNudgeContentProps> = ({
+  onDoMorningFirst,
+  onContinueAnyway,
 }) => {
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
@@ -46,11 +46,18 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
     }).start();
   };
 
-  const handleCardPress = (completed: boolean) => {
+  const handleMorningPress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    onSelectionComplete(completed);
+    onDoMorningFirst();
+  };
+
+  const handleContinuePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onContinueAnyway();
   };
 
   return (
@@ -63,64 +70,58 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
       {/* Question Section */}
       <View style={styles.questionSection}>
         <LinearGradient
-          colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
+          colors={['#FBBF24', '#F59E0B', '#D97706']}
           style={styles.iconGradientRing}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View style={styles.iconInnerCircle}>
-            <Ionicons name="checkmark-circle" size={28} color="#7C3AED" />
+            <Ionicons name="sunny" size={28} color="#D97706" />
           </View>
         </LinearGradient>
         <Text style={styles.questionText}>
-          Did you complete your priority?
+          Morning first?
+        </Text>
+        <Text style={styles.questionSubtext}>
+          Setting intentions first can make your evening reflection more meaningful.
         </Text>
       </View>
 
-      {/* Priority Card */}
-      <View style={styles.priorityCard}>
-        <View style={styles.priorityHeader}>
-          <Ionicons name="flag" size={16} color="#D97706" />
-          <Text style={styles.priorityLabel}>Today's Priority</Text>
-        </View>
-        <Text style={styles.priorityText}>{morningPriority}</Text>
-      </View>
-
-      {/* Completion Cards */}
+      {/* Option Cards */}
       <View style={styles.cardsContainer}>
-        {/* Yes, I did it! Card */}
+        {/* Do Morning First Card */}
         <TouchableOpacity
           activeOpacity={1}
           onPressIn={() => handlePressIn(scale1)}
           onPressOut={() => handlePressOut(scale1)}
-          onPress={() => handleCardPress(true)}
+          onPress={handleMorningPress}
           style={styles.cardTouchable}
         >
           <Animated.View
             style={[
               styles.card,
-              styles.successCard,
+              styles.morningCard,
               isSmallScreen && styles.cardSmall,
               { transform: [{ scale: scale1 }] },
             ]}
           >
             {/* Icon */}
             <LinearGradient
-              colors={['#34D399', '#10B981', '#059669']}
+              colors={['#FBBF24', '#F59E0B', '#D97706']}
               style={[styles.cardIconGradientRing, isSmallScreen && styles.cardIconGradientRingSmall]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={[styles.cardIconInnerCircle, isSmallScreen && styles.cardIconInnerCircleSmall]}>
-                <Ionicons name="checkmark" size={26} color="#059669" />
+                <Ionicons name="sunny" size={26} color="#D97706" />
               </View>
             </LinearGradient>
 
             {/* Content */}
             <View style={styles.cardTextContainer}>
-              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Yes, I did it!</Text>
+              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Do Morning First</Text>
               <Text style={[styles.cardDescription, isSmallScreen && styles.cardDescriptionSmall]}>
-                Celebrate your achievement
+                Set your intentions for the day
               </Text>
             </View>
 
@@ -131,39 +132,39 @@ const EveningTrackingPriorityContent: React.FC<EveningTrackingPriorityContentPro
           </Animated.View>
         </TouchableOpacity>
 
-        {/* Not today Card */}
+        {/* Continue to Evening Card */}
         <TouchableOpacity
           activeOpacity={1}
           onPressIn={() => handlePressIn(scale2)}
           onPressOut={() => handlePressOut(scale2)}
-          onPress={() => handleCardPress(false)}
+          onPress={handleContinuePress}
           style={styles.cardTouchable}
         >
           <Animated.View
             style={[
               styles.card,
-              styles.notTodayCard,
+              styles.continueCard,
               isSmallScreen && styles.cardSmall,
               { transform: [{ scale: scale2 }] },
             ]}
           >
             {/* Icon */}
             <LinearGradient
-              colors={['#9CA3AF', '#6B7280', '#4B5563']}
+              colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
               style={[styles.cardIconGradientRing, isSmallScreen && styles.cardIconGradientRingSmall]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <View style={[styles.cardIconInnerCircle, isSmallScreen && styles.cardIconInnerCircleSmall]}>
-                <Ionicons name="close" size={26} color="#4B5563" />
+                <Ionicons name="moon" size={26} color="#7C3AED" />
               </View>
             </LinearGradient>
 
             {/* Content */}
             <View style={styles.cardTextContainer}>
-              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Not today</Text>
+              <Text style={[styles.cardTitle, isSmallScreen && styles.cardTitleSmall]}>Continue to Evening</Text>
               <Text style={[styles.cardDescription, isSmallScreen && styles.cardDescriptionSmall]}>
-                Reflect and move forward
+                Skip morning
               </Text>
             </View>
 
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   // Question Section
   questionSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 32,
   },
   iconGradientRing: {
     width: 64,
@@ -216,54 +217,20 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   questionSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '400',
     color: '#6B7280',
     textAlign: 'center',
-    letterSpacing: -0.2,
-  },
-
-  // Priority Card
-  priorityCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#D97706',
-  },
-  priorityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  priorityLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#D97706',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  priorityText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
-    lineHeight: 24,
-    letterSpacing: -0.2,
+    lineHeight: 22,
+    paddingHorizontal: 16,
   },
 
   // Cards Container
   cardsContainer: {
     gap: 12,
-    paddingTop: 20,
   },
 
   // Card Styles
@@ -279,19 +246,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  successCard: {
-    shadowColor: '#10B981',
+  morningCard: {
+    shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 14,
     elevation: 5,
   },
-  notTodayCard: {
-    shadowColor: '#6B7280',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 5,
+  continueCard: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
   // Icon
@@ -371,4 +338,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EveningTrackingPriorityContent;
+export default EveningTrackingNudgeContent;

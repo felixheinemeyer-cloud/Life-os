@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Animated,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 type VaultItem = {
@@ -27,6 +27,8 @@ interface KnowledgeHubScreenProps {
 }
 
 const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
   // Vaults data - 8 vaults in 4 rows of 2
   const vaults: VaultItem[] = [
     {
@@ -109,8 +111,8 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.safeArea}>
+      <View style={[styles.container, { paddingTop: insets.top + 14 }]}>
         {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.title}>Second Brain</Text>
@@ -131,7 +133,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
           ))}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -207,18 +209,17 @@ const VaultCard: React.FC<{
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
 
   // Header
   header: {
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 24,
-    paddingTop: 8,
     paddingBottom: 8,
   },
   title: {

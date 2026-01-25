@@ -144,7 +144,7 @@ const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
     paddingHorizontal: 16,
   },
 

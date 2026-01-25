@@ -59,11 +59,11 @@ const PhysicalWealthQuestion1Screen: React.FC<PhysicalWealthQuestion1ScreenProps
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5F2',
+    backgroundColor: '#F0EEE8',
   },
   header: {
     flexDirection: 'row',
