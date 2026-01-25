@@ -171,10 +171,11 @@ const WeeklyTrackingPhysicalWealthScreen: React.FC<WeeklyTrackingPhysicalWealthS
 
   // Guiding questions for Physical Wealth assessment
   const guidingQuestions = [
-    { icon: 'flash-outline' as const, text: 'How were your energy levels throughout the week?' },
-    { icon: 'bed-outline' as const, text: 'Did you sleep well and wake up feeling rested?' },
-    { icon: 'fitness-outline' as const, text: 'Were you consistent with exercise or movement?' },
-    { icon: 'nutrition-outline' as const, text: 'How well did you nourish your body?' },
+    { icon: 'flash-outline' as const, text: 'How did your body feel overall this week?' },
+    { icon: 'bed-outline' as const, text: 'How well did you sleep this week?' },
+    { icon: 'fitness-outline' as const, text: 'How active were you this week?' },
+    { icon: 'nutrition-outline' as const, text: 'Did you eat well and stay hydrated?' },
+    { icon: 'bandage-outline' as const, text: 'Were you free from pain, illness, or physical discomfort?' },
   ];
 
   return (

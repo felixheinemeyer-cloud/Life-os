@@ -49,10 +49,11 @@ const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
     minLabel: 'Neglected',
     maxLabel: 'Thriving',
     guidingQuestions: [
-      { icon: 'flash-outline', text: 'How were your energy levels throughout the week?' },
-      { icon: 'bed-outline', text: 'Did you sleep well and wake up feeling rested?' },
-      { icon: 'fitness-outline', text: 'Were you consistent with exercise or movement?' },
-      { icon: 'nutrition-outline', text: 'How well did you nourish your body?' },
+      { icon: 'flash-outline', text: 'How did your body feel overall this week?' },
+      { icon: 'bed-outline', text: 'How well did you sleep this week?' },
+      { icon: 'fitness-outline', text: 'How active were you this week?' },
+      { icon: 'nutrition-outline', text: 'Did you eat well and stay hydrated?' },
+      { icon: 'bandage-outline', text: 'Were you free from pain, illness, or physical discomfort?' },
     ],
   },
   social: {
@@ -62,10 +63,10 @@ const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
     minLabel: 'Isolated',
     maxLabel: 'Connected',
     guidingQuestions: [
-      { icon: 'people-outline', text: 'Did you spend quality time with family or friends?' },
+      { icon: 'people-outline', text: 'Did you spend quality time with people who matter to you?' },
       { icon: 'chatbubbles-outline', text: 'Did you have meaningful conversations this week?' },
-      { icon: 'heart-outline', text: 'Did you feel supported and connected to others?' },
-      { icon: 'hand-left-outline', text: 'Were you able to support or help someone else?' },
+      { icon: 'heart-outline', text: 'Did you feel close and connected to others?' },
+      { icon: 'hand-left-outline', text: 'Were you there for others when they needed you?' },
     ],
   },
   mental: {
@@ -77,21 +78,21 @@ const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
     guidingQuestions: [
       { icon: 'bulb-outline', text: 'How clear and focused was your thinking this week?' },
       { icon: 'book-outline', text: 'Did you learn something new or challenge your mind?' },
-      { icon: 'cloud-outline', text: 'How well did you manage stress and mental load?' },
-      { icon: 'sparkles-outline', text: 'Did you feel creative and mentally engaged?' },
+      { icon: 'cloud-outline', text: 'Did your mental load feel manageable?' },
+      { icon: 'eye-outline', text: 'Did you feel in control of your attention this week?' },
     ],
   },
   financial: {
     title: 'Financial Wealth',
     subtitle: 'Rate your financial health and security this week',
     icon: 'wallet',
-    minLabel: 'Stressed',
-    maxLabel: 'Secure',
+    minLabel: 'Struggling',
+    maxLabel: 'Thriving',
     guidingQuestions: [
-      { icon: 'wallet-outline', text: 'Did you stay within your budget this week?' },
-      { icon: 'trending-up-outline', text: 'Did you make progress toward your financial goals?' },
-      { icon: 'shield-checkmark-outline', text: 'How secure do you feel about your finances?' },
-      { icon: 'cash-outline', text: 'Were you mindful about your spending decisions?' },
+      { icon: 'cash-outline', text: 'Did you feel good about your income or earning this week?' },
+      { icon: 'card-outline', text: 'Did you spend on things that truly matter to you?' },
+      { icon: 'trending-up-outline', text: 'Did you do anything to build your financial future?' },
+      { icon: 'shield-checkmark-outline', text: 'Did you feel secure about your financial situation?' },
     ],
   },
   time: {
@@ -102,9 +103,9 @@ const WEALTH_CONFIGS: Record<WealthType, WealthConfig> = {
     maxLabel: 'Balanced',
     guidingQuestions: [
       { icon: 'hourglass-outline', text: 'Did you have enough time for what matters most?' },
-      { icon: 'calendar-outline', text: 'How well did you balance work and personal life?' },
+      { icon: 'navigate-outline', text: 'Did you feel in control of how you spent your time?' },
       { icon: 'pause-outline', text: 'Did you have margin for rest and spontaneity?' },
-      { icon: 'checkmark-done-outline', text: 'Were you able to complete your priorities without rushing?' },
+      { icon: 'heart-outline', text: 'Do you feel good about how you spent your time?' },
     ],
   },
 };
