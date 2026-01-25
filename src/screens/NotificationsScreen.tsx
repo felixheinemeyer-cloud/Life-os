@@ -171,13 +171,18 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           { opacity: dismissOpacity },
         ]}
       >
-        <Ionicons name="close" size={22} color="#FFFFFF" />
-        <Text style={styles.dismissActionText}>Dismiss</Text>
+        <View style={styles.dismissIconContainer}>
+          <Ionicons name="trash-outline" size={22} color="#EF4444" />
+        </View>
       </Animated.View>
 
       {/* Swipeable card */}
       <Animated.View
-        style={[styles.cardWrapper, { transform: [{ translateX }] }]}
+        style={[
+          styles.cardWrapper,
+          { transform: [{ translateX }] },
+          !isUnread && styles.cardWrapperRead
+        ]}
         {...panResponder.panHandlers}
       >
         <TouchableOpacity
@@ -185,11 +190,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           onPress={onPress}
           activeOpacity={0.9}
         >
-          {/* Accent bar - vibrant for unread, muted for read */}
+          {/* Accent bar - prominent for unread, subtle for read */}
           <View style={[
             styles.accentBar,
-            { backgroundColor: config.accentColor },
-            !isUnread && styles.accentBarRead
+            isUnread ? styles.accentBarUnread : styles.accentBarRead,
+            { backgroundColor: config.accentColor }
           ]} />
 
           {/* Card content */}
@@ -240,7 +245,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   styles.cardSubtitle,
                   isUnread
                     ? { color: config.accentColor }
-                    : { color: config.accentColor, opacity: 0.6 }
+                    : { color: config.accentColor, opacity: 0.60 }
                 ]}
                 numberOfLines={1}
               >
@@ -507,7 +512,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   groupSpacing: {
-    marginTop: 28,
+    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 13,
@@ -526,21 +531,20 @@ const styles = StyleSheet.create({
   },
   dismissAction: {
     position: 'absolute',
-    right: 0,
+    right: 16,
     top: 0,
     bottom: 8,
-    width: 88,
-    backgroundColor: '#EF4444',
-    borderRadius: 16,
-    flexDirection: 'column',
+    width: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
   },
-  dismissActionText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
+  dismissIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardWrapper: {
     position: 'absolute',
@@ -557,18 +561,25 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
+  cardWrapperRead: {
+    backgroundColor: '#F7F7F5',
+    shadowOpacity: 0.04,
+  },
   card: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'stretch',
   },
   accentBar: {
-    width: 4,
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
   },
+  accentBarUnread: {
+    width: 4,
+  },
   accentBarRead: {
-    opacity: 0.55,
+    width: 4,
+    opacity: 0.50,
   },
   cardContent: {
     flex: 1,
@@ -591,13 +602,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   avatarTextRead: {
-    opacity: 0.75,
+    opacity: 0.70,
   },
   iconContainer: {
     // Wrapper for gradient icon - full opacity for unread
   },
   iconContainerRead: {
-    opacity: 0.7,
+    opacity: 0.65,
   },
   iconGradientRing: {
     width: 44,
