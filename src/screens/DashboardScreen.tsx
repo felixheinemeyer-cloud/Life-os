@@ -14,7 +14,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PremiumStatsChart from '../components/PremiumStatsChart';
 import TodaysPriorityCard from '../components/dashboard/TodaysPriorityCard';
+import SwipeableCheckInCard from '../components/dashboard/SwipeableCheckInCard';
+import NotificationBell from '../components/notifications/NotificationBell';
+import NotificationSection from '../components/notifications/NotificationSection';
 import { useStreak } from '../context/StreakContext';
+import { useNotifications } from '../context/NotificationContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 type ChartVariable = 'nutrition' | 'energy' | 'satisfaction' | null;
@@ -41,6 +45,16 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
 
   // Get streak data from context
   const { streakData } = useStreak();
+
+  // Get notification data from context
+  const {
+    notifications,
+    bannerNotification,
+    unreadCount,
+    dismiss,
+    snooze,
+    markAsRead,
+  } = useNotifications();
 
   // State for interactive chart legend - Nutrition is active by default
   const [activeVariable, setActiveVariable] = useState<ChartVariable>('nutrition');
@@ -80,51 +94,15 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   const [todaysPriority, setTodaysPriority] = useState<string | null>(null);
   const [priorityStatus, setPriorityStatus] = useState<PriorityStatus>('pending');
 
+  // Dismissed check-in cards state
+  const [dismissedCards, setDismissedCards] = useState<{
+    weekly: boolean;
+    monthly: boolean;
+    bodyCheckIn: boolean;
+  }>({ weekly: false, monthly: false, bodyCheckIn: false });
+
   // 24h timer state (hours since last 12:00 noon Europe/Berlin)
   const [timerHours, setTimerHours] = useState(0);
-
-  // Mock messages data (Frontend only - no backend integration)
-  const mockMessages = [
-    {
-      id: 1,
-      subject: 'Weekly Progress Summary',
-      body: 'Great work this week! You completed 5 out of 7 daily check-ins and maintained a consistent sleep schedule.',
-      sender: 'Life OS',
-      date: '2 hours ago',
-      isRead: false,
-      type: 'summary',
-    },
-    {
-      id: 2,
-      subject: 'Reflection Reminder',
-      body: "Don't forget to complete your weekly reflection. It's a great way to track your progress!",
-      sender: 'Life OS',
-      date: '5 hours ago',
-      isRead: false,
-      type: 'reminder',
-    },
-    {
-      id: 3,
-      subject: 'New Insight Available',
-      body: 'Based on your tracking patterns, we noticed you perform best when you exercise in the morning.',
-      sender: 'Life OS',
-      date: 'Yesterday',
-      isRead: true,
-      type: 'insight',
-    },
-    {
-      id: 4,
-      subject: 'Streak Milestone',
-      body: 'Congratulations on maintaining your daily tracking streak for 7 days!',
-      sender: 'Life OS',
-      date: '2 days ago',
-      isRead: true,
-      type: 'achievement',
-    },
-  ];
-
-  const unreadCount = mockMessages.filter(m => !m.isRead).length;
-  const newestMessage = mockMessages[0];
 
   // Mock insight data (Frontend only)
   const todaysInsight = {
@@ -341,14 +319,6 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
       navigation.navigate('StreakDetails');
     } else {
       console.log('Navigate to Streak Details');
-    }
-  };
-
-  const handleOpenInbox = (): void => {
-    if (navigation) {
-      navigation.navigate('Inbox');
-    } else {
-      console.log('Navigate to Inbox');
     }
   };
 
@@ -614,88 +584,122 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
           )}
 
           {/* Weekly Check-In Card */}
-          <TouchableOpacity
-            style={styles.weeklyCardTouchable}
-            onPress={handleWeeklyTracking}
-            activeOpacity={0.85}
-          >
-            <View style={styles.weeklyCard}>
-              {/* Icon with gradient ring */}
-              <LinearGradient
-                colors={['#5EEAD4', '#14B8A6', '#0D9488']}
-                style={styles.weeklyIconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          {!dismissedCards.weekly && (
+            <SwipeableCheckInCard
+              cardHeight={88}
+              marginBottom={12}
+              onDismiss={() => setDismissedCards(prev => ({ ...prev, weekly: true }))}
+            >
+              <TouchableOpacity
+                style={styles.weeklyCardSwipeable}
+                onPress={handleWeeklyTracking}
+                activeOpacity={0.85}
               >
-                <View style={styles.weeklyIconInnerCircle}>
-                  <Ionicons name="calendar" size={28} color="#0D9488" />
+                <View style={styles.weeklyCard}>
+                  {/* Icon with gradient ring */}
+                  <LinearGradient
+                    colors={['#5EEAD4', '#14B8A6', '#0D9488']}
+                    style={styles.weeklyIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.weeklyIconInnerCircle}>
+                      <Ionicons name="calendar" size={28} color="#0D9488" />
+                    </View>
+                  </LinearGradient>
+                  {/* Text content */}
+                  <View style={styles.weeklyTextContainer}>
+                    <Text style={styles.weeklyCardTitle}>Weekly Check-In</Text>
+                    <Text style={styles.weeklyCardSubtitle}>Reflect on your week</Text>
+                  </View>
+                  {/* Chevron indicator */}
+                  <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.weeklyChevron} />
                 </View>
-              </LinearGradient>
-              {/* Text content */}
-              <View style={styles.weeklyTextContainer}>
-                <Text style={styles.weeklyCardTitle}>Weekly Check-In</Text>
-                <Text style={styles.weeklyCardSubtitle}>Reflect on your week</Text>
-              </View>
-              {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.weeklyChevron} />
-            </View>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            </SwipeableCheckInCard>
+          )}
 
           {/* Monthly Check-In Card */}
-          <TouchableOpacity
-            style={styles.monthlyCardTouchable}
-            onPress={handleMonthlyTracking}
-            activeOpacity={0.85}
-          >
-            <View style={styles.monthlyCard}>
-              {/* Icon with gradient ring */}
-              <LinearGradient
-                colors={['#FBCFE8', '#F472B6', '#DB2777']}
-                style={styles.monthlyIconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          {!dismissedCards.monthly && (
+            <SwipeableCheckInCard
+              cardHeight={88}
+              marginBottom={12}
+              onDismiss={() => setDismissedCards(prev => ({ ...prev, monthly: true }))}
+            >
+              <TouchableOpacity
+                style={styles.monthlyCardSwipeable}
+                onPress={handleMonthlyTracking}
+                activeOpacity={0.85}
               >
-                <View style={styles.monthlyIconInnerCircle}>
-                  <Ionicons name="calendar-outline" size={28} color="#DB2777" />
+                <View style={styles.monthlyCard}>
+                  {/* Icon with gradient ring */}
+                  <LinearGradient
+                    colors={['#FBCFE8', '#F472B6', '#DB2777']}
+                    style={styles.monthlyIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.monthlyIconInnerCircle}>
+                      <Ionicons name="calendar-outline" size={28} color="#DB2777" />
+                    </View>
+                  </LinearGradient>
+                  {/* Text content */}
+                  <View style={styles.monthlyTextContainer}>
+                    <Text style={styles.monthlyCardTitle}>Monthly Check-In</Text>
+                    <Text style={styles.monthlyCardSubtitle}>Review your month</Text>
+                  </View>
+                  {/* Chevron indicator */}
+                  <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.monthlyChevron} />
                 </View>
-              </LinearGradient>
-              {/* Text content */}
-              <View style={styles.monthlyTextContainer}>
-                <Text style={styles.monthlyCardTitle}>Monthly Check-In</Text>
-                <Text style={styles.monthlyCardSubtitle}>Review your month</Text>
-              </View>
-              {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.monthlyChevron} />
-            </View>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            </SwipeableCheckInCard>
+          )}
 
           {/* Monthly Body Check-In Card */}
-          <TouchableOpacity
-            style={styles.bodyCheckInCardTouchable}
-            onPress={handleMonthlyBodyTracking}
-            activeOpacity={0.85}
-          >
-            <View style={styles.bodyCheckInCard}>
-              {/* Icon with gradient ring */}
-              <LinearGradient
-                colors={['#BAE6FD', '#38BDF8', '#0EA5E9']}
-                style={styles.bodyCheckInIconGradientRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          {!dismissedCards.bodyCheckIn && (
+            <SwipeableCheckInCard
+              cardHeight={88}
+              marginBottom={24}
+              onDismiss={() => setDismissedCards(prev => ({ ...prev, bodyCheckIn: true }))}
+            >
+              <TouchableOpacity
+                style={styles.bodyCheckInCardSwipeable}
+                onPress={handleMonthlyBodyTracking}
+                activeOpacity={0.85}
               >
-                <View style={styles.bodyCheckInIconInnerCircle}>
-                  <Ionicons name="body" size={28} color="#0EA5E9" />
+                <View style={styles.bodyCheckInCard}>
+                  {/* Icon with gradient ring */}
+                  <LinearGradient
+                    colors={['#BAE6FD', '#38BDF8', '#0EA5E9']}
+                    style={styles.bodyCheckInIconGradientRing}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.bodyCheckInIconInnerCircle}>
+                      <Ionicons name="body" size={28} color="#0EA5E9" />
+                    </View>
+                  </LinearGradient>
+                  {/* Text content */}
+                  <View style={styles.bodyCheckInTextContainer}>
+                    <Text style={styles.bodyCheckInCardTitle}>Monthly Body Check-In</Text>
+                    <Text style={styles.bodyCheckInCardSubtitle}>Track your physical progress</Text>
+                  </View>
+                  {/* Chevron indicator */}
+                  <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.bodyCheckInChevron} />
                 </View>
-              </LinearGradient>
-              {/* Text content */}
-              <View style={styles.bodyCheckInTextContainer}>
-                <Text style={styles.bodyCheckInCardTitle}>Monthly Body Check-In</Text>
-                <Text style={styles.bodyCheckInCardSubtitle}>Track your physical progress</Text>
-              </View>
-              {/* Chevron indicator */}
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" style={styles.bodyCheckInChevron} />
-            </View>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            </SwipeableCheckInCard>
+          )}
+
+          {/* Notifications Section */}
+          <NotificationSection
+            notifications={notifications}
+            onNotificationPress={(notification) => {
+              markAsRead(notification.id);
+              // TODO: Navigate to contact detail
+            }}
+            onDismiss={(id) => dismiss(id)}
+          />
 
           {/* Today's Insight Section */}
           <View style={styles.insightSection}>
@@ -879,7 +883,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Week</Text>
                 <Animated.View style={{ transform: [{ rotate: weekChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  <Ionicons name="chevron-down" size={18} color="#D1D5DB" />
                 </Animated.View>
               </View>
 
@@ -916,7 +920,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
                 </LinearGradient>
                 <Text style={styles.focusItemTitle}>This Month</Text>
                 <Animated.View style={{ transform: [{ rotate: monthChevronRotation }] }}>
-                  <Ionicons name="chevron-down" size={20} color="#6B7280" />
+                  <Ionicons name="chevron-down" size={18} color="#D1D5DB" />
                 </Animated.View>
               </View>
 
@@ -931,67 +935,6 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               </View>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Messages Section */}
-        <View style={styles.messagesSection}>
-          <LinearGradient
-            colors={['#EEF2FF', '#E0E7FF', '#DDD6FE']}
-            style={styles.messagesCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {/* Header */}
-            <View style={styles.messagesHeader}>
-              <Text style={styles.messagesTitle}>Messages</Text>
-              <Text style={styles.messagesSubtitle}>Stay updated with insights</Text>
-            </View>
-
-            {/* Newest Message Preview */}
-            <TouchableOpacity
-              style={styles.messagePreview}
-              onPress={handleOpenInbox}
-              activeOpacity={0.8}
-            >
-              <View style={styles.messagePreviewContent}>
-                <View style={styles.messagePreviewHeader}>
-                  <Text style={styles.messagePreviewSubject} numberOfLines={1}>
-                    {newestMessage.subject}
-                  </Text>
-                  {!newestMessage.isRead && <View style={styles.unreadDot} />}
-                </View>
-                <Text style={styles.messagePreviewBody} numberOfLines={2}>
-                  {newestMessage.body}
-                </Text>
-                <Text style={styles.messagePreviewDate}>{newestMessage.date}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#6366F1" />
-            </TouchableOpacity>
-
-            {/* Unread Counter or Empty State */}
-            {unreadCount > 1 ? (
-              <View style={styles.unreadCounter}>
-                <Ionicons name="mail-unread-outline" size={16} color="#6366F1" />
-                <Text style={styles.unreadCounterText}>
-                  +{unreadCount - 1} more unread {unreadCount - 1 === 1 ? 'message' : 'messages'}
-                </Text>
-              </View>
-            ) : unreadCount === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>You're all caught up ✨</Text>
-              </View>
-            ) : null}
-
-            {/* Open Inbox Button */}
-            <TouchableOpacity
-              style={styles.inboxButton}
-              onPress={handleOpenInbox}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.inboxButtonText}>Open Inbox</Text>
-              <Ionicons name="arrow-forward" size={16} color="#6366F1" />
-            </TouchableOpacity>
-          </LinearGradient>
         </View>
 
         {/* Bottom spacing */}
@@ -1027,14 +970,20 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
               <Text style={styles.streakNumber}>{streakCount}</Text>
             </TouchableOpacity>
 
-            {/* Right: Profile Button */}
-            <TouchableOpacity
-              style={styles.profileButton}
-              onPress={handleProfile}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
-            </TouchableOpacity>
+            {/* Right: Notification Bell + Profile Button */}
+            <View style={styles.headerRightButtons}>
+              <NotificationBell
+                unreadCount={unreadCount}
+                onPress={() => navigation?.navigate('Notifications')}
+              />
+              <TouchableOpacity
+                style={styles.profileButton}
+                onPress={handleProfile}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="person-circle-outline" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Center: Greeting - Absolutely positioned for true center */}
@@ -1043,6 +992,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
           </Text>
         </View>
       </View>
+
     </View>
   );
 };
@@ -1088,6 +1038,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerRightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 
   // LAYER 2: Fixed Button HUD Styles
@@ -1250,6 +1205,10 @@ const styles = StyleSheet.create({
   weeklyCardTouchable: {
     marginBottom: 12,
   },
+  weeklyCardSwipeable: {
+    flex: 1,
+    height: '100%',
+  },
   weeklyCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1304,6 +1263,10 @@ const styles = StyleSheet.create({
   monthlyCardTouchable: {
     marginBottom: 12,
   },
+  monthlyCardSwipeable: {
+    flex: 1,
+    height: '100%',
+  },
   monthlyCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1357,6 +1320,10 @@ const styles = StyleSheet.create({
   // Monthly Body Check-In Card Styles
   bodyCheckInCardTouchable: {
     marginBottom: 24,
+  },
+  bodyCheckInCardSwipeable: {
+    flex: 1,
+    height: '100%',
   },
   bodyCheckInCard: {
     flexDirection: 'row',
@@ -1758,143 +1725,6 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
-  },
-
-  // Messages Section Styles
-  messagesSection: {
-    paddingHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 20,
-  },
-  messagesCard: {
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-  messagesHeader: {
-    marginBottom: 16,
-  },
-  messagesTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4C1D95',
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  messagesSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#7C3AED',
-    opacity: 0.7,
-  },
-  messagePreview: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#5B21B6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  messagePreviewContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  messagePreviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  messagePreviewSubject: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#4C1D95',
-    flex: 1,
-    letterSpacing: -0.3,
-    lineHeight: 20,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#6366F1',
-    marginLeft: 8,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
-  },
-  messagePreviewBody: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#5B21B6',
-    lineHeight: 18,
-    letterSpacing: -0.1,
-    marginBottom: 6,
-  },
-  messagePreviewDate: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#8B5CF6',
-    opacity: 0.65,
-  },
-  unreadCounter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 6,
-  },
-  unreadCounterText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6366F1',
-  },
-  emptyState: {
-    paddingTop: 8, paddingBottom: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#7C3AED',
-    opacity: 0.8,
-  },
-  inboxButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 12,
-    paddingTop: 8, paddingBottom: 12,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  inboxButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6366F1',
-    letterSpacing: -0.1,
   },
 });
 
