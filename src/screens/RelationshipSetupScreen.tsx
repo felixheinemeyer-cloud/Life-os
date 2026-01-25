@@ -24,6 +24,13 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CROP_ASPECT_RATIO = 4 / 5; // Width to height ratio (matches relationship card)
+const CROP_AREA_WIDTH = SCREEN_WIDTH - 48;
+const CROP_AREA_HEIGHT = CROP_AREA_WIDTH / CROP_ASPECT_RATIO;
+const MIN_SCALE = 1;
+const MAX_SCALE = 3;
+
 interface RelationshipSetupScreenProps {
   navigation: {
     goBack: () => void;
@@ -52,29 +59,47 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isNameFocused, setIsNameFocused] = useState(false);
+
+  // Crop modal state
   const [showCropModal, setShowCropModal] = useState(false);
-  const [originalImageUri, setOriginalImageUri] = useState<string | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [currentZoom, setCurrentZoom] = useState(1);
 
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
   const nameInputCardRef = useRef<View>(null);
 
-
   // Date picker modal animation
-  const SCREEN_HEIGHT = Dimensions.get('window').height;
-  const SCREEN_WIDTH = Dimensions.get('window').width;
   const datePickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const SWIPE_THRESHOLD = 100;
 
-  // Crop modal state
-  const cropModalTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  // Crop modal animations
+  const cropModalOpacity = useRef(new Animated.Value(0)).current;
   const cropScale = useRef(new Animated.Value(1)).current;
   const cropTranslateX = useRef(new Animated.Value(0)).current;
   const cropTranslateY = useRef(new Animated.Value(0)).current;
   const lastScale = useRef(1);
   const lastTranslateX = useRef(0);
   const lastTranslateY = useRef(0);
-  const cropImageSize = useRef({ width: 0, height: 0 });
+  const baseScale = useRef(1);
+  const initialPinchDistance = useRef(0);
+  const isPinching = useRef(false);
+
+  // Calculate initial scale to fit image in crop area
+  const getInitialScale = (imgWidth: number, imgHeight: number) => {
+    const imageAspect = imgWidth / imgHeight;
+    const cropAspect = CROP_ASPECT_RATIO;
+
+    // Scale to cover the crop area
+    if (imageAspect > cropAspect) {
+      // Image is wider - scale based on height
+      return CROP_AREA_HEIGHT / imgHeight;
+    } else {
+      // Image is taller - scale based on width
+      return CROP_AREA_WIDTH / imgWidth;
+    }
+  };
 
   // Animate date picker modal in when it opens
   useEffect(() => {
@@ -88,6 +113,18 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
       }).start();
     }
   }, [showDatePicker]);
+
+  // Animate crop modal
+  useEffect(() => {
+    if (showCropModal) {
+      cropModalOpacity.setValue(0);
+      Animated.timing(cropModalOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showCropModal]);
 
   const datePickerPanResponder = useRef(
     PanResponder.create({
@@ -133,153 +170,127 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
     });
   };
 
-  // Animate crop modal in when it opens
-  useEffect(() => {
-    if (showCropModal) {
-      // Reset transforms
-      cropScale.setValue(1);
-      cropTranslateX.setValue(0);
-      cropTranslateY.setValue(0);
-      lastScale.current = 1;
-      lastTranslateX.current = 0;
-      lastTranslateY.current = 0;
-
-      cropModalTranslateY.setValue(SCREEN_HEIGHT);
-      Animated.timing(cropModalTranslateY, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [showCropModal]);
-
-  const handleCropModalDone = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    // Calculate crop region based on current scale and translation
-    if (originalImageUri && cropImageSize.current.width > 0) {
-      const scale = lastScale.current;
-      const translateX = lastTranslateX.current;
-      const translateY = lastTranslateY.current;
-
-      // The visible crop area is a square in the center
-      const cropAreaSize = SCREEN_WIDTH - 48; // Crop area with padding
-      const imageDisplaySize = cropAreaSize; // Image fills the crop area initially
-
-      // Calculate the crop region in image coordinates
-      const imageWidth = cropImageSize.current.width;
-      const imageHeight = cropImageSize.current.height;
-      const aspectRatio = imageWidth / imageHeight;
-
-      // Since we're cropping square, use the smaller dimension
-      const displayedImageWidth = aspectRatio >= 1 ? imageDisplaySize : imageDisplaySize * aspectRatio;
-      const displayedImageHeight = aspectRatio >= 1 ? imageDisplaySize / aspectRatio : imageDisplaySize;
-
-      // Scale factor from display to actual image
-      const scaleFactorX = imageWidth / (displayedImageWidth * scale);
-      const scaleFactorY = imageHeight / (displayedImageHeight * scale);
-
-      // Center of the crop area in display coordinates
-      const cropCenterX = cropAreaSize / 2 - translateX;
-      const cropCenterY = cropAreaSize / 2 - translateY;
-
-      // Crop dimensions in actual image coordinates
-      const cropWidth = Math.min(cropAreaSize * scaleFactorX, imageWidth);
-      const cropHeight = Math.min(cropAreaSize * scaleFactorY, imageHeight);
-
-      // Crop origin in actual image coordinates
-      let originX = (cropCenterX - cropAreaSize / 2) * scaleFactorX + (imageWidth - displayedImageWidth * scale * scaleFactorX) / 2;
-      let originY = (cropCenterY - cropAreaSize / 2) * scaleFactorY + (imageHeight - displayedImageHeight * scale * scaleFactorY) / 2;
-
-      // Clamp values
-      originX = Math.max(0, Math.min(originX, imageWidth - cropWidth));
-      originY = Math.max(0, Math.min(originY, imageHeight - cropHeight));
-
-      try {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          originalImageUri,
-          [
-            {
-              crop: {
-                originX: Math.round(originX),
-                originY: Math.round(originY),
-                width: Math.round(cropWidth),
-                height: Math.round(cropHeight),
-              },
-            },
-          ],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-        );
-        setPartnerPhoto(manipResult.uri);
-      } catch (error) {
-        console.error('Crop error:', error);
-      }
-    }
-
-    Animated.timing(cropModalTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowCropModal(false);
-    });
+  // Calculate distance between two touch points
+  const getDistance = (touches: any[]) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].pageX - touches[1].pageX;
+    const dy = touches[0].pageY - touches[1].pageY;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
-  const handleCropModalCancel = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.timing(cropModalTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowCropModal(false);
-    });
-  };
-
-  const openCropModal = () => {
-    if (partnerPhoto) {
-      if (Platform.OS === 'ios') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      // Store the current photo as the original for cropping
-      if (!originalImageUri) {
-        setOriginalImageUri(partnerPhoto);
-      }
-      // Get image dimensions
-      Image.getSize(originalImageUri || partnerPhoto, (width, height) => {
-        cropImageSize.current = { width, height };
-        setShowCropModal(true);
-      });
-    }
-  };
-
+  // Crop pan responder for dragging and pinch-to-zoom
   const cropPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        cropTranslateX.setOffset(lastTranslateX.current);
-        cropTranslateY.setOffset(lastTranslateY.current);
-        cropTranslateX.setValue(0);
-        cropTranslateY.setValue(0);
+      onPanResponderGrant: (evt) => {
+        const touches = evt.nativeEvent.touches;
+        if (touches.length === 2) {
+          // Start pinch
+          isPinching.current = true;
+          initialPinchDistance.current = getDistance(touches);
+        } else {
+          // Start pan
+          isPinching.current = false;
+          cropTranslateX.setOffset(lastTranslateX.current);
+          cropTranslateY.setOffset(lastTranslateY.current);
+          cropTranslateX.setValue(0);
+          cropTranslateY.setValue(0);
+        }
       },
-      onPanResponderMove: (_, gestureState) => {
-        cropTranslateX.setValue(gestureState.dx);
-        cropTranslateY.setValue(gestureState.dy);
+      onPanResponderMove: (evt, gestureState) => {
+        const touches = evt.nativeEvent.touches;
+
+        if (touches.length === 2) {
+          // Pinch-to-zoom
+          if (!isPinching.current) {
+            // Just started pinching
+            isPinching.current = true;
+            initialPinchDistance.current = getDistance(touches);
+            return;
+          }
+
+          const currentDistance = getDistance(touches);
+          if (initialPinchDistance.current > 0) {
+            const pinchScale = currentDistance / initialPinchDistance.current;
+            const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, lastScale.current * pinchScale));
+
+            cropScale.setValue(newScale);
+            setCurrentZoom(newScale);
+
+            // Clamp translation with new scale
+            const clampedValues = clampTranslation(lastTranslateX.current, lastTranslateY.current, newScale);
+            cropTranslateX.setValue(clampedValues.x);
+            cropTranslateY.setValue(clampedValues.y);
+          }
+        } else if (!isPinching.current) {
+          // Single finger pan
+          cropTranslateX.setValue(gestureState.dx);
+          cropTranslateY.setValue(gestureState.dy);
+        }
       },
-      onPanResponderRelease: () => {
-        cropTranslateX.flattenOffset();
-        cropTranslateY.flattenOffset();
-        lastTranslateX.current = (cropTranslateX as any)._value || 0;
-        lastTranslateY.current = (cropTranslateY as any)._value || 0;
+      onPanResponderRelease: (evt) => {
+        if (isPinching.current) {
+          // End pinch - save the current scale
+          const currentScale = (cropScale as any)._value || lastScale.current;
+          lastScale.current = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale));
+
+          // Clamp translation with final scale
+          const clampedValues = clampTranslation(lastTranslateX.current, lastTranslateY.current, lastScale.current);
+          lastTranslateX.current = clampedValues.x;
+          lastTranslateY.current = clampedValues.y;
+
+          cropTranslateX.setValue(clampedValues.x);
+          cropTranslateY.setValue(clampedValues.y);
+
+          isPinching.current = false;
+          initialPinchDistance.current = 0;
+        } else {
+          // End pan
+          cropTranslateX.flattenOffset();
+          cropTranslateY.flattenOffset();
+
+          // Get current values and clamp them
+          const currentX = (cropTranslateX as any)._value || 0;
+          const currentY = (cropTranslateY as any)._value || 0;
+
+          const clampedValues = clampTranslation(currentX, currentY, lastScale.current);
+
+          if (currentX !== clampedValues.x || currentY !== clampedValues.y) {
+            Animated.spring(cropTranslateX, {
+              toValue: clampedValues.x,
+              useNativeDriver: true,
+              friction: 8,
+            }).start();
+            Animated.spring(cropTranslateY, {
+              toValue: clampedValues.y,
+              useNativeDriver: true,
+              friction: 8,
+            }).start();
+          }
+
+          lastTranslateX.current = clampedValues.x;
+          lastTranslateY.current = clampedValues.y;
+        }
       },
     })
   ).current;
+
+  // Clamp translation to keep image within bounds
+  const clampTranslation = (x: number, y: number, scale: number) => {
+    if (imageSize.width === 0 || imageSize.height === 0) return { x: 0, y: 0 };
+
+    const scaledWidth = imageSize.width * baseScale.current * scale;
+    const scaledHeight = imageSize.height * baseScale.current * scale;
+
+    const maxX = Math.max(0, (scaledWidth - CROP_AREA_WIDTH) / 2);
+    const maxY = Math.max(0, (scaledHeight - CROP_AREA_HEIGHT) / 2);
+
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  };
 
   const pickImage = async () => {
     if (Platform.OS === 'ios') {
@@ -299,15 +310,129 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      allowsEditing: false, // Disable system editing - we'll use our own
+      quality: 1,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setPartnerPhoto(result.assets[0].uri);
-      setOriginalImageUri(result.assets[0].uri); // Store for future cropping
+      const uri = result.assets[0].uri;
+
+      // Get image dimensions
+      Image.getSize(uri, (width, height) => {
+        setImageSize({ width, height });
+
+        // Calculate initial scale
+        const initialScale = getInitialScale(width, height);
+        baseScale.current = initialScale;
+
+        // Reset crop state
+        cropScale.setValue(1);
+        cropTranslateX.setValue(0);
+        cropTranslateY.setValue(0);
+        lastScale.current = 1;
+        lastTranslateX.current = 0;
+        lastTranslateY.current = 0;
+        setCurrentZoom(1);
+
+        setSelectedImageUri(uri);
+        setShowCropModal(true);
+      }, (error) => {
+        console.error('Error getting image size:', error);
+        // Fallback - just use the image without cropping
+        setPartnerPhoto(uri);
+      });
     }
+  };
+
+  const handleZoomChange = (newZoom: number) => {
+    const clampedZoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newZoom));
+    setCurrentZoom(clampedZoom);
+    cropScale.setValue(clampedZoom);
+    lastScale.current = clampedZoom;
+
+    // Clamp translation with new scale
+    const clampedValues = clampTranslation(lastTranslateX.current, lastTranslateY.current, clampedZoom);
+    cropTranslateX.setValue(clampedValues.x);
+    cropTranslateY.setValue(clampedValues.y);
+    lastTranslateX.current = clampedValues.x;
+    lastTranslateY.current = clampedValues.y;
+  };
+
+  const handleCropDone = async () => {
+    if (!selectedImageUri || imageSize.width === 0) return;
+
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    try {
+      const scale = lastScale.current;
+      const translateX = lastTranslateX.current;
+      const translateY = lastTranslateY.current;
+
+      // Calculate the scaled image dimensions
+      const scaledWidth = imageSize.width * baseScale.current * scale;
+      const scaledHeight = imageSize.height * baseScale.current * scale;
+
+      // Calculate the crop region in original image coordinates
+      const cropCenterX = scaledWidth / 2 - translateX;
+      const cropCenterY = scaledHeight / 2 - translateY;
+
+      // Convert from display coordinates to original image coordinates
+      const displayToOriginalScale = imageSize.width / scaledWidth;
+
+      const originX = (cropCenterX - CROP_AREA_WIDTH / 2) * displayToOriginalScale;
+      const originY = (cropCenterY - CROP_AREA_HEIGHT / 2) * displayToOriginalScale;
+      const cropWidth = CROP_AREA_WIDTH * displayToOriginalScale;
+      const cropHeight = CROP_AREA_HEIGHT * displayToOriginalScale;
+
+      // Clamp to valid bounds
+      const finalOriginX = Math.max(0, Math.min(originX, imageSize.width - cropWidth));
+      const finalOriginY = Math.max(0, Math.min(originY, imageSize.height - cropHeight));
+      const finalWidth = Math.min(cropWidth, imageSize.width - finalOriginX);
+      const finalHeight = Math.min(cropHeight, imageSize.height - finalOriginY);
+
+      const manipResult = await ImageManipulator.manipulateAsync(
+        selectedImageUri,
+        [
+          {
+            crop: {
+              originX: Math.round(finalOriginX),
+              originY: Math.round(finalOriginY),
+              width: Math.round(finalWidth),
+              height: Math.round(finalHeight),
+            },
+          },
+        ],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setPartnerPhoto(manipResult.uri);
+    } catch (error) {
+      console.error('Crop error:', error);
+      // Fallback - use original image
+      setPartnerPhoto(selectedImageUri);
+    }
+
+    closeCropModal();
+  };
+
+  const handleCropCancel = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    closeCropModal();
+  };
+
+  const closeCropModal = () => {
+    Animated.timing(cropModalOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowCropModal(false);
+      setSelectedImageUri(null);
+    });
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -358,7 +483,6 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
 
   const handleNameFocus = () => {
     setIsNameFocused(true);
-    // Use keyboard show event to scroll properly
   };
 
   // Handle keyboard show to scroll the name input into view
@@ -367,10 +491,9 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (event) => {
         if (isNameFocused) {
-          // Scroll so the input card is 16px above the keyboard
           setTimeout(() => {
             scrollViewRef.current?.scrollTo({
-              y: 130, // Scroll enough to position input above keyboard with 16px gap
+              y: 130,
               animated: true,
             });
           }, 50);
@@ -381,7 +504,6 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
     const keyboardHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
-        // Scroll back to top when keyboard hides
         scrollViewRef.current?.scrollTo({
           y: 0,
           animated: true,
@@ -394,6 +516,19 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
       keyboardHideListener.remove();
     };
   }, [isNameFocused]);
+
+  // Calculate image dimensions for crop preview
+  const getImageDisplayDimensions = () => {
+    if (imageSize.width === 0 || imageSize.height === 0) {
+      return { width: CROP_AREA_WIDTH, height: CROP_AREA_HEIGHT };
+    }
+    return {
+      width: imageSize.width * baseScale.current,
+      height: imageSize.height * baseScale.current,
+    };
+  };
+
+  const imageDimensions = getImageDisplayDimensions();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -420,214 +555,198 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-            {/* Photo Card */}
-            <View style={[styles.sectionCard, styles.photoCard]}>
-              {partnerPhoto ? (
-                <View style={styles.photoCardTouchable}>
-                  <View style={styles.photoContainer}>
-                    <Image
-                      source={{ uri: partnerPhoto }}
-                      style={styles.photoImage}
-                    />
-                    <View style={styles.photoOverlay}>
-                      <View style={styles.photoButtonsRow}>
-                        <TouchableOpacity
-                          style={styles.changePhotoButton}
-                          onPress={openCropModal}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="crop-outline" size={18} color="#FFFFFF" />
-                          <Text style={styles.changePhotoText}>Crop</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.changePhotoButton}
-                          onPress={pickImage}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
-                          <Text style={styles.changePhotoText}>Change</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+          {/* Photo Card */}
+          <View style={[styles.sectionCard, styles.photoCard]}>
+            {partnerPhoto ? (
+              <View style={styles.photoCardTouchable}>
+                <View style={styles.photoContainer}>
+                  <Image
+                    source={{ uri: partnerPhoto }}
+                    style={styles.photoImage}
+                  />
+                  <View style={styles.photoOverlay}>
+                    <TouchableOpacity
+                      style={styles.changePhotoButton}
+                      onPress={pickImage}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="camera-outline" size={18} color="#FFFFFF" />
+                      <Text style={styles.changePhotoText}>Change</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.photoCardTouchable}
-                  onPress={pickImage}
-                  activeOpacity={0.9}
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.photoCardTouchable}
+                onPress={pickImage}
+                activeOpacity={0.9}
+              >
+                <LinearGradient
+                  colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+                  style={styles.photoPlaceholder}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
-                  <LinearGradient
-                    colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-                    style={styles.photoPlaceholder}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={styles.photoIconCircle}>
-                      <Ionicons name="people" size={28} color="#E11D48" />
-                    </View>
-                    <Text style={styles.photoPlaceholderTitle}>A photo of you two</Text>
-                    <View style={styles.addPhotoButton}>
-                      <Ionicons name="add" size={18} color="#BE123C" />
-                      <Text style={styles.addPhotoButtonText}>Choose photo</Text>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Partner Name Card */}
-            <View
-              ref={nameInputCardRef}
-              style={[
-                styles.sectionCard,
-                styles.inputCard,
-                isNameFocused && styles.inputCardFocused,
-              ]}
-            >
-              <View style={styles.inputLabelRow}>
-                <View style={styles.inputIconCircle}>
-                  <Ionicons name="heart-outline" size={20} color="#E11D48" />
-                </View>
-                <Text style={styles.inputLabel}>Your partner's name</Text>
-              </View>
-              <TextInput
-                style={styles.textInput}
-                placeholder="e.g. Alex"
-                placeholderTextColor="#9CA3AF"
-                value={partnerName}
-                onChangeText={setPartnerName}
-                onFocus={handleNameFocus}
-                onBlur={() => setIsNameFocused(false)}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-            </View>
-
-            {/* Together Since Card */}
-            <View style={[styles.sectionCard, styles.inputCard]}>
-              <View style={styles.inputLabelRow}>
-                <View style={styles.inputIconCircle}>
-                  <Ionicons name="calendar-outline" size={20} color="#E11D48" />
-                </View>
-                <Text style={styles.inputLabel}>Together since</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setShowDatePicker(true);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.datePickerText,
-                  !togetherSince && styles.datePickerPlaceholder
-                ]}>
-                  {togetherSince ? formatDate(togetherSince) : 'Choose date'}
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                  <View style={styles.photoIconCircle}>
+                    <Ionicons name="people" size={28} color="#E11D48" />
+                  </View>
+                  <Text style={styles.photoPlaceholderTitle}>A photo of you two</Text>
+                  <View style={styles.addPhotoButton}>
+                    <Ionicons name="add" size={18} color="#BE123C" />
+                    <Text style={styles.addPhotoButtonText}>Choose photo</Text>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
-            </View>
-          </ScrollView>
+            )}
+          </View>
 
-          {/* Date Picker Modal */}
-          <Modal
-            visible={showDatePicker}
-            transparent={true}
-            animationType="none"
-            onRequestClose={handleDatePickerDone}
+          {/* Partner Name Card */}
+          <View
+            ref={nameInputCardRef}
+            style={[
+              styles.sectionCard,
+              styles.inputCard,
+              isNameFocused && styles.inputCardFocused,
+            ]}
           >
-            <View style={styles.datePickerOverlay}>
-              <TouchableOpacity
-                style={styles.datePickerBackdrop}
-                activeOpacity={1}
-                onPress={handleDatePickerDone}
-              />
-              <Animated.View
-                style={[
-                  styles.datePickerContainer,
-                  { transform: [{ translateY: datePickerTranslateY }] },
-                ]}
-                {...datePickerPanResponder.panHandlers}
-              >
-                {/* Drag Handle */}
-                <View style={styles.datePickerHandle}>
-                  <View style={styles.datePickerHandleBar} />
-                </View>
-
-                {/* Title */}
-                <Text style={styles.datePickerTitle}>Together since</Text>
-
-                {/* Date Picker */}
-                <View style={styles.datePickerWrapper}>
-                  <DateTimePicker
-                    value={togetherSince || new Date()}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleDateChange}
-                    maximumDate={new Date()}
-                    style={styles.datePicker}
-                    textColor="#1F2937"
-                    themeVariant="light"
-                  />
-                </View>
-
-                {/* Action Button */}
-                <View style={styles.datePickerActions}>
-                  <TouchableOpacity
-                    onPress={handleDatePickerDone}
-                    style={styles.datePickerDoneButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.datePickerDoneText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
+            <View style={styles.inputLabelRow}>
+              <View style={styles.inputIconCircle}>
+                <Ionicons name="heart-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.inputLabel}>Your partner's name</Text>
             </View>
-          </Modal>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. Alex"
+              placeholderTextColor="#9CA3AF"
+              value={partnerName}
+              onChangeText={setPartnerName}
+              onFocus={handleNameFocus}
+              onBlur={() => setIsNameFocused(false)}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </View>
 
-          {/* Crop Modal */}
-          <Modal
-            visible={showCropModal}
-            transparent={true}
-            animationType="none"
-            onRequestClose={handleCropModalCancel}
-          >
+          {/* Together Since Card */}
+          <View style={[styles.sectionCard, styles.inputCard]}>
+            <View style={styles.inputLabelRow}>
+              <View style={styles.inputIconCircle}>
+                <Ionicons name="calendar-outline" size={20} color="#E11D48" />
+              </View>
+              <Text style={styles.inputLabel}>Together since</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                setShowDatePicker(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.datePickerText,
+                !togetherSince && styles.datePickerPlaceholder
+              ]}>
+                {togetherSince ? formatDate(togetherSince) : 'Choose date'}
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Date Picker Modal */}
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="none"
+          onRequestClose={handleDatePickerDone}
+        >
+          <View style={styles.datePickerOverlay}>
+            <TouchableOpacity
+              style={styles.datePickerBackdrop}
+              activeOpacity={1}
+              onPress={handleDatePickerDone}
+            />
             <Animated.View
               style={[
-                styles.cropModalContainer,
-                { transform: [{ translateY: cropModalTranslateY }] },
+                styles.datePickerContainer,
+                { transform: [{ translateY: datePickerTranslateY }] },
               ]}
+              {...datePickerPanResponder.panHandlers}
             >
-              <SafeAreaView style={styles.cropModalSafeArea}>
-                {/* Header */}
-                <View style={styles.cropModalHeader}>
-                  <TouchableOpacity
-                    onPress={handleCropModalCancel}
-                    style={styles.cropModalHeaderButton}
-                  >
-                    <Text style={styles.cropModalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.cropModalTitle}>Crop Photo</Text>
-                  <TouchableOpacity
-                    onPress={handleCropModalDone}
-                    style={styles.cropModalHeaderButton}
-                  >
-                    <Text style={styles.cropModalDoneText}>Done</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.datePickerHandle}>
+                <View style={styles.datePickerHandleBar} />
+              </View>
+              <Text style={styles.datePickerTitle}>Together since</Text>
+              <View style={styles.datePickerWrapper}>
+                <DateTimePicker
+                  value={togetherSince || new Date()}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  style={styles.datePicker}
+                  textColor="#1F2937"
+                  themeVariant="light"
+                />
+              </View>
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity
+                  onPress={handleDatePickerDone}
+                  style={styles.datePickerDoneButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.datePickerDoneText}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        </Modal>
 
-                {/* Crop Area */}
+        {/* Custom Crop Modal */}
+        <Modal
+          visible={showCropModal}
+          transparent={true}
+          animationType="none"
+          onRequestClose={handleCropCancel}
+        >
+          <Animated.View style={[styles.cropModalContainer, { opacity: cropModalOpacity }]}>
+            <SafeAreaView style={styles.cropModalSafeArea}>
+              {/* Header */}
+              <View style={styles.cropModalHeader}>
+                <TouchableOpacity
+                  onPress={handleCropCancel}
+                  style={styles.cropModalHeaderButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cropModalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.cropModalTitle}>Adjust Photo</Text>
+                <TouchableOpacity
+                  onPress={handleCropDone}
+                  style={styles.cropModalHeaderButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cropModalDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Crop Area */}
+              <View style={styles.cropAreaWrapper}>
                 <View style={styles.cropAreaContainer}>
+                  {/* The crop area with rounded corners */}
                   <View style={styles.cropArea}>
                     <Animated.View
                       style={[
                         styles.cropImageContainer,
                         {
+                          width: imageDimensions.width,
+                          height: imageDimensions.height,
                           transform: [
                             { scale: cropScale },
                             { translateX: cropTranslateX },
@@ -637,58 +756,85 @@ const RelationshipSetupScreen: React.FC<RelationshipSetupScreenProps> = ({ navig
                       ]}
                       {...cropPanResponder.panHandlers}
                     >
-                      {(originalImageUri || partnerPhoto) && (
+                      {selectedImageUri && (
                         <Image
-                          source={{ uri: originalImageUri || partnerPhoto || '' }}
+                          source={{ uri: selectedImageUri }}
                           style={styles.cropImage}
                           resizeMode="cover"
                         />
                       )}
                     </Animated.View>
                   </View>
-                  {/* Corner overlays to indicate crop area */}
-                  <View style={styles.cropCornerTL} />
-                  <View style={styles.cropCornerTR} />
-                  <View style={styles.cropCornerBL} />
-                  <View style={styles.cropCornerBR} />
+
+                  {/* Corner indicators */}
+                  <View style={[styles.cropCorner, styles.cropCornerTL]} />
+                  <View style={[styles.cropCorner, styles.cropCornerTR]} />
+                  <View style={[styles.cropCorner, styles.cropCornerBL]} />
+                  <View style={[styles.cropCorner, styles.cropCornerBR]} />
                 </View>
+              </View>
 
-                {/* Instructions */}
-                <Text style={styles.cropInstructions}>Drag to reposition</Text>
+              {/* Instructions */}
+              <Text style={styles.cropInstructions}>Drag to reposition · Pinch to zoom</Text>
 
-                {/* Zoom Slider */}
-                <View style={styles.zoomContainer}>
-                  <Ionicons name="remove" size={20} color="#9CA3AF" />
-                  <View style={styles.zoomSlider}>
-                    <TouchableOpacity
-                      style={styles.zoomSliderTrack}
-                      onPress={(e) => {
-                        const { locationX } = e.nativeEvent;
-                        const trackWidth = SCREEN_WIDTH - 120;
-                        const percentage = locationX / trackWidth;
-                        const newScale = 1 + percentage * 2; // Scale from 1x to 3x
-                        cropScale.setValue(newScale);
-                        lastScale.current = newScale;
-                      }}
-                    >
-                      <Animated.View
-                        style={[
-                          styles.zoomSliderFill,
-                          {
-                            width: cropScale.interpolate({
-                              inputRange: [1, 3],
-                              outputRange: ['0%', '100%'],
-                            }),
-                          },
-                        ]}
-                      />
-                    </TouchableOpacity>
+              {/* Zoom Slider */}
+              <View style={styles.zoomContainer}>
+                <TouchableOpacity
+                  onPress={() => handleZoomChange(currentZoom - 0.25)}
+                  style={styles.zoomButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="remove" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+
+                <View style={styles.zoomSliderContainer}>
+                  <View style={styles.zoomSliderTrack}>
+                    <View
+                      style={[
+                        styles.zoomSliderFill,
+                        { width: `${((currentZoom - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100}%` }
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.zoomSliderThumb,
+                        { left: `${((currentZoom - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100}%` }
+                      ]}
+                    />
                   </View>
-                  <Ionicons name="add" size={20} color="#9CA3AF" />
+                  <View
+                    style={styles.zoomSliderTouchArea}
+                    onTouchStart={(e) => {
+                      const touch = e.nativeEvent;
+                      const trackWidth = SCREEN_WIDTH - 140;
+                      const percentage = Math.max(0, Math.min(1, touch.locationX / trackWidth));
+                      const newZoom = MIN_SCALE + percentage * (MAX_SCALE - MIN_SCALE);
+                      handleZoomChange(newZoom);
+                    }}
+                    onTouchMove={(e) => {
+                      const touch = e.nativeEvent;
+                      const trackWidth = SCREEN_WIDTH - 140;
+                      const percentage = Math.max(0, Math.min(1, touch.locationX / trackWidth));
+                      const newZoom = MIN_SCALE + percentage * (MAX_SCALE - MIN_SCALE);
+                      handleZoomChange(newZoom);
+                    }}
+                  />
                 </View>
-              </SafeAreaView>
-            </Animated.View>
-          </Modal>
+
+                <TouchableOpacity
+                  onPress={() => handleZoomChange(currentZoom + 0.25)}
+                  style={styles.zoomButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Zoom percentage indicator */}
+              <Text style={styles.zoomPercentage}>{Math.round(currentZoom * 100)}%</Text>
+            </SafeAreaView>
+          </Animated.View>
+        </Modal>
 
         {/* Continue Button */}
         <View style={styles.buttonContainer}>
@@ -813,15 +959,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 16,
   },
-  photoPlaceholderText: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 260,
-    marginBottom: 12,
-  },
   addPhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -843,7 +980,7 @@ const styles = StyleSheet.create({
   },
   photoImage: {
     width: '100%',
-    aspectRatio: 1,
+    aspectRatio: CROP_ASPECT_RATIO,
     borderRadius: 20,
   },
   photoOverlay: {
@@ -853,11 +990,6 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     alignItems: 'center',
-  },
-  photoButtonsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
   },
   changePhotoButton: {
     flexDirection: 'row',
@@ -1053,8 +1185,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 16,
-    paddingBottom: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   cropModalHeaderButton: {
     paddingVertical: 8,
@@ -1065,6 +1197,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   cropModalCancelText: {
     fontSize: 17,
@@ -1077,101 +1210,135 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'right',
   },
-  cropAreaContainer: {
+  cropAreaWrapper: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  cropAreaContainer: {
     position: 'relative',
+    width: CROP_AREA_WIDTH,
+    height: CROP_AREA_HEIGHT,
   },
   cropArea: {
-    width: Dimensions.get('window').width - 48,
-    height: Dimensions.get('window').width - 48,
-    borderRadius: 12,
+    width: CROP_AREA_WIDTH,
+    height: CROP_AREA_HEIGHT,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#1A1A1A',
   },
   cropImageContainer: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -CROP_AREA_WIDTH / 2,
+    marginTop: -CROP_AREA_HEIGHT / 2,
   },
   cropImage: {
     width: '100%',
     height: '100%',
   },
-  cropCornerTL: {
+  cropCorner: {
     position: 'absolute',
-    top: Dimensions.get('window').height / 2 - (Dimensions.get('window').width - 48) / 2 - 60,
-    left: 24,
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
+    borderColor: '#FFFFFF',
+  },
+  cropCornerTL: {
+    top: -2,
+    left: -2,
     borderTopWidth: 3,
     borderLeftWidth: 3,
-    borderColor: '#FFFFFF',
-    borderTopLeftRadius: 4,
+    borderTopLeftRadius: 20,
   },
   cropCornerTR: {
-    position: 'absolute',
-    top: Dimensions.get('window').height / 2 - (Dimensions.get('window').width - 48) / 2 - 60,
-    right: 24,
-    width: 20,
-    height: 20,
+    top: -2,
+    right: -2,
     borderTopWidth: 3,
     borderRightWidth: 3,
-    borderColor: '#FFFFFF',
-    borderTopRightRadius: 4,
+    borderTopRightRadius: 20,
   },
   cropCornerBL: {
-    position: 'absolute',
-    bottom: Dimensions.get('window').height / 2 - (Dimensions.get('window').width - 48) / 2 - 60,
-    left: 24,
-    width: 20,
-    height: 20,
+    bottom: -2,
+    left: -2,
     borderBottomWidth: 3,
     borderLeftWidth: 3,
-    borderColor: '#FFFFFF',
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 20,
   },
   cropCornerBR: {
-    position: 'absolute',
-    bottom: Dimensions.get('window').height / 2 - (Dimensions.get('window').width - 48) / 2 - 60,
-    right: 24,
-    width: 20,
-    height: 20,
+    bottom: -2,
+    right: -2,
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    borderColor: '#FFFFFF',
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 20,
   },
   cropInstructions: {
     fontSize: 15,
     fontWeight: '400',
     color: '#9CA3AF',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 24,
+    marginBottom: 16,
   },
   zoomContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    gap: 12,
+    gap: 16,
   },
-  zoomSlider: {
+  zoomButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomSliderContainer: {
     flex: 1,
     height: 44,
     justifyContent: 'center',
+    position: 'relative',
   },
   zoomSliderTrack: {
     height: 4,
-    backgroundColor: '#333333',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   zoomSliderFill: {
     height: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
+  },
+  zoomSliderThumb: {
+    position: 'absolute',
+    top: -6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    marginLeft: -8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  zoomSliderTouchArea: {
+    position: 'absolute',
+    top: -20,
+    left: 0,
+    right: 0,
+    bottom: -20,
+  },
+  zoomPercentage: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 24,
   },
 });
 

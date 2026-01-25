@@ -1082,7 +1082,7 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
           {!dismissedCards.bodyCheckIn && (
             <SwipeableCheckInCard
               cardHeight={88}
-              marginBottom={24}
+              marginBottom={12}
               onDismiss={() => setDismissedCards(prev => ({ ...prev, bodyCheckIn: true }))}
             >
               <TouchableOpacity
@@ -1758,7 +1758,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   weeklyCardSubtitle: {
     fontSize: 13,
@@ -1816,7 +1816,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   monthlyCardSubtitle: {
     fontSize: 13,
@@ -1874,7 +1874,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   bodyCheckInCardSubtitle: {
     fontSize: 13,
@@ -1952,6 +1952,7 @@ const styles = StyleSheet.create({
 
   // Today's Insight Section Styles (Redesigned)
   insightSection: {
+    marginTop: 24,
     marginBottom: 24,
   },
   insightSectionCard: {
