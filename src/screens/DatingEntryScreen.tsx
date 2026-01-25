@@ -37,12 +37,8 @@ interface DatingPerson {
   instagram?: string;
   location?: string;
   dateOfBirth?: string;
-  rating?: number;
   createdAt: string;
 }
-
-// Rating values constant
-const RATING_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 interface DatingEntryScreenProps {
   navigation: {
@@ -109,7 +105,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(
     existingPerson?.dateOfBirth ? new Date(existingPerson.dateOfBirth) : null
   );
-  const [rating, setRating] = useState<number | null>(existingPerson?.rating || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Expanded states for optional fields - expand fields that have data
@@ -218,7 +213,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
       instagram: instagram.trim() || undefined,
       location: location.trim() || undefined,
       dateOfBirth: dateOfBirth?.toISOString() || undefined,
-      rating: rating || undefined,
       createdAt: isEditMode ? existingPerson.createdAt : new Date().toISOString(),
       ...(isEditMode ? { updatedAt: new Date().toISOString() } : {}),
     };
@@ -526,50 +520,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
                 autoCapitalize="words"
                 returnKeyType="done"
               />
-            </View>
-          </View>
-
-          {/* Rating Card */}
-          <View style={styles.card}>
-            <View style={styles.ratingHeader}>
-              <View style={styles.cardLabelRow}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="star-outline" size={20} color="#BE123C" />
-                </View>
-                <Text style={styles.cardLabel}>Rating</Text>
-              </View>
-              {rating && (
-                <View style={styles.currentRatingBadge}>
-                  <Text style={styles.currentRatingText}>{rating}/10</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.ratingSelector}>
-              {RATING_VALUES.map((value) => (
-                <TouchableOpacity
-                  key={value}
-                  onPress={() => {
-                    if (Platform.OS === 'ios') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                    setRating(rating === value ? null : value);
-                  }}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.ratingPill,
-                    rating === value && styles.ratingPillSelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.ratingPillText,
-                      rating === value && styles.ratingPillTextSelected,
-                    ]}
-                  >
-                    {value}
-                  </Text>
-                </TouchableOpacity>
-              ))}
             </View>
           </View>
 
@@ -889,50 +839,6 @@ const styles = StyleSheet.create({
 
   // Input Section
   inputSection: {},
-
-  // Rating Section
-  ratingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  currentRatingBadge: {
-    backgroundColor: '#FFF1F2',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  currentRatingText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#BE123C',
-    letterSpacing: -0.2,
-  },
-  ratingSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-  },
-  ratingPill: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-  },
-  ratingPillSelected: {
-    backgroundColor: '#BE123C',
-  },
-  ratingPillText: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    color: '#6B7280',
-  },
-  ratingPillTextSelected: {
-    color: '#FFFFFF',
-  },
 
   // Text Input
   textInput: {

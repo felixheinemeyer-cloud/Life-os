@@ -855,7 +855,7 @@ const PartnerNotesSection: React.FC<{
         <View style={styles.notesSectionAccent} />
         <View>
           <Text style={styles.sectionTitle}>Little Things About {partnerName}</Text>
-          <Text style={styles.sectionSubtitle}>Memories you want to keep</Text>
+          <Text style={styles.sectionSubtitle}>Memories & Notes you want to keep</Text>
         </View>
       </View>
     </View>
