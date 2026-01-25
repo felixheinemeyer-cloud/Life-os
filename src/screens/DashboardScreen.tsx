@@ -442,6 +442,27 @@ const DashboardScreen = ({ navigation, route }: DashboardScreenProps = {}): Reac
   // State for interactive chart legend - Nutrition is active by default
   const [activeVariable, setActiveVariable] = useState<ChartVariable>('nutrition');
 
+  // State for weekly chart active metrics - all active by default
+  const [activeChartMetrics, setActiveChartMetrics] = useState<Set<ChartMetricType>>(
+    new Set(['nutrition', 'energy', 'satisfaction'])
+  );
+
+  // Handler to toggle chart metrics
+  const handleToggleChartMetric = useCallback((metric: ChartMetricType) => {
+    setActiveChartMetrics(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(metric)) {
+        // Don't allow removing the last metric
+        if (newSet.size > 1) {
+          newSet.delete(metric);
+        }
+      } else {
+        newSet.add(metric);
+      }
+      return newSet;
+    });
+  }, []);
+
   // State for expandable focus cards
   const [isWeekExpanded, setIsWeekExpanded] = useState(false);
   const [isMonthExpanded, setIsMonthExpanded] = useState(false);
