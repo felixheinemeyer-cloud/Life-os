@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MediaProvider } from './src/context/MediaContext';
 import { BookProvider } from './src/context/BookContext';
 import { StreakProvider } from './src/context/StreakContext';
+import { NotificationProvider } from './src/context/NotificationContext';
 
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -16,9 +17,10 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import DailyOverviewScreen from './src/screens/DailyOverviewScreen';
 import WeeklyReviewScreen from './src/screens/WeeklyReviewScreen';
 import MonthlyReviewScreen from './src/screens/MonthlyReviewScreen';
-import InboxScreen from './src/screens/InboxScreen';
 import InsightDetailScreen from './src/screens/InsightDetailScreen';
 import StatisticsScreen from './src/screens/StatisticsScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
 import MorningTrackingMindsetEntriesScreen from './src/screens/MorningTrackingMindsetEntriesScreen';
 import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigherSelfScreen';
@@ -116,9 +118,11 @@ const DashboardStack = () => {
       }}
     >
       <Stack.Screen name="DashboardMain" component={DashboardScreen} />
-      <Stack.Screen name="Inbox" component={InboxScreen} />
       <Stack.Screen name="InsightDetail" component={InsightDetailScreen} />
       <Stack.Screen name="Statistics" component={StatisticsScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen as React.ComponentType<any>} />
+      <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
       <Stack.Screen name="MorningTracking" component={MorningTrackingContainerScreen} />
       <Stack.Screen name="MorningTrackingMindsetEntries" component={MorningTrackingMindsetEntriesScreen} />
       <Stack.Screen name="MorningTrackingHigherSelf" component={MorningTrackingHigherSelfScreen} />
@@ -277,9 +281,10 @@ const App = (): React.JSX.Element => {
   return (
     <SafeAreaProvider>
       <StreakProvider>
-        <MediaProvider>
-          <BookProvider>
-            <NavigationContainer>
+        <NotificationProvider>
+          <MediaProvider>
+            <BookProvider>
+              <NavigationContainer>
           <StatusBar style="auto" />
           <Tab.Navigator
           initialRouteName="Dashboard"
@@ -326,9 +331,10 @@ const App = (): React.JSX.Element => {
             }}
           />
           </Tab.Navigator>
-          </NavigationContainer>
-          </BookProvider>
-        </MediaProvider>
+              </NavigationContainer>
+            </BookProvider>
+          </MediaProvider>
+        </NotificationProvider>
       </StreakProvider>
     </SafeAreaProvider>
   );
