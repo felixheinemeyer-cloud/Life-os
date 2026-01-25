@@ -63,31 +63,35 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
 
 // Category styling
-const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string } => {
+const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string; ringColor: string } => {
   switch (category.toLowerCase()) {
     case 'family':
       return {
         colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
         textColor: '#BE185D',
         badgeColor: '#FCE7F3',
+        ringColor: '#F9A8D4',
       };
     case 'close friend':
       return {
         colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
         textColor: '#1D4ED8',
         badgeColor: '#DBEAFE',
+        ringColor: '#93C5FD',
       };
     case 'friend':
       return {
         colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
         textColor: '#7C3AED',
         badgeColor: '#EDE9FE',
+        ringColor: '#C4B5FD',
       };
     case 'work':
       return {
         colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
         textColor: '#047857',
         badgeColor: '#D1FAE5',
+        ringColor: '#6EE7B7',
       };
     case 'acquaintance':
     default:
@@ -95,6 +99,7 @@ const getCategoryStyle = (category: string): { colors: [string, string, string];
         colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
         textColor: '#6B7280',
         badgeColor: '#F3F4F6',
+        ringColor: '#D1D5DB',
       };
   }
 };
@@ -773,17 +778,19 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
       >
           {/* Hero Section */}
           <View style={styles.heroSection}>
-            {/* Avatar */}
-            <LinearGradient
-              colors={categoryStyle.colors}
-              style={styles.avatar}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={[styles.avatarInitials, { color: categoryStyle.textColor }]}>
-                {contact.initials}
-              </Text>
-            </LinearGradient>
+            {/* Avatar - Clean Elevated Design */}
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={['#F3F4F6', '#E5E7EB', '#D1D5DB']}
+                style={styles.avatar}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={[styles.avatarInitials, { color: categoryStyle.textColor }]}>
+                  {contact.initials}
+                </Text>
+              </LinearGradient>
+            </View>
 
             {/* Name */}
             <Text style={styles.contactName}>{contact.name}</Text>
@@ -804,7 +811,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="call-outline" size={20} color="#6B7280" />
+                    <Ionicons name="call-outline" size={22} color="#374151" />
                   </View>
                   <Text style={styles.quickActionLabel}>Call</Text>
                 </TouchableOpacity>
@@ -816,7 +823,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="mail" size={20} color="#6B7280" />
+                    <Ionicons name="mail-outline" size={22} color="#374151" />
                   </View>
                   <Text style={styles.quickActionLabel}>Email</Text>
                 </TouchableOpacity>
@@ -828,7 +835,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                   activeOpacity={0.7}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="logo-instagram" size={20} color="#6B7280" />
+                    <Ionicons name="logo-instagram" size={22} color="#374151" />
                   </View>
                   <Text style={styles.quickActionLabel}>Instagram</Text>
                 </TouchableOpacity>
@@ -1446,22 +1453,29 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 24,
   },
+  avatarContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 6,
   },
   avatarInitials: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '700',
+    letterSpacing: -1,
   },
   contactName: {
     fontSize: 26,
@@ -1483,29 +1497,32 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 28,
   },
   quickActionButton: {
     alignItems: 'center',
   },
   quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.10,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 3,
   },
   quickActionLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4B5563',
+    letterSpacing: -0.2,
   },
 
   // Cards
@@ -1524,7 +1541,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -1639,20 +1656,20 @@ const styles = StyleSheet.create({
   },
   activeReminderActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   activeReminderDoneButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 10,
+    gap: 6,
+    paddingVertical: 12,
     backgroundColor: '#1F2937',
-    borderRadius: 12,
+    borderRadius: 14,
   },
   activeReminderDoneText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -1662,14 +1679,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
+    paddingVertical: 12,
     backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderRadius: 14,
   },
   activeReminderChangeText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4B5563',
   },
@@ -1743,13 +1758,13 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
   infoRowLast: {
     borderBottomWidth: 0,
-    paddingBottom: 4,
+    paddingBottom: 0,
   },
   infoIconCircle: {
     width: 36,
@@ -1758,7 +1773,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
   },
   infoContent: {
     flex: 1,
@@ -1793,9 +1808,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1F2937',
-    letterSpacing: -0.3,
     marginBottom: 4,
   },
   sectionSubtitle: {
@@ -1806,11 +1820,12 @@ const styles = StyleSheet.create({
   addNoteCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingLeft: 16,
-    paddingRight: 8,
-    paddingTop: 8, paddingBottom: 12,
+    paddingRight: 10,
+    paddingVertical: 10,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
