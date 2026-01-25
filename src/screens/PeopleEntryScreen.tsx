@@ -589,7 +589,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                     <Ionicons name="person-outline" size={20} color="#1D4ED8" />
                   </View>
                   <Text style={styles.cardLabel}>Name</Text>
-                  <Text style={styles.requiredLabel}>required</Text>
                 </View>
                 <TextInput
                   style={styles.textInput}
@@ -612,7 +611,6 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                   <Ionicons name="people-outline" size={20} color="#1D4ED8" />
                 </View>
                 <Text style={styles.cardLabel}>Category</Text>
-                <Text style={styles.requiredLabel}>required</Text>
               </View>
               <View style={styles.categoriesContainer}>
                 {CATEGORIES.map((category) => {
@@ -622,18 +620,16 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
                       key={category.id}
                       style={[
                         styles.categoryChip,
-                        isSelected && {
-                          backgroundColor: category.colors[0],
-                          borderColor: category.colors[1],
-                        },
+                        isSelected && styles.categoryChipSelected,
                       ]}
                       onPress={() => handleCategorySelect(category.id)}
                       activeOpacity={0.7}
                     >
+                      <View style={[styles.categoryChipDot, { backgroundColor: category.textColor }]} />
                       <Text
                         style={[
                           styles.categoryChipText,
-                          isSelected && { color: category.textColor },
+                          isSelected && styles.categoryChipTextSelected,
                         ]}
                       >
                         {category.name}
@@ -964,18 +960,37 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     borderWidth: 1,
     backgroundColor: '#FFFFFF',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  categoryChipSelected: {
+    backgroundColor: '#1F2937',
+    borderColor: '#1F2937',
+  },
+  categoryChipDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   categoryChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
-    letterSpacing: -0.1,
+    color: '#1F2937',
+  },
+  categoryChipTextSelected: {
+    color: '#FFFFFF',
   },
 
   // Optional Card (no header)

@@ -922,7 +922,116 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<PartnerNote | null>(null);
   const [noteContent, setNoteContent] = useState('');
-  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Animation refs for dropdown
+  const dropdownScale = useRef(new Animated.Value(0)).current;
+  const dropdownOpacity = useRef(new Animated.Value(0)).current;
+  const dropdownContentOpacity = useRef(new Animated.Value(0)).current;
+  const iconRotation = useRef(new Animated.Value(0)).current;
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
+
+  // Dropdown animation functions
+  const openDropdown = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowMoreMenu(true);
+    dropdownScale.setValue(0);
+    dropdownOpacity.setValue(0);
+    dropdownContentOpacity.setValue(0);
+
+    // Dropdown "emerges" from the button - ease-out for a releasing feel
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 1,
+      duration: 200,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDropdown = (callback?: () => void) => {
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 0,
+        duration: 240,
+        delay: 40,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 0,
+        duration: 200,
+        delay: 60,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowMoreMenu(false);
+      if (callback) callback();
+    });
+  };
+
+  const handleMorePress = () => {
+    if (showMoreMenu) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.92,
+      friction: 8,
+      tension: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      friction: 8,
+      tension: 300,
+      useNativeDriver: true,
+    }).start();
+  };
 
   // Photo handler
   const handleEditPhoto = async () => {
@@ -1040,8 +1149,15 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
         />
       </ScrollView>
 
+      {/* Dropdown overlay for closing */}
+      {showMoreMenu && (
+        <TouchableWithoutFeedback onPress={() => closeDropdown()}>
+          <View style={styles.dropdownOverlay} />
+        </TouchableWithoutFeedback>
+      )}
+
       {/* Fixed Header with Gradient Fade */}
-      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top, zIndex: showMoreMenu ? 100 : 10 }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
@@ -1062,18 +1178,117 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setSettingsMenuVisible(true);
-            }}
-            style={styles.settingsButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
-          </TouchableOpacity>
+
+          <View style={styles.moreButtonContainer}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMorePress}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+              style={{ zIndex: 20 }}
+            >
+              <Animated.View style={[
+                styles.settingsButton,
+                { transform: [{ scale: moreButtonScale }] }
+              ]}>
+                {/* Ellipsis icon - fades out */}
+                <Animated.View style={{
+                  position: 'absolute',
+                  opacity: iconRotation.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [1, 0, 0],
+                  }),
+                  transform: [{
+                    rotate: iconRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '90deg'],
+                    }),
+                  }],
+                }}>
+                  <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+                </Animated.View>
+                {/* Close icon - fades in */}
+                <Animated.View style={{
+                  position: 'absolute',
+                  opacity: iconRotation.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 0, 1],
+                  }),
+                  transform: [{
+                    rotate: iconRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['-90deg', '0deg'],
+                    }),
+                  }],
+                }}>
+                  <Ionicons name="close" size={20} color="#1F2937" />
+                </Animated.View>
+              </Animated.View>
+            </TouchableOpacity>
+
+            {/* Inline Dropdown */}
+            {showMoreMenu && (
+              <Animated.View
+                style={[
+                  styles.inlineMenuContainer,
+                  {
+                    opacity: dropdownOpacity,
+                    transform: [
+                      { translateX: dropdownScale.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [95, 0],
+                      })},
+                      { translateY: dropdownScale.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-45, 0],
+                      })},
+                      { scale: dropdownScale },
+                    ],
+                  }
+                ]}
+              >
+                <Animated.View style={{ opacity: dropdownContentOpacity }}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      closeDropdown(() => {
+                        navigation.navigate('RelationshipSetup', {
+                          isEditMode: true,
+                          partnerName: partnerName,
+                          sinceDate: sinceDate,
+                          photoUri: currentPhotoUri,
+                        });
+                      });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.dropdownItemIcon}>
+                      <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                    </View>
+                    <Text style={styles.dropdownItemText}>Edit Info</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.dropdownDivider} />
+
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      closeDropdown(() => {
+                        // TODO: Switch to dating vault
+                        console.log('Switch to dating pressed');
+                      });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.dropdownItemIcon}>
+                      <Ionicons name="sync-outline" size={18} color="#6B7280" />
+                    </View>
+                    <Text style={styles.dropdownItemText}>Switch to Dating</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              </Animated.View>
+            )}
+          </View>
         </View>
       </View>
 
@@ -1122,55 +1337,6 @@ const RelationshipHomeScreen: React.FC<RelationshipHomeScreenProps> = ({
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Settings Menu Modal */}
-      <Modal
-        visible={settingsMenuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsMenuVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
-          <View style={styles.dropdownModalOverlay}>
-            <View style={styles.dropdownMenu}>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSettingsMenuVisible(false);
-                  navigation.navigate('RelationshipSetup', {
-                    isEditMode: true,
-                    partnerName: partnerName,
-                    sinceDate: sinceDate,
-                    photoUri: currentPhotoUri,
-                  });
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="pencil-outline" size={18} color="#6B7280" />
-                <Text style={styles.dropdownItemText}>Edit Info</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.dropdownItem, styles.dropdownItemWithDivider]}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSettingsMenuVisible(false);
-                  // TODO: Switch to dating vault
-                  console.log('Switch to dating pressed');
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="sync-outline" size={18} color="#6B7280" />
-                <Text style={styles.dropdownItemText}>Switch to Dating</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 };
@@ -1857,39 +2023,58 @@ const styles = StyleSheet.create({
     padding: 0,
   },
 
-  // Dropdown Modal
-  dropdownModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  // More Button & Inline Dropdown
+  moreButtonContainer: {
+    position: 'relative',
+    zIndex: 100,
   },
-  dropdownMenu: {
+  inlineMenuContainer: {
     position: 'absolute',
-    top: 116,
-    right: 16,
+    top: 48,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    paddingVertical: 6,
-    minWidth: 200,
+    paddingTop: 6,
+    paddingBottom: 2,
+    minWidth: 190,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: 14,
+    gap: 10,
   },
-  dropdownItemWithDivider: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+  dropdownItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 14,
+    marginVertical: 2,
   },
   dropdownItemText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#374151',
   },
 });

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
   Easing,
   Platform,
@@ -891,6 +892,10 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
   const searchButtonScale = useRef(new Animated.Value(1)).current;
   const moreButtonScale = useRef(new Animated.Value(1)).current;
+  const iconRotation = useRef(new Animated.Value(0)).current;
+  const dropdownScale = useRef(new Animated.Value(0)).current;
+  const dropdownOpacity = useRef(new Animated.Value(0)).current;
+  const dropdownContentOpacity = useRef(new Animated.Value(0)).current;
 
   // Show search only when 5+ entries
   const showSearch = entries.length >= 5;
@@ -1072,19 +1077,102 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
     // TODO: Persist changes to storage
   };
 
-  const handleMorePress = () => {
+  const openDropdown = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setShowMoreMenu(true);
+    dropdownScale.setValue(0);
+    dropdownOpacity.setValue(0);
+    dropdownContentOpacity.setValue(0);
+
+    // Dropdown "emerges" from the button - ease-out for a releasing feel
+    Animated.parallel([
+      // Icon morphs from ellipsis to X
+      Animated.timing(iconRotation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      // Container expands from button position
+      Animated.timing(dropdownScale, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.2)), // Slight overshoot for organic feel
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Content fades in after container starts expanding
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 1,
+      duration: 200,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDropdown = (callback?: () => void) => {
+    // First, quickly fade out content
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    // Then collapse container back into button with "suction" effect
+    Animated.parallel([
+      // Icon morphs back to ellipsis
+      Animated.timing(iconRotation, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      // Container shrinks and moves towards button - ease-in for suction feel
+      Animated.timing(dropdownScale, {
+        toValue: 0,
+        duration: 240,
+        delay: 40, // Slight delay so content fades first
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 0,
+        duration: 200,
+        delay: 60,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowMoreMenu(false);
+      if (callback) callback();
+    });
+  };
+
+  const handleMorePress = () => {
+    if (showMoreMenu) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
   };
 
   const handleMoreButtonPressIn = () => {
     Animated.spring(moreButtonScale, {
-      toValue: 0.9,
+      toValue: 0.92,
       useNativeDriver: true,
       friction: 8,
-      tension: 100,
+      tension: 300,
     }).start();
   };
 
@@ -1093,30 +1181,31 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
       toValue: 1,
       useNativeDriver: true,
       friction: 8,
-      tension: 100,
+      tension: 300,
     }).start();
   };
 
   const handleDeleteTopic = () => {
-    setShowMoreMenu(false);
-    Alert.alert(
-      'Delete Topic',
-      `Are you sure you want to delete "${currentTopic.name}" and all its entries? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            }
-            // TODO: Implement actual deletion from storage
-            navigation.goBack();
+    closeDropdown(() => {
+      Alert.alert(
+        'Delete Topic',
+        `Are you sure you want to delete "${currentTopic.name}" and all its entries? This action cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              }
+              // TODO: Implement actual deletion from storage
+              navigation.goBack();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    });
   };
 
   return (
@@ -1215,6 +1304,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
             {
               opacity: headerOpacity,
               transform: [{ translateY: headerTranslateY }],
+              zIndex: showMoreMenu ? 100 : 10,
             },
           ]}
           pointerEvents="box-none"
@@ -1271,16 +1361,102 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
                     </Animated.View>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={handleMorePress}
-                  onPressIn={handleMoreButtonPressIn}
-                  onPressOut={handleMoreButtonPressOut}
-                >
-                  <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
-                    <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
-                  </Animated.View>
-                </TouchableOpacity>
+                <View style={styles.moreButtonContainer}>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={handleMorePress}
+                    onPressIn={handleMoreButtonPressIn}
+                    onPressOut={handleMoreButtonPressOut}
+                    style={{ zIndex: 20 }}
+                  >
+                    <Animated.View style={[
+                      styles.headerButton,
+                      { transform: [{ scale: moreButtonScale }] }
+                    ]}>
+                      {/* Ellipsis icon - fades out */}
+                      <Animated.View style={{
+                        position: 'absolute',
+                        opacity: iconRotation.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 0, 0],
+                        }),
+                        transform: [{
+                          rotate: iconRotation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0deg', '90deg'],
+                          }),
+                        }],
+                      }}>
+                        <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+                      </Animated.View>
+                      {/* Close icon - fades in */}
+                      <Animated.View style={{
+                        position: 'absolute',
+                        opacity: iconRotation.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0, 0, 1],
+                        }),
+                        transform: [{
+                          rotate: iconRotation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['-90deg', '0deg'],
+                          }),
+                        }],
+                      }}>
+                        <Ionicons name="close" size={20} color="#1F2937" />
+                      </Animated.View>
+                    </Animated.View>
+                  </TouchableOpacity>
+
+                  {/* Inline Dropdown */}
+                  {showMoreMenu && (
+                    <Animated.View
+                      style={[
+                        styles.inlineMenuContainer,
+                        {
+                          opacity: dropdownOpacity,
+                          transform: [
+                            { translateX: dropdownScale.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [95, 0],
+                            })},
+                            { translateY: dropdownScale.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-45, 0],
+                            })},
+                            { scale: dropdownScale },
+                          ],
+                        }
+                      ]}
+                    >
+                      <Animated.View style={{ opacity: dropdownContentOpacity }}>
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            closeDropdown(() => handleEditTopic());
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.dropdownItemIcon}>
+                            <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                          </View>
+                          <Text style={styles.dropdownItemText}>Edit Topic</Text>
+                        </TouchableOpacity>
+                        <View style={styles.dropdownDivider} />
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          onPress={handleDeleteTopic}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.dropdownItemIcon, styles.dropdownItemIconDestructive]}>
+                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                          </View>
+                          <Text style={styles.dropdownItemTextDestructive}>Delete Topic</Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    </Animated.View>
+                  )}
+                </View>
               </View>
             </View>
           )}
@@ -1338,42 +1514,12 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* More Menu Modal */}
-      <Modal
-        visible={showMoreMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMoreMenu(false)}
-      >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMoreMenu(false)}
-        >
-          <View style={styles.menuContainer}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setShowMoreMenu(false);
-                handleEditTopic();
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil-outline" size={20} color="#1F2937" />
-              <Text style={styles.menuItemText}>Edit Topic</Text>
-            </TouchableOpacity>
-            <View style={styles.menuDivider} />
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={handleDeleteTopic}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={20} color="#DC2626" />
-              <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Topic</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {/* Dropdown overlay for closing */}
+      {showMoreMenu && (
+        <TouchableWithoutFeedback onPress={() => closeDropdown()}>
+          <View style={styles.dropdownOverlay} />
+        </TouchableWithoutFeedback>
+      )}
 
       {/* Edit Topic Modal */}
       <EditTopicModal
@@ -1425,6 +1571,67 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     gap: 10,
+  },
+  moreButtonContainer: {
+    position: 'relative',
+    zIndex: 100,
+  },
+  inlineMenuContainer: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingTop: 6,
+    paddingBottom: 2,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  dropdownItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownItemIconDestructive: {
+    backgroundColor: '#FEE2E2',
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 14,
+    marginVertical: 2,
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  dropdownItemTextDestructive: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#EF4444',
   },
   backButton: {
     width: 40,
@@ -1537,7 +1744,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1623,46 +1830,6 @@ const styles = StyleSheet.create({
   },
   roundButtonDisabled: {
     opacity: 0.5,
-  },
-
-  // More Menu Modal
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  menuContainer: {
-    position: 'absolute',
-    top: 116,
-    right: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingVertical: 8,
-    minWidth: 180,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8, paddingBottom: 12,
-    gap: 12,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginHorizontal: 12,
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1F2937',
-  },
-  menuItemTextDanger: {
-    color: '#DC2626',
   },
 
   modalTitle: {

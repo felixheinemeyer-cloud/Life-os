@@ -5,7 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
+  Easing,
   Platform,
   TextInput,
   Modal,
@@ -57,7 +59,85 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
 
   // Animation
   const moreButtonScale = useRef(new Animated.Value(1)).current;
-  const editButtonScale = useRef(new Animated.Value(1)).current;
+  const dropdownScale = useRef(new Animated.Value(0)).current;
+  const dropdownOpacity = useRef(new Animated.Value(0)).current;
+  const dropdownContentOpacity = useRef(new Animated.Value(0)).current;
+  const iconRotation = useRef(new Animated.Value(0)).current;
+
+  // Dropdown animation functions
+  const openDropdown = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowMoreMenu(true);
+    dropdownScale.setValue(0);
+    dropdownOpacity.setValue(0);
+    dropdownContentOpacity.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 1,
+      duration: 200,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDropdown = (callback?: () => void) => {
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 0,
+        duration: 240,
+        delay: 40,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 0,
+        duration: 200,
+        delay: 60,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowMoreMenu(false);
+      if (callback) callback();
+    });
+  };
 
   // Handlers
   const handleBack = () => {
@@ -100,34 +180,36 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
   };
 
   const handleDelete = () => {
-    setShowMoreMenu(false);
-    Alert.alert(
-      'Delete Story',
-      'Are you sure you want to delete this story? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            }
-            if (currentStory) {
-              onDelete?.(currentStory.id);
-            }
-            navigation.goBack();
+    closeDropdown(() => {
+      Alert.alert(
+        'Delete Story',
+        'Are you sure you want to delete this story? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              }
+              if (currentStory) {
+                onDelete?.(currentStory.id);
+              }
+              navigation.goBack();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    });
   };
 
   const handleMorePress = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (showMoreMenu) {
+      closeDropdown();
+    } else {
+      openDropdown();
     }
-    setShowMoreMenu(true);
   };
 
   const handleButtonPressIn = (scale: Animated.Value) => {
@@ -218,8 +300,15 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
         </View>
       </ScrollView>
 
+      {/* Dropdown overlay for closing */}
+      {showMoreMenu && (
+        <TouchableWithoutFeedback onPress={() => closeDropdown()}>
+          <View style={styles.dropdownOverlay} />
+        </TouchableWithoutFeedback>
+      )}
+
       {/* Fixed Header with Gradient Fade */}
-      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={[styles.fixedHeader, { paddingTop: insets.top, zIndex: showMoreMenu ? 100 : 10 }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
@@ -241,56 +330,101 @@ const StoryDetailScreen: React.FC<StoryDetailScreenProps> = ({ navigation, route
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
 
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleEdit}
-              onPressIn={() => handleButtonPressIn(editButtonScale)}
-              onPressOut={() => handleButtonPressOut(editButtonScale)}
-            >
-              <Animated.View style={[styles.headerButton, { transform: [{ scale: editButtonScale }] }]}>
-                <Ionicons name="pencil" size={20} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
+          <View style={styles.moreButtonContainer}>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={handleMorePress}
+                onPressIn={() => handleButtonPressIn(moreButtonScale)}
+                onPressOut={() => handleButtonPressOut(moreButtonScale)}
+                style={{ zIndex: 20 }}
+              >
+                <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
+                  {/* Ellipsis icon - fades out */}
+                  <Animated.View style={{
+                    position: 'absolute',
+                    opacity: iconRotation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [1, 0, 0],
+                    }),
+                    transform: [{
+                      rotate: iconRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '90deg'],
+                      }),
+                    }],
+                  }}>
+                    <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
+                  </Animated.View>
+                  {/* Close icon - fades in */}
+                  <Animated.View style={{
+                    position: 'absolute',
+                    opacity: iconRotation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0, 0, 1],
+                    }),
+                    transform: [{
+                      rotate: iconRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['-90deg', '0deg'],
+                      }),
+                    }],
+                  }}>
+                    <Ionicons name="close" size={20} color="#1F2937" />
+                  </Animated.View>
+                </Animated.View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={handleMorePress}
-              onPressIn={() => handleButtonPressIn(moreButtonScale)}
-              onPressOut={() => handleButtonPressOut(moreButtonScale)}
-            >
-              <Animated.View style={[styles.headerButton, { transform: [{ scale: moreButtonScale }] }]}>
-                <Ionicons name="ellipsis-horizontal" size={20} color="#1F2937" />
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
+              {/* Inline Dropdown */}
+              {showMoreMenu && (
+                <Animated.View
+                  style={[
+                    styles.inlineMenuContainer,
+                    {
+                      opacity: dropdownOpacity,
+                      transform: [
+                        { translateX: dropdownScale.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [95, 0],
+                        })},
+                        { translateY: dropdownScale.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-45, 0],
+                        })},
+                        { scale: dropdownScale },
+                      ],
+                    }
+                  ]}
+                >
+                  <Animated.View style={{ opacity: dropdownContentOpacity }}>
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={() => closeDropdown(() => handleEdit())}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.menuItemIcon}>
+                        <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                      </View>
+                      <Text style={styles.menuItemText}>Edit Story</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.menuDivider} />
+
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={handleDelete}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.menuItemIconDestructive}>
+                        <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                      </View>
+                      <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Story</Text>
+                    </TouchableOpacity>
+                  </Animated.View>
+                </Animated.View>
+              )}
+            </View>
         </View>
       </View>
-
-      {/* More Menu Modal */}
-      <Modal
-        visible={showMoreMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMoreMenu(false)}
-      >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMoreMenu(false)}
-        >
-          <View style={[styles.menuContainer, { top: insets.top + 60 }]}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={handleDelete}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={20} color="#DC2626" />
-              <Text style={[styles.menuItemText, styles.menuItemTextDanger]}>Delete Story</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
 
       {/* Edit Modal */}
       <Modal
@@ -411,10 +545,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
 
   // Scroll Content
   scrollView: {
@@ -503,34 +633,65 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
 
-  // More Menu
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  // More Button & Inline Dropdown
+  moreButtonContainer: {
+    position: 'relative',
+    zIndex: 100,
   },
-  menuContainer: {
+  dropdownOverlay: {
     position: 'absolute',
-    right: 16,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  },
+  inlineMenuContainer: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingVertical: 8,
+    borderRadius: 20,
+    paddingVertical: 6,
     minWidth: 180,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
-    elevation: 8,
+    elevation: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8, paddingBottom: 12,
-    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  menuItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuItemIconDestructive: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 14,
+    marginVertical: 2,
   },
   menuItemText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#1F2937',
   },
   menuItemTextDanger: {

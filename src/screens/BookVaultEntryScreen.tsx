@@ -100,6 +100,11 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const progressAccordionAnim = useRef(new Animated.Value(0)).current;
   const progressChevronAnim = useRef(new Animated.Value(1)).current;
+  const dropdownScale = useRef(new Animated.Value(0)).current;
+  const dropdownOpacity = useRef(new Animated.Value(0)).current;
+  const dropdownContentOpacity = useRef(new Animated.Value(0)).current;
+  const iconRotation = useRef(new Animated.Value(0)).current;
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
 
   // Derived data
   const formatInfo = getFormatInfo(currentFormat);
@@ -146,55 +151,159 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
     navigation.goBack();
   };
 
-  const handleMoreOptions = () => {
+  const openDropdown = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setShowDropdown(!showDropdown);
+    setShowDropdown(true);
+    dropdownScale.setValue(0);
+    dropdownOpacity.setValue(0);
+    dropdownContentOpacity.setValue(0);
+
+    // Dropdown "emerges" from the button - ease-out for a releasing feel
+    Animated.parallel([
+      // Icon morphs from ellipsis to X
+      Animated.timing(iconRotation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      // Container expands from button position
+      Animated.timing(dropdownScale, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.2)), // Slight overshoot for organic feel
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Content fades in after container starts expanding
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 1,
+      duration: 200,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDropdown = (callback?: () => void) => {
+    // First, quickly fade out content
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    // Then collapse container back into button with "suction" effect
+    Animated.parallel([
+      // Icon morphs back to ellipsis
+      Animated.timing(iconRotation, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      // Container shrinks and moves towards button - ease-in for suction feel
+      Animated.timing(dropdownScale, {
+        toValue: 0,
+        duration: 240,
+        delay: 40, // Slight delay so content fades first
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 0,
+        duration: 200,
+        delay: 60,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowDropdown(false);
+      if (callback) callback();
+    });
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreOptions = () => {
+    if (showDropdown) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
   };
 
   const handleDeleteEntry = () => {
-    setShowDropdown(false);
-    Alert.alert(
-      'Delete Book',
-      `Are you sure you want to delete "${entry.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-            deleteEntry(entry.id);
-            navigation.goBack();
+    closeDropdown(() => {
+      Alert.alert(
+        'Delete Book',
+        `Are you sure you want to delete "${entry.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              deleteEntry(entry.id);
+              navigation.goBack();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    });
   };
 
   const handleRemoveToRead = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setShowDropdown(false);
-    if (isToRead) {
-      setIsToRead(false);
-      updateEntry(entry.id, { isWatchlist: false });
-    }
+    closeDropdown(() => {
+      if (isToRead) {
+        setIsToRead(false);
+        updateEntry(entry.id, { isWatchlist: false });
+      }
+    });
   };
 
   const handleAddToRead = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setShowDropdown(false);
-    if (!isToRead) {
-      setIsToRead(true);
-      updateEntry(entry.id, { isWatchlist: true });
-    }
+    closeDropdown(() => {
+      if (!isToRead) {
+        setIsToRead(true);
+        updateEntry(entry.id, { isWatchlist: true });
+      }
+    });
   };
 
   const handleFormatPress = () => {
@@ -583,7 +692,7 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
       </ScrollView>
 
       {/* Fixed Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={[styles.header, { paddingTop: insets.top, zIndex: showDropdown ? 100 : 10 }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
@@ -606,58 +715,124 @@ const BookVaultEntryScreen = ({ navigation, route }: BookVaultEntryScreenProps) 
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleMoreOptions}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
-          </TouchableOpacity>
+          {/* Unified More Button + Dropdown Component */}
+          <View style={styles.moreButtonContainer}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={handleMoreOptions}
+              onPressIn={handleMoreButtonPressIn}
+              onPressOut={handleMoreButtonPressOut}
+              style={{ zIndex: 20 }}
+            >
+              <Animated.View style={[
+                styles.headerButton,
+                { transform: [{ scale: moreButtonScale }] }
+              ]}>
+                {/* Ellipsis icon - fades out */}
+                <Animated.View style={{
+                  position: 'absolute',
+                  opacity: iconRotation.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [1, 0, 0],
+                  }),
+                  transform: [{
+                    rotate: iconRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '90deg'],
+                    }),
+                  }],
+                }}>
+                  <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
+                </Animated.View>
+                {/* Close icon - fades in */}
+                <Animated.View style={{
+                  position: 'absolute',
+                  opacity: iconRotation.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 0, 1],
+                  }),
+                  transform: [{
+                    rotate: iconRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['-90deg', '0deg'],
+                    }),
+                  }],
+                }}>
+                  <Ionicons name="close" size={20} color="#1F2937" />
+                </Animated.View>
+              </Animated.View>
+            </TouchableOpacity>
+
+            {/* Inline Dropdown - grows from button */}
+            {showDropdown && (
+              <Animated.View
+                style={[
+                  styles.inlineDropdownMenu,
+                  {
+                    opacity: dropdownOpacity,
+                    transform: [
+                      // Translations BEFORE scale - creates "return to button" effect
+                      { translateX: dropdownScale.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [95, 0],
+                      })},
+                      { translateY: dropdownScale.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-45, 0],
+                      })},
+                      { scale: dropdownScale },
+                    ],
+                  }
+                ]}
+              >
+                <Animated.View style={{ opacity: dropdownContentOpacity }}>
+                  {isToRead ? (
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleRemoveToRead}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.dropdownItemIcon}>
+                        <Ionicons name="bookmark" size={18} color="#F59E0B" />
+                      </View>
+                      <Text style={styles.dropdownItemText}>Remove "To Read"</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleAddToRead}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.dropdownItemIcon}>
+                        <Ionicons name="bookmark-outline" size={18} color="#F59E0B" />
+                      </View>
+                      <Text style={styles.dropdownItemText}>Add "To Read"</Text>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.dropdownDivider} />
+                  <TouchableOpacity
+                    style={[styles.dropdownItem, styles.dropdownItemDestructive]}
+                    onPress={handleDeleteEntry}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.dropdownItemIcon, styles.dropdownItemIconDestructive]}>
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                    </View>
+                    <Text style={styles.dropdownItemTextDestructive}>Delete Entry</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              </Animated.View>
+            )}
+          </View>
         </Animated.View>
       </View>
 
-      {/* Options Dropdown Modal */}
-      <Modal
-        visible={showDropdown}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDropdown(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
-          <View style={styles.dropdownModalOverlay}>
-            <View style={[styles.dropdownMenu, { top: insets.top + 56, right: 16 }]}>
-              {isToRead ? (
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={handleRemoveToRead}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="bookmark-outline" size={18} color="#6B7280" />
-                  <Text style={styles.dropdownItemText}>Remove "To Read"</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={handleAddToRead}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="bookmark" size={18} color="#F59E0B" />
-                  <Text style={styles.dropdownItemText}>Add "To Read"</Text>
-                </TouchableOpacity>
-              )}
-              <View style={styles.dropdownDivider} />
-              <TouchableOpacity
-                style={[styles.dropdownItem, styles.dropdownItemDestructive]}
-                onPress={handleDeleteEntry}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                <Text style={styles.dropdownItemTextDestructive}>Delete Entry</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+      {/* Overlay to close dropdown when tapping outside */}
+      {showDropdown && (
+        <TouchableWithoutFeedback onPress={() => closeDropdown()}>
+          <View style={styles.dropdownOverlay} />
         </TouchableWithoutFeedback>
-      </Modal>
+      )}
 
       {/* Format Dropdown Modal */}
       <Modal
@@ -1047,46 +1222,70 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-
-  // Dropdown Menu
-  dropdownModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  headerButtonActive: {
+    backgroundColor: '#F3F4F6',
+    borderColor: 'rgba(0, 0, 0, 0.12)',
   },
-  dropdownMenu: {
+  moreButtonContainer: {
+    position: 'relative',
+    zIndex: 100,
+  },
+  dropdownOverlay: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  },
+  inlineDropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingVertical: 6,
-    minWidth: 200,
+    minWidth: 190,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 24,
+    elevation: 12,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8, paddingBottom: 12,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  dropdownItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownItemIconDestructive: {
+    backgroundColor: '#FEE2E2',
   },
   dropdownDivider: {
     height: 1,
     backgroundColor: '#F3F4F6',
-    marginHorizontal: 12,
+    marginHorizontal: 14,
+    marginVertical: 2,
   },
   dropdownItemDestructive: {
   },
   dropdownItemText: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#374151',
   },
   dropdownItemTextDestructive: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#EF4444',
   },
 
@@ -1344,7 +1543,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 8,
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 10,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

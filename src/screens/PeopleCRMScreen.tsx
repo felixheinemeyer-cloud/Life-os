@@ -129,13 +129,14 @@ const CONTACTS_DATA: Contact[] = [
   },
 ];
 
-// Unified avatar colors - matching the attention section background (rgba(0,0,0,0.03) on #F7F5F2)
+// Unified avatar colors - matching the Contact Detail screen Acquaintance style
 const getAvatarColors = (): [string, string, string] => {
-  return ['#F0EEEB', '#F0EEEB', '#F0EEEB'];
+  return ['#F3F4F6', '#E5E7EB', '#D1D5DB'];
 };
 
+// Neutral initials color for all avatars
 const getInitialsColor = (): string => {
-  return '#1F2937'; // Same as contact name
+  return '#6B7280';
 };
 
 // Reminder bell colors based on status
@@ -161,26 +162,32 @@ const isBirthdayToday = (dateOfBirth: string): boolean => {
   return today.getMonth() === birthday.getMonth() && today.getDate() === birthday.getDate();
 };
 
-const getCategoryFilterStyle = (category: string, isSelected: boolean): { bg: string; text: string; border: string } => {
-  if (!isSelected) {
-    return { bg: '#FFFFFF', text: '#6B7280', border: 'rgba(0, 0, 0, 0.08)' };
-  }
+// Get category dot color (theme color for each category)
+const getCategoryDotColor = (category: string): string => {
   switch (category.toLowerCase()) {
     case 'all':
-      return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
-    case 'close friend':
-      return { bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' };
-    case 'friend':
-      return { bg: '#EDE9FE', text: '#7C3AED', border: '#DDD6FE' };
+      return '#6B7280';
     case 'family':
-      return { bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' };
+      return '#BE185D';
+    case 'close friend':
+      return '#1D4ED8';
+    case 'friend':
+      return '#7C3AED';
     case 'work':
-      return { bg: '#D1FAE5', text: '#047857', border: '#A7F3D0' };
+      return '#047857';
     case 'acquaintance':
-      return { bg: '#F3F4F6', text: '#4B5563', border: '#E5E7EB' };
+      return '#6B7280';
     default:
-      return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
+      return '#6B7280';
   }
+};
+
+// Simplified filter style matching Media Vault design
+const getCategoryFilterStyle = (isSelected: boolean): { bg: string; text: string; border: string } => {
+  if (isSelected) {
+    return { bg: '#1F2937', text: '#FFFFFF', border: '#1F2937' };
+  }
+  return { bg: '#FFFFFF', text: '#1F2937', border: '#E5E7EB' };
 };
 
 const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
@@ -327,7 +334,8 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
             >
               {CATEGORIES.map((category) => {
                 const isSelected = selectedCategory === category;
-                const filterStyle = getCategoryFilterStyle(category, isSelected);
+                const filterStyle = getCategoryFilterStyle(isSelected);
+                const dotColor = getCategoryDotColor(category);
                 return (
                   <TouchableOpacity
                     key={category}
@@ -341,6 +349,9 @@ const PeopleCRMScreen: React.FC<PeopleCRMScreenProps> = ({ navigation }) => {
                     onPress={() => handleCategorySelect(category)}
                     activeOpacity={0.7}
                   >
+                    {category !== 'All' && (
+                      <View style={[styles.filterChipDot, { backgroundColor: dotColor }]} />
+                    )}
                     <Text style={[styles.filterChipText, { color: filterStyle.text }]}>
                       {category}
                     </Text>
@@ -606,8 +617,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
@@ -673,15 +684,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  filterChipDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    letterSpacing: -0.1,
   },
 
   // Contact List
@@ -701,6 +724,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
   contactAvatar: {
     width: 44,
     height: 44,
@@ -708,6 +735,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+  },
+  categoryDot: {
+    position: 'absolute',
+    bottom: 2,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   contactInitials: {
     fontSize: 15,

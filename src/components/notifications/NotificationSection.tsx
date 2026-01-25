@@ -44,7 +44,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
   const itemOpacity = useRef(new Animated.Value(1)).current;
-  const itemHeight = useRef(new Animated.Value(68)).current;
+  const itemHeight = useRef(new Animated.Value(72)).current;
   const isDismissing = useRef(false);
 
   const handleDismiss = useCallback(() => {
@@ -130,7 +130,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
         {
           opacity: itemOpacity,
           height: itemHeight,
-          marginBottom: isLast ? 0 : 8,
+          marginTop: 12,
         },
       ]}
     >
@@ -255,12 +255,13 @@ const NotificationSection: React.FC<NotificationSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 0,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginTop: 12,
+    marginBottom: 4,
     paddingHorizontal: 4,
   },
   dividerLine: {
@@ -329,9 +330,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingLeft: 12,
-    paddingRight: 14,
+    paddingVertical: 14,
+    paddingLeft: 14,
+    paddingRight: 16,
   },
   avatar: {
     width: 44,
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     letterSpacing: -0.2,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 13,

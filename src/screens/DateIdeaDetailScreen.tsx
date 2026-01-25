@@ -41,6 +41,7 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const heartScale = useRef(new Animated.Value(1)).current;
 
   // Load saved and done status
   useEffect(() => {
@@ -90,6 +91,22 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+
+    // Animate heart scale
+    Animated.sequence([
+      Animated.spring(heartScale, {
+        toValue: 1.2,
+        friction: 3,
+        tension: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(heartScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     try {
       const stored = await AsyncStorage.getItem(SAVED_IDEAS_STORAGE_KEY);
@@ -393,14 +410,20 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleToggleSave}
-            style={styles.headerButton}
+            style={[
+              styles.headerButton,
+              styles.saveButton,
+              isSaved && styles.saveButtonActive,
+            ]}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={isSaved ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isSaved ? '#E11D48' : '#1F2937'}
-            />
+            <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+              <Ionicons
+                name={isSaved ? 'heart' : 'heart-outline'}
+                size={22}
+                color={isSaved ? '#E11D48' : '#9CA3AF'}
+              />
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
@@ -482,6 +505,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
+  },
+  saveButton: {
+    backgroundColor: '#FFFFFF',
+  },
+  saveButtonActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(225, 29, 72, 0.25)',
   },
   scrollView: {
     flex: 1,
