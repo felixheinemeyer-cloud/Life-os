@@ -12,6 +12,7 @@ import {
   PanResponder,
   Modal,
   TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +29,31 @@ interface DatingHomeScreenProps {
   };
 }
 
+interface VibeRatings {
+  attraction?: number;
+  connection?: number;
+  compatibility?: number;
+}
+
+interface Flag {
+  id: string;
+  text: string;
+  type: 'green' | 'red';
+  createdAt: string;
+}
+
+type DateVibeType = 'amazing' | 'good' | 'okay' | 'meh' | 'bad';
+
+interface DateEntry {
+  id: string;
+  date: string;
+  title: string;
+  location?: string;
+  vibe: DateVibeType;
+  notes?: string;
+  createdAt: string;
+}
+
 interface DatingPerson {
   id: string;
   name: string;
@@ -39,6 +65,9 @@ interface DatingPerson {
   dateOfBirth?: string;
   rating?: number;
   notes?: { id: string; text: string; createdAt: string }[];
+  vibeRatings?: VibeRatings;
+  flags?: Flag[];
+  dateHistory?: DateEntry[];
 }
 
 interface DateIdea {
@@ -67,11 +96,94 @@ interface DatingAdvice {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
+// Vibe category configurations (matching DatingDetailScreen)
+const VIBE_CATEGORIES = {
+  attraction: {
+    icon: 'flame' as const,
+    color: '#F97316',
+    label: 'Attraction',
+  },
+  connection: {
+    icon: 'heart' as const,
+    color: '#EC4899',
+    label: 'Connection',
+  },
+  compatibility: {
+    icon: 'sparkles' as const,
+    color: '#8B5CF6',
+    label: 'Compatibility',
+  },
+};
+
+const DATE_VIBES: { type: DateVibeType; emoji: string; label: string }[] = [
+  { type: 'amazing', emoji: '🥰', label: 'Amazing' },
+  { type: 'good', emoji: '😊', label: 'Good' },
+  { type: 'okay', emoji: '😐', label: 'Okay' },
+  { type: 'meh', emoji: '😕', label: 'Meh' },
+  { type: 'bad', emoji: '😔', label: 'Bad' },
+];
+
+const getVibeEmoji = (type: DateVibeType): string => {
+  return DATE_VIBES.find(v => v.type === type)?.emoji || '😐';
+};
+
+const getTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return '1 week ago';
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 60) return '1 month ago';
+  return `${Math.floor(diffDays / 30)} months ago`;
+};
+
 // Mock Data
 const DATING_CRM_DATA: DatingPerson[] = [
-  { id: '1', name: 'Sophie', initials: 'S', createdAt: '2024-03-01' },
-  { id: '2', name: 'Emma', initials: 'E', createdAt: '2024-02-28' },
-  { id: '3', name: 'Mia', initials: 'M', createdAt: '2024-02-25' },
+  {
+    id: '1',
+    name: 'Sophie',
+    initials: 'S',
+    createdAt: '2024-03-01',
+    phoneNumber: '+1 (555) 123-4567',
+    instagram: 'sophie_h',
+    location: 'Brooklyn, NY',
+    vibeRatings: { attraction: 4, connection: 5, compatibility: 3 },
+    flags: [
+      { id: 'f1', text: 'Great listener', type: 'green', createdAt: '2024-03-02' },
+      { id: 'f2', text: 'Shares my values', type: 'green', createdAt: '2024-03-03' },
+      { id: 'f3', text: 'Often cancels last minute', type: 'red', createdAt: '2024-03-05' },
+    ],
+    dateHistory: [
+      { id: 'd1', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), title: 'Coffee at Blue Bottle', location: 'Williamsburg', vibe: 'amazing', createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+      { id: 'd2', date: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), title: 'Walk in Prospect Park', location: 'Park Slope', vibe: 'good', createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString() },
+    ],
+  },
+  {
+    id: '2',
+    name: 'Emma',
+    initials: 'E',
+    createdAt: '2024-02-28',
+    phoneNumber: '+1 (555) 987-6543',
+    vibeRatings: { attraction: 3, connection: 3 },
+    flags: [
+      { id: 'f1', text: 'Really funny', type: 'green', createdAt: '2024-02-28' },
+    ],
+    dateHistory: [
+      { id: 'd1', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), title: 'Dinner at Lilia', location: 'Williamsburg', vibe: 'good', createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+    ],
+  },
+  {
+    id: '3',
+    name: 'Mia',
+    initials: 'M',
+    createdAt: '2024-02-25',
+    instagram: 'mia.travels',
+    location: 'Manhattan, NY',
+  },
 ];
 
 const DATE_IDEAS: DateIdea[] = [
@@ -393,6 +505,241 @@ const SIDE_CARD_SCALE = 0.8;
 const SIDE_CARD_OFFSET = 96;
 const DRAG_THRESHOLD = 150;
 
+// Card width for pager (screen width minus horizontal padding)
+const PAGER_CARD_WIDTH = SCREEN_WIDTH - 32;
+
+// Person Card (single page in the pager)
+const PersonCard: React.FC<{
+  person: DatingPerson;
+  onViewProfile: () => void;
+  onCall: () => void;
+  onInstagram: () => void;
+  onOpenMaps: () => void;
+}> = ({ person, onViewProfile, onCall, onInstagram, onOpenMaps }) => {
+  const greenFlags = person.flags?.filter(f => f.type === 'green').length || 0;
+  const redFlags = person.flags?.filter(f => f.type === 'red').length || 0;
+  const lastDate = person.dateHistory?.[0];
+  const hasVibes = person.vibeRatings && (
+    person.vibeRatings.attraction || person.vibeRatings.connection || person.vibeRatings.compatibility
+  );
+  const hasFlags = (person.flags?.length || 0) > 0;
+  const hasContact = person.phoneNumber || person.instagram || person.location;
+
+  return (
+    <View style={[styles.dashboardCard, { width: PAGER_CARD_WIDTH }]}>
+      {/* Header: Avatar + Name */}
+      <View style={styles.dashboardHeader}>
+        <LinearGradient
+          colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+          style={styles.dashboardAvatar}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={styles.dashboardAvatarInitials}>{person.initials}</Text>
+        </LinearGradient>
+        <View style={styles.dashboardHeaderInfo}>
+          <Text style={styles.dashboardName}>{person.name}</Text>
+          {hasContact && (
+            <View style={styles.dashboardContactRow}>
+              {person.phoneNumber && (
+                <TouchableOpacity onPress={onCall} style={styles.dashboardContactIcon} activeOpacity={0.7}>
+                  <Ionicons name="call-outline" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              )}
+              {person.instagram && (
+                <TouchableOpacity onPress={onInstagram} style={styles.dashboardContactIcon} activeOpacity={0.7}>
+                  <Ionicons name="logo-instagram" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              )}
+              {person.location && (
+                <TouchableOpacity onPress={onOpenMaps} style={styles.dashboardContactIcon} activeOpacity={0.7}>
+                  <Ionicons name="location-outline" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Vibe Bars */}
+      {hasVibes && (
+        <View style={styles.dashboardVibes}>
+          {(['attraction', 'connection', 'compatibility'] as const).map((type) => {
+            const value = person.vibeRatings?.[type];
+            if (!value) return null;
+            const config = VIBE_CATEGORIES[type];
+            return (
+              <View key={type} style={styles.vibeBarRow}>
+                <Ionicons name={config.icon} size={14} color={config.color} style={styles.vibeBarIcon} />
+                <Text style={styles.vibeBarLabel}>{config.label}</Text>
+                <View style={styles.vibeBarTrack}>
+                  {[1, 2, 3, 4, 5].map((seg) => (
+                    <View
+                      key={seg}
+                      style={[
+                        styles.vibeBarSegment,
+                        {
+                          backgroundColor: seg <= value ? config.color : '#F3F4F6',
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Flag Summary */}
+      {hasFlags && (
+        <View style={styles.dashboardFlags}>
+          {greenFlags > 0 && (
+            <View style={styles.flagBadge}>
+              <Text style={styles.flagBadgeText}>🟢 {greenFlags} green</Text>
+            </View>
+          )}
+          {redFlags > 0 && (
+            <View style={styles.flagBadge}>
+              <Text style={styles.flagBadgeText}>🔴 {redFlags} red</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Last Date */}
+      {lastDate && (
+        <View style={styles.dashboardLastDate}>
+          <Text style={styles.lastDateEmoji}>{getVibeEmoji(lastDate.vibe)}</Text>
+          <View style={styles.lastDateInfo}>
+            <Text style={styles.lastDateTitle} numberOfLines={1}>{lastDate.title}</Text>
+            <Text style={styles.lastDateMeta}>
+              {lastDate.location ? `${lastDate.location} · ` : ''}{getTimeAgo(lastDate.date)}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* View Profile CTA */}
+      <TouchableOpacity
+        style={styles.viewProfileButton}
+        onPress={onViewProfile}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.viewProfileText}>View Full Profile</Text>
+        <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Person Pager — horizontal snap-scrolling cards with dot indicators
+const PersonPager: React.FC<{
+  people: DatingPerson[];
+  activeIndex: number;
+  onIndexChange: (index: number) => void;
+  navigation: any;
+}> = ({ people, activeIndex, onIndexChange, navigation }) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const isUserScrolling = useRef(false);
+
+  const handleScroll = useCallback((event: any) => {
+    if (!isUserScrolling.current) return;
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
+    if (newIndex !== activeIndex && newIndex >= 0 && newIndex < people.length) {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      onIndexChange(newIndex);
+    }
+  }, [activeIndex, onIndexChange, people.length]);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    isUserScrolling.current = true;
+  }, []);
+
+  const handleMomentumScrollEnd = useCallback((event: any) => {
+    isUserScrolling.current = false;
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
+    if (newIndex >= 0 && newIndex < people.length) {
+      onIndexChange(newIndex);
+    }
+  }, [onIndexChange, people.length]);
+
+  const handleViewProfile = useCallback((person: DatingPerson) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate('DatingDetail', { person });
+  }, [navigation]);
+
+  const handleCall = useCallback((person: DatingPerson) => {
+    if (person.phoneNumber) {
+      const cleaned = person.phoneNumber.replace(/[^+\d]/g, '');
+      Linking.openURL(`tel:${cleaned}`);
+    }
+  }, []);
+
+  const handleInstagram = useCallback((person: DatingPerson) => {
+    if (person.instagram) {
+      Linking.openURL(`https://instagram.com/${person.instagram}`);
+    }
+  }, []);
+
+  const handleOpenMaps = useCallback((person: DatingPerson) => {
+    if (person.location) {
+      const query = encodeURIComponent(person.location);
+      Linking.openURL(`https://maps.apple.com/?q=${query}`);
+    }
+  }, []);
+
+  return (
+    <View style={styles.pagerSection}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        contentContainerStyle={styles.pagerContent}
+      >
+        {people.map((person) => (
+          <View key={person.id} style={styles.pagerPage}>
+            <PersonCard
+              person={person}
+              onViewProfile={() => handleViewProfile(person)}
+              onCall={() => handleCall(person)}
+              onInstagram={() => handleInstagram(person)}
+              onOpenMaps={() => handleOpenMaps(person)}
+            />
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Dot Indicators */}
+      {people.length > 1 && (
+        <View style={styles.pagerDots}>
+          {people.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.pagerDot,
+                index === activeIndex && styles.pagerDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
 // Date Ideas Section Component
 const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ navigation, onSwipeStart, onSwipeEnd }) => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -650,6 +997,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [isSwipingCard, setIsSwipingCard] = useState(false);
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
+  const [activePersonIndex, setActivePersonIndex] = useState(0);
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -671,20 +1019,6 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
     ]).start();
   }, []);
 
-  const handlePersonPress = (person: DatingPerson) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('DatingDetail', { person });
-  };
-
-  const handleSeeAllCRM = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('DatingCRM');
-  };
-
   const handleAdvicePress = (advice: DatingAdvice) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -705,50 +1039,13 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
         scrollEnabled={!isSwipingCard}
       >
-          {/* Contacts Section */}
-          <View style={styles.section}>
-            <View style={styles.contactsSectionHeader}>
-              <View style={styles.contactsTitleRow}>
-                <View style={styles.sectionAccent} />
-                <View>
-                  <Text style={styles.sectionTitle}>Your Connections</Text>
-                  <Text style={styles.sectionSubtitle}>People you're getting to know</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.seeAllButton}
-                onPress={handleSeeAllCRM}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.seeAllText}>See All</Text>
-                <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.peopleList}>
-              {DATING_CRM_DATA.map((person) => (
-                <TouchableOpacity
-                  key={person.id}
-                  style={styles.personCard}
-                  onPress={() => handlePersonPress(person)}
-                  activeOpacity={0.7}
-                >
-                  <LinearGradient
-                    colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-                    style={styles.personAvatar}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Text style={styles.personInitials}>{person.initials}</Text>
-                  </LinearGradient>
-                  <View style={styles.personInfo}>
-                    <Text style={styles.personName}>{person.name}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          {/* Person Pager */}
+          <PersonPager
+            people={DATING_CRM_DATA}
+            activeIndex={activePersonIndex}
+            onIndexChange={setActivePersonIndex}
+            navigation={navigation}
+          />
 
           {/* Date Ideas Section */}
           <DateIdeasSection
@@ -981,53 +1278,170 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
 
-  // Contacts Section
-  contactsSectionHeader: {
+  // Person Pager
+  pagerSection: {
+    marginBottom: 28,
+  },
+  pagerContent: {
+    // no extra padding — each page is full screen width
+  },
+  pagerPage: {
+    width: SCREEN_WIDTH,
+    paddingHorizontal: 16,
+  },
+  pagerDots: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  contactsTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  peopleList: {
-    gap: 10,
-  },
-  personCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  personAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginTop: 14,
+    gap: 8,
   },
-  personInitials: {
-    fontSize: 17,
+  pagerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D1D5DB',
+  },
+  pagerDotActive: {
+    backgroundColor: '#E11D48',
+    width: 20,
+    borderRadius: 4,
+  },
+
+  // Person Dashboard Card
+  dashboardCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  dashboardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dashboardAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  dashboardAvatarInitials: {
+    fontSize: 28,
     fontWeight: '600',
     color: '#E11D48',
   },
-  personInfo: {
+  dashboardHeaderInfo: {
     flex: 1,
   },
-  personName: {
-    fontSize: 15,
+  dashboardName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1F2937',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+  },
+  dashboardContactRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  dashboardContactIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dashboardVibes: {
+    marginBottom: 14,
+    gap: 8,
+  },
+  vibeBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vibeBarIcon: {
+    width: 18,
+    marginRight: 6,
+  },
+  vibeBarLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
+    width: 80,
+  },
+  vibeBarTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 3,
+  },
+  vibeBarSegment: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+  },
+  dashboardFlags: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  flagBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  flagBadgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  dashboardLastDate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+  },
+  lastDateEmoji: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  lastDateInfo: {
+    flex: 1,
+  },
+  lastDateTitle: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#1F2937',
+    marginBottom: 2,
+  },
+  lastDateMeta: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#6B7280',
+  },
+  viewProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E11D48',
+    borderRadius: 14,
+    paddingVertical: 13,
+    gap: 6,
+  },
+  viewProfileText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
     letterSpacing: -0.2,
   },
 
