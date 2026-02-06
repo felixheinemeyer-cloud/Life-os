@@ -28,7 +28,26 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Life OS to record voice journal entries."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Life OS to record video journal entries."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Life OS to record video journal entries.",
+          "microphonePermission": "Allow Life OS to record audio for video journal entries."
+        }
+      ]
     ]
   }
 }

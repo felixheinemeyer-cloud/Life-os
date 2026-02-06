@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import VoiceRecorder from '../components/tracking/VoiceRecorder';
+import VideoRecorder from '../components/tracking/VideoRecorder';
 
 interface EveningTrackingJournalScreenProps {
   navigation?: {
@@ -29,6 +31,10 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('text');
   const [journalText, setJournalText] = useState('');
+  const [voiceUri, setVoiceUri] = useState<string | null>(null);
+  const [voiceDuration, setVoiceDuration] = useState(0);
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoDuration, setVideoDuration] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -39,7 +45,7 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
   };
 
   const handleContinue = (): void => {
-    console.log('Journal Entry:', { activeTab, journalText });
+    console.log('Journal Entry:', { activeTab, journalText, voiceUri, voiceDuration, videoUri, videoDuration });
     navigation?.navigate('EveningTrackingComplete');
   };
 
@@ -85,48 +91,30 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
     </View>
   );
 
-  const renderVoicePlaceholder = () => (
-    <View style={styles.placeholderCard}>
-      <LinearGradient
-        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-        style={styles.placeholderGradientRing}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.placeholderInnerCircle}>
-          <Ionicons name="mic" size={28} color="#7C3AED" />
-        </View>
-      </LinearGradient>
-      <Text style={styles.placeholderTitle}>Voice Recording</Text>
-      <View style={styles.comingSoonBadge}>
-        <Text style={styles.comingSoonText}>Coming Soon</Text>
-      </View>
-      <Text style={styles.placeholderSubtext}>
-        Record your thoughts hands-free
-      </Text>
-    </View>
+  const renderVoiceRecorder = () => (
+    <VoiceRecorder
+      onRecordingComplete={(uri, dur) => {
+        setVoiceUri(uri);
+        setVoiceDuration(dur);
+      }}
+      onRecordingDelete={() => {
+        setVoiceUri(null);
+        setVoiceDuration(0);
+      }}
+    />
   );
 
-  const renderVideoPlaceholder = () => (
-    <View style={styles.placeholderCard}>
-      <LinearGradient
-        colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
-        style={styles.placeholderGradientRing}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.placeholderInnerCircle}>
-          <Ionicons name="videocam" size={28} color="#7C3AED" />
-        </View>
-      </LinearGradient>
-      <Text style={styles.placeholderTitle}>Video Journal</Text>
-      <View style={styles.comingSoonBadge}>
-        <Text style={styles.comingSoonText}>Coming Soon</Text>
-      </View>
-      <Text style={styles.placeholderSubtext}>
-        Capture moments with video
-      </Text>
-    </View>
+  const renderVideoRecorder = () => (
+    <VideoRecorder
+      onRecordingComplete={(uri, dur) => {
+        setVideoUri(uri);
+        setVideoDuration(dur);
+      }}
+      onRecordingDelete={() => {
+        setVideoUri(null);
+        setVideoDuration(0);
+      }}
+    />
   );
 
   const renderContent = () => {
@@ -134,9 +122,9 @@ const EveningTrackingJournalScreen: React.FC<EveningTrackingJournalScreenProps> 
       case 'text':
         return renderTextInput();
       case 'voice':
-        return renderVoicePlaceholder();
+        return renderVoiceRecorder();
       case 'video':
-        return renderVideoPlaceholder();
+        return renderVideoRecorder();
     }
   };
 
