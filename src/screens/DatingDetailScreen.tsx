@@ -382,17 +382,56 @@ const SwipeableNoteCard: React.FC<{
   );
 };
 
-// Vibe Rating Row Component
+// Vibe category configurations
+const VIBE_CATEGORIES = {
+  attraction: {
+    icon: 'flame' as const,
+    color: '#F97316',
+    gradientColors: ['#FED7AA', '#FDBA74'] as [string, string],
+    labels: ['', 'Minimal', 'Some spark', 'Good chemistry', 'Strong pull', 'Magnetic'],
+  },
+  connection: {
+    icon: 'heart' as const,
+    color: '#EC4899',
+    gradientColors: ['#FBCFE8', '#F9A8D4'] as [string, string],
+    labels: ['', 'Surface level', 'Building', 'Meaningful', 'Deep bond', 'Soulful'],
+  },
+  compatibility: {
+    icon: 'sparkles' as const,
+    color: '#8B5CF6',
+    gradientColors: ['#DDD6FE', '#C4B5FD'] as [string, string],
+    labels: ['', 'Different paths', 'Some overlap', 'Good fit', 'Great match', 'Perfect sync'],
+  },
+};
+
+// Vibe Rating Row Component - Compact Design
 const VibeRatingRow: React.FC<{
   label: string;
+  type: 'attraction' | 'connection' | 'compatibility';
   value: number | undefined;
   onRate: (rating: number) => void;
-}> = ({ label, value, onRate }) => {
-  const handleHeartPress = (rating: number) => {
+}> = ({ label, type, value, onRate }) => {
+  const config = VIBE_CATEGORIES[type];
+  const animatedValues = useRef(
+    [1, 2, 3, 4, 5].map(() => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    animatedValues.forEach((anim, index) => {
+      const isFilled = value && index + 1 <= value;
+      Animated.timing(anim, {
+        toValue: isFilled ? 1 : 0,
+        duration: isFilled ? 200 : 150,
+        easing: isFilled ? Easing.out(Easing.back(1.5)) : Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+    });
+  }, [value, animatedValues]);
+
+  const handleSegmentPress = (rating: number) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // Toggle off if same rating is pressed
     if (value === rating) {
       onRate(0);
     } else {
@@ -401,23 +440,48 @@ const VibeRatingRow: React.FC<{
   };
 
   return (
-    <View style={styles.vibeRatingRow}>
-      <Text style={styles.vibeRatingLabel}>{label}</Text>
-      <View style={styles.vibeRatingHearts}>
-        {[1, 2, 3, 4, 5].map((rating) => (
-          <TouchableOpacity
-            key={rating}
-            onPress={() => handleHeartPress(rating)}
-            activeOpacity={0.6}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          >
-            <Ionicons
-              name={value && rating <= value ? 'heart' : 'heart-outline'}
-              size={20}
-              color={value && rating <= value ? ACCENT_COLOR : '#D1D5DB'}
-            />
-          </TouchableOpacity>
-        ))}
+    <View style={styles.vibeMetricRow}>
+      <View style={styles.vibeMetricLeft}>
+        <View
+          style={[
+            styles.vibeMetricIcon,
+            { backgroundColor: `${config.color}12` },
+          ]}
+        >
+          <Ionicons name={config.icon} size={11} color={config.color} />
+        </View>
+        <Text style={styles.vibeMetricLabel}>{label}</Text>
+      </View>
+
+      <View style={styles.vibeSegmentsRow}>
+        {[1, 2, 3, 4, 5].map((rating) => {
+          const fillWidth = animatedValues[rating - 1].interpolate({
+            inputRange: [0, 1],
+            outputRange: ['0%', '100%'],
+          });
+
+          return (
+            <TouchableOpacity
+              key={rating}
+              onPress={() => handleSegmentPress(rating)}
+              activeOpacity={0.7}
+              style={styles.vibeSegmentTouch}
+              hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
+            >
+              <View style={styles.vibeSegmentBg}>
+                <Animated.View
+                  style={[
+                    styles.vibeSegmentFill,
+                    {
+                      width: fillWidth,
+                      backgroundColor: config.color,
+                    },
+                  ]}
+                />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -1281,7 +1345,7 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
           {/* Vibe Ratings Card */}
           <View style={styles.vibeCard}>
             <View style={styles.vibeCardHeader}>
-              <View style={styles.vibeCardIconCircle}>
+              <View style={[styles.vibeCardIconCircle, { backgroundColor: '#FFF1F2' }]}>
                 <Ionicons name="heart" size={12} color={ACCENT_COLOR} />
               </View>
               <Text style={styles.vibeCardTitle}>The Vibe</Text>
@@ -1289,16 +1353,19 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             <View style={styles.vibeRatingsContainer}>
               <VibeRatingRow
                 label="Attraction"
+                type="attraction"
                 value={vibeRatings.attraction}
                 onRate={(rating) => handleVibeRating('attraction', rating)}
               />
               <VibeRatingRow
                 label="Connection"
+                type="connection"
                 value={vibeRatings.connection}
                 onRate={(rating) => handleVibeRating('connection', rating)}
               />
               <VibeRatingRow
                 label="Compatibility"
+                type="compatibility"
                 value={vibeRatings.compatibility}
                 onRate={(rating) => handleVibeRating('compatibility', rating)}
               />
@@ -2740,7 +2807,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Vibe Ratings Card
+  // Vibe Ratings Card - Compact Design
   vibeCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -2763,7 +2830,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#FFF1F2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -2777,6 +2843,50 @@ const styles = StyleSheet.create({
   vibeRatingsContainer: {
     gap: 10,
   },
+  // Compact vibe metric row
+  vibeMetricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  vibeMetricLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  vibeMetricIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vibeMetricLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  // Compact segment indicators
+  vibeSegmentsRow: {
+    flexDirection: 'row',
+    gap: 4,
+    width: 130,
+  },
+  vibeSegmentTouch: {
+    flex: 1,
+  },
+  vibeSegmentBg: {
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  vibeSegmentFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  // Legacy styles (kept for compatibility)
   vibeRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
