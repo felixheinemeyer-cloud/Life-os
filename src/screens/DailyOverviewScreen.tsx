@@ -6,11 +6,19 @@ import {
   TouchableOpacity,
   Pressable,
   Animated,
+  Modal,
+  Alert,
+  Easing,
+  GestureResponderEvent,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio, Video, ResizeMode } from 'expo-av';
+import * as MediaLibrary from 'expo-media-library';
 
 interface DailyOverviewScreenProps {
   navigation?: {
@@ -42,6 +50,11 @@ interface EveningData {
     satisfaction: number;
   };
   journal: string;
+  journalType?: 'text' | 'voice' | 'video';
+  journalVoiceUri?: string | null;
+  journalVoiceDuration?: number;
+  journalVideoUri?: string | null;
+  journalVideoDuration?: number;
 }
 
 const getMockData = (dateKey: string): { morning: MorningData; evening: EveningData } => {
@@ -383,12 +396,69 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
   const dateKey = getDateKey(currentDate);
   const dateDisplay = formatDisplayDate(currentDate);
 
-  const { morning, evening } = getMockData(dateKey);
+  const { morning, evening: mockEvening } = getMockData(dateKey);
+  const [eveningOverride, setEveningOverride] = useState<EveningData | null>(null);
+  const evening = eveningOverride || mockEvening;
+
+  // Voice playback state
+  const [isVoicePlaying, setIsVoicePlaying] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const voiceProgress = useRef(new Animated.Value(0)).current;
+  const voiceAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const voiceProgressBarWidth = useRef(0);
+  const [voiceDurationMs, setVoiceDurationMs] = useState(0);
+
+  // Video playback state
+  const videoRef = useRef<Video>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  // Fullscreen video state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenVideoRef = useRef<Video>(null);
+  const [isFsPlaying, setIsFsPlaying] = useState(false);
+  const [fsProgress, setFsProgress] = useState(0);
+  const [fsDurationMs, setFsDurationMs] = useState(0);
+  const [fsPositionMs, setFsPositionMs] = useState(0);
+  const fsProgressBarWidth = useRef(0);
+  const [fsNaturalAspect, setFsNaturalAspect] = useState(9 / 16);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
+  }, []);
+
+  // Load evening data from AsyncStorage
+  useEffect(() => {
+    const loadEvening = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(`@life_os_evening_${dateKey}`);
+        if (stored) {
+          setEveningOverride(JSON.parse(stored));
+        } else {
+          setEveningOverride(null);
+        }
+      } catch (e) {
+        setEveningOverride(null);
+      }
+    };
+    loadEvening();
+    // Clean up playback on date change
+    voiceAnimRef.current?.stop();
+    soundRef.current?.unloadAsync();
+    soundRef.current = null;
+    setIsVoicePlaying(false);
+    voiceProgress.setValue(0);
+    setIsVideoPlaying(false);
+    setIsFullscreen(false);
+    setIsFsPlaying(false);
+  }, [dateKey]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
   }, []);
 
   const handleBack = () => {
@@ -422,6 +492,171 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
       date: dateKey
     });
   };
+
+  const formatMediaDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const startVoiceAnimation = (fromFraction: number, totalMs: number) => {
+    voiceAnimRef.current?.stop();
+    const remainingMs = totalMs * (1 - fromFraction);
+    voiceAnimRef.current = Animated.timing(voiceProgress, {
+      toValue: 1,
+      duration: remainingMs,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    });
+    voiceAnimRef.current.start(({ finished }) => {
+      if (finished) {
+        setIsVoicePlaying(false);
+        voiceProgress.setValue(0);
+      }
+    });
+  };
+
+  const toggleVoicePlayback = async () => {
+    if (!evening.journalVoiceUri) return;
+
+    if (isVoicePlaying && soundRef.current) {
+      voiceAnimRef.current?.stop();
+      await soundRef.current.pauseAsync();
+      setIsVoicePlaying(false);
+      return;
+    }
+
+    if (soundRef.current) {
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded) {
+        const dur = status.durationMillis || 0;
+        setVoiceDurationMs(dur);
+        const atEnd = dur > 0 && status.positionMillis >= dur - 50;
+        if (atEnd) {
+          await soundRef.current.setPositionAsync(0);
+          voiceProgress.setValue(0);
+          await soundRef.current.playAsync();
+          setIsVoicePlaying(true);
+          startVoiceAnimation(0, dur);
+        } else {
+          await soundRef.current.playAsync();
+          setIsVoicePlaying(true);
+          const frac = dur > 0 ? status.positionMillis / dur : 0;
+          startVoiceAnimation(frac, dur);
+        }
+        return;
+      }
+    }
+
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: evening.journalVoiceUri },
+      { shouldPlay: true },
+      (status) => {
+        if (status.isLoaded) {
+          if (status.durationMillis) {
+            setVoiceDurationMs(status.durationMillis);
+          }
+          if (status.didJustFinish) {
+            voiceAnimRef.current?.stop();
+            setIsVoicePlaying(false);
+            voiceProgress.setValue(0);
+          }
+        }
+      }
+    );
+    soundRef.current = sound;
+    setIsVoicePlaying(true);
+    const totalMs = (evening.journalVoiceDuration || 0) * 1000;
+    setVoiceDurationMs(totalMs);
+    if (totalMs > 0) {
+      startVoiceAnimation(0, totalMs);
+    }
+  };
+
+
+  const toggleVideoPlayback = async () => {
+    if (!videoRef.current) return;
+
+    if (isVideoPlaying) {
+      await videoRef.current.pauseAsync();
+      setIsVideoPlaying(false);
+    } else {
+      const status = await videoRef.current.getStatusAsync();
+      if (status.isLoaded && status.positionMillis >= (status.durationMillis || 0) - 50) {
+        await videoRef.current.setPositionAsync(0);
+      }
+      await videoRef.current.playAsync();
+      setIsVideoPlaying(true);
+    }
+  };
+
+  const openFullscreen = async () => {
+    if (videoRef.current) {
+      await videoRef.current.pauseAsync();
+      setIsVideoPlaying(false);
+    }
+    setIsFsPlaying(false);
+    setFsProgress(0);
+    setFsPositionMs(0);
+    setIsFullscreen(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const closeFullscreen = async () => {
+    if (fullscreenVideoRef.current) {
+      await fullscreenVideoRef.current.pauseAsync();
+    }
+    setIsFsPlaying(false);
+    setIsFullscreen(false);
+  };
+
+  const toggleFsPlayback = async () => {
+    if (!fullscreenVideoRef.current) return;
+
+    if (isFsPlaying) {
+      await fullscreenVideoRef.current.pauseAsync();
+      setIsFsPlaying(false);
+    } else {
+      const status = await fullscreenVideoRef.current.getStatusAsync();
+      if (status.isLoaded && status.positionMillis >= (status.durationMillis || 0) - 50) {
+        await fullscreenVideoRef.current.setPositionAsync(0);
+      }
+      await fullscreenVideoRef.current.playAsync();
+      setIsFsPlaying(true);
+    }
+  };
+
+  const handleFsSeek = async (e: GestureResponderEvent) => {
+    if (!fullscreenVideoRef.current || fsProgressBarWidth.current === 0 || fsDurationMs === 0) return;
+    const locationX = e.nativeEvent.locationX;
+    const fraction = Math.max(0, Math.min(1, locationX / fsProgressBarWidth.current));
+    setFsProgress(fraction);
+    setFsPositionMs(fraction * fsDurationMs);
+    await fullscreenVideoRef.current.setPositionAsync(fraction * fsDurationMs);
+  };
+
+  const handleDownloadVideo = async () => {
+    if (!evening.journalVideoUri) return;
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please allow photo library access to save videos.');
+        return;
+      }
+      await MediaLibrary.saveToLibraryAsync(evening.journalVideoUri);
+      if (Platform.OS === 'ios') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      Alert.alert('Saved', 'Video saved to your photo library.');
+    } catch {
+      Alert.alert('Error', 'Could not save the video.');
+    }
+  };
+
+  const hasJournalContent =
+    ((!evening.journalType || evening.journalType === 'text') && evening.journal) ||
+    (evening.journalType === 'voice' && evening.journalVoiceUri) ||
+    (evening.journalType === 'video' && evening.journalVideoUri);
 
   // Check if we're at today (can't go forward)
   const today = new Date();
@@ -664,8 +899,11 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
           </View>
 
           {/* Journal Card - Standalone */}
-          {evening.journal && (
-            <View style={styles.journalCard}>
+          {evening.completed && hasJournalContent && (
+            <View style={[
+              styles.journalCard,
+              evening.journalType === 'video' && styles.journalCardVideo,
+            ]}>
               <View style={styles.journalCardHeader}>
                 <LinearGradient
                   colors={['#A78BFA', '#8B5CF6', '#7C3AED']}
@@ -674,20 +912,135 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
                   end={{ x: 1, y: 1 }}
                 >
                   <View style={styles.sectionIconInner}>
-                    <Ionicons name="book" size={22} color="#7C3AED" />
+                    <Ionicons
+                      name={
+                        evening.journalType === 'voice' ? 'mic' :
+                        evening.journalType === 'video' ? 'videocam' : 'book'
+                      }
+                      size={22}
+                      color="#7C3AED"
+                    />
                   </View>
                 </LinearGradient>
                 <View style={styles.sectionTitleContainer}>
-                  <Text style={styles.journalCardTitle}>Journal</Text>
+                  <Text style={styles.journalCardTitle}>
+                    {evening.journalType === 'voice' ? 'Voice Journal' :
+                     evening.journalType === 'video' ? 'Video Journal' : 'Journal'}
+                  </Text>
                   <View style={styles.completedBadge}>
                     <Ionicons name="checkmark-circle" size={14} color="#059669" />
                     <Text style={styles.completedText}>Completed</Text>
                   </View>
                 </View>
               </View>
-              <View style={styles.journalContentContainer}>
-                <Text style={styles.journalContentText}>{evening.journal}</Text>
-              </View>
+
+              {/* Text Journal */}
+              {(!evening.journalType || evening.journalType === 'text') && evening.journal ? (
+                <View style={styles.journalContentContainer}>
+                  <Text style={styles.journalContentText}>{evening.journal}</Text>
+                </View>
+              ) : null}
+
+              {/* Voice Journal */}
+              {evening.journalType === 'voice' && evening.journalVoiceUri ? (
+                <View>
+                  <TouchableOpacity
+                    style={styles.voiceJournalPlayer}
+                    onPress={toggleVoicePlayback}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.voicePlayIcon}>
+                      <Ionicons
+                        name={isVoicePlaying ? 'pause' : 'play'}
+                        size={14}
+                        color="#7C3AED"
+                        style={!isVoicePlaying ? { marginLeft: 1 } : undefined}
+                      />
+                    </View>
+                    <View style={styles.voiceJournalInfo}>
+                      <Text style={styles.voiceJournalLabel}>Voice Memo</Text>
+                      <Text style={styles.voiceJournalDuration}>
+                        {formatMediaDuration(evening.journalVoiceDuration || 0)}
+                      </Text>
+                    </View>
+                    <View style={styles.voicePlayHint}>
+                      <Text style={styles.voicePlayHintText}>
+                        {isVoicePlaying ? 'Tap to pause' : 'Tap to play'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                  {/* Seekable progress bar */}
+                  <Pressable
+                    style={styles.voiceProgressTrack}
+                    hitSlop={{ top: 12, bottom: 12 }}
+                    onLayout={(e) => { voiceProgressBarWidth.current = e.nativeEvent.layout.width; }}
+                    onPress={(e) => {
+                      if (!soundRef.current || voiceProgressBarWidth.current === 0 || voiceDurationMs === 0) return;
+                      voiceAnimRef.current?.stop();
+                      const fraction = Math.max(0, Math.min(1, e.nativeEvent.locationX / voiceProgressBarWidth.current));
+                      voiceProgress.setValue(fraction);
+                      soundRef.current.setPositionAsync(fraction * voiceDurationMs);
+                      if (isVoicePlaying) {
+                        startVoiceAnimation(fraction, voiceDurationMs);
+                      }
+                    }}
+                  >
+                    <Animated.View style={[styles.voiceProgressFill, {
+                      width: voiceProgress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    }]} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {/* Video Journal */}
+              {evening.journalType === 'video' && evening.journalVideoUri ? (
+                <TouchableOpacity
+                  onPress={toggleVideoPlayback}
+                  activeOpacity={0.95}
+                  style={styles.videoJournalTouchable}
+                >
+                  <View style={styles.videoJournalPreview}>
+                    <Video
+                      ref={videoRef}
+                      source={{ uri: evening.journalVideoUri }}
+                      style={styles.videoJournalVideo}
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay={false}
+                      isLooping={false}
+                      onPlaybackStatusUpdate={(status) => {
+                        if (status.isLoaded && status.didJustFinish) {
+                          setIsVideoPlaying(false);
+                        }
+                      }}
+                    />
+                    {!isVideoPlaying && (
+                      <View style={styles.videoJournalOverlay}>
+                        <View style={styles.videoJournalPlayCircle}>
+                          <Ionicons name="play" size={24} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                        </View>
+                      </View>
+                    )}
+                    <View style={styles.videoJournalDurationBadge}>
+                      <Ionicons name="time-outline" size={11} color="#FFFFFF" />
+                      <Text style={styles.videoJournalDurationText}>
+                        {formatMediaDuration(evening.journalVideoDuration || 0)}
+                      </Text>
+                    </View>
+
+                    {/* Fullscreen button */}
+                    <TouchableOpacity
+                      style={styles.videoExpandButton}
+                      onPress={openFullscreen}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="expand" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              ) : null}
             </View>
           )}
 
@@ -749,6 +1102,109 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
           <View style={styles.headerSpacer} />
         </View>
       </View>
+
+      {/* Fullscreen Video Modal */}
+      {evening.journalVideoUri ? (
+        <Modal
+          visible={isFullscreen}
+          animationType="fade"
+          statusBarTranslucent
+        >
+          <View style={styles.fsContainer}>
+            {/* Top bar with close + download */}
+            <View style={[styles.fsTopBar, { paddingTop: insets.top + 8 }]}>
+              <TouchableOpacity
+                style={styles.fsCloseButton}
+                onPress={closeFullscreen}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.fsDownloadButton}
+                onPress={handleDownloadVideo}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="download-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Video — 16px below the top bar, sized to natural aspect ratio */}
+            <View style={styles.fsVideoArea}>
+              <View style={{ width: '100%', aspectRatio: fsNaturalAspect }}>
+                <Video
+                  ref={fullscreenVideoRef}
+                  source={{ uri: evening.journalVideoUri }}
+                  style={styles.fsVideo}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={false}
+                  isLooping={false}
+                  onReadyForDisplay={(event: { naturalSize: { width: number; height: number } }) => {
+                    const { width, height } = event.naturalSize;
+                    if (width > 0 && height > 0) {
+                      setFsNaturalAspect(width / height);
+                    }
+                  }}
+                  onPlaybackStatusUpdate={(status) => {
+                    if (status.isLoaded) {
+                      if (status.durationMillis) {
+                        setFsDurationMs(status.durationMillis);
+                        setFsPositionMs(status.positionMillis);
+                        setFsProgress(status.positionMillis / status.durationMillis);
+                      }
+                      if (status.didJustFinish) {
+                        setIsFsPlaying(false);
+                        setFsProgress(0);
+                        setFsPositionMs(0);
+                      }
+                    }
+                  }}
+                />
+
+                {/* Tap to play/pause */}
+                <Pressable onPress={toggleFsPlayback} style={styles.fsTapArea}>
+                  {!isFsPlaying && (
+                    <View style={styles.fsPlayOverlay}>
+                      <View style={styles.fsPlayCircle}>
+                        <Ionicons name="play" size={36} color="#FFFFFF" style={{ marginLeft: 4 }} />
+                      </View>
+                    </View>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Bottom controls */}
+            <View style={[styles.fsBottomBar, { paddingBottom: insets.bottom + 16 }]}>
+              <LinearGradient
+                colors={['transparent', 'rgba(0, 0, 0, 0.7)']}
+                style={styles.fsBottomGradient}
+                pointerEvents="none"
+              />
+              <View style={styles.fsControlsRow}>
+                <Text style={styles.fsTimeText}>
+                  {formatMediaDuration(Math.round(fsPositionMs / 1000))}
+                </Text>
+                <View
+                  style={styles.fsProgressContainer}
+                  onLayout={(e) => { fsProgressBarWidth.current = e.nativeEvent.layout.width; }}
+                  onStartShouldSetResponder={() => true}
+                  onMoveShouldSetResponder={() => true}
+                  onResponderGrant={handleFsSeek}
+                  onResponderMove={handleFsSeek}
+                >
+                  <View style={styles.fsProgressTrack}>
+                    <View style={[styles.fsProgressFill, { width: `${fsProgress * 100}%` }]} />
+                  </View>
+                </View>
+                <Text style={styles.fsTimeText}>
+                  {formatMediaDuration(Math.round(fsDurationMs / 1000))}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </View>
   );
 };
@@ -1284,6 +1740,235 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#374151',
     lineHeight: 20,
+  },
+
+  // Fullscreen Video
+  fsContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  fsVideoArea: {
+    flex: 1,
+    marginTop: 16,
+    justifyContent: 'flex-start',
+  },
+  fsVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  fsTapArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  fsPlayOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fsPlayCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  fsTopBar: {
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  fsDownloadButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fsTopGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  fsCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fsBottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+  },
+  fsBottomGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 160,
+  },
+  fsControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  fsTimeText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  fsProgressContainer: {
+    flex: 1,
+    height: 28,
+    justifyContent: 'center',
+  },
+  fsProgressTrack: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  fsProgressFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  videoExpandButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Voice Journal Player
+  voiceJournalPlayer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  voicePlayIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#EDE9FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  voiceJournalInfo: {
+    flex: 1,
+  },
+  voiceJournalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  voiceJournalDuration: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  voicePlayHint: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  voicePlayHintText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+  voiceProgressTrack: {
+    height: 3,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 1.5,
+    overflow: 'hidden',
+    marginTop: 16,
+  },
+  voiceProgressFill: {
+    height: '100%',
+    backgroundColor: '#7C3AED',
+    borderRadius: 1.5,
+  },
+
+  // Video Journal
+  journalCardVideo: {
+    paddingBottom: 0,
+    overflow: 'hidden',
+  },
+  videoJournalTouchable: {
+    marginHorizontal: -16,
+  },
+  videoJournalPreview: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    backgroundColor: '#000',
+  },
+  videoJournalVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  videoJournalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoJournalPlayCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  videoJournalDurationBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  videoJournalDurationText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
 
   bottomSpacer: {

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import content components
 import EveningTrackingPriorityContent from '../components/tracking/EveningTrackingPriorityContent';
@@ -30,6 +31,7 @@ interface EveningTrackingContainerScreenProps {
   route?: {
     params?: {
       morningCheckInCompleted?: boolean;
+      date?: string;
     };
   };
 }
@@ -44,6 +46,11 @@ interface TrackingData {
     satisfaction: number;
   };
   journalText: string;
+  journalType: 'text' | 'voice' | 'video';
+  journalVoiceUri: string | null;
+  journalVoiceDuration: number;
+  journalVideoUri: string | null;
+  journalVideoDuration: number;
 }
 
 const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenProps> = ({
@@ -52,6 +59,7 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
 }) => {
   // Check if morning check-in was completed (passed from Dashboard)
   const morningCheckInCompleted = route?.params?.morningCheckInCompleted ?? false;
+  const dateKey = route?.params?.date || `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
 
   const [currentStep, setCurrentStep] = useState(0);
   const [trackingData, setTrackingData] = useState<TrackingData>({
@@ -59,6 +67,11 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
     morningPriority: "Finish the project proposal and send it to the team",
     ratings: { nutrition: 5, energy: 5, satisfaction: 5 },
     journalText: '',
+    journalType: 'text',
+    journalVoiceUri: null,
+    journalVoiceDuration: 0,
+    journalVideoUri: null,
+    journalVideoDuration: 0,
   });
 
   // Animation value for horizontal scroll position
@@ -108,7 +121,7 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -118,8 +131,26 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - go to completion screen
-      console.log('Evening tracking complete:', trackingData);
+      // Final step - save and go to completion screen
+      try {
+        const eveningData = {
+          completed: true,
+          priorityCompleted: trackingData.priorityCompleted,
+          ratings: trackingData.ratings,
+          journalType: trackingData.journalType,
+          journal: trackingData.journalText,
+          journalVoiceUri: trackingData.journalVoiceUri,
+          journalVoiceDuration: trackingData.journalVoiceDuration,
+          journalVideoUri: trackingData.journalVideoUri,
+          journalVideoDuration: trackingData.journalVideoDuration,
+        };
+        await AsyncStorage.setItem(
+          `@life_os_evening_${dateKey}`,
+          JSON.stringify(eveningData)
+        );
+      } catch (e) {
+        console.error('Failed to save evening data:', e);
+      }
       navigation?.navigate('EveningTrackingComplete', {
         priorityCompleted: trackingData.priorityCompleted,
         morningPriority: trackingData.morningPriority,
@@ -240,6 +271,35 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
                 journalText={trackingData.journalText}
                 onJournalChange={(value) => updateTrackingData('journalText', value)}
                 onContinue={handleContinue}
+                onTabChange={(tab) => updateTrackingData('journalType', tab)}
+                onVoiceRecordingComplete={(uri, duration) => {
+                  setTrackingData((prev) => ({
+                    ...prev,
+                    journalVoiceUri: uri,
+                    journalVoiceDuration: duration,
+                  }));
+                }}
+                onVoiceRecordingDelete={() => {
+                  setTrackingData((prev) => ({
+                    ...prev,
+                    journalVoiceUri: null,
+                    journalVoiceDuration: 0,
+                  }));
+                }}
+                onVideoRecordingComplete={(uri, duration) => {
+                  setTrackingData((prev) => ({
+                    ...prev,
+                    journalVideoUri: uri,
+                    journalVideoDuration: duration,
+                  }));
+                }}
+                onVideoRecordingDelete={() => {
+                  setTrackingData((prev) => ({
+                    ...prev,
+                    journalVideoUri: null,
+                    journalVideoDuration: 0,
+                  }));
+                }}
               />
             </View>
           </Animated.View>

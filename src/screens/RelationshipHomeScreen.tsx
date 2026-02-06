@@ -1414,7 +1414,7 @@ const styles = StyleSheet.create({
   // Hero Section
   heroSection: {
     marginBottom: 48,
-    marginHorizontal: 8,
+    marginHorizontal: 16,
   },
   heroPhotoContainer: {
     height: 346,
@@ -1451,7 +1451,7 @@ const styles = StyleSheet.create({
   },
   heroInfoCard: {
     marginTop: -38,
-    marginHorizontal: 16,
+    marginHorizontal: -16,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingVertical: 14,
