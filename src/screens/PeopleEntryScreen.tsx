@@ -562,7 +562,7 @@ const PeopleEntryScreen: React.FC<PeopleEntryScreenProps> = ({ navigation, route
             {/* Avatar Preview */}
             <View style={styles.avatarPreviewContainer}>
               <LinearGradient
-                colors={selectedCategoryData?.colors || ['#F3F4F6', '#E5E7EB', '#D1D5DB']}
+                colors={['#F3F4F6', '#E5E7EB', '#D1D5DB']}
                 style={styles.avatarPreview}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -873,11 +873,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
   },
   avatarInitials: {
     fontSize: 28,

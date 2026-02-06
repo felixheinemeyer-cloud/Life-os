@@ -63,43 +63,58 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
 
 // Category styling
-const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; badgeColor: string; ringColor: string } => {
+const getCategoryStyle = (category: string): { colors: [string, string, string]; textColor: string; initialsColor: string; badgeColor: string; ringColor: string; borderColor: string; dotColor: string } => {
   switch (category.toLowerCase()) {
     case 'family':
       return {
         colors: ['#FCE7F3', '#FBCFE8', '#F9A8D4'],
-        textColor: '#BE185D',
-        badgeColor: '#FCE7F3',
+        textColor: '#1F2937',
+        initialsColor: '#BE185D',
+        badgeColor: '#FFFFFF',
         ringColor: '#F9A8D4',
+        borderColor: '#E5E7EB',
+        dotColor: '#BE185D',
       };
     case 'close friend':
       return {
         colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
-        textColor: '#1D4ED8',
-        badgeColor: '#DBEAFE',
+        textColor: '#1F2937',
+        initialsColor: '#1D4ED8',
+        badgeColor: '#FFFFFF',
         ringColor: '#93C5FD',
+        borderColor: '#E5E7EB',
+        dotColor: '#1D4ED8',
       };
     case 'friend':
       return {
         colors: ['#EDE9FE', '#DDD6FE', '#C4B5FD'],
-        textColor: '#7C3AED',
-        badgeColor: '#EDE9FE',
+        textColor: '#1F2937',
+        initialsColor: '#7C3AED',
+        badgeColor: '#FFFFFF',
         ringColor: '#C4B5FD',
+        borderColor: '#E5E7EB',
+        dotColor: '#7C3AED',
       };
     case 'work':
       return {
         colors: ['#D1FAE5', '#A7F3D0', '#6EE7B7'],
-        textColor: '#047857',
-        badgeColor: '#D1FAE5',
+        textColor: '#1F2937',
+        initialsColor: '#047857',
+        badgeColor: '#FFFFFF',
         ringColor: '#6EE7B7',
+        borderColor: '#E5E7EB',
+        dotColor: '#047857',
       };
     case 'acquaintance':
     default:
       return {
         colors: ['#F3F4F6', '#E5E7EB', '#D1D5DB'],
-        textColor: '#6B7280',
-        badgeColor: '#F3F4F6',
+        textColor: '#1F2937',
+        initialsColor: '#6B7280',
+        badgeColor: '#FFFFFF',
         ringColor: '#D1D5DB',
+        borderColor: '#E5E7EB',
+        dotColor: '#6B7280',
       };
   }
 };
@@ -786,7 +801,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={[styles.avatarInitials, { color: categoryStyle.textColor }]}>
+                <Text style={[styles.avatarInitials, { color: categoryStyle.initialsColor }]}>
                   {contact.initials}
                 </Text>
               </LinearGradient>
@@ -796,7 +811,8 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
             <Text style={styles.contactName}>{contact.name}</Text>
 
             {/* Category Badge */}
-            <View style={[styles.categoryBadge, { backgroundColor: categoryStyle.badgeColor }]}>
+            <View style={[styles.categoryBadge, { backgroundColor: categoryStyle.badgeColor, borderColor: categoryStyle.borderColor }]}>
+              <View style={[styles.categoryBadgeDot, { backgroundColor: categoryStyle.dotColor }]} />
               <Text style={[styles.categoryBadgeText, { color: categoryStyle.textColor }]}>
                 {contact.category}
               </Text>
@@ -1078,17 +1094,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
               />
             ))}
 
-            {notes.length === 0 && (
-              <View style={styles.emptyNotesContainer}>
-                <View style={styles.emptyNotesIcon}>
-                  <Ionicons name="document-text-outline" size={32} color="#D1D5DB" />
-                </View>
-                <Text style={styles.emptyNotesText}>No notes yet</Text>
-                <Text style={styles.emptyNotesSubtext}>
-                  Add notes about {contact.name.split(' ')[0]} to remember important details
-                </Text>
-              </View>
-            )}
           </View>
 
           <View style={styles.bottomSpacer} />
@@ -1306,42 +1311,6 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({ navigation, r
                 />
               </View>
 
-              <View style={styles.datePickerQuickOptions}>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    setContactAgainDate(tomorrow);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>Tomorrow</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const nextWeek = new Date();
-                    nextWeek.setDate(nextWeek.getDate() + 7);
-                    setContactAgainDate(nextWeek);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>In a week</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.quickDateOption}
-                  onPress={() => {
-                    const nextMonth = new Date();
-                    nextMonth.setMonth(nextMonth.getMonth() + 1);
-                    setContactAgainDate(nextMonth);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickDateText}>In a month</Text>
-                </TouchableOpacity>
-              </View>
-
               <View style={styles.datePickerActions}>
                 <TouchableOpacity
                   onPress={handleClearDate}
@@ -1464,8 +1433,8 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
@@ -1485,15 +1454,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryBadge: {
-    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  categoryBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   categoryBadgeText: {
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.1,
+    fontWeight: '500',
   },
   quickActions: {
     flexDirection: 'row',
@@ -1607,12 +1589,11 @@ const styles = StyleSheet.create({
   },
   // Active Reminder State - Compact Design
   activeReminderContainer: {
-    paddingVertical: 4,
   },
   activeReminderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   activeReminderIconSmall: {
     width: 36,
@@ -1691,12 +1672,11 @@ const styles = StyleSheet.create({
 
   // Empty Reminder State - Compact Design
   emptyReminderContainer: {
-    paddingVertical: 4,
   },
   emptyReminderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   emptyReminderIconSmall: {
     width: 36,
@@ -1724,33 +1704,31 @@ const styles = StyleSheet.create({
   },
   quickReminderOptions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   quickReminderChip: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
   },
   quickReminderChipText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4B5563',
   },
   quickReminderChipCustom: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderRadius: 14,
   },
 
   // Contact Info
@@ -1758,7 +1736,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
@@ -1843,7 +1821,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -2085,11 +2063,9 @@ const styles = StyleSheet.create({
   },
   datePickerClearButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingVertical: 18,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2097,19 +2073,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#6B7280',
+    letterSpacing: -0.2,
   },
   datePickerDoneButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 14,
     backgroundColor: '#1F2937',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   datePickerDoneText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
 
   // More Button + Dropdown
