@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,6 +10,7 @@ import { MediaProvider } from './src/context/MediaContext';
 import { BookProvider } from './src/context/BookContext';
 import { StreakProvider } from './src/context/StreakContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import OnboardingContainerScreen from './src/screens/OnboardingContainerScreen';
 
 import KnowledgeHubScreen from './src/screens/KnowledgeHubScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -278,6 +279,19 @@ const KnowledgeStack = () => {
 };
 
 const App = (): React.JSX.Element => {
+  // Always show onboarding on launch (for design iteration)
+  // TODO: persist with AsyncStorage when onboarding is finalized
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+
+  if (!onboardingComplete) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <OnboardingContainerScreen onComplete={() => setOnboardingComplete(true)} />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <StreakProvider>
