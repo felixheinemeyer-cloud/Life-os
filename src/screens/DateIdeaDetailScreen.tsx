@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DONE_IDEAS_STORAGE_KEY = '@done_date_ideas';
 const SAVED_IDEAS_STORAGE_KEY = '@saved_date_ideas';
 
 interface DateIdeaDetailScreenProps {
@@ -35,7 +34,6 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
 
   // State
   const [isSaved, setIsSaved] = useState(false);
-  const [isDone, setIsDone] = useState(false);
   const [completedChallenges, setCompletedChallenges] = useState<Set<string>>(new Set());
 
   // Animations
@@ -43,7 +41,7 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
   const slideAnim = useRef(new Animated.Value(20)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
-  // Load saved and done status
+  // Load saved status
   useEffect(() => {
     const loadStatus = async () => {
       try {
@@ -51,12 +49,6 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
         if (savedStored) {
           const savedIdeas = new Set(JSON.parse(savedStored));
           setIsSaved(savedIdeas.has(idea.id));
-        }
-
-        const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
-        if (doneStored) {
-          const doneIdeas = new Set(JSON.parse(doneStored));
-          setIsDone(doneIdeas.has(idea.id));
         }
       } catch (error) {
         console.error('Error loading status:', error);
@@ -138,38 +130,6 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
       }
       return newSet;
     });
-  };
-
-  const handleMarkAsDone = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-
-    try {
-      const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
-      const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
-      doneIdeas.add(idea.id);
-      await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
-      setIsDone(true);
-    } catch (error) {
-      console.error('Error marking date as done:', error);
-    }
-  };
-
-  const handleUnmarkAsDone = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    try {
-      const doneStored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
-      const doneIdeas = doneStored ? new Set(JSON.parse(doneStored)) : new Set<string>();
-      doneIdeas.delete(idea.id);
-      await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(doneIdeas)));
-      setIsDone(false);
-    } catch (error) {
-      console.error('Error unmarking date as done:', error);
-    }
   };
 
   const getBudgetDisplay = (budget: string): string => {
@@ -428,33 +388,6 @@ const DateIdeaDetailScreen: React.FC<DateIdeaDetailScreenProps> = ({ navigation,
         </View>
       </View>
 
-      {/* Mark as Done Button */}
-      {!isDone && (
-        <View style={[styles.bottomButtonContainer, { bottom: 16 }]}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.8}
-            onPress={handleMarkAsDone}
-          >
-            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>Mark as Done</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Done Button */}
-      {isDone && (
-        <View style={[styles.bottomButtonContainer, { bottom: 16 }]}>
-          <TouchableOpacity
-            style={styles.doneButton}
-            activeOpacity={0.8}
-            onPress={handleUnmarkAsDone}
-          >
-            <Ionicons name="checkmark-circle" size={18} color="#64748B" />
-            <Text style={styles.doneButtonText}>Done</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
@@ -757,23 +690,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  doneButton: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 16,
-    paddingVertical: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  doneButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#64748B',
     letterSpacing: -0.2,
   },
 });
