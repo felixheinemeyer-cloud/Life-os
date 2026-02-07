@@ -1,118 +1,79 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-  Animated,
-  Easing,
-  Dimensions,
-  PanResponder,
-  Modal,
-  TouchableWithoutFeedback,
-  Linking,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform,
+  Animated, Easing, Dimensions, Modal, TouchableWithoutFeedback,
+  Linking, TextInput, KeyboardAvoidingView, PanResponder, Alert,
+  LayoutAnimation, UIManager,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-// Types
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface DatingHomeScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: any) => void;
-  };
+  navigation: { goBack: () => void; navigate: (screen: string, params?: any) => void };
 }
 
-interface VibeRatings {
-  attraction?: number;
-  connection?: number;
-  compatibility?: number;
-}
+interface VibeRatings { attraction?: number; connection?: number; compatibility?: number; }
 
-interface Flag {
-  id: string;
-  text: string;
-  type: 'green' | 'red';
-  createdAt: string;
-}
+interface Flag { id: string; text: string; type: 'green' | 'red'; createdAt: string; }
 
 type DateVibeType = 'amazing' | 'good' | 'okay' | 'meh' | 'bad';
 
 interface DateEntry {
-  id: string;
-  date: string;
-  title: string;
-  location?: string;
-  vibe: DateVibeType;
-  notes?: string;
-  createdAt: string;
+  id: string; date: string; title: string; location?: string;
+  vibe: DateVibeType; notes?: string; createdAt: string;
 }
 
+interface DatingNote { id: string; text: string; createdAt: string; }
+
+interface FirstImpression { text: string; whenWeMet?: string; }
+
 interface DatingPerson {
-  id: string;
-  name: string;
-  initials: string;
-  createdAt: string;
-  phoneNumber?: string;
-  instagram?: string;
-  location?: string;
-  dateOfBirth?: string;
-  rating?: number;
-  notes?: { id: string; text: string; createdAt: string }[];
-  vibeRatings?: VibeRatings;
-  flags?: Flag[];
-  dateHistory?: DateEntry[];
+  id: string; name: string; initials: string; createdAt: string;
+  phoneNumber?: string; instagram?: string; location?: string; dateOfBirth?: string;
+  rating?: number; notes?: DatingNote[]; firstImpression?: FirstImpression;
+  vibeRatings?: VibeRatings; flags?: Flag[]; dateHistory?: DateEntry[];
+}
+
+interface PersonState {
+  notes: DatingNote[]; firstImpression: FirstImpression | null;
+  vibeRatings: VibeRatings; flags: Flag[]; dateHistory: DateEntry[];
 }
 
 interface DateIdea {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  tagline: string;
-  duration: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  bestTime: string;
-  description: string;
-  steps: string[];
-  challenges: Array<{
-    id: string;
-    title: string;
-    description: string;
-  }>;
+  id: string; title: string; subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap; color: string;
+  duration: string; tagline: string; difficulty: string; bestTime: string;
+  description: string; steps: string[];
+  challenges: Array<{ id: string; title: string; description: string }>;
 }
 
 interface DatingAdvice {
-  id: string;
-  title: string;
-  description: string;
+  id: string; title: string; description: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-// Vibe category configurations (matching DatingDetailScreen)
+// ─── Constants ───────────────────────────────────────────────────────────────
+const ACCENT_COLOR = '#E11D48';
+const NOTE_ACTION_WIDTH = 136;
+
 const VIBE_CATEGORIES = {
-  attraction: {
-    icon: 'flame' as const,
-    color: '#F97316',
-    label: 'Attraction',
-  },
-  connection: {
-    icon: 'heart' as const,
-    color: '#EC4899',
-    label: 'Connection',
-  },
-  compatibility: {
-    icon: 'sparkles' as const,
-    color: '#8B5CF6',
-    label: 'Compatibility',
-  },
+  attraction: { icon: 'flame' as const, color: '#F97316', label: 'Attraction',
+    labels: ['', 'Minimal', 'Some spark', 'Good chemistry', 'Strong pull', 'Magnetic'] },
+  connection: { icon: 'heart' as const, color: '#EC4899', label: 'Connection',
+    labels: ['', 'Surface level', 'Building', 'Meaningful', 'Deep bond', 'Soulful'] },
+  compatibility: { icon: 'sparkles' as const, color: '#8B5CF6', label: 'Compatibility',
+    labels: ['', 'Different paths', 'Some overlap', 'Good fit', 'Great match', 'Perfect sync'] },
 };
 
 const DATE_VIBES: { type: DateVibeType; emoji: string; label: string }[] = [
@@ -123,868 +84,147 @@ const DATE_VIBES: { type: DateVibeType; emoji: string; label: string }[] = [
   { type: 'bad', emoji: '😔', label: 'Bad' },
 ];
 
-const getVibeEmoji = (type: DateVibeType): string => {
-  return DATE_VIBES.find(v => v.type === type)?.emoji || '😐';
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const getVibeEmoji = (type: DateVibeType): string =>
+  DATE_VIBES.find(v => v.type === type)?.emoji || '😐';
 
 const getTimeAgo = (dateString: string): string => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor((Date.now() - new Date(dateString).getTime()) / 86400000);
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 14) return '1 week ago';
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 60) return '1 month ago';
   return `${Math.floor(diffDays / 30)} months ago`;
 };
 
-// Mock Data
+const formatBirthday = (d: string): string => {
+  const date = new Date(d);
+  const m = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${m[date.getMonth()]} ${date.getDate()}`;
+};
+
+const formatWhenWeMet = (d: string): string => {
+  const date = new Date(d);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${m[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const formatDateEntryDate = (d: string): string => {
+  const date = new Date(d);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${m[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+};
+
+const initPersonState = (p: DatingPerson): PersonState => ({
+  notes: p.notes || [],
+  firstImpression: p.firstImpression || null,
+  vibeRatings: p.vibeRatings || {},
+  flags: p.flags || [],
+  dateHistory: (p.dateHistory || []).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+});
+
+// ─── Mock Data ───────────────────────────────────────────────────────────────
 const DATING_CRM_DATA: DatingPerson[] = [
   {
-    id: '1',
-    name: 'Sophie',
-    initials: 'S',
-    createdAt: '2024-03-01',
-    phoneNumber: '+1 (555) 123-4567',
-    instagram: 'sophie_h',
-    location: 'Brooklyn, NY',
+    id: '1', name: 'Sophie', initials: 'S', createdAt: '2024-03-01',
+    phoneNumber: '+1 (555) 123-4567', instagram: 'sophie_h', location: 'Brooklyn, NY',
+    dateOfBirth: '1998-06-15',
+    firstImpression: {
+      text: 'She walked in with this incredible energy. We talked for 3 hours and it felt like 20 minutes. Her laugh is contagious.',
+      whenWeMet: '2024-07-15',
+    },
     vibeRatings: { attraction: 4, connection: 5, compatibility: 3 },
     flags: [
       { id: 'f1', text: 'Great listener', type: 'green', createdAt: '2024-03-02' },
       { id: 'f2', text: 'Shares my values', type: 'green', createdAt: '2024-03-03' },
       { id: 'f3', text: 'Often cancels last minute', type: 'red', createdAt: '2024-03-05' },
     ],
+    notes: [
+      { id: 'n1', text: 'Loves Italian food and wine', createdAt: new Date().toISOString() },
+      { id: 'n2', text: 'Works in marketing at a startup', createdAt: new Date().toISOString() },
+    ],
     dateHistory: [
-      { id: 'd1', date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), title: 'Coffee at Blue Bottle', location: 'Williamsburg', vibe: 'amazing', createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-      { id: 'd2', date: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(), title: 'Walk in Prospect Park', location: 'Park Slope', vibe: 'good', createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString() },
+      { id: 'd1', date: new Date(Date.now() - 2*86400000).toISOString(), title: 'Coffee at Blue Bottle', location: 'Williamsburg', vibe: 'amazing', createdAt: new Date(Date.now() - 2*86400000).toISOString() },
+      { id: 'd2', date: new Date(Date.now() - 9*86400000).toISOString(), title: 'Walk in Prospect Park', location: 'Park Slope', vibe: 'good', createdAt: new Date(Date.now() - 9*86400000).toISOString() },
+      { id: 'd3', date: '2024-07-28', title: 'First real date - dinner and walk', location: 'Osteria, West Village', vibe: 'amazing', notes: 'Talked for 4 hours, walked along the Hudson after', createdAt: '2024-07-28' },
     ],
   },
   {
-    id: '2',
-    name: 'Emma',
-    initials: 'E',
-    createdAt: '2024-02-28',
+    id: '2', name: 'Emma', initials: 'E', createdAt: '2024-02-28',
     phoneNumber: '+1 (555) 987-6543',
     vibeRatings: { attraction: 3, connection: 3 },
-    flags: [
-      { id: 'f1', text: 'Really funny', type: 'green', createdAt: '2024-02-28' },
-    ],
+    flags: [{ id: 'f1', text: 'Really funny', type: 'green', createdAt: '2024-02-28' }],
+    notes: [{ id: 'n1', text: 'Met at the bookstore on 5th Ave', createdAt: new Date().toISOString() }],
     dateHistory: [
-      { id: 'd1', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), title: 'Dinner at Lilia', location: 'Williamsburg', vibe: 'good', createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+      { id: 'd1', date: new Date(Date.now() - 5*86400000).toISOString(), title: 'Dinner at Lilia', location: 'Williamsburg', vibe: 'good', createdAt: new Date(Date.now() - 5*86400000).toISOString() },
     ],
   },
   {
-    id: '3',
-    name: 'Mia',
-    initials: 'M',
-    createdAt: '2024-02-25',
-    instagram: 'mia.travels',
-    location: 'Manhattan, NY',
+    id: '3', name: 'Mia', initials: 'M', createdAt: '2024-02-25',
+    instagram: 'mia.travels', location: 'Manhattan, NY',
   },
 ];
 
 const DATE_IDEAS: DateIdea[] = [
-  {
-    id: '1',
-    title: 'Coffee & conversation',
-    subtitle: 'Classic first date',
-    icon: 'cafe-outline',
-    color: '#92400E',
-    tagline: 'Keep it simple with a cozy coffee date',
-    duration: '1-2 hours',
-    difficulty: 'Easy',
-    bestTime: 'Morning or afternoon',
-    description: 'A coffee date is the perfect low-pressure way to get to know someone. It\'s casual, comfortable, and easy to extend if things are going well—or wrap up gracefully if they\'re not. The relaxed atmosphere makes it easier to have genuine conversations.',
-    steps: [
-      'Pick a cozy coffee shop with comfortable seating',
-      'Arrive a few minutes early to settle in',
-      'Order your favorite drink and maybe a pastry to share',
-      'Find a quiet corner where you can actually hear each other',
-      'Ask open-ended questions and actively listen',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'No phone zone',
-        description: 'Keep your phone in your pocket for the entire date',
-      },
-      {
-        id: 'c2',
-        title: 'Share something real',
-        description: 'Tell them about a passion or hobby you genuinely care about',
-      },
-      {
-        id: 'c3',
-        title: 'Make them laugh',
-        description: 'Share a funny story or memory that makes them smile',
-      },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Walk in the park',
-    subtitle: 'Fresh air & easy talk',
-    icon: 'walk-outline',
-    color: '#059669',
-    tagline: 'Stroll, talk, and see where the path leads',
-    duration: '1-2 hours',
-    difficulty: 'Easy',
-    bestTime: 'Afternoon or early evening',
-    description: 'Walking dates are underrated. The side-by-side nature makes conversation feel less intense than sitting face-to-face, and the changing scenery gives you natural things to comment on if the conversation lulls. Plus, the activity makes it feel more dynamic than just sitting.',
-    steps: [
-      'Choose a scenic park or waterfront path',
-      'Check the weather and dress appropriately',
-      'Start walking at a comfortable pace',
-      'Point out interesting things you notice along the way',
-      'Consider grabbing ice cream or a drink midway through',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'People watching',
-        description: 'Make up funny backstories for people you pass',
-      },
-      {
-        id: 'c2',
-        title: 'Photo moment',
-        description: 'Offer to take a photo of them in a pretty spot',
-      },
-      {
-        id: 'c3',
-        title: 'Find a bench',
-        description: 'Sit down somewhere with a nice view and just talk',
-      },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Museum visit',
-    subtitle: 'Art & interesting talk',
-    icon: 'color-palette-outline',
-    color: '#7C3AED',
-    tagline: 'Let art spark meaningful conversations',
-    duration: '2-3 hours',
-    difficulty: 'Easy',
-    bestTime: 'Afternoon',
-    description: 'Museums provide the perfect balance of activity and conversation. You get to see how someone interacts with art, what catches their attention, and what they have to say about it. It\'s a window into how they think and what they value.',
-    steps: [
-      'Pick a museum that interests both of you',
-      'Don\'t try to see everything—let yourselves wander',
-      'Ask them what pieces stand out to them and why',
-      'Share your own reactions and interpretations',
-      'End with coffee or a drink at the museum café',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Favorite piece',
-        description: 'Each pick your favorite piece and explain why',
-      },
-      {
-        id: 'c2',
-        title: 'Make up titles',
-        description: 'Find an untitled piece and come up with names for it together',
-      },
-      {
-        id: 'c3',
-        title: 'Gift shop browse',
-        description: 'Pick out something silly you\'d buy for each other',
-      },
-    ],
-  },
-  {
-    id: '4',
-    title: 'Drinks & appetizers',
-    subtitle: 'Relaxed evening vibe',
-    icon: 'wine-outline',
-    color: '#DC2626',
-    tagline: 'Unwind with good drinks and easy conversation',
-    duration: '2-3 hours',
-    difficulty: 'Easy',
-    bestTime: 'Evening',
-    description: 'Meeting for drinks is a classic for a reason. It\'s more relaxed than dinner (less commitment, easier to extend or end naturally) but still feels like a proper date. Sharing appetizers also gives you something to do with your hands and talk about.',
-    steps: [
-      'Choose a bar or lounge with a good atmosphere',
-      'Arrive on time and text if you\'re running late',
-      'Order a drink you actually enjoy, not what you think you should',
-      'Share a few appetizers to keep it casual',
-      'Pay attention to body language and engagement',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Try something new',
-        description: 'Order a drink or food you\'ve never had before',
-      },
-      {
-        id: 'c2',
-        title: 'Ask deeper questions',
-        description: 'Move beyond small talk—ask what they\'re passionate about',
-      },
-      {
-        id: 'c3',
-        title: 'Share the bill',
-        description: 'Handle the payment smoothly, whatever you both decide',
-      },
-    ],
-  },
-  {
-    id: '5',
-    title: 'Farmers market stroll',
-    subtitle: 'Casual & colorful',
-    icon: 'basket-outline',
-    color: '#EA580C',
-    tagline: 'Browse, sample, and see what catches your eye',
-    duration: '1-2 hours',
-    difficulty: 'Easy',
-    bestTime: 'Weekend morning',
-    description: 'Farmers markets are perfect for first dates. They\'re public and casual, there\'s always something to look at or talk about, and you can easily extend the date by cooking something together with what you buy or grabbing lunch nearby.',
-    steps: [
-      'Meet at the market entrance around mid-morning',
-      'Wander through the stalls together',
-      'Try free samples and share your thoughts',
-      'Pick up ingredients for a future cooking date (subtle hint)',
-      'End with coffee from a vendor or brunch nearby',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Sample everything',
-        description: 'Try at least 3 new foods or drinks together',
-      },
-      {
-        id: 'c2',
-        title: 'Mystery ingredient',
-        description: 'Each buy one unusual ingredient to challenge the other with',
-      },
-      {
-        id: 'c3',
-        title: 'Bouquet gift',
-        description: 'Buy them a small bouquet from a flower stand',
-      },
-    ],
-  },
-  {
-    id: '6',
-    title: 'Bookstore browsing',
-    subtitle: 'For book lovers',
-    icon: 'book-outline',
-    color: '#0891B2',
-    tagline: 'Share your favorite books and discover theirs',
-    duration: '1-2 hours',
-    difficulty: 'Easy',
-    bestTime: 'Afternoon',
-    description: 'Bookstores are intimate without being intense. You learn so much about someone by seeing what books they gravitate toward, what they recommend, and how they talk about what they love to read. It\'s perfect for people who value depth and curiosity.',
-    steps: [
-      'Pick a bookstore with cozy seating areas',
-      'Split up for 10 minutes to find a book for each other',
-      'Share your picks and explain why you chose them',
-      'Browse your favorite sections together',
-      'End with coffee at the café if there is one',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Book recommendations',
-        description: 'Each pick a book the other person should read',
-      },
-      {
-        id: 'c2',
-        title: 'Childhood favorite',
-        description: 'Find a book from your childhood and share the memory',
-      },
-      {
-        id: 'c3',
-        title: 'Random page',
-        description: 'Open a random book, read a line, and discuss what you think',
-      },
-    ],
-  },
-  {
-    id: '7',
-    title: 'Ice cream walk',
-    subtitle: 'Sweet & simple',
-    icon: 'ice-cream-outline',
-    color: '#EC4899',
-    tagline: 'Keep it light and enjoy the moment',
-    duration: '1 hour',
-    difficulty: 'Easy',
-    bestTime: 'Afternoon or evening',
-    description: 'Sometimes the best first dates are the simplest. Getting ice cream and walking around is low-pressure, fun, and gives you a natural activity while you chat. It\'s also easy to keep going if you\'re enjoying yourself or wrap up naturally when you finish.',
-    steps: [
-      'Pick a good ice cream spot in a walkable area',
-      'Take your time choosing flavors—it\'s a conversation starter',
-      'Walk somewhere scenic or interesting nearby',
-      'Focus on light, fun conversation',
-      'See where the evening naturally leads',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Flavor swap',
-        description: 'Try each other\'s flavors and give honest reviews',
-      },
-      {
-        id: 'c2',
-        title: 'Photo swap',
-        description: 'Take a candid photo of them enjoying their ice cream',
-      },
-      {
-        id: 'c3',
-        title: 'Sunset timing',
-        description: 'Time your walk to catch the golden hour light',
-      },
-    ],
-  },
-  {
-    id: '8',
-    title: 'Mini golf',
-    subtitle: 'Playful competition',
-    icon: 'golf-outline',
-    color: '#10B981',
-    tagline: 'A little friendly competition never hurt anyone',
-    duration: '1-2 hours',
-    difficulty: 'Easy',
-    bestTime: 'Afternoon or evening',
-    description: 'Mini golf is perfect because it gives you something fun to do while getting to know each other. The lighthearted competition breaks the ice, and you\'ll learn a lot about someone by seeing how they handle winning, losing, and the inevitable silly moments.',
-    steps: [
-      'Choose a mini golf place with a fun, quirky theme',
-      'Keep score but don\'t take it too seriously',
-      'Celebrate good shots and laugh at the bad ones',
-      'Grab drinks or food afterward to keep talking',
-      'Suggest a rematch if things are going well',
-    ],
-    challenges: [
-      {
-        id: 'c1',
-        title: 'Trick shot',
-        description: 'Each attempt one ridiculous trick shot',
-      },
-      {
-        id: 'c2',
-        title: 'Victory prize',
-        description: 'Winner gets to pick the next date activity',
-      },
-      {
-        id: 'c3',
-        title: 'Photo finish',
-        description: 'Take a photo at the last hole, regardless of who won',
-      },
-    ],
-  },
+  { id: '1', title: 'Coffee & conversation', subtitle: 'Classic first date', icon: 'cafe-outline', color: '#92400E', tagline: 'Keep it simple', duration: '1-2 hours', difficulty: 'Easy', bestTime: 'Morning', description: '', steps: [], challenges: [] },
+  { id: '2', title: 'Walk in the park', subtitle: 'Fresh air & easy talk', icon: 'walk-outline', color: '#059669', tagline: 'Stroll and chat', duration: '1-2 hours', difficulty: 'Easy', bestTime: 'Afternoon', description: '', steps: [], challenges: [] },
+  { id: '3', title: 'Museum visit', subtitle: 'Art & deep talk', icon: 'color-palette-outline', color: '#7C3AED', tagline: 'Let art spark conversation', duration: '2-3 hours', difficulty: 'Easy', bestTime: 'Afternoon', description: '', steps: [], challenges: [] },
+  { id: '4', title: 'Drinks & appetizers', subtitle: 'Relaxed evening vibe', icon: 'wine-outline', color: '#DC2626', tagline: 'Unwind together', duration: '2-3 hours', difficulty: 'Easy', bestTime: 'Evening', description: '', steps: [], challenges: [] },
+  { id: '5', title: 'Farmers market', subtitle: 'Casual & colorful', icon: 'basket-outline', color: '#EA580C', tagline: 'Browse and sample', duration: '1-2 hours', difficulty: 'Easy', bestTime: 'Weekend', description: '', steps: [], challenges: [] },
+  { id: '6', title: 'Bookstore browsing', subtitle: 'For book lovers', icon: 'book-outline', color: '#0891B2', tagline: 'Share favorites', duration: '1-2 hours', difficulty: 'Easy', bestTime: 'Afternoon', description: '', steps: [], challenges: [] },
+  { id: '7', title: 'Ice cream walk', subtitle: 'Sweet & simple', icon: 'ice-cream-outline', color: '#EC4899', tagline: 'Keep it light', duration: '1 hour', difficulty: 'Easy', bestTime: 'Evening', description: '', steps: [], challenges: [] },
+  { id: '8', title: 'Mini golf', subtitle: 'Playful competition', icon: 'golf-outline', color: '#10B981', tagline: 'Friendly competition', duration: '1-2 hours', difficulty: 'Easy', bestTime: 'Afternoon', description: '', steps: [], challenges: [] },
 ];
 
 const DATING_ADVICE_DATA: DatingAdvice[] = [
-  {
-    id: '1',
-    title: 'Green flags to look for',
-    description: 'Signs that someone is emotionally available',
-    icon: 'flag-outline',
-  },
-  {
-    id: '2',
-    title: 'Questions for deeper conversation',
-    description: 'Move beyond small talk',
-    icon: 'chatbubbles-outline',
-  },
-  {
-    id: '3',
-    title: 'Setting healthy boundaries',
-    description: 'How to communicate your needs',
-    icon: 'shield-checkmark-outline',
-  },
+  { id: '1', title: 'Green flags to look for', description: 'Signs that someone is emotionally available', icon: 'flag-outline' },
+  { id: '2', title: 'Questions for deeper conversation', description: 'Move beyond small talk', icon: 'chatbubbles-outline' },
+  { id: '3', title: 'Setting healthy boundaries', description: 'How to communicate your needs', icon: 'shield-checkmark-outline' },
 ];
 
-// Carousel Constants
-const CARD_WIDTH = 220;
-const CARD_HEIGHT = 220;
-const SIDE_CARD_SCALE = 0.8;
-const SIDE_CARD_OFFSET = 96;
-const DRAG_THRESHOLD = 150;
+// ─── Vibe Rating Row Component ───────────────────────────────────────────────
+const VibeRatingRow: React.FC<{
+  label: string; type: 'attraction' | 'connection' | 'compatibility';
+  value: number | undefined; onRate: (rating: number) => void;
+}> = ({ label, type, value, onRate }) => {
+  const config = VIBE_CATEGORIES[type];
+  const animatedValues = useRef([1,2,3,4,5].map(() => new Animated.Value(0))).current;
 
-// Card width for pager (screen width minus horizontal padding)
-const PAGER_CARD_WIDTH = SCREEN_WIDTH - 32;
-
-// Person Card (single page in the pager)
-const PersonCard: React.FC<{
-  person: DatingPerson;
-  onViewProfile: () => void;
-  onCall: () => void;
-  onInstagram: () => void;
-  onOpenMaps: () => void;
-}> = ({ person, onViewProfile, onCall, onInstagram, onOpenMaps }) => {
-  const greenFlags = person.flags?.filter(f => f.type === 'green').length || 0;
-  const redFlags = person.flags?.filter(f => f.type === 'red').length || 0;
-  const lastDate = person.dateHistory?.[0];
-  const hasVibes = person.vibeRatings && (
-    person.vibeRatings.attraction || person.vibeRatings.connection || person.vibeRatings.compatibility
-  );
-  const hasFlags = (person.flags?.length || 0) > 0;
-  const hasContact = person.phoneNumber || person.instagram || person.location;
+  useEffect(() => {
+    animatedValues.forEach((anim, index) => {
+      const isFilled = value && index + 1 <= value;
+      Animated.timing(anim, {
+        toValue: isFilled ? 1 : 0,
+        duration: isFilled ? 200 : 150,
+        easing: isFilled ? Easing.out(Easing.back(1.5)) : Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+    });
+  }, [value, animatedValues]);
 
   return (
-    <View style={[styles.dashboardCard, { width: PAGER_CARD_WIDTH }]}>
-      {/* Header: Avatar + Name */}
-      <View style={styles.dashboardHeader}>
-        <LinearGradient
-          colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-          style={styles.dashboardAvatar}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.dashboardAvatarInitials}>{person.initials}</Text>
-        </LinearGradient>
-        <View style={styles.dashboardHeaderInfo}>
-          <Text style={styles.dashboardName}>{person.name}</Text>
-          {hasContact && (
-            <View style={styles.dashboardContactRow}>
-              {person.phoneNumber && (
-                <TouchableOpacity onPress={onCall} style={styles.dashboardContactIcon} activeOpacity={0.7}>
-                  <Ionicons name="call-outline" size={18} color="#6B7280" />
-                </TouchableOpacity>
-              )}
-              {person.instagram && (
-                <TouchableOpacity onPress={onInstagram} style={styles.dashboardContactIcon} activeOpacity={0.7}>
-                  <Ionicons name="logo-instagram" size={18} color="#6B7280" />
-                </TouchableOpacity>
-              )}
-              {person.location && (
-                <TouchableOpacity onPress={onOpenMaps} style={styles.dashboardContactIcon} activeOpacity={0.7}>
-                  <Ionicons name="location-outline" size={18} color="#6B7280" />
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+    <View style={styles.vibeMetricRow}>
+      <View style={styles.vibeMetricLeft}>
+        <View style={[styles.vibeMetricIcon, { backgroundColor: `${config.color}12` }]}>
+          <Ionicons name={config.icon} size={11} color={config.color} />
         </View>
+        <Text style={styles.vibeMetricLabel}>{label}</Text>
       </View>
-
-      {/* Vibe Bars */}
-      {hasVibes && (
-        <View style={styles.dashboardVibes}>
-          {(['attraction', 'connection', 'compatibility'] as const).map((type) => {
-            const value = person.vibeRatings?.[type];
-            if (!value) return null;
-            const config = VIBE_CATEGORIES[type];
-            return (
-              <View key={type} style={styles.vibeBarRow}>
-                <Ionicons name={config.icon} size={14} color={config.color} style={styles.vibeBarIcon} />
-                <Text style={styles.vibeBarLabel}>{config.label}</Text>
-                <View style={styles.vibeBarTrack}>
-                  {[1, 2, 3, 4, 5].map((seg) => (
-                    <View
-                      key={seg}
-                      style={[
-                        styles.vibeBarSegment,
-                        {
-                          backgroundColor: seg <= value ? config.color : '#F3F4F6',
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      {/* Flag Summary */}
-      {hasFlags && (
-        <View style={styles.dashboardFlags}>
-          {greenFlags > 0 && (
-            <View style={styles.flagBadge}>
-              <Text style={styles.flagBadgeText}>🟢 {greenFlags} green</Text>
-            </View>
-          )}
-          {redFlags > 0 && (
-            <View style={styles.flagBadge}>
-              <Text style={styles.flagBadgeText}>🔴 {redFlags} red</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Last Date */}
-      {lastDate && (
-        <View style={styles.dashboardLastDate}>
-          <Text style={styles.lastDateEmoji}>{getVibeEmoji(lastDate.vibe)}</Text>
-          <View style={styles.lastDateInfo}>
-            <Text style={styles.lastDateTitle} numberOfLines={1}>{lastDate.title}</Text>
-            <Text style={styles.lastDateMeta}>
-              {lastDate.location ? `${lastDate.location} · ` : ''}{getTimeAgo(lastDate.date)}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* View Profile CTA */}
-      <TouchableOpacity
-        style={styles.viewProfileButton}
-        onPress={onViewProfile}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.viewProfileText}>View Full Profile</Text>
-        <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-// Person Pager — horizontal snap-scrolling cards with dot indicators
-const PersonPager: React.FC<{
-  people: DatingPerson[];
-  activeIndex: number;
-  onIndexChange: (index: number) => void;
-  navigation: any;
-}> = ({ people, activeIndex, onIndexChange, navigation }) => {
-  const scrollRef = useRef<ScrollView>(null);
-  const isUserScrolling = useRef(false);
-
-  const handleScroll = useCallback((event: any) => {
-    if (!isUserScrolling.current) return;
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
-    if (newIndex !== activeIndex && newIndex >= 0 && newIndex < people.length) {
-      if (Platform.OS === 'ios') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      onIndexChange(newIndex);
-    }
-  }, [activeIndex, onIndexChange, people.length]);
-
-  const handleScrollBeginDrag = useCallback(() => {
-    isUserScrolling.current = true;
-  }, []);
-
-  const handleMomentumScrollEnd = useCallback((event: any) => {
-    isUserScrolling.current = false;
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
-    if (newIndex >= 0 && newIndex < people.length) {
-      onIndexChange(newIndex);
-    }
-  }, [onIndexChange, people.length]);
-
-  const handleViewProfile = useCallback((person: DatingPerson) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('DatingDetail', { person });
-  }, [navigation]);
-
-  const handleCall = useCallback((person: DatingPerson) => {
-    if (person.phoneNumber) {
-      const cleaned = person.phoneNumber.replace(/[^+\d]/g, '');
-      Linking.openURL(`tel:${cleaned}`);
-    }
-  }, []);
-
-  const handleInstagram = useCallback((person: DatingPerson) => {
-    if (person.instagram) {
-      Linking.openURL(`https://instagram.com/${person.instagram}`);
-    }
-  }, []);
-
-  const handleOpenMaps = useCallback((person: DatingPerson) => {
-    if (person.location) {
-      const query = encodeURIComponent(person.location);
-      Linking.openURL(`https://maps.apple.com/?q=${query}`);
-    }
-  }, []);
-
-  return (
-    <View style={styles.pagerSection}>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        contentContainerStyle={styles.pagerContent}
-      >
-        {people.map((person) => (
-          <View key={person.id} style={styles.pagerPage}>
-            <PersonCard
-              person={person}
-              onViewProfile={() => handleViewProfile(person)}
-              onCall={() => handleCall(person)}
-              onInstagram={() => handleInstagram(person)}
-              onOpenMaps={() => handleOpenMaps(person)}
-            />
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Dot Indicators */}
-      {people.length > 1 && (
-        <View style={styles.pagerDots}>
-          {people.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.pagerDot,
-                index === activeIndex && styles.pagerDotActive,
-              ]}
-            />
-          ))}
-        </View>
-      )}
-    </View>
-  );
-};
-
-// Date Ideas Section Component
-const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; onSwipeEnd?: () => void }> = ({ navigation, onSwipeStart, onSwipeEnd }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
-  const animatedIndex = useRef(new Animated.Value(0)).current;
-  const panX = useRef(new Animated.Value(0)).current;
-
-  const handleIdeaPress = (idea: DateIdea) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation?.navigate('DateIdeaDetail', { idea });
-  };
-
-  const handleSeeAll = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation?.navigate('DateIdeasList');
-  };
-
-  const handleToggleSave = (ideaId: string, event: any) => {
-    event.stopPropagation();
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    setSavedIdeas(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(ideaId)) {
-        newSet.delete(ideaId);
-      } else {
-        newSet.add(ideaId);
-      }
-      return newSet;
-    });
-  };
-
-  const goToIndex = useCallback((newIndex: number) => {
-    const clampedIndex = Math.max(0, Math.min(DATE_IDEAS.length - 1, newIndex));
-    setActiveIndex(clampedIndex);
-    Animated.spring(animatedIndex, {
-      toValue: clampedIndex,
-      useNativeDriver: true,
-      friction: 7,
-      tension: 50,
-    }).start();
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, [animatedIndex]);
-
-  const carouselPanResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
-      },
-      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 15 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
-      },
-      onPanResponderGrant: () => {
-        panX.setValue(0);
-        onSwipeStart?.();
-      },
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderMove: (_, gestureState) => {
-        panX.setValue(gestureState.dx);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        onSwipeEnd?.();
-        const threshold = 50;
-        if (gestureState.dx < -threshold && activeIndex < DATE_IDEAS.length - 1) {
-          goToIndex(activeIndex + 1);
-        } else if (gestureState.dx > threshold && activeIndex > 0) {
-          goToIndex(activeIndex - 1);
-        }
-        Animated.spring(panX, {
-          toValue: 0,
-          useNativeDriver: true,
-          friction: 7,
-        }).start();
-      },
-      onPanResponderTerminate: () => {
-        onSwipeEnd?.();
-        Animated.spring(panX, {
-          toValue: 0,
-          useNativeDriver: true,
-          friction: 7,
-        }).start();
-      },
-    }),
-  [activeIndex, goToIndex, panX, onSwipeStart, onSwipeEnd]);
-
-  const getCardAnimatedStyle = (cardIndex: number) => {
-    const baseTranslateX = animatedIndex.interpolate({
-      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
-      outputRange: [
-        2 * SIDE_CARD_OFFSET,
-        SIDE_CARD_OFFSET,
-        0,
-        -SIDE_CARD_OFFSET,
-        -2 * SIDE_CARD_OFFSET,
-      ],
-      extrapolate: 'clamp',
-    });
-
-    const dragOffset = panX.interpolate({
-      inputRange: [-DRAG_THRESHOLD, 0, DRAG_THRESHOLD],
-      outputRange: [-SIDE_CARD_OFFSET, 0, SIDE_CARD_OFFSET],
-      extrapolate: 'clamp',
-    });
-
-    const translateX = Animated.add(baseTranslateX, dragOffset);
-
-    const baseScale = animatedIndex.interpolate({
-      inputRange: [cardIndex - 2, cardIndex - 1, cardIndex, cardIndex + 1, cardIndex + 2],
-      outputRange: [0.7, SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE, 0.7],
-      extrapolate: 'clamp',
-    });
-
-    const dragScaleAdjust = panX.interpolate({
-      inputRange: [-DRAG_THRESHOLD, 0, DRAG_THRESHOLD],
-      outputRange: [0.1, 0, 0.1],
-      extrapolate: 'clamp',
-    });
-
-    const scale = Animated.subtract(baseScale, Animated.multiply(
-      dragScaleAdjust,
-      animatedIndex.interpolate({
-        inputRange: [cardIndex - 1, cardIndex, cardIndex + 1],
-        outputRange: [-1, 1, -1],
-        extrapolate: 'clamp',
-      })
-    ));
-
-    const opacity = 1;
-
-    return {
-      transform: [{ translateX }, { scale }],
-      opacity,
-    };
-  };
-
-  const getZIndex = (cardIndex: number) => {
-    const distance = Math.abs(cardIndex - activeIndex);
-    return 10 - distance;
-  };
-
-  const getVisibleCardIndices = () => {
-    const indices: number[] = [];
-    for (let i = 0; i < DATE_IDEAS.length; i++) {
-      if (Math.abs(i - activeIndex) <= 2) {
-        indices.push(i);
-      }
-    }
-    return indices.sort((a, b) => {
-      const distanceA = Math.abs(a - activeIndex);
-      const distanceB = Math.abs(b - activeIndex);
-      return distanceB - distanceA;
-    });
-  };
-
-  return (
-    <View style={[styles.section, styles.dateIdeasSection]}>
-      <View style={styles.dateIdeasHeader}>
-        <View style={styles.dateIdeasTitleRow}>
-          <View style={styles.sectionAccent} />
-          <View>
-            <Text style={styles.sectionTitle}>Date Ideas</Text>
-            <Text style={styles.dateIdeasSubtitle}>First date inspiration</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll} activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>See All</Text>
-          <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.carouselContainer} {...carouselPanResponder.panHandlers}>
-        {getVisibleCardIndices().map((cardIndex) => {
-          const idea = DATE_IDEAS[cardIndex];
-          const cardAnimatedStyle = getCardAnimatedStyle(cardIndex);
+      <View style={styles.vibeSegmentsRow}>
+        {[1,2,3,4,5].map((rating) => {
+          const fillWidth = animatedValues[rating-1].interpolate({
+            inputRange: [0, 1], outputRange: ['0%', '100%'],
+          });
           return (
-            <Animated.View
-              key={idea.id}
-              style={[
-                styles.carouselCard,
-                {
-                  transform: cardAnimatedStyle.transform,
-                  opacity: cardAnimatedStyle.opacity,
-                  zIndex: getZIndex(cardIndex),
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.dateIdeaCardInner}
-                onPress={() => handleIdeaPress(idea)}
-                activeOpacity={1}
-              >
-                <View style={styles.dateIdeaGradient}>
-                  <TouchableOpacity
-                    style={styles.dateIdeaHeartButton}
-                    onPress={(e) => handleToggleSave(idea.id, e)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={savedIdeas.has(idea.id) ? 'heart' : 'heart-outline'}
-                      size={20}
-                      color={savedIdeas.has(idea.id) ? '#E11D48' : '#9CA3AF'}
-                    />
-                  </TouchableOpacity>
-
-                  <View style={styles.dateIdeaMainContent}>
-                    <View style={[styles.dateIdeaIconContainer]}>
-                      <View style={[styles.dateIdeaIcon, {
-                        backgroundColor: '#FFFFFF',
-                        shadowColor: idea.color,
-                      }]}>
-                        <Ionicons name={idea.icon} size={36} color={idea.color} />
-                      </View>
-                    </View>
-
-                    <View style={styles.dateIdeaTextContent}>
-                      <Text style={styles.dateIdeaTitle} numberOfLines={2}>
-                        {idea.title}
-                      </Text>
-                      <Text style={styles.dateIdeaSubtitle} numberOfLines={1}>
-                        {idea.subtitle}
-                      </Text>
-                    </View>
-
-                    <View style={styles.dateIdeaFooter}>
-                      <View style={[styles.dateIdeaDurationBadge, {
-                        backgroundColor: `${idea.color}10`,
-                        borderColor: `${idea.color}20`,
-                      }]}>
-                        <Ionicons name="time-outline" size={11} color={idea.color} />
-                        <Text style={[styles.dateIdeaDurationText, { color: idea.color }]}>
-                          {idea.duration}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity key={rating} onPress={() => {
+              if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onRate(value === rating ? 0 : rating);
+            }} activeOpacity={0.7} style={styles.vibeSegmentTouch}
+              hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}>
+              <View style={styles.vibeSegmentBg}>
+                <Animated.View style={[styles.vibeSegmentFill, { width: fillWidth, backgroundColor: config.color }]} />
+              </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -992,676 +232,1488 @@ const DateIdeasSection: React.FC<{ navigation?: any; onSwipeStart?: () => void; 
   );
 };
 
-// Main Component
-const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
-  const [isSwipingCard, setIsSwipingCard] = useState(false);
-  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
-  const [activePersonIndex, setActivePersonIndex] = useState(0);
+// ─── Flag Chip Component ─────────────────────────────────────────────────────
+const FlagChip: React.FC<{
+  flag: Flag; onPress: () => void; onDelete: () => void;
+}> = ({ flag, onPress, onDelete }) => {
+  const isGreen = flag.type === 'green';
+  return (
+    <TouchableOpacity
+      style={[styles.flagChip, isGreen ? styles.flagChipGreen : styles.flagChipRed]}
+      onPress={onPress}
+      onLongPress={() => {
+        if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert('Delete Flag', `Remove "${flag.text}"?`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: onDelete },
+        ]);
+      }}
+      activeOpacity={0.7}>
+      <Ionicons name={isGreen ? 'checkmark-circle' : 'alert-circle'} size={14}
+        color={isGreen ? '#15803D' : '#DC2626'} />
+      <Text style={[styles.flagChipText, isGreen ? styles.flagChipTextGreen : styles.flagChipTextRed]}
+        numberOfLines={1}>{flag.text}</Text>
+    </TouchableOpacity>
+  );
+};
 
-  // Animation values
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+// ─── Date Entry Row (Timeline Item) ──────────────────────────────────────────
+const DateEntryRow: React.FC<{
+  entry: DateEntry; isLast: boolean; onPress: () => void; onDelete: () => void;
+}> = ({ entry, isLast, onPress, onDelete }) => (
+  <TouchableOpacity style={styles.dateEntryRow} onPress={onPress}
+    onLongPress={() => {
+      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert('Delete Date', `Remove "${entry.title}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: onDelete },
+      ]);
+    }} activeOpacity={0.7}>
+    <View style={styles.dateEntryTimeline}>
+      <View style={styles.dateEntryDot} />
+      {!isLast && <View style={styles.dateEntryLine} />}
+    </View>
+    <View style={styles.dateEntryContent}>
+      <View style={styles.dateEntryHeader}>
+        <Text style={styles.dateEntryTitle} numberOfLines={2}>{entry.title}</Text>
+        <Text style={styles.dateEntryVibe}>{getVibeEmoji(entry.vibe)}</Text>
+      </View>
+      {entry.location && (
+        <View style={styles.dateEntryLocationRow}>
+          <Ionicons name="location-outline" size={12} color="#9CA3AF" />
+          <Text style={styles.dateEntryLocation} numberOfLines={1}>{entry.location}</Text>
+        </View>
+      )}
+      <Text style={styles.dateEntryDate}>{formatDateEntryDate(entry.date)}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// ─── Swipeable Note Card ─────────────────────────────────────────────────────
+const SwipeableNoteCard: React.FC<{
+  note: DatingNote; onEdit: () => void; onDelete: () => void;
+  onSwipeStart: () => void; onSwipeEnd: () => void;
+}> = ({ note, onEdit, onDelete, onSwipeStart, onSwipeEnd }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentTranslateX = useRef(0);
+  const isOpenRef = useRef(false);
 
   useEffect(() => {
+    const id = translateX.addListener(({ value }) => { currentTranslateX.current = value; });
+    return () => translateX.removeListener(id);
+  }, [translateX]);
+
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+
+  const closeActions = useCallback(() => {
+    setIsOpen(false);
+    Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 8, tension: 100 }).start();
+  }, [translateX]);
+
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 5,
+    onMoveShouldSetPanResponderCapture: (_, gs) => Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 10,
+    onPanResponderGrant: () => { translateX.stopAnimation(); onSwipeStart(); },
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderMove: (_, gs) => {
+      let v = isOpenRef.current ? -NOTE_ACTION_WIDTH + gs.dx : gs.dx;
+      translateX.setValue(Math.max(-NOTE_ACTION_WIDTH, Math.min(0, v)));
+    },
+    onPanResponderRelease: (_, gs) => {
+      onSwipeEnd();
+      if (gs.vx < -0.3) {
+        setIsOpen(true);
+        Animated.spring(translateX, { toValue: -NOTE_ACTION_WIDTH, useNativeDriver: true, velocity: gs.vx, friction: 7, tension: 80 }).start();
+        if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else if (gs.vx > 0.3 || currentTranslateX.current > -NOTE_ACTION_WIDTH / 3) {
+        setIsOpen(false);
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true, friction: 7, tension: 80 }).start();
+      } else {
+        setIsOpen(true);
+        Animated.spring(translateX, { toValue: -NOTE_ACTION_WIDTH, useNativeDriver: true, friction: 7, tension: 80 }).start();
+        if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    },
+    onPanResponderTerminate: () => {
+      onSwipeEnd();
+      if (currentTranslateX.current < -NOTE_ACTION_WIDTH / 2) {
+        setIsOpen(true);
+        Animated.spring(translateX, { toValue: -NOTE_ACTION_WIDTH, useNativeDriver: true }).start();
+      } else {
+        setIsOpen(false);
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  }), [translateX, onSwipeStart, onSwipeEnd]);
+
+  return (
+    <View style={styles.noteCardWrapper}>
+      <View style={styles.noteActionsContainer}>
+        <TouchableOpacity style={[styles.noteSwipeAction, styles.noteEditAction]}
+          onPress={() => { closeActions(); setTimeout(onEdit, 200); }} activeOpacity={0.8}>
+          <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.noteSwipeAction, styles.noteDeleteAction]}
+          onPress={() => { closeActions(); setTimeout(onDelete, 200); }} activeOpacity={0.8}>
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
+      <Animated.View style={[styles.noteCardAnimatedWrapper, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}>
+        <TouchableOpacity activeOpacity={1} onPress={() => isOpen && closeActions()}>
+          <View style={styles.noteCard}>
+            <View style={styles.noteAccent} />
+            <Text style={styles.noteText}>{note.text}</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+  const [activePersonIndex, setActivePersonIndex] = useState(0);
+  const [isSwipingCard, setIsSwipingCard] = useState(false);
+  const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
+  const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
+
+  // Expandable sections state
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ vibe: true });
+  const chevronAnims = useRef<Record<string, Animated.Value>>({
+    vibe: new Animated.Value(1), firstImpression: new Animated.Value(0),
+    flags: new Animated.Value(0), dateHistory: new Animated.Value(0),
+    notes: new Animated.Value(0), details: new Animated.Value(0),
+  }).current;
+
+  // Per-person mutable data
+  const [allPersonData, setAllPersonData] = useState<Record<string, PersonState>>(() => {
+    const init: Record<string, PersonState> = {};
+    DATING_CRM_DATA.forEach(p => { init[p.id] = initPersonState(p); });
+    return init;
+  });
+
+  const currentPerson = DATING_CRM_DATA[activePersonIndex];
+  const currentData = allPersonData[currentPerson.id];
+
+  const updateCurrentPerson = useCallback((updates: Partial<PersonState>) => {
+    setAllPersonData(prev => ({
+      ...prev,
+      [currentPerson.id]: { ...prev[currentPerson.id], ...updates },
+    }));
+  }, [currentPerson.id]);
+
+  // Modal state
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [editingNote, setEditingNote] = useState<DatingNote | null>(null);
+  const [noteContent, setNoteContent] = useState('');
+
+  const [firstImpressionModalVisible, setFirstImpressionModalVisible] = useState(false);
+  const [impressionText, setImpressionText] = useState('');
+  const [whenWeMet, setWhenWeMet] = useState<Date | null>(null);
+  const [showWhenWeMetPicker, setShowWhenWeMetPicker] = useState(false);
+  const whenWeMetTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [flagType, setFlagType] = useState<'green' | 'red'>('green');
+  const [flagText, setFlagText] = useState('');
+  const [editingFlag, setEditingFlag] = useState<Flag | null>(null);
+
+  const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [editingDateEntry, setEditingDateEntry] = useState<DateEntry | null>(null);
+  const [dateEntryDate, setDateEntryDate] = useState<Date>(new Date());
+  const [dateEntryTitle, setDateEntryTitle] = useState('');
+  const [dateEntryLocation, setDateEntryLocation] = useState('');
+  const [dateEntryVibe, setDateEntryVibe] = useState<DateVibeType | null>(null);
+  const [dateEntryNotes, setDateEntryNotes] = useState('');
+  const [showDateEntryPicker, setShowDateEntryPicker] = useState(false);
+  const dateEntryPickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Header animation
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  useEffect(() => {
     Animated.parallel([
-      Animated.timing(headerOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(headerTranslateY, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
+      Animated.timing(headerOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(headerTranslateY, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
   }, []);
 
-  const handleAdvicePress = (advice: DatingAdvice) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('DatingAdviceDetail', { advice });
-  };
+  // ─── Section Toggle ──────────────────────────────────────────────────────
+  const toggleSection = useCallback((key: string) => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const newVal = !expandedSections[key];
+    setExpandedSections(prev => ({ ...prev, [key]: newVal }));
+    Animated.spring(chevronAnims[key], {
+      toValue: newVal ? 1 : 0, useNativeDriver: true, friction: 8, tension: 100,
+    }).start();
+  }, [expandedSections, chevronAnims]);
 
+  const getChevronStyle = (key: string) => ({
+    transform: [{ rotate: chevronAnims[key].interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }],
+  });
+
+  // ─── Person Switching ────────────────────────────────────────────────────
+  const personSelectorRef = useRef<ScrollView>(null);
+  const switchPerson = useCallback((index: number) => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActivePersonIndex(index);
+  }, []);
+
+  // ─── Contact Handlers ────────────────────────────────────────────────────
+  const handleCall = useCallback(() => {
+    if (currentPerson.phoneNumber) {
+      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Linking.openURL(`tel:${currentPerson.phoneNumber.replace(/[^0-9+]/g, '')}`);
+    }
+  }, [currentPerson]);
+
+  const handleInstagram = useCallback(() => {
+    if (currentPerson.instagram) {
+      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Linking.openURL(`https://instagram.com/${currentPerson.instagram}`);
+    }
+  }, [currentPerson]);
+
+  const handleOpenMaps = useCallback(() => {
+    if (currentPerson.location) {
+      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Linking.openURL(`https://maps.apple.com/?q=${encodeURIComponent(currentPerson.location)}`);
+    }
+  }, [currentPerson]);
+
+  // ─── Vibe Handlers ───────────────────────────────────────────────────────
+  const handleVibeRating = useCallback((type: keyof VibeRatings, rating: number) => {
+    updateCurrentPerson({
+      vibeRatings: { ...currentData.vibeRatings, [type]: rating === 0 ? undefined : rating },
+    });
+  }, [currentData.vibeRatings, updateCurrentPerson]);
+
+  // ─── Note Handlers ───────────────────────────────────────────────────────
+  const handleAddNote = useCallback(() => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setEditingNote(null); setNoteContent(''); setNoteModalVisible(true);
+  }, []);
+
+  const handleEditNote = useCallback((note: DatingNote) => {
+    setEditingNote(note); setNoteContent(note.text); setNoteModalVisible(true);
+  }, []);
+
+  const handleDeleteNote = useCallback((id: string) => {
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    updateCurrentPerson({ notes: currentData.notes.filter(n => n.id !== id) });
+  }, [currentData.notes, updateCurrentPerson]);
+
+  const handleSaveNote = useCallback(() => {
+    if (!noteContent.trim()) return;
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (editingNote) {
+      updateCurrentPerson({ notes: currentData.notes.map(n => n.id === editingNote.id ? { ...n, text: noteContent.trim() } : n) });
+    } else {
+      updateCurrentPerson({ notes: [{ id: Date.now().toString(), text: noteContent.trim(), createdAt: new Date().toISOString() }, ...currentData.notes] });
+    }
+    setNoteModalVisible(false); setNoteContent(''); setEditingNote(null);
+  }, [noteContent, editingNote, currentData.notes, updateCurrentPerson]);
+
+  // ─── First Impression Handlers ───────────────────────────────────────────
+  const handleFirstImpressionPress = useCallback(() => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setImpressionText(currentData.firstImpression?.text || '');
+    setWhenWeMet(currentData.firstImpression?.whenWeMet ? new Date(currentData.firstImpression.whenWeMet) : null);
+    setFirstImpressionModalVisible(true);
+  }, [currentData.firstImpression]);
+
+  const handleSaveFirstImpression = useCallback(() => {
+    if (!impressionText.trim()) return;
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    updateCurrentPerson({ firstImpression: { text: impressionText.trim(), whenWeMet: whenWeMet?.toISOString() } });
+    setFirstImpressionModalVisible(false);
+  }, [impressionText, whenWeMet, updateCurrentPerson]);
+
+  const handleClearFirstImpression = useCallback(() => {
+    Alert.alert('Remove First Impression', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => {
+        updateCurrentPerson({ firstImpression: null });
+        setFirstImpressionModalVisible(false);
+      }},
+    ]);
+  }, [updateCurrentPerson]);
+
+  const openWhenWeMetPicker = useCallback(() => {
+    whenWeMetTranslateY.setValue(SCREEN_HEIGHT);
+    setShowWhenWeMetPicker(true);
+    Animated.timing(whenWeMetTranslateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [whenWeMetTranslateY]);
+
+  const closeWhenWeMetPicker = useCallback(() => {
+    Animated.timing(whenWeMetTranslateY, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }).start(() => setShowWhenWeMetPicker(false));
+  }, [whenWeMetTranslateY]);
+
+  // ─── Flag Handlers ───────────────────────────────────────────────────────
+  const handleAddFlag = useCallback((type: 'green' | 'red') => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFlagType(type); setFlagText(''); setEditingFlag(null); setFlagModalVisible(true);
+  }, []);
+
+  const handleEditFlag = useCallback((flag: Flag) => {
+    setFlagType(flag.type); setFlagText(flag.text); setEditingFlag(flag); setFlagModalVisible(true);
+  }, []);
+
+  const handleSaveFlag = useCallback(() => {
+    if (!flagText.trim()) return;
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (editingFlag) {
+      updateCurrentPerson({ flags: currentData.flags.map(f => f.id === editingFlag.id ? { ...f, text: flagText.trim(), type: flagType } : f) });
+    } else {
+      updateCurrentPerson({ flags: [...currentData.flags, { id: Date.now().toString(), text: flagText.trim(), type: flagType, createdAt: new Date().toISOString() }] });
+    }
+    setFlagModalVisible(false); setFlagText(''); setEditingFlag(null);
+  }, [flagText, flagType, editingFlag, currentData.flags, updateCurrentPerson]);
+
+  const handleDeleteFlag = useCallback((id: string) => {
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    updateCurrentPerson({ flags: currentData.flags.filter(f => f.id !== id) });
+  }, [currentData.flags, updateCurrentPerson]);
+
+  // ─── Date History Handlers ───────────────────────────────────────────────
+  const handleAddDateEntry = useCallback(() => {
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditingDateEntry(null); setDateEntryDate(new Date()); setDateEntryTitle('');
+    setDateEntryLocation(''); setDateEntryVibe(null); setDateEntryNotes(''); setDateModalVisible(true);
+  }, []);
+
+  const handleEditDateEntry = useCallback((entry: DateEntry) => {
+    setEditingDateEntry(entry); setDateEntryDate(new Date(entry.date));
+    setDateEntryTitle(entry.title); setDateEntryLocation(entry.location || '');
+    setDateEntryVibe(entry.vibe); setDateEntryNotes(entry.notes || ''); setDateModalVisible(true);
+  }, []);
+
+  const handleSaveDateEntry = useCallback(() => {
+    if (!dateEntryTitle.trim() || !dateEntryVibe) return;
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const entry = {
+      id: editingDateEntry?.id || Date.now().toString(),
+      date: dateEntryDate.toISOString(), title: dateEntryTitle.trim(),
+      location: dateEntryLocation.trim() || undefined, vibe: dateEntryVibe,
+      notes: dateEntryNotes.trim() || undefined, createdAt: editingDateEntry?.createdAt || new Date().toISOString(),
+    };
+    const newHistory = editingDateEntry
+      ? currentData.dateHistory.map(d => d.id === editingDateEntry.id ? entry : d)
+      : [...currentData.dateHistory, entry];
+    updateCurrentPerson({ dateHistory: newHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) });
+    setDateModalVisible(false); setEditingDateEntry(null);
+  }, [dateEntryTitle, dateEntryVibe, dateEntryDate, dateEntryLocation, dateEntryNotes, editingDateEntry, currentData.dateHistory, updateCurrentPerson]);
+
+  const handleDeleteDateEntry = useCallback((id: string) => {
+    if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    updateCurrentPerson({ dateHistory: currentData.dateHistory.filter(d => d.id !== id) });
+  }, [currentData.dateHistory, updateCurrentPerson]);
+
+  const openDateEntryPicker = useCallback(() => {
+    dateEntryPickerTranslateY.setValue(SCREEN_HEIGHT);
+    setShowDateEntryPicker(true);
+    Animated.timing(dateEntryPickerTranslateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [dateEntryPickerTranslateY]);
+
+  const closeDateEntryPicker = useCallback(() => {
+    Animated.timing(dateEntryPickerTranslateY, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }).start(() => setShowDateEntryPicker(false));
+  }, [dateEntryPickerTranslateY]);
+
+  const handleDeletePerson = useCallback(() => {
+    setShowMoreMenu(false);
+    Alert.alert('Delete Person', `Are you sure you want to delete ${currentPerson.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => {
+        if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        // In production, would remove from data source
+        navigation.goBack();
+      }},
+    ]);
+  }, [currentPerson, navigation]);
+
+  // ─── Computed Values ─────────────────────────────────────────────────────
+  const greenFlags = currentData.flags.filter(f => f.type === 'green');
+  const redFlags = currentData.flags.filter(f => f.type === 'red');
+  const hasContact = currentPerson.phoneNumber || currentPerson.instagram || currentPerson.location;
+  const hasInfo = currentPerson.phoneNumber || currentPerson.instagram || currentPerson.location || currentPerson.dateOfBirth;
+
+  // ─── Section Header Component ────────────────────────────────────────────
+  const SectionHeader: React.FC<{
+    sectionKey: string; icon: keyof typeof Ionicons.glyphMap; label: string;
+    preview?: string; rightAction?: React.ReactNode;
+  }> = ({ sectionKey, icon, label, preview, rightAction }) => (
+    <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection(sectionKey)} activeOpacity={0.7}>
+      <View style={styles.sectionHeaderLeft}>
+        <View style={styles.sectionIconCircle}>
+          <Ionicons name={icon} size={12} color={ACCENT_COLOR} />
+        </View>
+        <Text style={styles.sectionLabel}>{label}</Text>
+      </View>
+      <View style={styles.sectionHeaderRight}>
+        {preview ? <Text style={styles.sectionPreview}>{preview}</Text> : null}
+        {rightAction}
+        <Animated.View style={getChevronStyle(sectionKey)}>
+          <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        </Animated.View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* ScrollView - scrolls under the header */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 72 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        scrollEnabled={!isSwipingCard}
-      >
-          {/* Person Pager */}
-          <PersonPager
-            people={DATING_CRM_DATA}
-            activeIndex={activePersonIndex}
-            onIndexChange={setActivePersonIndex}
-            navigation={navigation}
-          />
+      <ScrollView style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 72 }]}
+        showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+        scrollEnabled={!isSwipingCard}>
 
-          {/* Date Ideas Section */}
-          <DateIdeasSection
-            navigation={navigation}
-            onSwipeStart={() => setIsSwipingCard(true)}
-            onSwipeEnd={() => setIsSwipingCard(false)}
-          />
-
-          {/* Dating Advice Section */}
-          <View style={styles.section}>
-            <View style={styles.adviceSectionHeader}>
-              <View style={styles.adviceTitleRow}>
-                <View style={styles.sectionAccent} />
-                <View>
-                  <Text style={styles.sectionTitle}>Dating Wisdom</Text>
-                  <Text style={styles.sectionSubtitle}>Tips for meaningful connections</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.adviceList}>
-              {DATING_ADVICE_DATA.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.adviceCard}
-                  onPress={() => handleAdvicePress(item)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.adviceIconCircle}>
-                    <Ionicons name={item.icon} size={22} color="#E11D48" />
-                  </View>
-                  <View style={styles.adviceContent}>
-                    <Text style={styles.adviceTitle}>{item.title}</Text>
-                    <Text style={styles.adviceDescription}>{item.description}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#6B7280" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+        {/* ── Person Selector ─────────────────────────────────── */}
+        <ScrollView ref={personSelectorRef} horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.personSelectorContent} style={styles.personSelector}>
+          {DATING_CRM_DATA.map((person, index) => (
+            <TouchableOpacity key={person.id}
+              style={[styles.personChip, index === activePersonIndex && styles.personChipActive]}
+              onPress={() => switchPerson(index)} activeOpacity={0.7}>
+              <LinearGradient
+                colors={index === activePersonIndex ? ['#FFFFFF', '#FFFFFF'] : ['#FFF1F2', '#FFE4E6']}
+                style={styles.personChipAvatar}>
+                <Text style={[styles.personChipInitials,
+                  index === activePersonIndex && styles.personChipInitialsActive]}>
+                  {person.initials}
+                </Text>
+              </LinearGradient>
+              <Text style={[styles.personChipName,
+                index === activePersonIndex && styles.personChipNameActive]}>
+                {person.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.addPersonChip}
+            onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry'); }}
+            activeOpacity={0.7}>
+            <Ionicons name="add" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
         </ScrollView>
 
-      {/* Fixed Header with Gradient Fade */}
+        {/* ── Person Header Card ──────────────────────────────── */}
+        <View style={styles.personHeaderCard}>
+          <View style={styles.personCardAccent} />
+          <View style={styles.personAvatarRing}>
+            <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personAvatar}>
+              <Text style={styles.personAvatarInitials}>{currentPerson.initials}</Text>
+            </LinearGradient>
+          </View>
+          <View style={styles.personHeaderCenter}>
+            <Text style={styles.personName} numberOfLines={1}>{currentPerson.name}</Text>
+          </View>
+          <View style={styles.personHeaderActions}>
+            {currentPerson.phoneNumber && (
+              <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.7}>
+                <Ionicons name="call-outline" size={17} color={ACCENT_COLOR} />
+              </TouchableOpacity>
+            )}
+            {currentPerson.instagram && (
+              <TouchableOpacity style={styles.quickActionBtn} onPress={handleInstagram} activeOpacity={0.7}>
+                <Ionicons name="logo-instagram" size={17} color={ACCENT_COLOR} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.personHeaderEditBtn}
+              onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry', { person: currentPerson }); }}
+              activeOpacity={0.7}>
+              <Ionicons name="pencil" size={14} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Expandable Sections ─────────────────────────────── */}
+        <View style={styles.sectionsContainer}>
+
+          {/* The Vibe */}
+          <View style={styles.expandableCard}>
+            <SectionHeader sectionKey="vibe" icon="heart" label="THE VIBE" />
+            {expandedSections.vibe && (
+              <View style={styles.expandableContent}>
+                <VibeRatingRow label="Attraction" type="attraction" value={currentData.vibeRatings.attraction}
+                  onRate={(r) => handleVibeRating('attraction', r)} />
+                <VibeRatingRow label="Connection" type="connection" value={currentData.vibeRatings.connection}
+                  onRate={(r) => handleVibeRating('connection', r)} />
+                <VibeRatingRow label="Compatibility" type="compatibility" value={currentData.vibeRatings.compatibility}
+                  onRate={(r) => handleVibeRating('compatibility', r)} />
+              </View>
+            )}
+          </View>
+
+          {/* First Impression */}
+          <View style={styles.expandableCard}>
+            <SectionHeader sectionKey="firstImpression" icon="sparkles" label="FIRST IMPRESSION"
+              preview={currentData.firstImpression ? '' : 'Tap to add'} />
+            {expandedSections.firstImpression && (
+              <View style={styles.expandableContent}>
+                <TouchableOpacity onPress={handleFirstImpressionPress} activeOpacity={0.7}
+                  style={styles.firstImpressionTouchable}>
+                  {currentData.firstImpression ? (
+                    <View>
+                      <Text style={styles.firstImpressionText}>"{currentData.firstImpression.text}"</Text>
+                      {currentData.firstImpression.whenWeMet && (
+                        <View style={styles.firstImpressionMeta}>
+                          <View style={styles.metaTag}>
+                            <Ionicons name="calendar-outline" size={10} color="#6B7280" />
+                            <Text style={styles.metaTagText}>{formatWhenWeMet(currentData.firstImpression.whenWeMet)}</Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <View style={styles.firstImpressionEmpty}>
+                      <Ionicons name="sparkles-outline" size={18} color="#9CA3AF" />
+                      <Text style={styles.firstImpressionEmptyText}>What stood out when you first met?</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Flags */}
+          <View style={styles.expandableCard}>
+            <SectionHeader sectionKey="flags" icon="flag" label="FLAGS"
+              preview={currentData.flags.length > 0 ? `${greenFlags.length} green · ${redFlags.length} red` : 'None yet'} />
+            {expandedSections.flags && (
+              <View style={styles.expandableContent}>
+                {currentData.flags.length > 0 ? (
+                  <View style={styles.flagsContainer}>
+                    {greenFlags.length > 0 && (
+                      <View style={styles.flagsSection}>
+                        <Text style={styles.flagsSectionLabel}>Green</Text>
+                        <View style={styles.flagsChipsRow}>
+                          {greenFlags.map(flag => (
+                            <FlagChip key={flag.id} flag={flag} onPress={() => handleEditFlag(flag)}
+                              onDelete={() => handleDeleteFlag(flag.id)} />
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                    {redFlags.length > 0 && (
+                      <View style={styles.flagsSection}>
+                        <Text style={styles.flagsSectionLabel}>Red</Text>
+                        <View style={styles.flagsChipsRow}>
+                          {redFlags.map(flag => (
+                            <FlagChip key={flag.id} flag={flag} onPress={() => handleEditFlag(flag)}
+                              onDelete={() => handleDeleteFlag(flag.id)} />
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <Text style={styles.flagsEmptyText}>No flags yet. Add green or red flags to track patterns.</Text>
+                )}
+                <View style={styles.flagsAddButtons}>
+                  <TouchableOpacity style={styles.flagsAddButtonGreen} onPress={() => handleAddFlag('green')} activeOpacity={0.7}>
+                    <Ionicons name="add" size={16} color="#15803D" /><Text style={styles.flagsAddButtonGreenText}>Green</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.flagsAddButtonRed} onPress={() => handleAddFlag('red')} activeOpacity={0.7}>
+                    <Ionicons name="add" size={16} color="#DC2626" /><Text style={styles.flagsAddButtonRedText}>Red</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Date History */}
+          <View style={styles.expandableCard}>
+            <SectionHeader sectionKey="dateHistory" icon="calendar" label="DATE HISTORY"
+              preview={currentData.dateHistory.length > 0
+                ? `${currentData.dateHistory.length} date${currentData.dateHistory.length > 1 ? 's' : ''}`
+                : 'None yet'} />
+            {expandedSections.dateHistory && (
+              <View style={styles.expandableContent}>
+                <View style={styles.dateHistoryHeader}>
+                  <View />
+                  <TouchableOpacity style={styles.dateHistoryAddButton} onPress={handleAddDateEntry} activeOpacity={0.7}>
+                    <Ionicons name="add" size={18} color={ACCENT_COLOR} />
+                  </TouchableOpacity>
+                </View>
+                {currentData.dateHistory.length > 0 ? (
+                  <View style={styles.dateHistoryTimeline}>
+                    {currentData.dateHistory.map((entry, index) => (
+                      <DateEntryRow key={entry.id} entry={entry}
+                        isLast={index === currentData.dateHistory.length - 1}
+                        onPress={() => handleEditDateEntry(entry)}
+                        onDelete={() => handleDeleteDateEntry(entry.id)} />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.dateHistoryEmpty}>
+                    <View style={styles.dateHistoryEmptyIcon}>
+                      <Ionicons name="heart-outline" size={24} color="#D1D5DB" />
+                    </View>
+                    <Text style={styles.dateHistoryEmptyText}>No dates logged yet</Text>
+                    <TouchableOpacity style={styles.dateHistoryEmptyButton} onPress={handleAddDateEntry} activeOpacity={0.7}>
+                      <Ionicons name="add" size={16} color="#FFFFFF" />
+                      <Text style={styles.dateHistoryEmptyButtonText}>Log First Date</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Notes */}
+          <View style={styles.expandableCard}>
+            <SectionHeader sectionKey="notes" icon="document-text" label="NOTES"
+              preview={currentData.notes.length > 0 ? `${currentData.notes.length} note${currentData.notes.length > 1 ? 's' : ''}` : 'None yet'} />
+            {expandedSections.notes && (
+              <View style={styles.expandableContent}>
+                <TouchableOpacity style={styles.addNoteCard} onPress={handleAddNote} activeOpacity={0.7}>
+                  <Text style={styles.addNotePlaceholder}>Add a note...</Text>
+                  <View style={styles.addNoteButton}><Ionicons name="add" size={20} color={ACCENT_COLOR} /></View>
+                </TouchableOpacity>
+                {currentData.notes.map(note => (
+                  <SwipeableNoteCard key={note.id} note={note}
+                    onEdit={() => handleEditNote(note)} onDelete={() => handleDeleteNote(note.id)}
+                    onSwipeStart={() => setIsSwipingCard(true)} onSwipeEnd={() => setIsSwipingCard(false)} />
+                ))}
+                {currentData.notes.length === 0 && (
+                  <View style={styles.emptyNotesContainer}>
+                    <Text style={styles.emptyNotesText}>No notes yet</Text>
+                    <Text style={styles.emptyNotesSubtext}>Add notes about {currentPerson.name}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Details */}
+          {hasInfo && (
+            <View style={styles.expandableCard}>
+              <SectionHeader sectionKey="details" icon="person" label="DETAILS" />
+              {expandedSections.details && (
+                <View style={styles.expandableContent}>
+                  {currentPerson.phoneNumber && (
+                    <TouchableOpacity style={styles.detailsRow} onPress={handleCall} activeOpacity={0.7}>
+                      <View style={styles.detailsRowIcon}><Ionicons name="call-outline" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={styles.detailsRowContent}>
+                        <Text style={styles.detailsRowLabel}>PHONE</Text>
+                        <Text style={styles.detailsRowValue}>{currentPerson.phoneNumber}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+                    </TouchableOpacity>
+                  )}
+                  {currentPerson.instagram && (
+                    <TouchableOpacity style={styles.detailsRow} onPress={handleInstagram} activeOpacity={0.7}>
+                      <View style={styles.detailsRowIcon}><Ionicons name="logo-instagram" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={styles.detailsRowContent}>
+                        <Text style={styles.detailsRowLabel}>INSTAGRAM</Text>
+                        <Text style={styles.detailsRowValue}>@{currentPerson.instagram}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+                    </TouchableOpacity>
+                  )}
+                  {currentPerson.location && (
+                    <TouchableOpacity style={styles.detailsRow} onPress={handleOpenMaps} activeOpacity={0.7}>
+                      <View style={styles.detailsRowIcon}><Ionicons name="location-outline" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={styles.detailsRowContent}>
+                        <Text style={styles.detailsRowLabel}>LOCATION</Text>
+                        <Text style={styles.detailsRowValue}>{currentPerson.location}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+                    </TouchableOpacity>
+                  )}
+                  {currentPerson.dateOfBirth && (
+                    <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
+                      <View style={styles.detailsRowIcon}><Ionicons name="gift-outline" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={styles.detailsRowContent}>
+                        <Text style={styles.detailsRowLabel}>BIRTHDAY</Text>
+                        <Text style={styles.detailsRowValue}>{formatBirthday(currentPerson.dateOfBirth)}</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* ── Date Ideas ──────────────────────────────────────── */}
+        <View style={styles.dateIdeasSection}>
+          <View style={styles.dateIdeasHeader}>
+            <View style={styles.dateIdeasTitleRow}>
+              <View style={styles.sectionAccent} />
+              <View>
+                <Text style={styles.bigSectionTitle}>Date Ideas</Text>
+                <Text style={styles.bigSectionSubtitle}>First date inspiration</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.seeAllButton}
+              onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DateIdeasList'); }}
+              activeOpacity={0.7}>
+              <Text style={styles.seeAllText}>See All</Text>
+              <Ionicons name="chevron-forward" size={14} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dateIdeasScroll}>
+            {DATE_IDEAS.map(idea => (
+              <TouchableOpacity key={idea.id} style={styles.dateIdeaCard}
+                onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DateIdeaDetail', { idea }); }}
+                activeOpacity={0.8}>
+                <TouchableOpacity style={styles.dateIdeaHeart}
+                  onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setSavedIdeas(prev => { const s = new Set(prev); s.has(idea.id) ? s.delete(idea.id) : s.add(idea.id); return s; });
+                  }} activeOpacity={0.7}>
+                  <Ionicons name={savedIdeas.has(idea.id) ? 'heart' : 'heart-outline'} size={16}
+                    color={savedIdeas.has(idea.id) ? '#E11D48' : '#9CA3AF'} />
+                </TouchableOpacity>
+                <View style={[styles.dateIdeaIconCircle, { shadowColor: idea.color }]}>
+                  <Ionicons name={idea.icon} size={28} color={idea.color} />
+                </View>
+                <Text style={styles.dateIdeaTitle} numberOfLines={2}>{idea.title}</Text>
+                <Text style={styles.dateIdeaSubtitle} numberOfLines={1}>{idea.subtitle}</Text>
+                <View style={[styles.dateIdeaDuration, { backgroundColor: `${idea.color}10`, borderColor: `${idea.color}20` }]}>
+                  <Ionicons name="time-outline" size={10} color={idea.color} />
+                  <Text style={[styles.dateIdeaDurationText, { color: idea.color }]}>{idea.duration}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── Dating Wisdom ───────────────────────────────────── */}
+        <View style={styles.wisdomSection}>
+          <View style={styles.wisdomHeader}>
+            <View style={styles.dateIdeasTitleRow}>
+              <View style={styles.sectionAccent} />
+              <View>
+                <Text style={styles.bigSectionTitle}>Dating Wisdom</Text>
+                <Text style={styles.bigSectionSubtitle}>Tips for meaningful connections</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.wisdomList}>
+            {DATING_ADVICE_DATA.map(item => (
+              <TouchableOpacity key={item.id} style={styles.wisdomCard}
+                onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingAdviceDetail', { advice: item }); }}
+                activeOpacity={0.8}>
+                <View style={styles.wisdomIconCircle}>
+                  <Ionicons name={item.icon} size={20} color="#E11D48" />
+                </View>
+                <View style={styles.wisdomContent}>
+                  <Text style={styles.wisdomTitle}>{item.title}</Text>
+                  <Text style={styles.wisdomDescription}>{item.description}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* ── Fixed Header ──────────────────────────────────────── */}
       <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
-          <LinearGradient
-            colors={[
-              'rgba(240, 238, 232, 0.95)',
-              'rgba(240, 238, 232, 0.8)',
-              'rgba(240, 238, 232, 0.4)',
-              'rgba(240, 238, 232, 0)',
-            ]}
-            locations={[0, 0.4, 0.75, 1]}
-            style={styles.headerGradient}
-          />
+          <LinearGradient colors={['rgba(240,238,232,0.95)','rgba(240,238,232,0.8)','rgba(240,238,232,0.4)','rgba(240,238,232,0)']}
+            locations={[0,0.4,0.75,1]} style={styles.headerGradient} />
         </View>
-        <Animated.View
-          style={[
-            styles.headerContent,
-            {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
+        <Animated.View style={[styles.headerContent, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              setSettingsMenuVisible(true);
-            }}
-            style={styles.settingsButton}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowMoreMenu(true); }}
+            style={styles.headerBtn} activeOpacity={0.7}>
             <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
           </TouchableOpacity>
         </Animated.View>
       </View>
 
-      {/* Settings Menu Modal */}
-      <Modal
-        visible={settingsMenuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsMenuVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
-          <View style={styles.dropdownModalOverlay}>
-            <View style={styles.dropdownMenu}>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => {
-                  if (Platform.OS === 'ios') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                  setSettingsMenuVisible(false);
-                  navigation.navigate('RelationshipSetup');
-                }}
-                activeOpacity={0.7}
-              >
+      {/* ── More Menu Modal ───────────────────────────────────── */}
+      <Modal visible={showMoreMenu} transparent animationType="fade" onRequestClose={() => setShowMoreMenu(false)}>
+        <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); navigation.navigate('RelationshipSetup'); }} activeOpacity={0.7}>
                 <Ionicons name="sync-outline" size={18} color="#6B7280" />
-                <Text style={styles.dropdownItemText}>Switch to Relationship</Text>
+                <Text style={styles.menuItemText}>Switch to Relationship</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: '#F3F4F6' }]}
+                onPress={handleDeletePerson} activeOpacity={0.7}>
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text style={[styles.menuItemText, { color: '#DC2626' }]}>Delete {currentPerson.name}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* ── Settings Menu (legacy compat) ─────────────────────── */}
+      <Modal visible={settingsMenuVisible} transparent animationType="fade" onRequestClose={() => setSettingsMenuVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setSettingsMenuVisible(false)}>
+          <View style={styles.menuOverlay}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setSettingsMenuVisible(false); navigation.navigate('RelationshipSetup'); }} activeOpacity={0.7}>
+                <Ionicons name="sync-outline" size={18} color="#6B7280" />
+                <Text style={styles.menuItemText}>Switch to Relationship</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* ── Note Modal ────────────────────────────────────────── */}
+      <Modal visible={noteModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setNoteModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setNoteModalVisible(false)} style={styles.roundButton}>
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{editingNote ? 'Edit Note' : 'New Note'}</Text>
+            <TouchableOpacity onPress={handleSaveNote} style={[styles.roundButton, !noteContent.trim() && styles.roundButtonDisabled]} disabled={!noteContent.trim()}>
+              <Ionicons name="checkmark" size={20} color={noteContent.trim() ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalInputContainer}>
+            <TextInput style={styles.modalTextInput} placeholder={`Write something about ${currentPerson.name}...`}
+              placeholderTextColor="#9CA3AF" value={noteContent} onChangeText={setNoteContent}
+              multiline textAlignVertical="top" autoFocus />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── First Impression Modal ────────────────────────────── */}
+      <Modal visible={firstImpressionModalVisible} animationType="slide" presentationStyle="pageSheet"
+        onRequestClose={() => setFirstImpressionModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setFirstImpressionModalVisible(false)} style={styles.roundButton}>
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>First Impression</Text>
+            <TouchableOpacity onPress={handleSaveFirstImpression}
+              style={[styles.roundButton, !impressionText.trim() && styles.roundButtonDisabled]} disabled={!impressionText.trim()}>
+              <Ionicons name="checkmark" size={20} color={impressionText.trim() ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>What was your first impression of {currentPerson.name}?</Text>
+              <View style={styles.modalTextAreaContainer}>
+                <TextInput style={styles.modalTextArea} placeholder="She walked in with this incredible energy..."
+                  placeholderTextColor="#9CA3AF" value={impressionText} onChangeText={setImpressionText}
+                  multiline textAlignVertical="top" autoFocus />
+              </View>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>When did you first meet?</Text>
+              <TouchableOpacity style={styles.modalMetaButton} onPress={openWhenWeMetPicker} activeOpacity={0.7}>
+                {whenWeMet ? (
+                  <View style={styles.modalMetaSelected}>
+                    <Ionicons name="calendar" size={18} color={ACCENT_COLOR} />
+                    <Text style={styles.modalMetaSelectedText}>{formatWhenWeMet(whenWeMet.toISOString())}</Text>
+                    <TouchableOpacity onPress={() => { setWhenWeMet(null); closeWhenWeMetPicker(); }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                      <Ionicons name="close-circle" size={18} color="#C4C4C4" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.modalMetaPlaceholder}>
+                    <Ionicons name="calendar-outline" size={18} color="#9CA3AF" />
+                    <Text style={styles.modalMetaPlaceholderText}>Select when you met</Text>
+                    <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+            {currentData.firstImpression && (
+              <View style={styles.modalSection}>
+                <TouchableOpacity style={styles.dangerButton} onPress={handleClearFirstImpression} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Remove First Impression</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+        {showWhenWeMetPicker && Platform.OS === 'ios' && (
+          <View style={styles.pickerOverlay}>
+            <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={closeWhenWeMetPicker} />
+            <Animated.View style={[styles.datePickerContainer, { transform: [{ translateY: whenWeMetTranslateY }] }]}>
+              <View style={styles.pickerHandle}><View style={styles.pickerHandleBar} /></View>
+              <Text style={styles.pickerTitle}>When did you first meet?</Text>
+              <View style={styles.datePickerWrapper}>
+                <DateTimePicker value={whenWeMet || new Date()} mode="date" display="spinner"
+                  onChange={(_, d) => { if (d) setWhenWeMet(d); }} maximumDate={new Date()}
+                  minimumDate={new Date(2000, 0, 1)} style={styles.datePicker} />
+              </View>
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity onPress={() => { setWhenWeMet(null); closeWhenWeMetPicker(); }}
+                  style={styles.datePickerClearButton} activeOpacity={0.7}>
+                  <Text style={styles.datePickerClearText}>Clear</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={closeWhenWeMetPicker} style={styles.datePickerDoneButton} activeOpacity={0.7}>
+                  <Text style={styles.datePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        )}
+      </Modal>
+
+      {/* ── Flag Modal ────────────────────────────────────────── */}
+      <Modal visible={flagModalVisible} animationType="slide" presentationStyle="pageSheet"
+        onRequestClose={() => { setFlagModalVisible(false); setEditingFlag(null); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => { setFlagModalVisible(false); setEditingFlag(null); }} style={styles.roundButton}>
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{editingFlag ? 'Edit Flag' : 'Add Flag'}</Text>
+            <TouchableOpacity onPress={handleSaveFlag}
+              style={[styles.roundButton, !flagText.trim() && styles.roundButtonDisabled]} disabled={!flagText.trim()}>
+              <Ionicons name="checkmark" size={20} color={flagText.trim() ? "#1F2937" : "#9CA3AF"} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>Flag Type</Text>
+              <View style={styles.flagTypeButtons}>
+                <TouchableOpacity style={[styles.flagTypeButton, flagType === 'green' && styles.flagTypeButtonGreenActive]}
+                  onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlagType('green'); }} activeOpacity={0.7}>
+                  <Ionicons name="checkmark-circle" size={20} color={flagType === 'green' ? '#15803D' : '#9CA3AF'} />
+                  <Text style={[styles.flagTypeButtonText, flagType === 'green' && { color: '#15803D' }]}>Green Flag</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.flagTypeButton, flagType === 'red' && styles.flagTypeButtonRedActive]}
+                  onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlagType('red'); }} activeOpacity={0.7}>
+                  <Ionicons name="alert-circle" size={20} color={flagType === 'red' ? '#DC2626' : '#9CA3AF'} />
+                  <Text style={[styles.flagTypeButtonText, flagType === 'red' && { color: '#DC2626' }]}>Red Flag</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>{flagType === 'green' ? "What's the positive trait?" : "What's the concern?"}</Text>
+              <View style={[styles.flagTextInputContainer, flagType === 'green' ? styles.flagTextInputContainerGreen : styles.flagTextInputContainerRed]}>
+                <TextInput style={styles.flagTextInput}
+                  placeholder={flagType === 'green' ? 'e.g., Great listener...' : 'e.g., Often late...'}
+                  placeholderTextColor="#9CA3AF" value={flagText} onChangeText={setFlagText} autoFocus maxLength={50} />
+              </View>
+              <Text style={styles.flagCharCount}>{flagText.length}/50</Text>
+            </View>
+            {editingFlag && (
+              <View style={styles.modalSection}>
+                <TouchableOpacity style={styles.dangerButton} onPress={() => {
+                  Alert.alert('Delete Flag', `Remove "${editingFlag.text}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteFlag(editingFlag.id); setFlagModalVisible(false); setEditingFlag(null); }},
+                  ]);
+                }} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Delete Flag</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Date Entry Modal ──────────────────────────────────── */}
+      <Modal visible={dateModalVisible} animationType="slide" presentationStyle="pageSheet"
+        onRequestClose={() => { setDateModalVisible(false); setEditingDateEntry(null); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => { setDateModalVisible(false); setEditingDateEntry(null); }} style={styles.roundButton}>
+              <Ionicons name="close" size={20} color="#1F2937" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{editingDateEntry ? 'Edit Date' : 'Log Date'}</Text>
+            <TouchableOpacity onPress={handleSaveDateEntry}
+              style={[styles.roundButton, (!dateEntryTitle.trim() || !dateEntryVibe) && styles.roundButtonDisabled]}
+              disabled={!dateEntryTitle.trim() || !dateEntryVibe}>
+              <Ionicons name="checkmark" size={20} color={dateEntryTitle.trim() && dateEntryVibe ? '#1F2937' : '#9CA3AF'} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>When?</Text>
+              <TouchableOpacity style={styles.modalMetaButton} onPress={openDateEntryPicker} activeOpacity={0.7}>
+                <View style={styles.modalMetaPlaceholder}>
+                  <Ionicons name="calendar-outline" size={18} color={ACCENT_COLOR} />
+                  <Text style={[styles.modalMetaPlaceholderText, { color: '#1F2937', fontWeight: '500' }]}>{formatDateEntryDate(dateEntryDate.toISOString())}</Text>
+                  <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>What did you do?</Text>
+              <View style={styles.modalInputWrapper}>
+                <TextInput style={styles.modalInput} placeholder="e.g., Dinner and a walk by the river"
+                  placeholderTextColor="#9CA3AF" value={dateEntryTitle} onChangeText={setDateEntryTitle} maxLength={100} />
+              </View>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>Where? (optional)</Text>
+              <View style={styles.modalInputWrapper}>
+                <TextInput style={styles.modalInput} placeholder="e.g., Blue Bottle Coffee, Brooklyn"
+                  placeholderTextColor="#9CA3AF" value={dateEntryLocation} onChangeText={setDateEntryLocation} maxLength={80} />
+              </View>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>How did it go?</Text>
+              <View style={styles.vibePickerContainer}>
+                {DATE_VIBES.map(vibe => (
+                  <TouchableOpacity key={vibe.type}
+                    style={[styles.vibePickerItem, dateEntryVibe === vibe.type && styles.vibePickerItemSelected]}
+                    onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setDateEntryVibe(vibe.type); }}
+                    activeOpacity={0.7}>
+                    <Text style={styles.vibePickerEmoji}>{vibe.emoji}</Text>
+                    <Text style={[styles.vibePickerLabel, dateEntryVibe === vibe.type && styles.vibePickerLabelSelected]}>{vibe.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionLabel}>Notes (optional)</Text>
+              <View style={styles.modalTextAreaContainer}>
+                <TextInput style={[styles.modalTextArea, { minHeight: 80 }]} placeholder="Any memorable moments..."
+                  placeholderTextColor="#9CA3AF" value={dateEntryNotes} onChangeText={setDateEntryNotes}
+                  multiline textAlignVertical="top" maxLength={300} />
+              </View>
+            </View>
+            {editingDateEntry && (
+              <View style={styles.modalSection}>
+                <TouchableOpacity style={styles.dangerButton} onPress={() => {
+                  Alert.alert('Delete Date', `Remove "${editingDateEntry.title}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteDateEntry(editingDateEntry.id); setDateModalVisible(false); setEditingDateEntry(null); }},
+                  ]);
+                }} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Delete Date</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+        {showDateEntryPicker && Platform.OS === 'ios' && (
+          <View style={styles.pickerOverlay}>
+            <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={closeDateEntryPicker} />
+            <Animated.View style={[styles.datePickerContainer, { transform: [{ translateY: dateEntryPickerTranslateY }] }]}>
+              <View style={styles.pickerHandle}><View style={styles.pickerHandleBar} /></View>
+              <Text style={styles.pickerTitle}>When was the date?</Text>
+              <View style={styles.datePickerWrapper}>
+                <DateTimePicker value={dateEntryDate} mode="date" display="spinner"
+                  onChange={(_, d) => { if (Platform.OS === 'android') setShowDateEntryPicker(false); if (d) setDateEntryDate(d); }}
+                  maximumDate={new Date()} minimumDate={new Date(2000, 0, 1)} style={styles.datePicker} />
+              </View>
+              <View style={styles.datePickerActions}>
+                <TouchableOpacity onPress={() => { setDateEntryDate(new Date()); closeDateEntryPicker(); }}
+                  style={styles.datePickerClearButton} activeOpacity={0.7}>
+                  <Text style={styles.datePickerClearText}>Today</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={closeDateEntryPicker} style={styles.datePickerDoneButton} activeOpacity={0.7}>
+                  <Text style={styles.datePickerDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        )}
+      </Modal>
+
+      {/* Android Date Pickers */}
+      {showWhenWeMetPicker && Platform.OS === 'android' && (
+        <DateTimePicker value={whenWeMet || new Date()} mode="date" display="default"
+          onChange={(_, d) => { setShowWhenWeMetPicker(false); if (d) setWhenWeMet(d); }}
+          maximumDate={new Date()} minimumDate={new Date(2000, 0, 1)} />
+      )}
+      {showDateEntryPicker && Platform.OS === 'android' && (
+        <DateTimePicker value={dateEntryDate} mode="date" display="default"
+          onChange={(_, d) => { setShowDateEntryPicker(false); if (d) setDateEntryDate(d); }}
+          maximumDate={new Date()} minimumDate={new Date(2000, 0, 1)} />
+      )}
     </View>
   );
 };
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0EEE8',
+  container: { flex: 1, backgroundColor: '#F0EEE8' },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
+
+  // Fixed Header
+  fixedHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+  headerBlur: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  headerGradient: { flex: 1, height: 120 },
+  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
+  headerBtn: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.10)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1,
   },
 
-  // Fixed Header with Gradient
-  fixedHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  // Person Selector
+  personSelector: { marginBottom: 16, maxHeight: 48 },
+  personSelectorContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
+  personChip: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    paddingLeft: 4, paddingRight: 14, paddingVertical: 4, borderRadius: 24, gap: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  headerBlur: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  headerGradient: {
-    flex: 1,
-    height: 120,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.10)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.10)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
+  personChipActive: { backgroundColor: ACCENT_COLOR },
+  personChipAvatar: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  personChipInitials: { fontSize: 13, fontWeight: '700', color: ACCENT_COLOR },
+  personChipInitialsActive: { color: ACCENT_COLOR },
+  personChipName: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  personChipNameActive: { color: '#FFFFFF' },
+  addPersonChip: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#E5E7EB', borderStyle: 'dashed',
   },
 
-  // Section Common
-  section: {
-    marginBottom: 28,
-    paddingHorizontal: 16,
+  // Person Header Card
+  personHeaderCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, marginHorizontal: 16, marginBottom: 12,
+    paddingVertical: 14, paddingLeft: 20, paddingRight: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
   },
-  sectionAccent: {
-    width: 4,
-    height: 40,
-    backgroundColor: '#E11D48',
-    borderRadius: 2,
-    marginTop: 2,
+  personCardAccent: {
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+    backgroundColor: ACCENT_COLOR, borderTopLeftRadius: 20, borderBottomLeftRadius: 20,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-    marginBottom: 4,
+  personAvatarRing: {
+    width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: 'rgba(225, 29, 72, 0.15)',
+    justifyContent: 'center', alignItems: 'center',
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
+  personAvatar: {
+    width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center',
   },
-  seeAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+  personAvatarInitials: { fontSize: 19, fontWeight: '700', color: '#E11D48' },
+  personHeaderCenter: { flex: 1 },
+  personHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  quickActionBtn: {
+    width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center',
   },
-  seeAllText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginRight: 2,
+  personHeaderEditBtn: {
+    width: 34, height: 34, borderRadius: 17, backgroundColor: '#F3F4F6',
+    justifyContent: 'center', alignItems: 'center',
   },
+  personName: { fontSize: 26, fontWeight: '700', color: '#1F2937', letterSpacing: -0.4 },
 
-  // Person Pager
-  pagerSection: {
-    marginBottom: 28,
-  },
-  pagerContent: {
-    // no extra padding — each page is full screen width
-  },
-  pagerPage: {
-    width: SCREEN_WIDTH,
-    paddingHorizontal: 16,
-  },
-  pagerDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 14,
-    gap: 8,
-  },
-  pagerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D1D5DB',
-  },
-  pagerDotActive: {
-    backgroundColor: '#E11D48',
-    width: 20,
-    borderRadius: 4,
-  },
-
-  // Person Dashboard Card
-  dashboardCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  dashboardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  dashboardAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  dashboardAvatarInitials: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#E11D48',
-  },
-  dashboardHeaderInfo: {
-    flex: 1,
-  },
-  dashboardName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-    marginBottom: 8,
-  },
-  dashboardContactRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dashboardContactIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dashboardVibes: {
-    marginBottom: 14,
-    gap: 8,
-  },
-  vibeBarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  vibeBarIcon: {
-    width: 18,
-    marginRight: 6,
-  },
-  vibeBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-    width: 80,
-  },
-  vibeBarTrack: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 3,
-  },
-  vibeBarSegment: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-  },
-  dashboardFlags: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  flagBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    backgroundColor: '#F9FAFB',
-  },
-  flagBadgeText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  dashboardLastDate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-  },
-  lastDateEmoji: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  lastDateInfo: {
-    flex: 1,
-  },
-  lastDateTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  lastDateMeta: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#6B7280',
-  },
-  viewProfileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E11D48',
-    borderRadius: 14,
-    paddingVertical: 13,
-    gap: 6,
-  },
-  viewProfileText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-
-  // Date Ideas Section - Carousel
-  dateIdeasSection: {
-    marginBottom: 40,
-    paddingHorizontal: 0,
-  },
-  dateIdeasHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  dateIdeasTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  dateIdeasSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#6B7280',
-  },
-  carouselContainer: {
-    height: 240,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'visible',
-  },
-  carouselCard: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  dateIdeaCardInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
+  // Expandable Sections
+  sectionsContainer: { paddingHorizontal: 16, marginBottom: 24 },
+  expandableCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    position: 'relative',
   },
-  dateIdeaGradient: {
-    width: '100%',
-    height: '100%',
-    padding: 20,
-    backgroundColor: '#FFFFFF',
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 14, paddingHorizontal: 16,
   },
-  dateIdeaMainContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionIconCircle: {
+    width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center',
   },
-  dateIdeaHeartButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    zIndex: 10,
-  },
-  dateIdeaIconContainer: {
-    marginBottom: 4,
-  },
-  dateIdeaIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  dateIdeaTextContent: {
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  dateIdeaTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    letterSpacing: -0.3,
-    marginBottom: 4,
-    lineHeight: 20,
-  },
-  dateIdeaSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-    textAlign: 'center',
-    letterSpacing: -0.1,
-    lineHeight: 16,
-  },
-  dateIdeaFooter: {
-    alignItems: 'center',
-  },
-  dateIdeaDurationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  dateIdeaDurationText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#9CA3AF', letterSpacing: 0.8 },
+  sectionPreview: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
+  expandableContent: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
 
-  // Advice Section
-  adviceSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  adviceTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  adviceList: {
-    gap: 12,
-  },
-  adviceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  adviceIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF1F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  adviceContent: {
-    flex: 1,
-  },
-  adviceTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    letterSpacing: -0.2,
-    marginBottom: 3,
-  },
-  adviceDescription: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#6B7280',
-    lineHeight: 18,
-  },
+  // Vibe Rating
+  vibeMetricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  vibeMetricLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  vibeMetricIcon: { width: 22, height: 22, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
+  vibeMetricLabel: { fontSize: 14, fontWeight: '500', color: '#374151' },
+  vibeSegmentsRow: { flexDirection: 'row', gap: 4, width: 130 },
+  vibeSegmentTouch: { flex: 1 },
+  vibeSegmentBg: { height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' },
+  vibeSegmentFill: { height: '100%', borderRadius: 3 },
 
-  // Dropdown Modal
-  dropdownModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  // First Impression
+  firstImpressionTouchable: { paddingVertical: 4 },
+  firstImpressionText: { fontSize: 15, fontWeight: '500', color: '#374151', lineHeight: 22, fontStyle: 'italic' },
+  firstImpressionMeta: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, gap: 6 },
+  metaTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, gap: 4 },
+  metaTagText: { fontSize: 11, fontWeight: '500', color: '#6B7280' },
+  firstImpressionEmpty: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
+  firstImpressionEmptyText: { fontSize: 14, fontWeight: '400', color: '#9CA3AF' },
+
+  // Flags
+  flagsContainer: { gap: 12 },
+  flagsSection: { gap: 6 },
+  flagsSectionLabel: { fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3 },
+  flagsChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  flagsEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 8 },
+  flagsAddButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  flagsAddButtonGreen: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 10, borderRadius: 12, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', gap: 4,
   },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 116,
-    right: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 6,
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+  flagsAddButtonGreenText: { fontSize: 13, fontWeight: '600', color: '#15803D' },
+  flagsAddButtonRed: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 10, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', gap: 4,
   },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    gap: 12,
+  flagsAddButtonRedText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
+  flagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, gap: 5 },
+  flagChipGreen: { backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' },
+  flagChipRed: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
+  flagChipText: { fontSize: 13, fontWeight: '500' },
+  flagChipTextGreen: { color: '#15803D' },
+  flagChipTextRed: { color: '#DC2626' },
+
+  // Date History
+  dateHistoryHeader: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
+  dateHistoryAddButton: {
+    width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center',
   },
-  dropdownItemWithDivider: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+  dateHistoryTimeline: { paddingLeft: 4 },
+  dateEntryRow: { flexDirection: 'row', minHeight: 70 },
+  dateEntryTimeline: { width: 24, alignItems: 'center' },
+  dateEntryDot: {
+    width: 10, height: 10, borderRadius: 5, backgroundColor: ACCENT_COLOR, marginTop: 4,
+    shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2,
   },
-  dropdownItemText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#374151',
+  dateEntryLine: { flex: 1, width: 2, backgroundColor: '#E5E7EB', marginTop: 4, marginBottom: -4 },
+  dateEntryContent: { flex: 1, paddingLeft: 12, paddingBottom: 16 },
+  dateEntryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
+  dateEntryTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1F2937', lineHeight: 20 },
+  dateEntryVibe: { fontSize: 18 },
+  dateEntryLocationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
+  dateEntryLocation: { fontSize: 13, fontWeight: '400', color: '#6B7280', flex: 1 },
+  dateEntryDate: { fontSize: 12, fontWeight: '500', color: '#9CA3AF', marginTop: 4 },
+  dateHistoryEmpty: { alignItems: 'center', paddingVertical: 16 },
+  dateHistoryEmptyIcon: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
   },
+  dateHistoryEmptyText: { fontSize: 15, fontWeight: '600', color: '#6B7280', marginBottom: 10 },
+  dateHistoryEmptyButton: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: ACCENT_COLOR,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, gap: 6,
+  },
+  dateHistoryEmptyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+
+  // Notes
+  addNoteCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
+    borderRadius: 14, paddingLeft: 16, paddingRight: 8, paddingVertical: 10, marginBottom: 6,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  addNotePlaceholder: { flex: 1, fontSize: 14, fontWeight: '400', color: '#9CA3AF' },
+  addNoteButton: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFE4E6',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  emptyNotesContainer: { alignItems: 'center', paddingVertical: 16 },
+  emptyNotesText: { fontSize: 15, fontWeight: '600', color: '#6B7280', marginBottom: 4 },
+  emptyNotesSubtext: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center' },
+  noteCardWrapper: { marginBottom: 8, position: 'relative', overflow: 'hidden', borderRadius: 14 },
+  noteCardAnimatedWrapper: { backgroundColor: '#FDF5F3', borderRadius: 14 },
+  noteActionsContainer: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 16, gap: 16,
+  },
+  noteSwipeAction: {
+    width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2,
+  },
+  noteEditAction: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', shadowColor: '#6B7280' },
+  noteDeleteAction: { backgroundColor: '#FFFFFF', borderColor: '#FECACA', shadowColor: '#EF4444' },
+  noteCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FDF5F3',
+    borderRadius: 14, padding: 14, paddingLeft: 18,
+    borderWidth: 1, borderColor: 'rgba(228, 115, 103, 0.10)',
+    overflow: 'hidden',
+  },
+  noteAccent: {
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+    backgroundColor: ACCENT_COLOR, borderTopLeftRadius: 14, borderBottomLeftRadius: 14,
+  },
+  noteText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#374151', lineHeight: 22 },
+
+  // Details
+  detailsRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
+  detailsRowIcon: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+  },
+  detailsRowContent: { flex: 1 },
+  detailsRowLabel: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
+  detailsRowValue: { fontSize: 15, fontWeight: '500', color: '#1F2937' },
+
+  // Date Ideas Section
+  dateIdeasSection: { marginBottom: 24 },
+  dateIdeasHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingHorizontal: 16, marginBottom: 14,
+  },
+  dateIdeasTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  sectionAccent: { width: 4, height: 36, backgroundColor: '#E11D48', borderRadius: 2, marginTop: 2 },
+  bigSectionTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', letterSpacing: -0.3, marginBottom: 3 },
+  bigSectionSubtitle: { fontSize: 13, fontWeight: '400', color: '#6B7280' },
+  seeAllButton: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 14, backgroundColor: '#FFFFFF',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1,
+  },
+  seeAllText: { fontSize: 12, fontWeight: '500', color: '#6B7280', marginRight: 2 },
+  dateIdeasScroll: { paddingLeft: 16, paddingRight: 8, gap: 10 },
+  dateIdeaCard: {
+    width: 152, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  dateIdeaHeart: {
+    position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center', zIndex: 10,
+  },
+  dateIdeaIconCircle: {
+    width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
+    shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3,
+  },
+  dateIdeaTitle: { fontSize: 14, fontWeight: '700', color: '#1F2937', textAlign: 'center', letterSpacing: -0.2, marginBottom: 2, lineHeight: 18 },
+  dateIdeaSubtitle: { fontSize: 11, fontWeight: '500', color: '#6B7280', textAlign: 'center', marginBottom: 8 },
+  dateIdeaDuration: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1,
+  },
+  dateIdeaDurationText: { fontSize: 10, fontWeight: '600' },
+
+  // Dating Wisdom
+  wisdomSection: { paddingHorizontal: 16, marginBottom: 24 },
+  wisdomHeader: { marginBottom: 14 },
+  wisdomList: { gap: 8 },
+  wisdomCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 16, padding: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
+  },
+  wisdomIconCircle: {
+    width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+  },
+  wisdomContent: { flex: 1 },
+  wisdomTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937', letterSpacing: -0.2, marginBottom: 2 },
+  wisdomDescription: { fontSize: 12, fontWeight: '400', color: '#6B7280', lineHeight: 16 },
+
+  // Menu Overlay
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
+  menuContainer: {
+    position: 'absolute', top: 116, right: 16, backgroundColor: '#FFFFFF',
+    borderRadius: 18, paddingVertical: 6, minWidth: 200,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 8,
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, gap: 12 },
+  menuItemText: { fontSize: 15, fontWeight: '500', color: '#374151' },
+
+  // Modals (shared)
+  modalContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+  modalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F3F5',
+  },
+  roundButton: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
+  },
+  roundButtonDisabled: { opacity: 0.5 },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: '#1F2937' },
+  modalInputContainer: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+  modalTextInput: { flex: 1, fontSize: 16, fontWeight: '500', color: '#1F2937', lineHeight: 24, padding: 0 },
+  modalSection: { paddingHorizontal: 20, paddingTop: 20 },
+  modalSectionLabel: { fontSize: 15, fontWeight: '500', color: '#6B7280', marginBottom: 10 },
+  modalTextAreaContainer: {
+    backgroundColor: '#F9FAFB', borderRadius: 14, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 120,
+  },
+  modalTextArea: { flex: 1, fontSize: 16, fontWeight: '500', color: '#1F2937', lineHeight: 24, padding: 16, minHeight: 120 },
+  modalMetaButton: {
+    backgroundColor: '#F9FAFB', borderRadius: 14, borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden',
+  },
+  modalMetaPlaceholder: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+  modalMetaPlaceholderText: { flex: 1, fontSize: 15, fontWeight: '400', color: '#9CA3AF' },
+  modalMetaSelected: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+  modalMetaSelectedText: { flex: 1, fontSize: 15, fontWeight: '500', color: '#1F2937' },
+  modalInputWrapper: {
+    backgroundColor: '#F9FAFB', borderRadius: 14, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  modalInput: { fontSize: 16, fontWeight: '500', color: '#1F2937', padding: 0 },
+  dangerButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 14, borderRadius: 14, backgroundColor: '#FEF2F2',
+    borderWidth: 1, borderColor: '#FECACA', gap: 8,
+  },
+  dangerButtonText: { fontSize: 15, fontWeight: '600', color: '#DC2626' },
+
+  // Flag Modal specific
+  flagTypeButtons: { flexDirection: 'row', gap: 10 },
+  flagTypeButton: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 14, borderRadius: 14, backgroundColor: '#F9FAFB',
+    borderWidth: 1.5, borderColor: '#E5E7EB', gap: 8,
+  },
+  flagTypeButtonGreenActive: { backgroundColor: '#F0FDF4', borderColor: '#22C55E' },
+  flagTypeButtonRedActive: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
+  flagTypeButtonText: { fontSize: 15, fontWeight: '600', color: '#9CA3AF' },
+  flagTextInputContainer: {
+    backgroundColor: '#F9FAFB', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  flagTextInputContainerGreen: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  flagTextInputContainerRed: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+  flagTextInput: { fontSize: 16, fontWeight: '500', color: '#1F2937', padding: 0 },
+  flagCharCount: { fontSize: 12, fontWeight: '500', color: '#9CA3AF', textAlign: 'right', marginTop: 8 },
+
+  // Vibe Picker (in date modal)
+  vibePickerContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  vibePickerItem: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 2,
+    borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB',
+  },
+  vibePickerItemSelected: { backgroundColor: '#FFF1F2', borderColor: ACCENT_COLOR },
+  vibePickerEmoji: { fontSize: 22, marginBottom: 3 },
+  vibePickerLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280' },
+  vibePickerLabelSelected: { color: ACCENT_COLOR, fontWeight: '600' },
+
+  // Date Picker
+  pickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
+  pickerBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
+  pickerHandle: { alignItems: 'center', paddingTop: 12, paddingBottom: 8 },
+  pickerHandleBar: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB' },
+  pickerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', textAlign: 'center', marginBottom: 16, letterSpacing: -0.3 },
+  datePickerContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40 },
+  datePickerWrapper: { alignItems: 'center', justifyContent: 'center', marginHorizontal: -10 },
+  datePicker: { width: '100%', height: 200 },
+  datePickerActions: { flexDirection: 'row', marginHorizontal: 20, marginTop: 12, gap: 10 },
+  datePickerClearButton: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center',
+  },
+  datePickerClearText: { fontSize: 15, fontWeight: '600', color: '#6B7280' },
+  datePickerDoneButton: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#1F2937',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  datePickerDoneText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
 });
 
 export default DatingHomeScreen;
