@@ -1348,7 +1348,7 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
               <View style={[styles.vibeCardIconCircle, { backgroundColor: '#FFF1F2' }]}>
                 <Ionicons name="heart" size={12} color={ACCENT_COLOR} />
               </View>
-              <Text style={styles.vibeCardTitle}>The Vibe</Text>
+              <Text style={styles.vibeCardTitle}>Vibe Check</Text>
             </View>
             <View style={styles.vibeRatingsContainer}>
               <VibeRatingRow
