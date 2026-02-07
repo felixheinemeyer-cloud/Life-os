@@ -609,7 +609,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
           >
             <Ionicons name="close" size={20} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isEditMode ? 'Edit' : 'New Person'}</Text>
+          <View style={{ flex: 1 }} />
           <TouchableOpacity
             onPress={handleSave}
             style={[styles.roundButton, !isFormValid && styles.roundButtonDisabled]}

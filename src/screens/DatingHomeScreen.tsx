@@ -67,6 +67,15 @@ interface DatingAdvice {
 const ACCENT_COLOR = '#E11D48';
 const NOTE_ACTION_WIDTH = 136;
 
+const SECTION_COLORS: Record<string, { icon: string; bg: string; border: string }> = {
+  vibe: { icon: '#E11D48', bg: '#FFF1F2', border: '#F9A8B8' },
+  firstImpression: { icon: '#D946EF', bg: '#FDF4FF', border: '#E8A8F5' },
+  flags: { icon: '#F59E0B', bg: '#FFFBEB', border: '#FCD377' },
+  dateHistory: { icon: '#3B82F6', bg: '#EFF6FF', border: '#93BBFD' },
+  notes: { icon: '#10B981', bg: '#ECFDF5', border: '#6EE7B7' },
+  details: { icon: '#6366F1', bg: '#EEF2FF', border: '#A5B4FC' },
+};
+
 const VIBE_CATEGORIES = {
   attraction: { icon: 'flame' as const, color: '#F97316', label: 'Attraction',
     labels: ['', 'Minimal', 'Some spark', 'Good chemistry', 'Strong pull', 'Magnetic'] },
@@ -76,17 +85,17 @@ const VIBE_CATEGORIES = {
     labels: ['', 'Different paths', 'Some overlap', 'Good fit', 'Great match', 'Perfect sync'] },
 };
 
-const DATE_VIBES: { type: DateVibeType; emoji: string; label: string }[] = [
-  { type: 'amazing', emoji: '🥰', label: 'Amazing' },
-  { type: 'good', emoji: '😊', label: 'Good' },
-  { type: 'okay', emoji: '😐', label: 'Okay' },
-  { type: 'meh', emoji: '😕', label: 'Meh' },
-  { type: 'bad', emoji: '😔', label: 'Bad' },
+const DATE_VIBES: { type: DateVibeType; label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { type: 'amazing', label: 'Amazing', color: '#15803D', bg: '#F0FDF4', icon: 'heart' },
+  { type: 'good', label: 'Good', color: '#3B82F6', bg: '#EFF6FF', icon: 'thumbs-up' },
+  { type: 'okay', label: 'Okay', color: '#F59E0B', bg: '#FFFBEB', icon: 'remove' },
+  { type: 'meh', label: 'Meh', color: '#9CA3AF', bg: '#F3F4F6', icon: 'thumbs-down' },
+  { type: 'bad', label: 'Bad', color: '#DC2626', bg: '#FEF2F2', icon: 'close' },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const getVibeEmoji = (type: DateVibeType): string =>
-  DATE_VIBES.find(v => v.type === type)?.emoji || '😐';
+const getVibeInfo = (type: DateVibeType) =>
+  DATE_VIBES.find(v => v.type === type) || DATE_VIBES[2];
 
 const getTimeAgo = (dateString: string): string => {
   const diffDays = Math.floor((Date.now() - new Date(dateString).getTime()) / 86400000);
@@ -249,9 +258,8 @@ const FlagChip: React.FC<{
         ]);
       }}
       activeOpacity={0.7}>
-      <Ionicons name={isGreen ? 'checkmark-circle' : 'alert-circle'} size={14}
-        color={isGreen ? '#15803D' : '#DC2626'} />
-      <Text style={[styles.flagChipText, isGreen ? styles.flagChipTextGreen : styles.flagChipTextRed]}
+      <View style={[styles.flagDot, { backgroundColor: isGreen ? '#22C55E' : '#EF4444' }]} />
+      <Text style={[styles.flagChipText, { color: isGreen ? '#15803D' : '#DC2626' }]}
         numberOfLines={1}>{flag.text}</Text>
     </TouchableOpacity>
   );
@@ -274,17 +282,17 @@ const DateEntryRow: React.FC<{
       {!isLast && <View style={styles.dateEntryLine} />}
     </View>
     <View style={styles.dateEntryContent}>
-      <View style={styles.dateEntryHeader}>
-        <Text style={styles.dateEntryTitle} numberOfLines={2}>{entry.title}</Text>
-        <Text style={styles.dateEntryVibe}>{getVibeEmoji(entry.vibe)}</Text>
+      <Text style={styles.dateEntryTitle} numberOfLines={2}>{entry.title}</Text>
+      <View style={styles.dateEntryMeta}>
+        <Text style={styles.dateEntryDate}>{formatDateEntryDate(entry.date)}</Text>
+        {entry.location && (
+          <>
+            <Text style={styles.dateEntryMetaDot}>·</Text>
+            <Ionicons name="location-outline" size={11} color="#9CA3AF" />
+            <Text style={styles.dateEntryLocation} numberOfLines={1}>{entry.location}</Text>
+          </>
+        )}
       </View>
-      {entry.location && (
-        <View style={styles.dateEntryLocationRow}>
-          <Ionicons name="location-outline" size={12} color="#9CA3AF" />
-          <Text style={styles.dateEntryLocation} numberOfLines={1}>{entry.location}</Text>
-        </View>
-      )}
-      <Text style={styles.dateEntryDate}>{formatDateEntryDate(entry.date)}</Text>
     </View>
   </TouchableOpacity>
 );
@@ -447,11 +455,10 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   // ─── Section Toggle ──────────────────────────────────────────────────────
   const toggleSection = useCallback((key: string) => {
     if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const newVal = !expandedSections[key];
     setExpandedSections(prev => ({ ...prev, [key]: newVal }));
-    Animated.spring(chevronAnims[key], {
-      toValue: newVal ? 1 : 0, useNativeDriver: true, friction: 8, tension: 100,
+    Animated.timing(chevronAnims[key], {
+      toValue: newVal ? 1 : 0, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
     }).start();
   }, [expandedSections, chevronAnims]);
 
@@ -596,12 +603,12 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   }, []);
 
   const handleSaveDateEntry = useCallback(() => {
-    if (!dateEntryTitle.trim() || !dateEntryVibe) return;
+    if (!dateEntryTitle.trim()) return;
     if (Platform.OS === 'ios') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const entry = {
       id: editingDateEntry?.id || Date.now().toString(),
       date: dateEntryDate.toISOString(), title: dateEntryTitle.trim(),
-      location: dateEntryLocation.trim() || undefined, vibe: dateEntryVibe,
+      location: dateEntryLocation.trim() || undefined, vibe: dateEntryVibe || 'okay',
       notes: dateEntryNotes.trim() || undefined, createdAt: editingDateEntry?.createdAt || new Date().toISOString(),
     };
     const newHistory = editingDateEntry
@@ -648,23 +655,24 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   const SectionHeader: React.FC<{
     sectionKey: string; icon: keyof typeof Ionicons.glyphMap; label: string;
     preview?: string; rightAction?: React.ReactNode;
-  }> = ({ sectionKey, icon, label, preview, rightAction }) => (
-    <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection(sectionKey)} activeOpacity={0.7}>
-      <View style={styles.sectionHeaderLeft}>
-        <View style={styles.sectionIconCircle}>
-          <Ionicons name={icon} size={12} color={ACCENT_COLOR} />
+  }> = ({ sectionKey, icon, label, preview, rightAction }) => {
+    const colors = SECTION_COLORS[sectionKey] || { icon: ACCENT_COLOR, bg: '#FFF1F2' };
+    return (
+      <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection(sectionKey)} activeOpacity={0.7}>
+        <View style={styles.sectionHeaderLeft}>
+          <Ionicons name={icon} size={18} color={colors.icon} />
+          <Text style={styles.sectionLabel}>{label}</Text>
         </View>
-        <Text style={styles.sectionLabel}>{label}</Text>
-      </View>
-      <View style={styles.sectionHeaderRight}>
-        {preview ? <Text style={styles.sectionPreview}>{preview}</Text> : null}
-        {rightAction}
-        <Animated.View style={getChevronStyle(sectionKey)}>
-          <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
-        </Animated.View>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.sectionHeaderRight}>
+          {preview ? <Text style={styles.sectionPreview}>{preview}</Text> : null}
+          {rightAction}
+          <Animated.View style={getChevronStyle(sectionKey)}>
+            <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+          </Animated.View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
@@ -677,6 +685,11 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         {/* ── Person Selector ─────────────────────────────────── */}
         <ScrollView ref={personSelectorRef} horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.personSelectorContent} style={styles.personSelector}>
+          <TouchableOpacity style={styles.addPersonChip}
+            onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry'); }}
+            activeOpacity={0.7}>
+            <Ionicons name="add" size={18} color={ACCENT_COLOR} />
+          </TouchableOpacity>
           {DATING_CRM_DATA.map((person, index) => (
             <TouchableOpacity key={person.id}
               style={[styles.personChip, index === activePersonIndex && styles.personChipActive]}
@@ -695,16 +708,10 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               </Text>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.addPersonChip}
-            onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry'); }}
-            activeOpacity={0.7}>
-            <Ionicons name="add" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
         </ScrollView>
 
         {/* ── Person Header Card ──────────────────────────────── */}
         <View style={styles.personHeaderCard}>
-          <View style={styles.personCardAccent} />
           <View style={styles.personAvatarRing}>
             <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personAvatar}>
               <Text style={styles.personAvatarInitials}>{currentPerson.initials}</Text>
@@ -716,12 +723,12 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           <View style={styles.personHeaderActions}>
             {currentPerson.phoneNumber && (
               <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.7}>
-                <Ionicons name="call-outline" size={17} color={ACCENT_COLOR} />
+                <Ionicons name="call-outline" size={17} color="#6B7280" />
               </TouchableOpacity>
             )}
             {currentPerson.instagram && (
               <TouchableOpacity style={styles.quickActionBtn} onPress={handleInstagram} activeOpacity={0.7}>
-                <Ionicons name="logo-instagram" size={17} color={ACCENT_COLOR} />
+                <Ionicons name="logo-instagram" size={17} color="#6B7280" />
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.personHeaderEditBtn}
@@ -736,8 +743,8 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         <View style={styles.sectionsContainer}>
 
           {/* The Vibe */}
-          <View style={styles.expandableCard}>
-            <SectionHeader sectionKey="vibe" icon="heart" label="THE VIBE" />
+          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.vibe.border }]}>
+            <SectionHeader sectionKey="vibe" icon="heart" label="The Vibe" />
             {expandedSections.vibe && (
               <View style={styles.expandableContent}>
                 <VibeRatingRow label="Attraction" type="attraction" value={currentData.vibeRatings.attraction}
@@ -751,8 +758,8 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* First Impression */}
-          <View style={styles.expandableCard}>
-            <SectionHeader sectionKey="firstImpression" icon="sparkles" label="FIRST IMPRESSION"
+          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.firstImpression.border }]}>
+            <SectionHeader sectionKey="firstImpression" icon="sparkles" label="First Impression"
               preview={currentData.firstImpression ? '' : 'Tap to add'} />
             {expandedSections.firstImpression && (
               <View style={styles.expandableContent}>
@@ -782,45 +789,30 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* Flags */}
-          <View style={styles.expandableCard}>
-            <SectionHeader sectionKey="flags" icon="flag" label="FLAGS"
+          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.flags.border }]}>
+            <SectionHeader sectionKey="flags" icon="flag" label="Flags"
               preview={currentData.flags.length > 0 ? `${greenFlags.length} green · ${redFlags.length} red` : 'None yet'} />
             {expandedSections.flags && (
               <View style={styles.expandableContent}>
                 {currentData.flags.length > 0 ? (
-                  <View style={styles.flagsContainer}>
-                    {greenFlags.length > 0 && (
-                      <View style={styles.flagsSection}>
-                        <Text style={styles.flagsSectionLabel}>Green</Text>
-                        <View style={styles.flagsChipsRow}>
-                          {greenFlags.map(flag => (
-                            <FlagChip key={flag.id} flag={flag} onPress={() => handleEditFlag(flag)}
-                              onDelete={() => handleDeleteFlag(flag.id)} />
-                          ))}
-                        </View>
-                      </View>
-                    )}
-                    {redFlags.length > 0 && (
-                      <View style={styles.flagsSection}>
-                        <Text style={styles.flagsSectionLabel}>Red</Text>
-                        <View style={styles.flagsChipsRow}>
-                          {redFlags.map(flag => (
-                            <FlagChip key={flag.id} flag={flag} onPress={() => handleEditFlag(flag)}
-                              onDelete={() => handleDeleteFlag(flag.id)} />
-                          ))}
-                        </View>
-                      </View>
-                    )}
+                  <View style={styles.flagsChipsRow}>
+                    {currentData.flags.map(flag => (
+                      <FlagChip key={flag.id} flag={flag} onPress={() => handleEditFlag(flag)}
+                        onDelete={() => handleDeleteFlag(flag.id)} />
+                    ))}
                   </View>
                 ) : (
-                  <Text style={styles.flagsEmptyText}>No flags yet. Add green or red flags to track patterns.</Text>
+                  <Text style={styles.flagsEmptyText}>No flags yet</Text>
                 )}
-                <View style={styles.flagsAddButtons}>
-                  <TouchableOpacity style={styles.flagsAddButtonGreen} onPress={() => handleAddFlag('green')} activeOpacity={0.7}>
-                    <Ionicons name="add" size={16} color="#15803D" /><Text style={styles.flagsAddButtonGreenText}>Green</Text>
+                <View style={styles.flagsAddRow}>
+                  <TouchableOpacity style={styles.flagsAddLink} onPress={() => handleAddFlag('green')} activeOpacity={0.7}>
+                    <Ionicons name="add-circle-outline" size={15} color="#22C55E" />
+                    <Text style={styles.flagsAddLinkGreenText}>Add green</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.flagsAddButtonRed} onPress={() => handleAddFlag('red')} activeOpacity={0.7}>
-                    <Ionicons name="add" size={16} color="#DC2626" /><Text style={styles.flagsAddButtonRedText}>Red</Text>
+                  <View style={styles.flagsAddDivider} />
+                  <TouchableOpacity style={styles.flagsAddLink} onPress={() => handleAddFlag('red')} activeOpacity={0.7}>
+                    <Ionicons name="add-circle-outline" size={15} color="#EF4444" />
+                    <Text style={styles.flagsAddLinkRedText}>Add red</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -828,19 +820,13 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* Date History */}
-          <View style={styles.expandableCard}>
-            <SectionHeader sectionKey="dateHistory" icon="calendar" label="DATE HISTORY"
+          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.dateHistory.border }]}>
+            <SectionHeader sectionKey="dateHistory" icon="calendar" label="Date History"
               preview={currentData.dateHistory.length > 0
                 ? `${currentData.dateHistory.length} date${currentData.dateHistory.length > 1 ? 's' : ''}`
                 : 'None yet'} />
             {expandedSections.dateHistory && (
               <View style={styles.expandableContent}>
-                <View style={styles.dateHistoryHeader}>
-                  <View />
-                  <TouchableOpacity style={styles.dateHistoryAddButton} onPress={handleAddDateEntry} activeOpacity={0.7}>
-                    <Ionicons name="add" size={18} color={ACCENT_COLOR} />
-                  </TouchableOpacity>
-                </View>
                 {currentData.dateHistory.length > 0 ? (
                   <View style={styles.dateHistoryTimeline}>
                     {currentData.dateHistory.map((entry, index) => (
@@ -851,50 +837,39 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                     ))}
                   </View>
                 ) : (
-                  <View style={styles.dateHistoryEmpty}>
-                    <View style={styles.dateHistoryEmptyIcon}>
-                      <Ionicons name="heart-outline" size={24} color="#D1D5DB" />
-                    </View>
-                    <Text style={styles.dateHistoryEmptyText}>No dates logged yet</Text>
-                    <TouchableOpacity style={styles.dateHistoryEmptyButton} onPress={handleAddDateEntry} activeOpacity={0.7}>
-                      <Ionicons name="add" size={16} color="#FFFFFF" />
-                      <Text style={styles.dateHistoryEmptyButtonText}>Log First Date</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={styles.dateHistoryEmptyText}>No dates logged yet</Text>
                 )}
+                <TouchableOpacity style={styles.dateHistoryAddLink} onPress={handleAddDateEntry} activeOpacity={0.7}>
+                  <Ionicons name="add-circle-outline" size={15} color="#3B82F6" />
+                  <Text style={styles.dateHistoryAddLinkText}>Add date</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
 
           {/* Notes */}
-          <View style={styles.expandableCard}>
-            <SectionHeader sectionKey="notes" icon="document-text" label="NOTES"
+          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.notes.border }]}>
+            <SectionHeader sectionKey="notes" icon="document-text" label="Notes"
               preview={currentData.notes.length > 0 ? `${currentData.notes.length} note${currentData.notes.length > 1 ? 's' : ''}` : 'None yet'} />
             {expandedSections.notes && (
               <View style={styles.expandableContent}>
                 <TouchableOpacity style={styles.addNoteCard} onPress={handleAddNote} activeOpacity={0.7}>
                   <Text style={styles.addNotePlaceholder}>Add a note...</Text>
-                  <View style={styles.addNoteButton}><Ionicons name="add" size={20} color={ACCENT_COLOR} /></View>
+                  <Ionicons name="add-circle-outline" size={20} color="#10B981" />
                 </TouchableOpacity>
                 {currentData.notes.map(note => (
                   <SwipeableNoteCard key={note.id} note={note}
                     onEdit={() => handleEditNote(note)} onDelete={() => handleDeleteNote(note.id)}
                     onSwipeStart={() => setIsSwipingCard(true)} onSwipeEnd={() => setIsSwipingCard(false)} />
                 ))}
-                {currentData.notes.length === 0 && (
-                  <View style={styles.emptyNotesContainer}>
-                    <Text style={styles.emptyNotesText}>No notes yet</Text>
-                    <Text style={styles.emptyNotesSubtext}>Add notes about {currentPerson.name}</Text>
-                  </View>
-                )}
               </View>
             )}
           </View>
 
           {/* Details */}
           {hasInfo && (
-            <View style={styles.expandableCard}>
-              <SectionHeader sectionKey="details" icon="person" label="DETAILS" />
+            <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.details.border }]}>
+              <SectionHeader sectionKey="details" icon="person" label="Details" />
               {expandedSections.details && (
                 <View style={styles.expandableContent}>
                   {currentPerson.phoneNumber && (
@@ -1174,7 +1149,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
             <TouchableOpacity onPress={() => { setFlagModalVisible(false); setEditingFlag(null); }} style={styles.roundButton}>
               <Ionicons name="close" size={20} color="#1F2937" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{editingFlag ? 'Edit Flag' : 'Add Flag'}</Text>
+            <View style={{ flex: 1 }} />
             <TouchableOpacity onPress={handleSaveFlag}
               style={[styles.roundButton, !flagText.trim() && styles.roundButtonDisabled]} disabled={!flagText.trim()}>
               <Ionicons name="checkmark" size={20} color={flagText.trim() ? "#1F2937" : "#9CA3AF"} />
@@ -1182,26 +1157,25 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
           <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>Flag Type</Text>
-              <View style={styles.flagTypeButtons}>
-                <TouchableOpacity style={[styles.flagTypeButton, flagType === 'green' && styles.flagTypeButtonGreenActive]}
+              <View style={styles.flagTypeToggle}>
+                <TouchableOpacity style={[styles.flagTypeOption, flagType === 'green' && styles.flagTypeOptionGreenActive]}
                   onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlagType('green'); }} activeOpacity={0.7}>
-                  <Ionicons name="checkmark-circle" size={20} color={flagType === 'green' ? '#15803D' : '#9CA3AF'} />
-                  <Text style={[styles.flagTypeButtonText, flagType === 'green' && { color: '#15803D' }]}>Green Flag</Text>
+                  <View style={[styles.flagTypeDot, { backgroundColor: flagType === 'green' ? '#22C55E' : '#D1D5DB' }]} />
+                  <Text style={[styles.flagTypeOptionText, flagType === 'green' && { color: '#15803D' }]}>Green</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.flagTypeButton, flagType === 'red' && styles.flagTypeButtonRedActive]}
+                <TouchableOpacity style={[styles.flagTypeOption, flagType === 'red' && styles.flagTypeOptionRedActive]}
                   onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlagType('red'); }} activeOpacity={0.7}>
-                  <Ionicons name="alert-circle" size={20} color={flagType === 'red' ? '#DC2626' : '#9CA3AF'} />
-                  <Text style={[styles.flagTypeButtonText, flagType === 'red' && { color: '#DC2626' }]}>Red Flag</Text>
+                  <View style={[styles.flagTypeDot, { backgroundColor: flagType === 'red' ? '#EF4444' : '#D1D5DB' }]} />
+                  <Text style={[styles.flagTypeOptionText, flagType === 'red' && { color: '#DC2626' }]}>Red</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <View style={styles.modalSection}>
               <Text style={styles.modalSectionLabel}>{flagType === 'green' ? "What's the positive trait?" : "What's the concern?"}</Text>
-              <View style={[styles.flagTextInputContainer, flagType === 'green' ? styles.flagTextInputContainerGreen : styles.flagTextInputContainerRed]}>
+              <View style={styles.flagTextInputContainer}>
                 <TextInput style={styles.flagTextInput}
                   placeholder={flagType === 'green' ? 'e.g., Great listener...' : 'e.g., Often late...'}
-                  placeholderTextColor="#9CA3AF" value={flagText} onChangeText={setFlagText} autoFocus maxLength={50} />
+                  placeholderTextColor="#C4C4C4" value={flagText} onChangeText={setFlagText} autoFocus maxLength={50} />
               </View>
               <Text style={styles.flagCharCount}>{flagText.length}/50</Text>
             </View>
@@ -1233,9 +1207,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
             <Text style={styles.modalTitle}>{editingDateEntry ? 'Edit Date' : 'Log Date'}</Text>
             <TouchableOpacity onPress={handleSaveDateEntry}
-              style={[styles.roundButton, (!dateEntryTitle.trim() || !dateEntryVibe) && styles.roundButtonDisabled]}
-              disabled={!dateEntryTitle.trim() || !dateEntryVibe}>
-              <Ionicons name="checkmark" size={20} color={dateEntryTitle.trim() && dateEntryVibe ? '#1F2937' : '#9CA3AF'} />
+              style={[styles.roundButton, !dateEntryTitle.trim() && styles.roundButtonDisabled]}
+              disabled={!dateEntryTitle.trim()}>
+              <Ionicons name="checkmark" size={20} color={dateEntryTitle.trim() ? '#1F2937' : '#9CA3AF'} />
             </TouchableOpacity>
           </View>
           <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -1250,9 +1224,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>What did you do?</Text>
+              <Text style={styles.modalSectionLabel}>Title</Text>
               <View style={styles.modalInputWrapper}>
-                <TextInput style={styles.modalInput} placeholder="e.g., Dinner and a walk by the river"
+                <TextInput style={styles.modalInput} placeholder="e.g., Coffee at Blue Bottle"
                   placeholderTextColor="#9CA3AF" value={dateEntryTitle} onChangeText={setDateEntryTitle} maxLength={100} />
               </View>
             </View>
@@ -1261,20 +1235,6 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               <View style={styles.modalInputWrapper}>
                 <TextInput style={styles.modalInput} placeholder="e.g., Blue Bottle Coffee, Brooklyn"
                   placeholderTextColor="#9CA3AF" value={dateEntryLocation} onChangeText={setDateEntryLocation} maxLength={80} />
-              </View>
-            </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>How did it go?</Text>
-              <View style={styles.vibePickerContainer}>
-                {DATE_VIBES.map(vibe => (
-                  <TouchableOpacity key={vibe.type}
-                    style={[styles.vibePickerItem, dateEntryVibe === vibe.type && styles.vibePickerItemSelected]}
-                    onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setDateEntryVibe(vibe.type); }}
-                    activeOpacity={0.7}>
-                    <Text style={styles.vibePickerEmoji}>{vibe.emoji}</Text>
-                    <Text style={[styles.vibePickerLabel, dateEntryVibe === vibe.type && styles.vibePickerLabelSelected]}>{vibe.label}</Text>
-                  </TouchableOpacity>
-                ))}
               </View>
             </View>
             <View style={styles.modalSection}>
@@ -1376,7 +1336,8 @@ const styles = StyleSheet.create({
   addPersonChip: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderStyle: 'dashed',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    borderWidth: 1.5, borderColor: '#F9D1D5',
   },
 
   // Person Header Card
@@ -1401,7 +1362,7 @@ const styles = StyleSheet.create({
   personHeaderCenter: { flex: 1 },
   personHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   quickActionBtn: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFF1F2',
+    width: 34, height: 34, borderRadius: 17, backgroundColor: '#F3F4F6',
     justifyContent: 'center', alignItems: 'center',
   },
   personHeaderEditBtn: {
@@ -1413,21 +1374,17 @@ const styles = StyleSheet.create({
   // Expandable Sections
   sectionsContainer: { paddingHorizontal: 16, marginBottom: 24 },
   expandableCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 8,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+    backgroundColor: '#FFFFFF', borderRadius: 14, marginBottom: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
     overflow: 'hidden',
   },
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, paddingHorizontal: 16,
+    paddingVertical: 16, paddingHorizontal: 16,
   },
-  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionIconCircle: {
-    width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF1F2',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#9CA3AF', letterSpacing: 0.8 },
+  sectionLabel: { fontSize: 15, fontWeight: '600', color: '#374151' },
   sectionPreview: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
   expandableContent: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
 
@@ -1451,78 +1408,54 @@ const styles = StyleSheet.create({
   firstImpressionEmptyText: { fontSize: 14, fontWeight: '400', color: '#9CA3AF' },
 
   // Flags
-  flagsContainer: { gap: 12 },
-  flagsSection: { gap: 6 },
-  flagsSectionLabel: { fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3 },
   flagsChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  flagsEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 8 },
-  flagsAddButtons: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  flagsAddButtonGreen: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: 12, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', gap: 4,
-  },
-  flagsAddButtonGreenText: { fontSize: 13, fontWeight: '600', color: '#15803D' },
-  flagsAddButtonRed: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 10, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', gap: 4,
-  },
-  flagsAddButtonRedText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
-  flagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, gap: 5 },
-  flagChipGreen: { backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' },
-  flagChipRed: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
+  flagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, gap: 6 },
+  flagChipGreen: { backgroundColor: '#F0FDF4' },
+  flagChipRed: { backgroundColor: '#FEF2F2' },
+  flagDot: { width: 6, height: 6, borderRadius: 3 },
   flagChipText: { fontSize: 13, fontWeight: '500' },
-  flagChipTextGreen: { color: '#15803D' },
-  flagChipTextRed: { color: '#DC2626' },
+  flagsEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 4 },
+  flagsAddRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  flagsAddLink: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8 },
+  flagsAddDivider: { width: 1, height: 14, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
+  flagsAddLinkGreenText: { fontSize: 13, fontWeight: '500', color: '#15803D' },
+  flagsAddLinkRedText: { fontSize: 13, fontWeight: '500', color: '#DC2626' },
 
   // Date History
-  dateHistoryHeader: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
-  dateHistoryAddButton: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF1F2',
-    justifyContent: 'center', alignItems: 'center',
-  },
   dateHistoryTimeline: { paddingLeft: 4 },
-  dateEntryRow: { flexDirection: 'row', minHeight: 70 },
-  dateEntryTimeline: { width: 24, alignItems: 'center' },
+  dateEntryRow: { flexDirection: 'row', minHeight: 56 },
+  dateEntryTimeline: { width: 20, alignItems: 'center' },
   dateEntryDot: {
-    width: 10, height: 10, borderRadius: 5, backgroundColor: ACCENT_COLOR, marginTop: 4,
-    shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2,
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', marginTop: 6,
   },
-  dateEntryLine: { flex: 1, width: 2, backgroundColor: '#E5E7EB', marginTop: 4, marginBottom: -4 },
-  dateEntryContent: { flex: 1, paddingLeft: 12, paddingBottom: 16 },
-  dateEntryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  dateEntryTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1F2937', lineHeight: 20 },
-  dateEntryVibe: { fontSize: 18 },
-  dateEntryLocationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
-  dateEntryLocation: { fontSize: 13, fontWeight: '400', color: '#6B7280', flex: 1 },
-  dateEntryDate: { fontSize: 12, fontWeight: '500', color: '#9CA3AF', marginTop: 4 },
-  dateHistoryEmpty: { alignItems: 'center', paddingVertical: 16 },
-  dateHistoryEmptyIcon: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
+  dateEntryLine: { flex: 1, width: 1.5, backgroundColor: '#DBEAFE', marginTop: 4, marginBottom: -4 },
+  dateEntryContent: { flex: 1, paddingLeft: 12, paddingBottom: 14 },
+  dateEntryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  dateEntryTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937', lineHeight: 19 },
+  dateEntryVibePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginTop: 1,
   },
-  dateHistoryEmptyText: { fontSize: 15, fontWeight: '600', color: '#6B7280', marginBottom: 10 },
-  dateHistoryEmptyButton: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: ACCENT_COLOR,
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, gap: 6,
+  dateEntryVibeText: { fontSize: 11, fontWeight: '600' },
+  dateEntryMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 3 },
+  dateEntryMetaDot: { fontSize: 11, color: '#C4C4C4' },
+  dateEntryLocation: { fontSize: 12, fontWeight: '400', color: '#9CA3AF' },
+  dateEntryDate: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
+  dateHistoryEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 4 },
+  dateHistoryAddLink: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    paddingVertical: 4, marginTop: 2,
   },
-  dateHistoryEmptyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  dateHistoryAddLinkText: { fontSize: 13, fontWeight: '500', color: '#3B82F6' },
 
   // Notes
   addNoteCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
-    borderRadius: 14, paddingLeft: 16, paddingRight: 8, paddingVertical: 10, marginBottom: 6,
-    borderWidth: 1, borderColor: '#E5E7EB',
+    borderRadius: 12, paddingLeft: 16, paddingRight: 12, paddingVertical: 10, marginBottom: 6,
   },
   addNotePlaceholder: { flex: 1, fontSize: 14, fontWeight: '400', color: '#9CA3AF' },
-  addNoteButton: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFE4E6',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  emptyNotesContainer: { alignItems: 'center', paddingVertical: 16 },
-  emptyNotesText: { fontSize: 15, fontWeight: '600', color: '#6B7280', marginBottom: 4 },
-  emptyNotesSubtext: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center' },
-  noteCardWrapper: { marginBottom: 8, position: 'relative', overflow: 'hidden', borderRadius: 14 },
-  noteCardAnimatedWrapper: { backgroundColor: '#FDF5F3', borderRadius: 14 },
+  noteCardWrapper: { marginBottom: 6, position: 'relative', overflow: 'hidden', borderRadius: 12 },
+  noteCardAnimatedWrapper: { backgroundColor: '#F9FAFB', borderRadius: 12 },
   noteActionsContainer: {
     position: 'absolute', right: 0, top: 0, bottom: 0,
     flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 16, gap: 16,
@@ -1534,16 +1467,15 @@ const styles = StyleSheet.create({
   noteEditAction: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', shadowColor: '#6B7280' },
   noteDeleteAction: { backgroundColor: '#FFFFFF', borderColor: '#FECACA', shadowColor: '#EF4444' },
   noteCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FDF5F3',
-    borderRadius: 14, padding: 14, paddingLeft: 18,
-    borderWidth: 1, borderColor: 'rgba(228, 115, 103, 0.10)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
+    borderRadius: 12, padding: 12, paddingLeft: 16,
     overflow: 'hidden',
   },
   noteAccent: {
     position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-    backgroundColor: ACCENT_COLOR, borderTopLeftRadius: 14, borderBottomLeftRadius: 14,
+    backgroundColor: '#10B981', borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
   },
-  noteText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#374151', lineHeight: 22 },
+  noteText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#374151', lineHeight: 20 },
 
   // Details
   detailsRow: {
@@ -1565,15 +1497,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, marginBottom: 14,
   },
   dateIdeasTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  sectionAccent: { width: 4, height: 36, backgroundColor: '#E11D48', borderRadius: 2, marginTop: 2 },
+  sectionAccent: { width: 4, height: 36, backgroundColor: '#D1D5DB', borderRadius: 2, marginTop: 2 },
   bigSectionTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', letterSpacing: -0.3, marginBottom: 3 },
   bigSectionSubtitle: { fontSize: 13, fontWeight: '400', color: '#6B7280' },
   seeAllButton: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 14, backgroundColor: '#FFFFFF',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1,
   },
-  seeAllText: { fontSize: 12, fontWeight: '500', color: '#6B7280', marginRight: 2 },
+  seeAllText: { fontSize: 13, fontWeight: '500', color: '#6B7280', marginRight: 2 },
   dateIdeasScroll: { paddingLeft: 16, paddingRight: 8, gap: 10 },
   dateIdeaCard: {
     width: 152, backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, alignItems: 'center',
@@ -1665,23 +1597,23 @@ const styles = StyleSheet.create({
   dangerButtonText: { fontSize: 15, fontWeight: '600', color: '#DC2626' },
 
   // Flag Modal specific
-  flagTypeButtons: { flexDirection: 'row', gap: 10 },
-  flagTypeButton: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 14, borderRadius: 14, backgroundColor: '#F9FAFB',
-    borderWidth: 1.5, borderColor: '#E5E7EB', gap: 8,
+  flagTypeToggle: {
+    flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 12, padding: 3,
   },
-  flagTypeButtonGreenActive: { backgroundColor: '#F0FDF4', borderColor: '#22C55E' },
-  flagTypeButtonRedActive: { backgroundColor: '#FEF2F2', borderColor: '#EF4444' },
-  flagTypeButtonText: { fontSize: 15, fontWeight: '600', color: '#9CA3AF' },
+  flagTypeOption: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 10, borderRadius: 10, gap: 6,
+  },
+  flagTypeOptionGreenActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 2 },
+  flagTypeOptionRedActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 2 },
+  flagTypeDot: { width: 8, height: 8, borderRadius: 4 },
+  flagTypeOptionText: { fontSize: 15, fontWeight: '600', color: '#9CA3AF' },
   flagTextInputContainer: {
-    backgroundColor: '#F9FAFB', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB', borderRadius: 14,
     paddingHorizontal: 16, paddingVertical: 14,
   },
-  flagTextInputContainerGreen: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
-  flagTextInputContainerRed: { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
   flagTextInput: { fontSize: 16, fontWeight: '500', color: '#1F2937', padding: 0 },
-  flagCharCount: { fontSize: 12, fontWeight: '500', color: '#9CA3AF', textAlign: 'right', marginTop: 8 },
+  flagCharCount: { fontSize: 12, fontWeight: '500', color: '#C4C4C4', textAlign: 'right', marginTop: 8 },
 
   // Vibe Picker (in date modal)
   vibePickerContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
@@ -1689,10 +1621,7 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 2,
     borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1.5, borderColor: '#E5E7EB',
   },
-  vibePickerItemSelected: { backgroundColor: '#FFF1F2', borderColor: ACCENT_COLOR },
-  vibePickerEmoji: { fontSize: 22, marginBottom: 3 },
-  vibePickerLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280' },
-  vibePickerLabelSelected: { color: ACCENT_COLOR, fontWeight: '600' },
+  vibePickerLabel: { fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 3 },
 
   // Date Picker
   pickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },

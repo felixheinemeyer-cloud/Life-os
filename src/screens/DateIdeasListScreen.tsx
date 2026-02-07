@@ -48,7 +48,6 @@ interface DateIdea {
 }
 
 const CUSTOM_IDEAS_STORAGE_KEY = '@custom_date_ideas';
-const DONE_IDEAS_STORAGE_KEY = '@done_date_ideas';
 const SAVED_IDEAS_STORAGE_KEY = '@saved_date_ideas';
 
 interface Category {
@@ -62,8 +61,7 @@ interface Category {
 const CATEGORIES: Category[] = [
   { id: 'all', name: 'All', icon: 'sparkles-outline', color: '#6B7280' },
   { id: 'liked', name: 'Liked', icon: 'heart', color: '#E11D48' },
-  { id: 'done', name: 'Done', icon: 'checkmark-circle', color: '#10B981' },
-  { id: 'my-ideas', name: 'My Ideas', icon: 'person-outline', color: '#BE123C' },
+{ id: 'my-ideas', name: 'My Ideas', icon: 'person-outline', color: '#BE123C' },
   { id: 'romantic', name: 'Romantic', icon: 'heart-outline', color: '#E11D48' },
   { id: 'adventure', name: 'Adventure', icon: 'compass-outline', color: '#0891B2' },
   { id: 'creative', name: 'Creative', icon: 'color-palette-outline', color: '#7C3AED' },
@@ -1442,7 +1440,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
   const [searchQuery, setSearchQuery] = useState('');
   const [customIdeas, setCustomIdeas] = useState<DateIdea[]>([]);
   const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
-  const [doneIdeas, setDoneIdeas] = useState<Set<string>>(new Set());
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -1457,27 +1454,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
       }
     } catch (error) {
       console.error('Error loading custom ideas:', error);
-    }
-  };
-
-  // Load done ideas from AsyncStorage
-  const loadDoneIdeas = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(DONE_IDEAS_STORAGE_KEY);
-      if (stored) {
-        setDoneIdeas(new Set(JSON.parse(stored)));
-      }
-    } catch (error) {
-      console.error('Error loading done ideas:', error);
-    }
-  };
-
-  // Save done ideas to AsyncStorage
-  const saveDoneIdeas = async (ideas: Set<string>) => {
-    try {
-      await AsyncStorage.setItem(DONE_IDEAS_STORAGE_KEY, JSON.stringify(Array.from(ideas)));
-    } catch (error) {
-      console.error('Error saving done ideas:', error);
     }
   };
 
@@ -1502,11 +1478,10 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
     }
   };
 
-  // Reload custom ideas, done ideas, and saved ideas when screen comes into focus
+  // Reload custom ideas and saved ideas when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadCustomIdeas();
-      loadDoneIdeas();
       loadSavedIdeas();
     }, [])
   );
@@ -1581,8 +1556,6 @@ const DateIdeasListScreen: React.FC<DateIdeasListScreenProps> = ({ navigation })
       matchesCategory = true;
     } else if (selectedCategory === 'liked') {
       matchesCategory = savedIdeas.has(idea.id);
-    } else if (selectedCategory === 'done') {
-      matchesCategory = doneIdeas.has(idea.id);
     } else if (selectedCategory === 'my-ideas') {
       matchesCategory = idea.isCustom === true;
     } else {
