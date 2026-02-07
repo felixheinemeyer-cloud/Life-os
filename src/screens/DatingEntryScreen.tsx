@@ -471,7 +471,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 60 },
+          { paddingTop: 68 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -588,7 +588,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
       </ScrollView>
 
       {/* Fixed Header with Gradient Fade */}
-      <View style={[styles.fixedHeader, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={[styles.fixedHeader, { paddingTop: 8 }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[

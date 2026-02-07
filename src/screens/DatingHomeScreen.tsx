@@ -488,13 +488,6 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
     }
   }, [currentPerson]);
 
-  const handleOpenMaps = useCallback(() => {
-    if (currentPerson.location) {
-      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Linking.openURL(`https://maps.apple.com/?q=${encodeURIComponent(currentPerson.location)}`);
-    }
-  }, [currentPerson]);
-
   // ─── Vibe Handlers ───────────────────────────────────────────────────────
   const handleVibeRating = useCallback((type: keyof VibeRatings, rating: number) => {
     updateCurrentPerson({
@@ -688,7 +681,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           <TouchableOpacity style={styles.addPersonChip}
             onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry'); }}
             activeOpacity={0.7}>
-            <Ionicons name="add" size={18} color={ACCENT_COLOR} />
+            <Ionicons name="add" size={18} color="#6B7280" />
           </TouchableOpacity>
           {DATING_CRM_DATA.map((person, index) => (
             <TouchableOpacity key={person.id}
@@ -712,11 +705,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
 
         {/* ── Person Header Card ──────────────────────────────── */}
         <View style={styles.personHeaderCard}>
-          <View style={styles.personAvatarRing}>
-            <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personAvatar}>
-              <Text style={styles.personAvatarInitials}>{currentPerson.initials}</Text>
-            </LinearGradient>
-          </View>
+          <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personAvatar}>
+            <Text style={styles.personAvatarInitials}>{currentPerson.initials}</Text>
+          </LinearGradient>
           <View style={styles.personHeaderCenter}>
             <Text style={styles.personName} numberOfLines={1}>{currentPerson.name}</Text>
           </View>
@@ -742,9 +733,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         {/* ── Expandable Sections ─────────────────────────────── */}
         <View style={styles.sectionsContainer}>
 
-          {/* The Vibe */}
+          {/* Vibe Check */}
           <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.vibe.border }]}>
-            <SectionHeader sectionKey="vibe" icon="heart" label="The Vibe" />
+            <SectionHeader sectionKey="vibe" icon="heart" label="Vibe Check" />
             {expandedSections.vibe && (
               <View style={styles.expandableContent}>
                 <VibeRatingRow label="Attraction" type="attraction" value={currentData.vibeRatings.attraction}
@@ -874,7 +865,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 <View style={styles.expandableContent}>
                   {currentPerson.phoneNumber && (
                     <TouchableOpacity style={styles.detailsRow} onPress={handleCall} activeOpacity={0.7}>
-                      <View style={styles.detailsRowIcon}><Ionicons name="call-outline" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={[styles.detailsRowIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="call-outline" size={16} color="#10B981" /></View>
                       <View style={styles.detailsRowContent}>
                         <Text style={styles.detailsRowLabel}>PHONE</Text>
                         <Text style={styles.detailsRowValue}>{currentPerson.phoneNumber}</Text>
@@ -884,7 +875,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                   )}
                   {currentPerson.instagram && (
                     <TouchableOpacity style={styles.detailsRow} onPress={handleInstagram} activeOpacity={0.7}>
-                      <View style={styles.detailsRowIcon}><Ionicons name="logo-instagram" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={[styles.detailsRowIcon, { backgroundColor: '#FDF2F8' }]}><Ionicons name="logo-instagram" size={16} color="#EC4899" /></View>
                       <View style={styles.detailsRowContent}>
                         <Text style={styles.detailsRowLabel}>INSTAGRAM</Text>
                         <Text style={styles.detailsRowValue}>@{currentPerson.instagram}</Text>
@@ -893,18 +884,17 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                     </TouchableOpacity>
                   )}
                   {currentPerson.location && (
-                    <TouchableOpacity style={styles.detailsRow} onPress={handleOpenMaps} activeOpacity={0.7}>
-                      <View style={styles.detailsRowIcon}><Ionicons name="location-outline" size={16} color={ACCENT_COLOR} /></View>
+                    <View style={styles.detailsRow}>
+                      <View style={[styles.detailsRowIcon, { backgroundColor: '#FFF7ED' }]}><Ionicons name="location-outline" size={16} color="#F97316" /></View>
                       <View style={styles.detailsRowContent}>
                         <Text style={styles.detailsRowLabel}>LOCATION</Text>
                         <Text style={styles.detailsRowValue}>{currentPerson.location}</Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
-                    </TouchableOpacity>
+                    </View>
                   )}
                   {currentPerson.dateOfBirth && (
                     <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
-                      <View style={styles.detailsRowIcon}><Ionicons name="gift-outline" size={16} color={ACCENT_COLOR} /></View>
+                      <View style={[styles.detailsRowIcon, { backgroundColor: '#EEF2FF' }]}><Ionicons name="gift-outline" size={16} color="#6366F1" /></View>
                       <View style={styles.detailsRowContent}>
                         <Text style={styles.detailsRowLabel}>BIRTHDAY</Text>
                         <Text style={styles.detailsRowValue}>{formatBirthday(currentPerson.dateOfBirth)}</Text>
@@ -1324,20 +1314,19 @@ const styles = StyleSheet.create({
   personSelectorContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   personChip: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-    paddingLeft: 4, paddingRight: 14, paddingVertical: 4, borderRadius: 24, gap: 8,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    paddingLeft: 3, paddingRight: 12, paddingVertical: 3, borderRadius: 22, gap: 7,
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
-  personChipActive: { backgroundColor: ACCENT_COLOR },
-  personChipAvatar: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  personChipInitials: { fontSize: 13, fontWeight: '700', color: ACCENT_COLOR },
-  personChipInitialsActive: { color: ACCENT_COLOR },
-  personChipName: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  personChipNameActive: { color: '#FFFFFF' },
+  personChipActive: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
+  personChipAvatar: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  personChipInitials: { fontSize: 11, fontWeight: '700', color: ACCENT_COLOR },
+  personChipInitialsActive: { color: '#E11D48' },
+  personChipName: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  personChipNameActive: { color: '#1F2937' },
   addPersonChip: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
-    borderWidth: 1.5, borderColor: '#F9D1D5',
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
 
   // Person Header Card
@@ -1351,25 +1340,23 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
     backgroundColor: ACCENT_COLOR, borderTopLeftRadius: 20, borderBottomLeftRadius: 20,
   },
-  personAvatarRing: {
-    width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: 'rgba(225, 29, 72, 0.15)',
-    justifyContent: 'center', alignItems: 'center',
-  },
   personAvatar: {
-    width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center',
+    width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center',
   },
-  personAvatarInitials: { fontSize: 19, fontWeight: '700', color: '#E11D48' },
+  personAvatarInitials: { fontSize: 17, fontWeight: '700', color: '#E11D48' },
   personHeaderCenter: { flex: 1 },
   personHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   quickActionBtn: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: '#F3F4F6',
+    width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
   personHeaderEditBtn: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: '#F3F4F6',
+    width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#E5E7EB',
   },
-  personName: { fontSize: 26, fontWeight: '700', color: '#1F2937', letterSpacing: -0.4 },
+  personName: { fontSize: 22, fontWeight: '700', color: '#1F2937', letterSpacing: -0.3 },
 
   // Expandable Sections
   sectionsContainer: { paddingHorizontal: 16, marginBottom: 24 },
@@ -1483,7 +1470,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
   },
   detailsRowIcon: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF1F2',
+    width: 32, height: 32, borderRadius: 16,
     justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
   detailsRowContent: { flex: 1 },
