@@ -415,6 +415,15 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
             />
             <View style={styles.separator} />
             <SettingsItem
+              icon="help-circle-outline"
+              iconColor="#3B82F6"
+              iconBackground="#DBEAFE"
+              label="Help Center"
+              description="FAQs and guides"
+              onPress={() => Alert.alert('Help Center', 'Help center coming soon!')}
+            />
+            <View style={styles.separator} />
+            <SettingsItem
               icon="mail-outline"
               iconColor="#8B5CF6"
               iconBackground="#EDE9FE"
