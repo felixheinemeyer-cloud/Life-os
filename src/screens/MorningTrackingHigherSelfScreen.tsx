@@ -169,7 +169,7 @@ const MorningTrackingHigherSelfScreen: React.FC<MorningTrackingHigherSelfScreenP
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('MorningTrackingComplete');
+    navigation.goBack();
   };
 
   const handleWealthPress = (type: WealthType) => {

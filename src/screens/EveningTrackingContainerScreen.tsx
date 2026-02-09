@@ -151,9 +151,16 @@ const EveningTrackingContainerScreen: React.FC<EveningTrackingContainerScreenPro
       } catch (e) {
         console.error('Failed to save evening data:', e);
       }
+      const journalCompleted = !!(
+        trackingData.journalText.trim() ||
+        trackingData.journalVoiceUri ||
+        trackingData.journalVideoUri
+      );
       navigation?.navigate('EveningTrackingComplete', {
         priorityCompleted: trackingData.priorityCompleted,
         morningPriority: trackingData.morningPriority,
+        ratings: trackingData.ratings,
+        journalCompleted,
       });
     }
   };
