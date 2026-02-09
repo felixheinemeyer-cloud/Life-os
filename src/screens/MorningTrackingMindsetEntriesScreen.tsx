@@ -69,7 +69,7 @@ const MorningTrackingMindsetEntriesScreen: React.FC<MorningTrackingMindsetEntrie
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    navigation.navigate('MorningTrackingComplete');
+    navigation.goBack();
   };
 
   const handleBack = () => {

@@ -25,7 +25,8 @@ const TOTAL_STEPS = 4;
 interface MorningTrackingContainerScreenProps {
   navigation?: {
     goBack: () => void;
-    navigate: (screen: string) => void;
+    navigate: (screen: string, params?: Record<string, unknown>) => void;
+    addListener: (event: string, callback: () => void) => () => void;
   };
 }
 
@@ -41,6 +42,9 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
   navigation,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const mindsetStartTime = useRef<number | null>(null);
+  const mindsetDuration = useRef(0);
+  const visitedSubScreen = useRef(false);
   const [trackingData, setTrackingData] = useState<TrackingData>({
     bedtime: { hour: 23, minute: 15 },
     wakeTime: { hour: 7, minute: 0 },
@@ -69,6 +73,27 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
       })
     );
     Animated.parallel(animations).start();
+  }, [currentStep]);
+
+  // Auto-complete when returning from a mindset sub-screen
+  useEffect(() => {
+    const unsubscribe = navigation?.addListener('focus', () => {
+      if (visitedSubScreen.current && currentStep === 3) {
+        visitedSubScreen.current = false;
+        handleContinue();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, currentStep]);
+
+  // Track time spent on mindset step (index 3)
+  useEffect(() => {
+    if (currentStep === 3) {
+      mindsetStartTime.current = Date.now();
+    } else if (mindsetStartTime.current !== null) {
+      mindsetDuration.current += Date.now() - mindsetStartTime.current;
+      mindsetStartTime.current = null;
+    }
   }, [currentStep]);
 
   const animateToStep = (step: number) => {
@@ -105,9 +130,20 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - complete tracking
-      console.log('Morning tracking complete:', trackingData);
-      navigation?.goBack();
+      // Final step - navigate to completion screen with tracking data
+      // Capture final mindset duration if still on step 3
+      let finalMindsetMs = mindsetDuration.current;
+      if (mindsetStartTime.current !== null) {
+        finalMindsetMs += Date.now() - mindsetStartTime.current;
+        mindsetStartTime.current = null;
+      }
+      navigation?.navigate('MorningTrackingComplete', {
+        bedtime: trackingData.bedtime,
+        wakeTime: trackingData.wakeTime,
+        gratitudeText: trackingData.gratitudeText,
+        intentionText: trackingData.intentionText,
+        mindsetDurationMs: finalMindsetMs,
+      });
     }
   };
 
@@ -193,7 +229,7 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
             {/* Step 4: Mindset */}
             <View style={styles.page}>
               <MorningTrackingMindsetContent
-                onNavigate={(screen) => navigation?.navigate(screen)}
+                onNavigate={(screen) => { visitedSubScreen.current = true; navigation?.navigate(screen); }}
                 onContinue={handleContinue}
               />
             </View>

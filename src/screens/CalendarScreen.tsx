@@ -36,7 +36,7 @@ interface WeekData {
   weekNumber: number;
   startDay: number;
   endDay: number;
-  dateRange: string;
+  dateRange: string; 
   completed: boolean;
   score: number | null;
   isAvailable: boolean;

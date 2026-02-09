@@ -18,6 +18,7 @@ interface MorningTrackingMindsetContentProps {
 
 const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps> = ({
   onNavigate,
+  onContinue,
 }) => {
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
@@ -137,6 +138,7 @@ const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps
           </Animated.View>
         </TouchableOpacity>
       </View>
+
     </View>
   );
 };
@@ -263,6 +265,29 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 29,
     justifyContent: 'center',
+  },
+
+  // Finish Button
+  finishContainer: {
+    marginTop: 'auto',
+    paddingBottom: 16,
+  },
+  finishButton: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  finishButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
 
