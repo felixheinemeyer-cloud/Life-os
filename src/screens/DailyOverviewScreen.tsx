@@ -852,17 +852,19 @@ const DailyOverviewScreen = ({ navigation, route }: DailyOverviewScreenProps): R
                           color={evening.priorityCompleted ? "#059669" : "#EF4444"}
                         />
                         <Text style={styles.infoLabel}>Priority Review</Text>
-                        <View style={[
-                          styles.priorityBadge,
-                          { backgroundColor: evening.priorityCompleted ? '#D1FAE5' : '#FEE2E2' }
-                        ]}>
-                          <Text style={[
-                            styles.priorityBadgeText,
-                            { color: evening.priorityCompleted ? '#059669' : '#EF4444' }
+                        {!evening.priorityCompleted && (
+                          <View style={[
+                            styles.priorityBadge,
+                            { backgroundColor: '#FEE2E2' }
                           ]}>
-                            {evening.priorityCompleted ? 'Achieved' : 'Missed'}
-                          </Text>
-                        </View>
+                            <Text style={[
+                              styles.priorityBadgeText,
+                              { color: '#EF4444' }
+                            ]}>
+                              Missed
+                            </Text>
+                          </View>
+                        )}
                       </View>
                       <Text style={styles.priorityText}>{morning.priority}</Text>
                     </View>

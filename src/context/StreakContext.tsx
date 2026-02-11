@@ -93,10 +93,10 @@ export const StreakProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const recordCheckIn = useCallback(async (): Promise<boolean> => {
     const today = getBerlinDate();
 
-    // Check if already checked in today
-    if (streakData.lastCheckInDate === today) {
-      return false; // Already checked in today
-    }
+    // TODO: Re-enable once-per-day guard after development
+    // if (streakData.lastCheckInDate === today) {
+    //   return false; // Already checked in today
+    // }
 
     const isConsecutive = streakData.lastCheckInDate
       ? areConsecutiveDays(streakData.lastCheckInDate, today) || streakData.lastCheckInDate === today

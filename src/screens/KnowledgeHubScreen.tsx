@@ -52,7 +52,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
       title: 'Knowledge',
       subtitle: 'Notes, concepts &\nframeworks',
       icon: 'bulb',
-      iconColor: '#06B6D4',
+      iconColor: '#38BDF8',
       route: 'KnowledgeVault',
     },
     {

@@ -41,11 +41,17 @@ interface KnowledgeTopic {
   createdAt: string;
 }
 
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; uri: string; aspectRatio?: number };
+
 interface KnowledgeEntry {
   id: string;
   topicId: string;
   title: string;
   content: string;
+  contentBlocks?: ContentBlock[];
+  imageUri?: string;
   tags?: string[];
   sourceUrl?: string;
   createdAt: string;
@@ -86,7 +92,7 @@ const MOCK_ENTRIES: KnowledgeEntry[] = [
 ];
 
 // Consistent teal color for all topic card icons (matches KnowledgeHubScreen Knowledge card)
-const TOPIC_ICON_COLOR = '#06B6D4';
+const TOPIC_ICON_COLOR = '#38BDF8';
 
 // Icon categories for the picker
 const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[] }[] = [
@@ -427,6 +433,7 @@ const TopicCard: React.FC<{
     >
       <Animated.View style={[styles.topicCard, { transform: [{ scale: scaleAnim }] }]}>
         <View style={styles.topicIconCircle}>
+          <Ionicons name={topic.icon.replace('-outline', '') as keyof typeof Ionicons.glyphMap} size={24} color="#FFFFFF" style={{ position: 'absolute' }} />
           <Ionicons name={topic.icon} size={24} color={TOPIC_ICON_COLOR} />
         </View>
         <Text style={styles.topicName} numberOfLines={2}>{topic.name}</Text>
@@ -872,10 +879,16 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    overflow: 'hidden',
+    backgroundColor: '#E8F4FE',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   topicName: {
     fontSize: 16,
@@ -1201,7 +1214,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconItemSelected: {
-    backgroundColor: '#CFFAFE',
+    backgroundColor: '#E0F2FE',
     borderWidth: 2,
     borderColor: TOPIC_ICON_COLOR,
   },
