@@ -14,13 +14,16 @@ import {
   Dimensions,
   Modal,
   KeyboardAvoidingView,
+  InputAccessoryView,
   PanResponder,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ENTRY_ACTION_WIDTH = 140;
@@ -29,7 +32,7 @@ const HORIZONTAL_PADDING = 16;
 const CARD_WIDTH = (SCREEN_WIDTH - (HORIZONTAL_PADDING * 2) - CARD_GAP) / 2;
 
 // Consistent teal color matching KnowledgeVaultScreen
-const ACCENT_COLOR = '#06B6D4';
+const ACCENT_COLOR = '#38BDF8';
 
 // Icon categories for the picker
 const ICON_CATEGORIES: { name: string; icons: (keyof typeof Ionicons.glyphMap)[] }[] = [
@@ -112,16 +115,77 @@ interface KnowledgeTopic {
   createdAt: string;
 }
 
+type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; uri: string; aspectRatio?: number };
+
 interface KnowledgeEntry {
   id: string;
   topicId: string;
   title: string;
   content: string;
+  contentBlocks?: ContentBlock[];
+  imageUri?: string;
   tags?: string[];
   sourceUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+// Helper functions for block content
+const entryToBlocks = (entry: KnowledgeEntry): ContentBlock[] => {
+  if (entry.contentBlocks?.length) return entry.contentBlocks;
+  const blocks: ContentBlock[] = [{ type: 'text', text: entry.content }];
+  if (entry.imageUri) blocks.push({ type: 'image', uri: entry.imageUri });
+  return blocks;
+};
+
+const blocksToPlainText = (blocks: ContentBlock[]): string =>
+  blocks.filter((b): b is { type: 'text'; text: string } => b.type === 'text').map(b => b.text).join('\n');
+
+const blocksHaveContent = (blocks: ContentBlock[]): boolean =>
+  blocks.some(b => (b.type === 'text' && b.text.trim()) || b.type === 'image');
+
+const insertImageAtCursor = (
+  blocks: ContentBlock[],
+  blockIndex: number,
+  cursorPos: number,
+  imageUri: string,
+  aspectRatio?: number
+): ContentBlock[] => {
+  const newBlocks = [...blocks];
+  const targetBlock = newBlocks[blockIndex];
+  if (!targetBlock || targetBlock.type !== 'text') {
+    newBlocks.splice(blockIndex + 1, 0, { type: 'image', uri: imageUri, aspectRatio }, { type: 'text', text: '' });
+    return newBlocks;
+  }
+  const textBefore = targetBlock.text.slice(0, cursorPos);
+  const textAfter = targetBlock.text.slice(cursorPos);
+  newBlocks.splice(blockIndex, 1,
+    { type: 'text', text: textBefore },
+    { type: 'image', uri: imageUri, aspectRatio },
+    { type: 'text', text: textAfter }
+  );
+  return newBlocks;
+};
+
+const removeImageBlock = (blocks: ContentBlock[], index: number): ContentBlock[] => {
+  const newBlocks = [...blocks];
+  newBlocks.splice(index, 1);
+  // Merge adjacent text blocks
+  const merged: ContentBlock[] = [];
+  for (const block of newBlocks) {
+    const prev = merged[merged.length - 1];
+    if (block.type === 'text' && prev?.type === 'text') {
+      merged[merged.length - 1] = { type: 'text', text: prev.text + block.text };
+    } else {
+      merged.push(block);
+    }
+  }
+  // Ensure at least one text block
+  if (merged.length === 0) merged.push({ type: 'text', text: '' });
+  return merged;
+};
 
 interface KnowledgeTopicScreenProps {
   navigation: {
@@ -502,7 +566,7 @@ const editTopicModalStyles = StyleSheet.create({
     alignItems: 'center',
   },
   iconItemSelected: {
-    backgroundColor: '#CFFAFE',
+    backgroundColor: '#E0F2FE',
     borderWidth: 2,
     borderColor: ACCENT_COLOR,
   },
@@ -522,16 +586,14 @@ const editTopicModalStyles = StyleSheet.create({
 const SwipeableEntryCard: React.FC<{
   entry: KnowledgeEntry;
   topicColor: string;
+  onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onSwipeStart: () => void;
   onSwipeEnd: () => void;
   index: number;
-}> = ({ entry, topicColor, onEdit, onDelete, onSwipeStart, onSwipeEnd, index }) => {
+}> = ({ entry, topicColor, onPress, onEdit, onDelete, onSwipeStart, onSwipeEnd, index }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [needsExpansion, setNeedsExpansion] = useState(false);
-  const [hasCheckedLayout, setHasCheckedLayout] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const currentTranslateX = useRef(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -679,28 +741,11 @@ const SwipeableEntryCard: React.FC<{
     }),
   [translateX, onSwipeStart, onSwipeEnd]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const handleTextLayout = (e: any) => {
-    if (!hasCheckedLayout) {
-      setHasCheckedLayout(true);
-      if (e.nativeEvent.lines.length > 3) {
-        setNeedsExpansion(true);
-      }
-    }
-  };
-
   const handleCardPress = () => {
     if (isOpen) {
       closeActions();
-    } else if (needsExpansion) {
-      if (Platform.OS === 'ios') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      setIsExpanded(!isExpanded);
+    } else {
+      onPress();
     }
   };
 
@@ -754,23 +799,10 @@ const SwipeableEntryCard: React.FC<{
               <Text style={swipeableEntryStyles.entryTitle} numberOfLines={1}>{entry.title}</Text>
               <Text
                 style={swipeableEntryStyles.entrySnippet}
-                numberOfLines={!hasCheckedLayout ? undefined : (isExpanded ? undefined : 3)}
-                onTextLayout={handleTextLayout}
+                numberOfLines={3}
               >
                 {entry.content}
               </Text>
-              {needsExpansion && (
-                <TouchableOpacity onPress={handleCardPress} style={swipeableEntryStyles.expandButton}>
-                  <Text style={swipeableEntryStyles.expandButtonText}>
-                    {isExpanded ? 'Show less' : 'Read more'}
-                  </Text>
-                  <Ionicons
-                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={14}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
-              )}
             </View>
           </View>
         </TouchableOpacity>
@@ -854,17 +886,6 @@ const swipeableEntryStyles = StyleSheet.create({
     color: '#6B7280',
     lineHeight: 22,
   },
-  expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 2,
-  },
-  expandButtonText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
 });
 
 // Main Component
@@ -879,13 +900,16 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [entryTitle, setEntryTitle] = useState('');
-  const [entryContent, setEntryContent] = useState('');
+  const [entryBlocks, setEntryBlocks] = useState<ContentBlock[]>([{ type: 'text', text: '' }]);
+  const [focusedBlockIndex, setFocusedBlockIndex] = useState(0);
+  const [cursorPosition, setCursorPosition] = useState(0);
   const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
   const [isSwipingEntry, setIsSwipingEntry] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [editTopicModalVisible, setEditTopicModalVisible] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const titleInputRef = useRef<TextInput>(null);
+  const blockInputRefs = useRef<{ [key: number]: TextInput | null }>({});
 
   // Animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -954,7 +978,9 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
     }
     setEditingEntry(null);
     setEntryTitle('');
-    setEntryContent('');
+    setEntryBlocks([{ type: 'text', text: '' }]);
+    setFocusedBlockIndex(0);
+    setCursorPosition(0);
     setModalVisible(true);
     setTimeout(() => titleInputRef.current?.focus(), 100);
   };
@@ -962,16 +988,18 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
   const handleCloseModal = () => {
     setModalVisible(false);
     setEntryTitle('');
-    setEntryContent('');
+    setEntryBlocks([{ type: 'text', text: '' }]);
     setEditingEntry(null);
     Keyboard.dismiss();
   };
 
   const handleSaveEntry = () => {
-    if (entryContent.trim()) {
+    if (blocksHaveContent(entryBlocks)) {
       if (Platform.OS === 'ios') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+
+      const plainText = blocksToPlainText(entryBlocks);
 
       if (editingEntry) {
         // Editing existing entry
@@ -979,8 +1007,10 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
           e.id === editingEntry.id
             ? {
                 ...e,
-                title: entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50),
-                content: entryContent.trim(),
+                title: entryTitle.trim() || plainText.trim().split('\n')[0].slice(0, 50),
+                content: plainText.trim(),
+                contentBlocks: entryBlocks,
+                imageUri: undefined,
                 updatedAt: new Date().toISOString(),
               }
             : e
@@ -988,12 +1018,13 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
         setEntries(updatedEntries);
       } else {
         // Creating new entry
-        const autoTitle = entryTitle.trim() || entryContent.trim().split('\n')[0].slice(0, 50);
+        const autoTitle = entryTitle.trim() || plainText.trim().split('\n')[0].slice(0, 50);
         const newEntry: KnowledgeEntry = {
           id: Date.now().toString(),
           topicId: topic.id,
           title: autoTitle,
-          content: entryContent.trim(),
+          content: plainText.trim(),
+          contentBlocks: entryBlocks,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -1009,9 +1040,53 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
     }
     setEditingEntry(entry);
     setEntryTitle(entry.title);
-    setEntryContent(entry.content);
+    setEntryBlocks(entryToBlocks(entry));
+    setFocusedBlockIndex(0);
+    setCursorPosition(0);
     setModalVisible(true);
     setTimeout(() => titleInputRef.current?.focus(), 100);
+  };
+
+  const handlePickImage = async () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please enable photo library access in your device settings.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const ratio = asset.width && asset.height ? asset.width / asset.height : undefined;
+      const newBlocks = insertImageAtCursor(entryBlocks, focusedBlockIndex, cursorPosition, asset.uri, ratio);
+      setEntryBlocks(newBlocks);
+      // Focus the text block after the image (index = focusedBlockIndex + 2)
+      const nextTextIndex = focusedBlockIndex + 2;
+      setTimeout(() => {
+        blockInputRefs.current[nextTextIndex]?.focus();
+      }, 100);
+    }
+  };
+
+  const handleRemoveImageBlock = (blockIndex: number) => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const newBlocks = removeImageBlock(entryBlocks, blockIndex);
+    setEntryBlocks(newBlocks);
+  };
+
+  const handleBlockTextChange = (blockIndex: number, text: string) => {
+    setEntryBlocks(prev => {
+      const newBlocks = [...prev];
+      newBlocks[blockIndex] = { type: 'text', text };
+      return newBlocks;
+    });
   };
 
   const handleDeleteEntry = (entryId: string) => {
@@ -1038,8 +1113,18 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // TODO: Navigate to entry detail screen
-    console.log('Entry pressed:', entry.title);
+    navigation.navigate('KnowledgeEntryDetail', {
+      entry,
+      topicName: currentTopic.name,
+      topicIcon: currentTopic.icon,
+      topicColor: ACCENT_COLOR,
+      onUpdate: (updated: KnowledgeEntry) => {
+        setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+      },
+      onDelete: (entryId: string) => {
+        setEntries(prev => prev.filter(e => e.id !== entryId));
+      },
+    });
   };
 
   const handleSearchPressIn = () => {
@@ -1265,6 +1350,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
                 key={entry.id}
                 entry={entry}
                 topicColor={ACCENT_COLOR}
+                onPress={() => handleEntryPress(entry)}
                 onEdit={() => handleEditEntry(entry)}
                 onDelete={() => handleDeleteEntry(entry.id)}
                 onSwipeStart={() => setIsSwipingEntry(true)}
@@ -1484,14 +1570,14 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
             <Text style={styles.modalTitle}>{editingEntry ? 'Edit Insight' : 'New Insight'}</Text>
             <TouchableOpacity
               onPress={handleSaveEntry}
-              style={[styles.roundButton, !entryContent.trim() && styles.roundButtonDisabled]}
-              disabled={!entryContent.trim()}
+              style={[styles.roundButton, !blocksHaveContent(entryBlocks) && styles.roundButtonDisabled]}
+              disabled={!blocksHaveContent(entryBlocks)}
             >
-              <Ionicons name="checkmark" size={20} color={entryContent.trim() ? "#1F2937" : "#9CA3AF"} />
+              <Ionicons name="checkmark" size={20} color={blocksHaveContent(entryBlocks) ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalContent}>
+          <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
             <TextInput
               ref={titleInputRef}
               style={styles.modalTitleInput}
@@ -1501,17 +1587,65 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
               onChangeText={setEntryTitle}
               autoFocus
             />
-            <TextInput
-              style={styles.modalContentInput}
-              placeholder="What did you learn?"
-              placeholderTextColor="#9CA3AF"
-              value={entryContent}
-              onChangeText={setEntryContent}
-              multiline
-              textAlignVertical="top"
-            />
-          </View>
+
+            {/* Block Editor */}
+            {entryBlocks.map((block, index) => {
+              if (block.type === 'text') {
+                const isFirstBlock = index === 0;
+                const isOnlyEmptyText = entryBlocks.length === 1 && !block.text;
+                return (
+                  <TextInput
+                    key={`text-${index}`}
+                    ref={(ref) => { blockInputRefs.current[index] = ref; }}
+                    style={styles.modalContentInput}
+                    placeholder={isFirstBlock && isOnlyEmptyText ? 'What did you learn?' : undefined}
+                    placeholderTextColor="#9CA3AF"
+                    value={block.text}
+                    onChangeText={(text) => handleBlockTextChange(index, text)}
+                    onFocus={() => setFocusedBlockIndex(index)}
+                    onSelectionChange={(e) => {
+                      if (focusedBlockIndex === index) {
+                        setCursorPosition(e.nativeEvent.selection.start);
+                      }
+                    }}
+                    multiline
+                    textAlignVertical="top"
+                    inputAccessoryViewID="knowledgeEditorToolbar"
+                  />
+                );
+              } else {
+                return (
+                  <View key={`image-${index}`} style={styles.inlineImageContainer}>
+                    <Image
+                      source={{ uri: block.uri }}
+                      style={[styles.inlineImage, block.aspectRatio ? { aspectRatio: block.aspectRatio } : { height: 200 }]}
+                    />
+                    <TouchableOpacity
+                      style={styles.inlineImageRemoveButton}
+                      onPress={() => handleRemoveImageBlock(index)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close-circle" size={28} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                );
+              }
+            })}
+          </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* InputAccessoryView - renders above keyboard on iOS */}
+        <InputAccessoryView nativeID="knowledgeEditorToolbar">
+          <View style={styles.keyboardToolbar}>
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={handlePickImage}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="image" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
       </Modal>
 
       {/* Dropdown overlay for closing */}
@@ -1856,8 +1990,44 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#1F2937',
     lineHeight: 24,
-    flex: 1,
+    minHeight: 40,
     padding: 0,
+  },
+  inlineImageContainer: {
+    marginVertical: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  inlineImage: {
+    width: '100%',
+    borderRadius: 12,
+  },
+  inlineImageRemoveButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  keyboardToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    height: 44,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#B0B0B3',
+    backgroundColor: '#D1D1D6',
+  },
+  toolbarButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
   },
 });
 

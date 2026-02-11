@@ -1952,7 +1952,7 @@ const styles = StyleSheet.create({
 
   // Today's Insight Section Styles (Redesigned)
   insightSection: {
-    marginTop: 24,
+    marginTop: 12,
     marginBottom: 24,
   },
   insightSectionCard: {

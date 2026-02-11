@@ -33,6 +33,7 @@ import WeeklyTrackingCompleteScreen from './src/screens/WeeklyTrackingCompleteSc
 import MonthlyTrackingContainerScreen from './src/screens/MonthlyTrackingContainerScreen';
 import MonthlyTrackingCompleteScreen from './src/screens/MonthlyTrackingCompleteScreen';
 import MonthlyBodyTrackingContainerScreen from './src/screens/MonthlyBodyTrackingContainerScreen';
+import MonthlyBodyTrackingCompleteScreen from './src/screens/MonthlyBodyTrackingCompleteScreen';
 import BodyCheckInReviewScreen from './src/screens/BodyCheckInReviewScreen';
 import HomeIcon from './src/components/HomeIcon';
 import BrainIcon from './src/components/BrainIcon';
@@ -40,6 +41,7 @@ import CalendarIcon from './src/components/CalendarIcon';
 import MindsetIdentityScreen from './src/screens/MindsetIdentityScreen';
 import KnowledgeVaultScreen from './src/screens/KnowledgeVaultScreen';
 import KnowledgeTopicScreen from './src/screens/KnowledgeTopicScreen';
+import KnowledgeEntryDetailScreen from './src/screens/KnowledgeEntryDetailScreen';
 import MediaVaultScreen from './src/screens/MediaVaultScreen';
 import MediaVaultNewEntryScreen from './src/screens/MediaVaultNewEntryScreen';
 import MediaVaultEntryScreen from './src/screens/MediaVaultEntryScreen';
@@ -135,6 +137,7 @@ const DashboardStack = () => {
       <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
+      <Stack.Screen name="MonthlyBodyTrackingComplete" component={MonthlyBodyTrackingCompleteScreen} />
       <Stack.Screen
         name="StreakDetails"
         component={StreakScreen}
@@ -171,6 +174,7 @@ const CalendarStack = () => {
       <Stack.Screen name="MonthlyTracking" component={MonthlyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
+      <Stack.Screen name="MonthlyBodyTrackingComplete" component={MonthlyBodyTrackingCompleteScreen} />
       <Stack.Screen name="BodyCheckInReview" component={BodyCheckInReviewScreen} />
     </Stack.Navigator>
   );
@@ -190,6 +194,7 @@ const KnowledgeStack = () => {
       <Stack.Screen name="MindsetBeliefs" component={MindsetBeliefsScreen} />
       <Stack.Screen name="KnowledgeVault" component={KnowledgeVaultScreen} />
       <Stack.Screen name="KnowledgeTopic" component={KnowledgeTopicScreen as React.ComponentType<any>} />
+      <Stack.Screen name="KnowledgeEntryDetail" component={KnowledgeEntryDetailScreen as React.ComponentType<any>} />
       <Stack.Screen name="MediaVault" component={MediaVaultScreen} />
       <Stack.Screen
         name="MediaVaultNewEntry"

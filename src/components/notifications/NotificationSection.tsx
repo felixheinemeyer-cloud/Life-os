@@ -255,7 +255,7 @@ const NotificationSection: React.FC<NotificationSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0,
+    marginBottom: 12,
   },
   dividerContainer: {
     flexDirection: 'row',

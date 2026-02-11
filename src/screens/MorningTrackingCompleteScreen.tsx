@@ -6,14 +6,13 @@ import {
   SafeAreaView,
   Animated,
   Easing,
-  Dimensions,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useStreak } from '../context/StreakContext';
-import StreakCelebrationModal from '../components/StreakCelebrationModal';
 
 interface MorningTrackingCompleteScreenProps {
   navigation?: {
@@ -31,7 +30,7 @@ interface MorningTrackingCompleteScreenProps {
   };
 }
 
-const { width, height } = Dimensions.get('window');
+const DIGIT_HEIGHT = 76;
 
 const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps> = ({
   navigation,
@@ -44,8 +43,17 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
   const intentionText = route?.params?.intentionText;
   const mindsetDurationMs = route?.params?.mindsetDurationMs;
   const { streakData, recordCheckIn } = useStreak();
-  const [showStreakModal, setShowStreakModal] = useState(false);
-  const [newStreakCount, setNewStreakCount] = useState(0);
+
+  // Streak inline animation state
+  const isFireModeRef = useRef(false);
+  const [showStreakNumber, setShowStreakNumber] = useState(false);
+  const [titleContent, setTitleContent] = useState('Check-in Complete!');
+  const [subtitleContent, setSubtitleContent] = useState('Great job starting your day\nwith intention. Go crush it!');
+  const streakWasIncremented = useRef(false);
+  const [gratitudeExpanded, setGratitudeExpanded] = useState(false);
+  const [priorityExpanded, setPriorityExpanded] = useState(false);
+  const newStreakCountRef = useRef(0);
+  const streakDigitsRef = useRef<{ old: string[]; new: string[] }>({ old: [], new: [] });
 
   // Compute sleep duration
   const sleepHours = (() => {
@@ -68,10 +76,26 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
   const sunOpacity = useRef(new Animated.Value(1)).current;
   const sunRotate = useRef(new Animated.Value(0)).current;
 
-  // Checkmark icon animations
-  const checkmarkScale = useRef(new Animated.Value(0)).current;
-  const checkmarkOpacity = useRef(new Animated.Value(0)).current;
-  const checkmarkRotate = useRef(new Animated.Value(-180)).current;
+  // Fire icon animations (for streak phase)
+  const fireScale = useRef(new Animated.Value(0)).current;
+  const fireOpacity = useRef(new Animated.Value(0)).current;
+  const fireRotate = useRef(new Animated.Value(-90)).current;
+  const iconContainerRotate = useRef(new Animated.Value(0)).current;
+
+  // Slide animations for overview transition (fire slides left, counter slides right+up)
+  const fireSlideX = useRef(new Animated.Value(0)).current;
+  const counterSlideX = useRef(new Animated.Value(0)).current;
+  const counterSlideY = useRef(new Animated.Value(0)).current;
+
+  // Streak number rolling animation
+  const streakNumberOpacity = useRef(new Animated.Value(0)).current;
+  const digitRolls = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const streakColorAnim = useRef(new Animated.Value(0)).current;
 
   // Ring animations
   const ringScale = useRef(new Animated.Value(0.8)).current;
@@ -99,6 +123,10 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
   // Icon shrink when transitioning to overview
   const iconShrinkScale = useRef(new Animated.Value(1)).current;
 
+  // Nudge card animations
+  const nudgeOpacity = useRef(new Animated.Value(0)).current;
+  const nudgeTranslateY = useRef(new Animated.Value(40)).current;
+
   // Continue button animations
   const continueOpacity = useRef(new Animated.Value(0)).current;
   const continueTranslateY = useRef(new Animated.Value(20)).current;
@@ -110,6 +138,7 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
   const overviewCardsHeight = useRef(0);
   const bottomFixedHeight = useRef(0);
   const overviewGapValue = useRef(new Animated.Value(0)).current;
+  const bottomSectionTop = useRef(new Animated.Value(9999)).current;
 
   // Per-card stagger animations
   const card1Opacity = useRef(new Animated.Value(0)).current;
@@ -128,178 +157,29 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
   const card5TranslateY = useRef(new Animated.Value(20)).current;
   const card5Scale = useRef(new Animated.Value(1)).current;
 
-  // Particle animations (12 particles with varied sizes)
-  const particles = useRef(
-    Array.from({ length: 12 }, () => ({
-      scale: new Animated.Value(0),
-      opacity: new Animated.Value(0),
-      translateX: new Animated.Value(0),
-      translateY: new Animated.Value(0),
-    }))
-  ).current;
-
   useEffect(() => {
-    // Sequence of animations
-    const animationSequence = Animated.sequence([
-      // Phase 1: Ring and Sun appear together
+    // Phase 1+2: Ring + sun appear + brief pause
+    const introAnimation = Animated.sequence([
       Animated.parallel([
-        Animated.timing(ringOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(ringScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(containerOpacity, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.spring(containerScale, {
-          toValue: 1,
-          friction: 4,
-          tension: 100,
-          useNativeDriver: true,
-        }),
+        Animated.timing(ringOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.spring(ringScale, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+        Animated.timing(containerOpacity, { toValue: 1, duration: 150, useNativeDriver: true }),
+        Animated.spring(containerScale, { toValue: 1, friction: 4, tension: 100, useNativeDriver: true }),
       ]),
-
-      // Phase 2: Brief pause to show the sun
       Animated.delay(250),
-
-      // Phase 3: Transform Sun to Checkmark with pulse + ripple
-      Animated.parallel([
-        // Sun spins and shrinks out
-        Animated.timing(sunRotate, {
-          toValue: 180,
-          duration: 400,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(sunScale, {
-          toValue: 0,
-          duration: 300,
-          easing: Easing.in(Easing.back(1.5)),
-          useNativeDriver: true,
-        }),
-        Animated.timing(sunOpacity, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        // Pulse the container
-        Animated.sequence([
-          Animated.timing(pulseScale, {
-            toValue: 1.2,
-            duration: 150,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.spring(pulseScale, {
-            toValue: 1,
-            friction: 4,
-            tension: 120,
-            useNativeDriver: true,
-          }),
-        ]),
-        // Checkmark spins and grows in with bounce
-        Animated.sequence([
-          Animated.delay(150),
-          Animated.parallel([
-            Animated.timing(checkmarkRotate, {
-              toValue: 0,
-              duration: 400,
-              easing: Easing.out(Easing.back(1.5)),
-              useNativeDriver: true,
-            }),
-            Animated.spring(checkmarkScale, {
-              toValue: 1,
-              friction: 3,
-              tension: 100,
-              useNativeDriver: true,
-            }),
-            Animated.timing(checkmarkOpacity, {
-              toValue: 1,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]),
-        // Ripple ring expands outward
-        Animated.sequence([
-          Animated.delay(250),
-          Animated.parallel([
-            Animated.timing(rippleOpacity, {
-              toValue: 0.6,
-              duration: 100,
-              useNativeDriver: true,
-            }),
-            Animated.timing(rippleScale, {
-              toValue: 1.8,
-              duration: 600,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-            Animated.sequence([
-              Animated.delay(150),
-              Animated.timing(rippleOpacity, {
-                toValue: 0,
-                duration: 450,
-                useNativeDriver: true,
-              }),
-            ]),
-          ]),
-        ]),
-      ]),
     ]);
 
-    // Text animations (start after sun-to-checkmark transform)
-    const textAnimations = Animated.sequence([
-      Animated.delay(1100),
-      Animated.parallel([
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(textTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(subtextOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(subtextTranslateY, {
-          toValue: 0,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Pause to let user read the text
-      Animated.delay(400),
-    ]);
-
-    // Start all animations, then transition to overview
-    Animated.parallel([animationSequence, textAnimations]).start(() => {
-      // Position icon and cards to match evening screen layout
+    // Overview transition logic (extracted so it can be called after streak phase or directly)
+    const proceedToOverview = () => {
       const targetIconCenterY = containerHeight.current * 0.10;
-      const iconVisualBottom = targetIconCenterY + 44; // half of scaled animation container (160 * 0.55 / 2)
+      const iconVisualBottom = targetIconCenterY + 55;
       const cardsTargetTop = iconVisualBottom + 16;
-      const spacer = Math.max(0, containerHeight.current - 16 - overviewCardsHeight.current - bottomFixedHeight.current - cardsTargetTop);
-      overviewGapValue.setValue(spacer);
+      // Position bottom section: streak visual bottom + 48px gap
+      const streakVisualBottom = targetIconCenterY + 6 + 66;
+      bottomSectionTop.setValue(streakVisualBottom + 16);
 
-      // Phase 1: Icon transition (shrink + move up + text fade out)
-      Animated.parallel([
+      // Build animations array
+      const overviewAnims: Animated.CompositeAnimation[] = [
         Animated.timing(textOpacity, {
           toValue: 0,
           duration: 400,
@@ -317,13 +197,39 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
           useNativeDriver: true,
         }),
         Animated.timing(celebrationShiftY, {
-          toValue: targetIconCenterY - iconCenterY.current,
+          toValue: targetIconCenterY - iconCenterY.current + 6,
           duration: 600,
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        // Phase 2: Staggered card reveals with completion celebrations
+      ];
+
+      // In fire mode, slide fire left and counter right+up independently
+      if (isFireModeRef.current) {
+        overviewAnims.push(
+          Animated.timing(fireSlideX, {
+            toValue: -68,
+            duration: 600,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(counterSlideX, {
+            toValue: 92,
+            duration: 600,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(counterSlideY, {
+            toValue: -160,
+            duration: 600,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        );
+      }
+
+      Animated.parallel(overviewAnims).start(() => {
+        // Staggered card reveals with completion celebrations
         const fadeIn = (opacity: Animated.Value, translateY: Animated.Value) => Animated.parallel([
           Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
           Animated.timing(translateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
@@ -379,80 +285,288 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
         }
 
         Animated.sequence(cardAnims).start(() => {
-          // Continue button + confetti + breathing all start together
+          // Nudge card + continue button + breathing start together
           Animated.parallel([
+            Animated.timing(nudgeOpacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+            Animated.timing(nudgeTranslateY, { toValue: 0, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
             Animated.timing(continueOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
             Animated.timing(continueTranslateY, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          ]).start();
-
-          // Confetti particles
-          Animated.sequence([
-            Animated.stagger(
-              40,
-              particles.map((particle, index) => {
-                const angle = (index / particles.length) * 2 * Math.PI + (Math.random() * 0.3 - 0.15);
-                const distance = 70 + Math.random() * 60;
-                return Animated.parallel([
-                  Animated.timing(particle.opacity, { toValue: 1, duration: 150, useNativeDriver: true }),
-                  Animated.spring(particle.scale, { toValue: 0.6 + Math.random() * 0.8, friction: 5, tension: 80, useNativeDriver: true }),
-                  Animated.timing(particle.translateX, { toValue: Math.cos(angle) * distance, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-                  Animated.timing(particle.translateY, { toValue: Math.sin(angle) * distance, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-                ]);
-              })
-            ),
-            Animated.parallel(
-              particles.map((particle) =>
-                Animated.timing(particle.opacity, { toValue: 0, duration: 400, useNativeDriver: true })
-              )
-            ),
           ]).start();
 
           // Gentle breathing pulse
           Animated.loop(
             Animated.sequence([
-              Animated.timing(breatheScale, { toValue: 1.04, duration: 2000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-              Animated.timing(breatheScale, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+              Animated.timing(breatheScale, { toValue: 1.08, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+              Animated.timing(breatheScale, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
             ])
           ).start();
         });
       });
-    });
-
-    // Trigger haptic when transformation completes
-    const hapticTimer = setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1000);
-
-    // Record check-in and potentially show streak modal
-    const recordStreak = async () => {
-      const streakIncremented = await recordCheckIn();
-      if (streakIncremented) {
-        setNewStreakCount(streakData.currentStreak + 1);
-        setTimeout(() => {
-          setShowStreakModal(true);
-        }, 2500);
-      }
     };
 
-    recordStreak();
+    // Record check-in immediately, store promise for later
+    const streakPromise = (async () => {
+      const incremented = await recordCheckIn();
+      streakWasIncremented.current = incremented;
+      if (incremented) {
+        newStreakCountRef.current = streakData.currentStreak + 1;
+      }
+      return incremented;
+    })();
+
+    // Light haptic on intro
+    const hapticTimer = setTimeout(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }, 400);
+
+    // Start intro, then branch based on streak result
+    introAnimation.start(async () => {
+      const incremented = await streakPromise;
+
+      if (incremented) {
+        // === STREAK PATH: Sun → Fire directly ===
+        const count = newStreakCountRef.current;
+        const oldCount = Math.max(count - 1, 0);
+        const newStr = String(count);
+        const oldStr = String(oldCount).padStart(newStr.length, ' ');
+        const oldDigits = oldStr.split('');
+        const newDigits = newStr.split('');
+        streakDigitsRef.current = { old: oldDigits, new: newDigits };
+        setShowStreakNumber(true);
+        setSubtitleContent(
+          count === 1 ? "You've started your streak!" :
+          count < 7 ? 'Keep going!' :
+          count < 30 ? "You're on fire!" :
+          'Legendary consistency!'
+        );
+        isFireModeRef.current = true;
+
+        // Reset animation values
+        iconContainerRotate.setValue(0);
+        rippleScale.setValue(1);
+        rippleOpacity.setValue(0);
+        streakNumberOpacity.setValue(0);
+        streakColorAnim.setValue(0);
+        digitRolls.forEach(d => d.setValue(0));
+
+        // Build per-digit roll animations
+        const digitAnimations = newDigits.map((newD, i) => {
+          if (oldDigits[i] !== newD) {
+            return Animated.timing(digitRolls[i], {
+              toValue: -DIGIT_HEIGHT,
+              duration: 1000,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            });
+          }
+          return Animated.delay(0);
+        });
+
+        // Sun+Container → Fire transition via Y-axis spin
+        Animated.parallel([
+          // Whole gradient circle (with sun inside) spins on Y-axis to edge-on
+          Animated.timing(iconContainerRotate, {
+            toValue: 90,
+            duration: 550,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          // Ring fades out in sync
+          Animated.timing(ringOpacity, {
+            toValue: 0,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+          // Snap container invisible after reaching edge-on
+          Animated.sequence([
+            Animated.delay(520),
+            Animated.timing(containerOpacity, {
+              toValue: 0,
+              duration: 30,
+              useNativeDriver: true,
+            }),
+          ]),
+          // Pulse at crossover
+          Animated.sequence([
+            Animated.delay(400),
+            Animated.timing(pulseScale, {
+              toValue: 1.15,
+              duration: 200,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.spring(pulseScale, {
+              toValue: 1,
+              friction: 5,
+              tension: 80,
+              useNativeDriver: true,
+            }),
+          ]),
+          // Flame spins in from opposite Y-axis side
+          Animated.sequence([
+            Animated.delay(480),
+            Animated.parallel([
+              Animated.timing(fireOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.spring(fireScale, {
+                toValue: 1,
+                friction: 4,
+                tension: 60,
+                useNativeDriver: true,
+              }),
+              Animated.timing(fireRotate, {
+                toValue: 0,
+                duration: 600,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+          // Ripple ring with fire colors
+          Animated.sequence([
+            Animated.delay(250),
+            Animated.parallel([
+              Animated.timing(rippleOpacity, {
+                toValue: 0.6,
+                duration: 100,
+                useNativeDriver: true,
+              }),
+              Animated.timing(rippleScale, {
+                toValue: 1.8,
+                duration: 600,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              }),
+              Animated.sequence([
+                Animated.delay(150),
+                Animated.timing(rippleOpacity, {
+                  toValue: 0,
+                  duration: 450,
+                  useNativeDriver: true,
+                }),
+              ]),
+            ]),
+          ]),
+          // Streak number rolling animation
+          Animated.sequence([
+            Animated.delay(300),
+            Animated.timing(streakNumberOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+            Animated.delay(700),
+            Animated.parallel([
+              ...digitAnimations,
+              Animated.timing(streakColorAnim, {
+                toValue: 1,
+                duration: 1000,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: false,
+              }),
+            ]),
+            Animated.parallel([
+              Animated.timing(subtextOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(subtextTranslateY, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+            ]),
+          ]),
+        ]).start(() => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setTimeout(() => proceedToOverview(), 800);
+        });
+      } else {
+        // === NON-STREAK PATH: Sun stays, outer ring expands + fades → text → overview ===
+        Animated.parallel([
+          // Pulse
+          Animated.sequence([
+            Animated.timing(pulseScale, {
+              toValue: 1.2,
+              duration: 150,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.spring(pulseScale, {
+              toValue: 1,
+              friction: 4,
+              tension: 120,
+              useNativeDriver: true,
+            }),
+          ]),
+          // Outer ring expands and fades (becomes the ripple)
+          Animated.sequence([
+            Animated.delay(250),
+            Animated.parallel([
+              Animated.timing(ringScale, {
+                toValue: 1.8,
+                duration: 600,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+              }),
+              Animated.sequence([
+                Animated.delay(150),
+                Animated.timing(ringOpacity, {
+                  toValue: 0,
+                  duration: 450,
+                  useNativeDriver: true,
+                }),
+              ]),
+            ]),
+          ]),
+        ]).start(() => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          // Show text then proceed to overview
+          Animated.sequence([
+            Animated.parallel([
+              Animated.timing(textOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(textTranslateY, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+            ]),
+            Animated.parallel([
+              Animated.timing(subtextOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(subtextTranslateY, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+            ]),
+            Animated.delay(400),
+          ]).start(() => proceedToOverview());
+        });
+      }
+    });
 
     return () => {
       clearTimeout(hapticTimer);
     };
   }, [navigation]);
 
-  // Warm morning colors for particles
-  const particleColors = ['#7C3AED', '#A78BFA', '#C4B5FD', '#6366F1', '#818CF8', '#DDD6FE', '#EDE9FE', '#8B5CF6', '#7C3AED', '#C4B5FD', '#A78BFA', '#6366F1'];
+  // Theme colors (always use morning gold — fire colors are on the flameStack itself)
+  const gradientColors: [string, string, string] = ['#FBBF24', '#F59E0B', '#D97706'];
+  const ringColor = '#FCD34D';
+  const shadowColor = '#D97706';
 
-  // Interpolate rotation values
+  // Interpolate rotation values (Y-axis coin-flip)
   const sunRotateInterpolate = sunRotate.interpolate({
-    inputRange: [0, 180],
-    outputRange: ['0deg', '180deg'],
+    inputRange: [0, 90],
+    outputRange: ['0deg', '90deg'],
   });
 
-  const checkmarkRotateInterpolate = checkmarkRotate.interpolate({
-    inputRange: [-180, 0],
-    outputRange: ['-180deg', '0deg'],
+  const fireRotateInterpolate = fireRotate.interpolate({
+    inputRange: [-90, 0],
+    outputRange: ['-90deg', '0deg'],
+  });
+
+  const iconContainerRotateInterpolate = iconContainerRotate.interpolate({
+    inputRange: [0, 90],
+    outputRange: ['0deg', '90deg'],
+  });
+
+  // Streak number color interpolations (gray → fire)
+  const streakDigitColor = streakColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#9CA3AF', '#E56B3E'],
+  });
+  const streakShadowColor = streakColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(156, 163, 175, 0)', 'rgba(229, 107, 62, 0.25)'],
+  });
+  const streakLabelColor = streakColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#9CA3AF', '#C0714A'],
   });
 
   // Format time for display
@@ -477,32 +591,21 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
       <View style={styles.container} onLayout={(e) => { containerHeight.current = e.nativeEvent.layout.height; }}>
         {/* Celebration Zone — starts centered, shifts up */}
         <Animated.View style={[styles.celebrationZone, { transform: [{ translateY: celebrationShiftY }] }]}>
-          <View onLayout={(e) => { iconCenterY.current = e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2; }}>
-            <Animated.View style={[styles.animationContainer, { transform: [{ scale: iconShrinkScale }] }]}>
-            {/* Particles */}
-            {particles.map((particle, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.particle,
-                  {
-                    backgroundColor: particleColors[index % particleColors.length],
-                    opacity: particle.opacity,
-                    transform: [
-                      { scale: particle.scale },
-                      { translateX: particle.translateX },
-                      { translateY: particle.translateY },
-                    ],
-                  },
-                ]}
-              />
-            ))}
-
+          <Animated.View
+            onLayout={(e) => { iconCenterY.current = e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2; }}
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: [{ scale: iconShrinkScale }],
+            }}
+          >
+            <Animated.View style={[styles.animationContainer, { transform: [{ translateX: fireSlideX }] }]}>
             {/* Ripple Ring */}
             <Animated.View
               style={[
                 styles.rippleRing,
                 {
+                  borderColor: ringColor,
                   opacity: rippleOpacity,
                   transform: [{ scale: rippleScale }],
                 },
@@ -514,6 +617,7 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
               style={[
                 styles.outerRing,
                 {
+                  borderColor: ringColor,
                   opacity: ringOpacity,
                   transform: [{ scale: Animated.multiply(ringScale, breatheScale) }],
                 },
@@ -525,90 +629,146 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
               style={[
                 styles.iconContainer,
                 {
+                  shadowColor: shadowColor,
                   opacity: containerOpacity,
                   transform: [
+                    { perspective: 800 },
                     { scale: Animated.multiply(Animated.multiply(containerScale, pulseScale), breatheScale) },
+                    { rotateY: iconContainerRotateInterpolate },
                   ],
                 },
               ]}
             >
               <LinearGradient
-                colors={['#6D28D9', '#7C3AED', '#8B5CF6']}
+                colors={gradientColors}
                 style={styles.iconGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                {/* Sun Icon (fades/rotates out) */}
-                <Animated.View
-                  style={[
-                    styles.iconWrapper,
-                    {
-                      opacity: sunOpacity,
-                      transform: [
-                        { scale: sunScale },
-                        { rotate: sunRotateInterpolate },
-                      ],
-                    },
-                  ]}
-                >
-                  <Ionicons name="sunny" size={56} color="#FFFFFF" />
-                </Animated.View>
+                <View style={styles.iconInnerCircle}>
+                  {/* Sun Icon (flips out on Y-axis) */}
+                  <Animated.View
+                    style={[
+                      styles.iconWrapper,
+                      {
+                        opacity: sunOpacity,
+                        transform: [
+                          { perspective: 800 },
+                          { scale: sunScale },
+                          { rotateY: sunRotateInterpolate },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Ionicons name="sunny" size={72} color="#D97706" />
+                  </Animated.View>
 
-                {/* Checkmark Icon (fades/rotates in) */}
-                <Animated.View
-                  style={[
-                    styles.iconWrapper,
-                    styles.iconOverlay,
-                    {
-                      opacity: checkmarkOpacity,
-                      transform: [
-                        { scale: checkmarkScale },
-                        { rotate: checkmarkRotateInterpolate },
-                      ],
-                    },
-                  ]}
-                >
-                  <Ionicons name="checkmark" size={56} color="#FFFFFF" />
-                </Animated.View>
+                </View>
               </LinearGradient>
             </Animated.View>
-          </Animated.View>
-          </View>
 
-          {/* Text Content */}
+            {/* Flame Stack (flips in on Y-axis during streak phase) */}
+            <Animated.View
+              style={[
+                styles.flameStack,
+                {
+                  opacity: fireOpacity,
+                  transform: [
+                    { translateY: 5 },
+                    { perspective: 800 },
+                    { scale: Animated.multiply(Animated.multiply(fireScale, pulseScale), breatheScale) },
+                    { rotateY: fireRotateInterpolate },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.flameOuterGlow} />
+              <View style={styles.flameInnerGlow} />
+              <View style={styles.flameLayer}>
+                <Ionicons name="flame" size={114} color="#FFD166" />
+              </View>
+              <View style={[styles.flameLayer, { top: 5 }]}>
+                <Ionicons name="flame" size={108} color="#FF9F43" />
+              </View>
+              <View style={[styles.flameLayer, { top: 10 }]}>
+                <Ionicons name="flame" size={102} color="#EE7B4D" />
+              </View>
+            </Animated.View>
+          </Animated.View>
+
+            {/* Streak counter (inside scaled wrapper so it shrinks with icon) */}
+            {showStreakNumber && (
+              <Animated.View style={[styles.streakNumberWrapper, { opacity: streakNumberOpacity, transform: [{ translateX: counterSlideX }, { translateY: counterSlideY }] }]}>
+                <View style={styles.digitsRow}>
+                  {streakDigitsRef.current.new.map((newDigit, i) => {
+                    const oldDigit = streakDigitsRef.current.old[i];
+                    const changed = oldDigit !== newDigit;
+                    return (
+                      <View key={i} style={styles.digitClip}>
+                        {changed ? (
+                          <Animated.View style={{ transform: [{ translateY: digitRolls[i] }] }}>
+                            <Animated.Text style={[styles.streakDigit, { color: oldDigit === ' ' ? 'transparent' : streakDigitColor, textShadowColor: streakShadowColor }]}>
+                              {oldDigit === ' ' ? '0' : oldDigit}
+                            </Animated.Text>
+                            <Animated.Text style={[styles.streakDigit, { color: streakDigitColor, textShadowColor: streakShadowColor }]}>
+                              {newDigit}
+                            </Animated.Text>
+                          </Animated.View>
+                        ) : (
+                          <Animated.Text style={[styles.streakDigit, { color: streakDigitColor, textShadowColor: streakShadowColor }]}>
+                            {newDigit}
+                          </Animated.Text>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+                <Animated.Text style={[styles.streakLabelText, { color: streakLabelColor }]}>day streak</Animated.Text>
+              </Animated.View>
+            )}
+          </Animated.View>
+
+          {/* Text Content (outside scaled wrapper) */}
           <View style={styles.textContainer}>
             <Animated.Text
               style={[
                 styles.titleText,
                 {
-                  opacity: textOpacity,
+                  opacity: showStreakNumber ? 0 : textOpacity,
                   transform: [{ translateY: textTranslateY }],
                 },
               ]}
             >
-              Check-in Complete!
+              {titleContent}
             </Animated.Text>
             <Animated.Text
               style={[
                 styles.subtitleText,
                 {
                   opacity: subtextOpacity,
-                  transform: [{ translateY: subtextTranslateY }],
+                  transform: [{ translateY: showStreakNumber ? 68 : subtextTranslateY }],
                 },
               ]}
             >
-              Great job starting your day{'\n'}with intention. Go crush it!
+              {subtitleContent}
             </Animated.Text>
           </View>
         </Animated.View>
 
         {/* Bottom Section: Overview + Continue */}
-        <View
+        <Animated.View
           onLayout={(e) => { bottomSectionHeight.current = e.nativeEvent.layout.height; }}
-          style={styles.bottomSection}
+          style={[styles.bottomSection, { top: bottomSectionTop }]}
         >
-          {/* Overview Cards Group */}
-          <View onLayout={(e) => { overviewCardsHeight.current = e.nativeEvent.layout.height; }}>
+          {/* Overview Cards Group - scrollable if content overflows */}
+          <ScrollView
+            style={{ flex: 1, marginBottom: 16 }}
+            contentContainerStyle={{ paddingBottom: 4, paddingHorizontal: 16 }}
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            nestedScrollEnabled
+            overScrollMode="never"
+          >
             {/* Sleep Card - DailyOverview style */}
             {sleepHours ? (
               <Animated.View style={{ opacity: card1Opacity, transform: [{ translateY: card1TranslateY }, { scale: card1Scale }] }}>
@@ -659,10 +819,14 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
 
             {/* Gratitude Card */}
             <Animated.View style={{ opacity: card2Opacity, transform: [{ translateY: card2TranslateY }, { scale: card2Scale }] }}>
-              <View style={[
-                styles.gratitudeCard,
-                { borderLeftColor: gratitudeText && gratitudeText.trim().length > 0 ? '#F59E0B' : '#D1D5DB' },
-              ]}>
+              <TouchableOpacity
+                activeOpacity={gratitudeText && gratitudeText.trim().length > 0 ? 0.7 : 1}
+                onPress={() => { if (gratitudeText && gratitudeText.trim().length > 0) setGratitudeExpanded(prev => !prev); }}
+                style={[
+                  styles.gratitudeCard,
+                  { borderLeftColor: gratitudeText && gratitudeText.trim().length > 0 ? '#F59E0B' : '#D1D5DB' },
+                ]}
+              >
                 <View style={[styles.cardHeader, !(gratitudeText && gratitudeText.trim().length > 0) && { marginBottom: 0 }]}>
                   <Ionicons
                     name={gratitudeText && gratitudeText.trim().length > 0 ? 'heart' : 'heart-outline'}
@@ -679,19 +843,26 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
                   )}
                 </View>
                 {gratitudeText && gratitudeText.trim().length > 0 && (
-                  <Text style={styles.cardTextCompleted} numberOfLines={2}>
+                  <Text
+                    style={styles.cardTextCompleted}
+                    numberOfLines={gratitudeExpanded ? undefined : 3}
+                  >
                     {gratitudeText.trim()}
                   </Text>
                 )}
-              </View>
+              </TouchableOpacity>
             </Animated.View>
 
             {/* Today's Priority Card */}
             <Animated.View style={{ opacity: card3Opacity, transform: [{ translateY: card3TranslateY }, { scale: card3Scale }] }}>
-              <View style={[
-                styles.priorityCard,
-                { borderLeftColor: intentionText && intentionText.trim().length > 0 ? '#D97706' : '#D1D5DB' },
-              ]}>
+              <TouchableOpacity
+                activeOpacity={intentionText && intentionText.trim().length > 0 ? 0.7 : 1}
+                onPress={() => { if (intentionText && intentionText.trim().length > 0) setPriorityExpanded(prev => !prev); }}
+                style={[
+                  styles.priorityCard,
+                  { borderLeftColor: intentionText && intentionText.trim().length > 0 ? '#D97706' : '#D1D5DB' },
+                ]}
+              >
                 <View style={[styles.cardHeader, !(intentionText && intentionText.trim().length > 0) && { marginBottom: 0 }]}>
                   <Ionicons
                     name={intentionText && intentionText.trim().length > 0 ? 'flag' : 'flag-outline'}
@@ -708,11 +879,14 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
                   )}
                 </View>
                 {intentionText && intentionText.trim().length > 0 && (
-                  <Text style={styles.cardTextCompleted}>
+                  <Text
+                    style={styles.cardTextCompleted}
+                    numberOfLines={priorityExpanded ? undefined : 3}
+                  >
                     {intentionText.trim()}
                   </Text>
                 )}
-              </View>
+              </TouchableOpacity>
             </Animated.View>
 
             {/* Mindset Card */}
@@ -729,15 +903,30 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
                 </View>
               </Animated.View>
             ) : null}
-          </View>
-
-          {/* Dynamic spacer to center overview cards */}
-          <Animated.View style={{ height: overviewGapValue }} />
+          </ScrollView>
 
           {/* Bottom Fixed Group */}
           <View
+            style={{ paddingHorizontal: 16 }}
             onLayout={(e) => { bottomFixedHeight.current = e.nativeEvent.layout.height; }}
           >
+            {/* Good Luck Nudge */}
+            <Animated.View style={{ opacity: nudgeOpacity, transform: [{ translateY: nudgeTranslateY }] }}>
+              <View style={styles.nudgeCard}>
+                <View style={styles.nudgeContent}>
+                  <View style={styles.nudgeIconRow}>
+                    <View style={styles.nudgeIconCircle}>
+                      <Ionicons name="flash" size={16} color="#D97706" />
+                    </View>
+                    <Text style={styles.nudgeLabel}>Go get it</Text>
+                  </View>
+                  <Text style={styles.nudgeText}>
+                    Amazing work! You're already ahead - the day is yours.
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
+
             <Animated.View style={{ opacity: continueOpacity, transform: [{ translateY: continueTranslateY }] }}>
               <TouchableOpacity
                 style={styles.continueButton}
@@ -753,21 +942,8 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
               </TouchableOpacity>
             </Animated.View>
           </View>
-        </View>
+        </Animated.View>
       </View>
-
-      {/* Streak Celebration Modal */}
-      <StreakCelebrationModal
-        visible={showStreakModal}
-        streakCount={newStreakCount}
-        onClose={() => {
-          setShowStreakModal(false);
-          navigation?.reset({
-            index: 0,
-            routes: [{ name: 'DashboardMain', params: { morningCheckInJustCompleted: true } }],
-          });
-        }}
-      />
     </SafeAreaView>
   );
 };
@@ -787,34 +963,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   animationContainer: {
-    width: 160,
-    height: 160,
+    width: 200,
+    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 36,
+    marginBottom: 12,
   },
   rippleRing: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     borderWidth: 2,
-    borderColor: '#C4B5FD',
   },
   outerRing: {
     position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 3,
+  },
+  iconContainer: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    borderWidth: 3,
-    borderColor: '#C4B5FD',
-  },
-  iconContainer: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -823,6 +996,16 @@ const styles = StyleSheet.create({
   iconGradient: {
     width: '100%',
     height: '100%',
+    borderRadius: 70,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconInnerCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 65,
+    backgroundColor: '#F0EEE8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -830,17 +1013,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconOverlay: {
+  flameStack: {
     position: 'absolute',
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  particle: {
+  flameOuterGlow: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 152,
+    height: 152,
+    borderRadius: 76,
+    backgroundColor: '#FFF0E5',
+  },
+  flameInnerGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFE4D4',
+  },
+  flameLayer: {
+    position: 'absolute',
+    alignItems: 'center',
   },
   textContainer: {
     alignItems: 'center',
+    minHeight: 96,
   },
   titleText: {
     fontSize: 28,
@@ -861,8 +1061,8 @@ const styles = StyleSheet.create({
   bottomSection: {
     position: 'absolute',
     bottom: 16,
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
   },
   sleepCard: {
     backgroundColor: '#FFFFFF',
@@ -1027,6 +1227,50 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     letterSpacing: 0.2,
   },
+  nudgeCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 18,
+    overflow: 'hidden',
+    width: '100%',
+    marginBottom: 16,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  nudgeContent: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  nudgeIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  nudgeIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  nudgeLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#D97706',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  nudgeText: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
   continueButton: {
     backgroundColor: '#1F2937',
     borderRadius: 16,
@@ -1044,6 +1288,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  streakNumberWrapper: {
+    position: 'absolute',
+    top: 212,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  digitsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  digitClip: {
+    height: 76,
+    overflow: 'hidden',
+  },
+  streakDigit: {
+    fontSize: 64,
+    fontWeight: '800',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 6,
+    height: 76,
+    lineHeight: 76,
+    textAlign: 'center',
+    width: 42,
+  },
+  streakLabelText: {
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
 });
 

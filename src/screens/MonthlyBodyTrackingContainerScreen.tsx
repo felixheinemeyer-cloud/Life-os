@@ -153,21 +153,24 @@ const MonthlyBodyTrackingContainerScreen: React.FC<MonthlyBodyTrackingContainerS
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - complete the check-in
-      // For now, just go back. Later, navigate to a completion screen.
-      console.log('Monthly Body Check-In complete:', {
-        bodyMetrics,
-        healthRatings,
-        physicalActivityData,
-        healthNotesData,
-        progressPhotoData,
-        bodyPromiseData,
-        mentalWellnessData,
-        mentalLoadData,
-        mindHelpersData,
-        mindDrainsData,
+      // Final step - navigate to completion screen
+      navigation?.navigate('MonthlyBodyTrackingComplete', {
+        weight: bodyMetrics.weight,
+        weightUnit: bodyMetrics.weightUnit,
+        measurements: bodyMetrics.measurements,
+        overallHealth: healthRatings.overallHealth,
+        skinQuality: healthRatings.skinQuality,
+        activityLevel: physicalActivityData.activityLevel,
+        healthNotes: healthNotesData.notes,
+        photoUri: progressPhotoData.photoUri,
+        promise: bodyPromiseData.promise,
+        mentalClarity: mentalWellnessData.mentalClarity,
+        emotionalBalance: mentalWellnessData.emotionalBalance,
+        motivation: mentalWellnessData.motivation,
+        mentalLoadLevel: mentalLoadData.mentalLoadLevel,
+        primaryDrain: mindDrainsData.primaryDrain,
+        selectedHelpers: mindHelpersData.selectedHelpers,
       });
-      navigation?.goBack();
     }
   };
 
