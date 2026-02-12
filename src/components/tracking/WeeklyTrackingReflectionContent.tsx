@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -68,17 +68,25 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
   const textInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const buttonBottom = useRef(new Animated.Value(0)).current;
+  const containerRef = useRef<View>(null);
+  const containerBottomScreenY = useRef(0);
 
   const config = REFLECTION_CONFIGS[reflectionType];
+
+  const handleContainerLayout = useCallback(() => {
+    containerRef.current?.measureInWindow((_x, y, _width, height) => {
+      containerBottomScreenY.current = y + height;
+    });
+  }, []);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
         setIsFocused(true);
-        const keyboardTop = e.endCoordinates.height - 80;
+        const overlap = containerBottomScreenY.current - e.endCoordinates.screenY;
         Animated.timing(buttonBottom, {
-          toValue: keyboardTop + 8,
+          toValue: Math.max(0, overlap + 16),
           duration: Platform.OS === 'ios' ? 250 : 0,
           useNativeDriver: false,
         }).start();
@@ -104,7 +112,7 @@ const WeeklyTrackingReflectionContent: React.FC<WeeklyTrackingReflectionContentP
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View ref={containerRef} style={styles.container} onLayout={handleContainerLayout}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}

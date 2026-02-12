@@ -30,6 +30,12 @@ interface HigherSelfScreenProps {
     goBack: () => void;
     navigate: (screen: string, params?: object) => void;
   };
+  route?: {
+    params?: {
+      fromTracking?: boolean;
+      trackingCompletionParams?: Record<string, unknown>;
+    };
+  };
 }
 
 // Calculate star points
@@ -57,15 +63,18 @@ const getWealthPosition = (index: number, centerX: number, centerY: number, radi
   };
 };
 
-const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
+const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const fromTracking = route?.params?.fromTracking ?? false;
   const [modalVisible, setModalVisible] = useState(false);
+  const [nudgeVisible, setNudgeVisible] = useState(false);
+  const nudgeShown = useRef(false);
 
   // Track which wealth areas have been defined
   const completedWealth: Record<WealthType, boolean> = {
     physical: true,
-    mental: true,
-    social: true,
+    mental: false,
+    social: false,
     financial: false,
     time: true,
   };
@@ -88,6 +97,8 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
   const starRotate = useRef(new Animated.Value(0)).current;
   const modalScale = useRef(new Animated.Value(0.9)).current;
   const modalOpacity = useRef(new Animated.Value(0)).current;
+  const nudgeScale = useRef(new Animated.Value(0.9)).current;
+  const nudgeOpacity = useRef(new Animated.Value(0)).current;
   const buttonAnims = useRef(
     [0, 1, 2, 3, 4].map(() => ({
       scale: new Animated.Value(0),
@@ -139,6 +150,27 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
       ])
     );
     Animated.parallel(buttonAnimations).start();
+
+    // Show nudge popup after animations settle (incomplete areas, not from tracking)
+    if (completedCount < 5 && !fromTracking && !nudgeShown.current) {
+      nudgeShown.current = true;
+      setTimeout(() => {
+        setNudgeVisible(true);
+        Animated.parallel([
+          Animated.spring(nudgeScale, {
+            toValue: 1,
+            friction: 8,
+            tension: 65,
+            useNativeDriver: true,
+          }),
+          Animated.timing(nudgeOpacity, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 1000);
+    }
   }, []);
 
   const openModal = () => {
@@ -180,6 +212,40 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
       setModalVisible(false);
       modalScale.setValue(0.9);
     });
+  };
+
+  const closeNudge = () => {
+    Animated.parallel([
+      Animated.timing(nudgeScale, {
+        toValue: 0.9,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(nudgeOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setNudgeVisible(false);
+      nudgeScale.setValue(0.9);
+    });
+  };
+
+  // Find incomplete wealth areas
+  const incompleteAreas = (Object.entries(completedWealth) as [WealthType, boolean][])
+    .filter(([, done]) => !done)
+    .map(([type]) => type);
+  const firstIncomplete = incompleteAreas[0];
+
+  const handleNudgeAction = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    closeNudge();
+    if (firstIncomplete) {
+      setTimeout(() => handleWealthPress(firstIncomplete), 250);
+    }
   };
 
   const handleWealthPress = (type: WealthType) => {
@@ -248,7 +314,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 64, paddingBottom: 24 + 48 + 24 },
+          { paddingTop: insets.top + 64, paddingBottom: fromTracking ? 24 + 80 + 24 : 24 + 48 + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -356,15 +422,33 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
 
       </ScrollView>
 
-      {/* Bottom instruction - Fixed at bottom */}
-      <Animated.View style={[styles.bottomContainer, { opacity: fadeIn, bottom: 24 }]}>
-        <View style={styles.instructionCard}>
-          <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
-          <Text style={styles.instructionText}>
-            Tap any area to define your best self
-          </Text>
+      {/* Bottom - Fixed at bottom */}
+      {fromTracking ? (
+        <View style={[styles.finishButtonContainer, { bottom: 16 }]}>
+          <TouchableOpacity
+            style={styles.finishButton}
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              navigation.navigate('MorningTrackingComplete', route?.params?.trackingCompletionParams ?? {});
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.finishButtonText}>Finish</Text>
+            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-      </Animated.View>
+      ) : (
+        <Animated.View style={[styles.bottomContainer, { opacity: fadeIn, bottom: 24 }]}>
+          <View style={styles.instructionCard}>
+            <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
+            <Text style={styles.instructionText}>
+              Tap any area to define your best self
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Fixed Header with Blur Background */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
@@ -422,6 +506,96 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
         </Animated.View>
       </View>
 
+      {/* Nudge Modal - incomplete areas reminder */}
+      <Modal
+        visible={nudgeVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closeNudge}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.nudgeBackdrop}
+            activeOpacity={1}
+            onPress={closeNudge}
+          />
+          <Animated.View
+            style={[
+              styles.nudgeContainer,
+              {
+                opacity: nudgeOpacity,
+                transform: [{ scale: nudgeScale }],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#FAFAFA']}
+              style={styles.nudgeContent}
+            >
+              {/* Icon */}
+              <View style={styles.nudgeIconContainer}>
+                <LinearGradient
+                  colors={['#E0E7FF', '#C7D2FE']}
+                  style={styles.nudgeIconBg}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="compass" size={26} color="#6366F1" />
+                </LinearGradient>
+              </View>
+
+              {/* Title */}
+              <Text style={styles.nudgeTitle}>
+                {completedCount === 0
+                  ? 'Define Your Best Self'
+                  : `${5 - completedCount} ${5 - completedCount === 1 ? 'area' : 'areas'} left to define`}
+              </Text>
+
+              {/* Subtitle */}
+              <Text style={styles.nudgeSubtitle}>
+                Completing all five areas creates a clear compass for your daily decisions.
+              </Text>
+
+              {/* Incomplete areas chips */}
+              <View style={styles.nudgeChipsRow}>
+                {incompleteAreas.map((type) => {
+                  const config = WEALTH_CONFIGS[type];
+                  return (
+                    <View key={type} style={[styles.nudgeChip, { backgroundColor: config.backgroundColor }]}>
+                      <Ionicons name={getIconName(type)} size={14} color={config.color} />
+                      <Text style={[styles.nudgeChipText, { color: config.color }]}>
+                        {config.title.replace(' Wealth', '')}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* CTA Button */}
+              <TouchableOpacity
+                style={styles.nudgeCta}
+                onPress={handleNudgeAction}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.nudgeCtaText}>
+                  Define {firstIncomplete ? WEALTH_CONFIGS[firstIncomplete].title.replace(' Wealth', '') : 'Next Area'}
+                </Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              {/* Dismiss */}
+              <TouchableOpacity
+                onPress={closeNudge}
+                activeOpacity={0.7}
+                style={styles.nudgeDismiss}
+              >
+                <Text style={styles.nudgeDismissText}>Later</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </Modal>
+
       {/* Info Modal */}
       <Modal
         visible={modalVisible}
@@ -470,50 +644,48 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation }) => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Ionicons name="star" size={32} color="#6366F1" />
+                    <Ionicons name="star" size={28} color="#6366F1" />
                   </LinearGradient>
                 </View>
 
                 {/* Title */}
                 <Text style={styles.modalTitle}>What is Your Best Self?</Text>
 
-                <View style={styles.modalQuoteSection}>
-                  <View style={styles.modalQuoteDecoration}>
-                    <Text style={styles.modalQuoteMarkLeft}>"</Text>
-                  </View>
-                  <Text style={styles.modalQuoteText}>
-                    The person who knows their destination finds the way. The person who doesn't wanders endlessly.
-                  </Text>
-                  <Text style={styles.modalQuoteAttribution}>Ancient Proverb</Text>
-                </View>
-
-                <View style={styles.modalDivider} />
-
+                {/* Description */}
                 <Text style={styles.modalParagraph}>
                   Your Best Self is the highest version of who you can become — the person you aspire to be when you're living with intention, clarity, and purpose.
                 </Text>
 
-                <View style={styles.modalDivider} />
+                {/* Quote Card */}
+                <View style={styles.modalQuoteCard}>
+                  <View style={styles.modalQuoteLine} />
+                  <View style={styles.modalQuoteContent}>
+                    <Text style={styles.modalQuoteText}>
+                      The person who knows their destination finds the way. The person who doesn't wanders endlessly.
+                    </Text>
+                    <Text style={styles.modalQuoteAttribution}>— Ancient Proverb</Text>
+                  </View>
+                </View>
 
+                {/* Why Section */}
                 <Text style={styles.modalSubtitle}>Why Design It?</Text>
                 <Text style={styles.modalParagraph}>
-                  Without a clear vision of who you want to become, daily decisions lack direction. By defining your Best Self across five key areas of life, you create a compass that guides every choice you make.
+                  Without a clear vision of who you want to become, daily decisions lack direction. By defining your Best Self across five key areas, you create a compass that guides every choice.
                 </Text>
 
-                <View style={styles.modalDivider} />
-
+                {/* Pillars */}
                 <Text style={styles.modalSubtitle}>Five Pillars of Wealth</Text>
                 <View style={styles.modalPillarList}>
                   {[
-                    { icon: 'fitness-outline', color: '#059669', name: 'Physical', desc: 'Body, energy & health' },
-                    { icon: 'bulb-outline', color: '#3B82F6', name: 'Mental', desc: 'Mind, clarity & resilience' },
-                    { icon: 'people-outline', color: '#8B5CF6', name: 'Social', desc: 'Relationships & connection' },
-                    { icon: 'bar-chart-outline', color: '#F59E0B', name: 'Financial', desc: 'Money & security' },
-                    { icon: 'time-outline', color: '#6366F1', name: 'Time', desc: 'Focus & priorities' },
+                    { icon: 'fitness-outline', color: '#059669', bg: '#ECFDF5', name: 'Physical', desc: 'Body, energy & health' },
+                    { icon: 'bulb-outline', color: '#3B82F6', bg: '#EFF6FF', name: 'Mental', desc: 'Mind, clarity & resilience' },
+                    { icon: 'people-outline', color: '#8B5CF6', bg: '#F5F3FF', name: 'Social', desc: 'Relationships & connection' },
+                    { icon: 'bar-chart-outline', color: '#F59E0B', bg: '#FFFBEB', name: 'Financial', desc: 'Money & security' },
+                    { icon: 'time-outline', color: '#6366F1', bg: '#EEF2FF', name: 'Time', desc: 'Focus & priorities' },
                   ].map((pillar, index) => (
                     <View key={index} style={styles.modalPillarItem}>
-                      <View style={[styles.modalPillarIcon, { backgroundColor: `${pillar.color}15` }]}>
-                        <Ionicons name={pillar.icon as any} size={18} color={pillar.color} />
+                      <View style={[styles.modalPillarIcon, { backgroundColor: pillar.bg }]}>
+                        <Ionicons name={pillar.icon as any} size={17} color={pillar.color} />
                       </View>
                       <View style={styles.modalPillarText}>
                         <Text style={styles.modalPillarName}>{pillar.name}</Text>
@@ -745,6 +917,36 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
+  // Finish Button (tracking flow)
+  finishButtonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  finishButton: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  finishButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginRight: 8,
+    letterSpacing: -0.2,
+  },
+
   // Modal
   modalOverlay: {
     flex: 1,
@@ -753,122 +955,120 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalContainer: {
     width: SCREEN_WIDTH - 40,
     maxHeight: SCREEN_HEIGHT * 0.8,
-    borderRadius: 24,
+    borderRadius: 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 40,
     elevation: 20,
   },
   modalContent: {
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 24,
-    paddingTop: 20,
+    paddingTop: 24,
   },
   modalCloseButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    top: 18,
+    right: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   modalIconContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   modalIconBackground: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 16,
+    marginBottom: 24,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalScrollView: {
-    maxHeight: SCREEN_HEIGHT * 0.45,
+    maxHeight: SCREEN_HEIGHT * 0.5,
   },
   modalParagraph: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: '400',
-    color: '#4B5563',
-    lineHeight: 23,
-    letterSpacing: -0.2,
-    marginBottom: 12,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginVertical: 16,
+    color: '#6B7280',
+    lineHeight: 22,
+    letterSpacing: -0.15,
+    marginBottom: 24,
+    textAlign: 'left',
   },
   modalSubtitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#1F2937',
     letterSpacing: -0.3,
     marginBottom: 10,
   },
-  modalQuoteSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
+  modalQuoteCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F3FF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
   },
-  modalQuoteDecoration: {
-    marginBottom: -16,
+  modalQuoteLine: {
+    width: 3.5,
+    backgroundColor: '#6366F1',
   },
-  modalQuoteMarkLeft: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#6366F1',
-    lineHeight: 36,
+  modalQuoteContent: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingLeft: 20,
+    paddingRight: 16,
   },
   modalQuoteText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     fontStyle: 'italic',
-    color: '#374151',
-    textAlign: 'center',
-    lineHeight: 22,
-    letterSpacing: -0.2,
+    color: '#4B5563',
+    lineHeight: 21,
+    letterSpacing: -0.15,
   },
   modalQuoteAttribution: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6366F1',
-    textAlign: 'center',
     marginTop: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   modalPillarList: {
-    gap: 10,
+    gap: 8,
   },
   modalPillarItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
   },
   modalPillarIcon: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -886,11 +1086,113 @@ const styles = StyleSheet.create({
   modalPillarDesc: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#6B7280',
+    color: '#9CA3AF',
     marginTop: 1,
   },
   modalBottomSpacer: {
-    height: 16,
+    height: 8,
+  },
+
+  // Nudge Modal
+  nudgeBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  nudgeContainer: {
+    width: SCREEN_WIDTH - 48,
+    borderRadius: 24,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.15,
+    shadowRadius: 32,
+    elevation: 16,
+  },
+  nudgeContent: {
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  nudgeIconContainer: {
+    marginBottom: 16,
+  },
+  nudgeIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nudgeTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    letterSpacing: -0.4,
+    marginBottom: 8,
+  },
+  nudgeSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    letterSpacing: -0.1,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  nudgeChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  nudgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    gap: 6,
+  },
+  nudgeChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  nudgeCta: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'stretch',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  nudgeCtaText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  nudgeDismiss: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  nudgeDismissText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    letterSpacing: -0.2,
   },
 });
 

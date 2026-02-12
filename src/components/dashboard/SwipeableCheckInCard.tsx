@@ -6,12 +6,14 @@ import {
   Animated,
   PanResponder,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const DISMISS_THRESHOLD = -100;
+const DISMISS_THRESHOLD = -60;
+const SNAP_POSITION = -88;
 
 interface SwipeableCheckInCardProps {
   children: ReactNode;
@@ -30,6 +32,7 @@ const SwipeableCheckInCard: React.FC<SwipeableCheckInCardProps> = ({
   const itemOpacity = useRef(new Animated.Value(1)).current;
   const itemHeight = useRef(new Animated.Value(cardHeight + marginBottom)).current;
   const isDismissing = useRef(false);
+  const isSnapped = useRef(false);
 
   const handleDismiss = useCallback(() => {
     if (isDismissing.current) return;
@@ -59,7 +62,19 @@ const SwipeableCheckInCard: React.FC<SwipeableCheckInCardProps> = ({
     });
   }, [onDismiss, translateX, itemOpacity, itemHeight]);
 
+  const snapOpen = useCallback(() => {
+    isSnapped.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.spring(translateX, {
+      toValue: SNAP_POSITION,
+      friction: 8,
+      tension: 50,
+      useNativeDriver: false,
+    }).start();
+  }, [translateX]);
+
   const springBack = useCallback(() => {
+    isSnapped.current = false;
     Animated.spring(translateX, {
       toValue: 0,
       friction: 8,
@@ -78,22 +93,32 @@ const SwipeableCheckInCard: React.FC<SwipeableCheckInCardProps> = ({
         return isHorizontalSwipe && isLeftSwipe && isNotVertical;
       },
       onPanResponderGrant: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        translateX.stopAnimation();
       },
       onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx < 0) {
-          translateX.setValue(gestureState.dx);
+        const offset = isSnapped.current ? SNAP_POSITION : 0;
+        const newValue = offset + gestureState.dx;
+        if (newValue < 0) {
+          translateX.setValue(newValue);
+        } else {
+          translateX.setValue(0);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < DISMISS_THRESHOLD) {
-          handleDismiss();
+        const offset = isSnapped.current ? SNAP_POSITION : 0;
+        const finalX = offset + gestureState.dx;
+        if (finalX < DISMISS_THRESHOLD) {
+          snapOpen();
         } else {
           springBack();
         }
       },
       onPanResponderTerminate: () => {
-        springBack();
+        if (isSnapped.current) {
+          snapOpen();
+        } else {
+          springBack();
+        }
       },
       onPanResponderTerminationRequest: (_, gestureState) => {
         return gestureState.dx > -50;
@@ -127,8 +152,14 @@ const SwipeableCheckInCard: React.FC<SwipeableCheckInCardProps> = ({
           }
         ]}
       >
-        <Ionicons name="close" size={22} color="#FFFFFF" />
-        <Text style={styles.dismissActionText}>Dismiss</Text>
+        <TouchableOpacity
+          style={styles.dismissTouchable}
+          onPress={handleDismiss}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="close" size={22} color="#FFFFFF" />
+          <Text style={styles.dismissActionText}>Dismiss</Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Swipeable card wrapper */}
@@ -162,6 +193,10 @@ const styles = StyleSheet.create({
     width: 88,
     backgroundColor: '#EF4444',
     borderRadius: 20,
+    overflow: 'hidden',
+  },
+  dismissTouchable: {
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',

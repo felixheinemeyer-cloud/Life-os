@@ -763,7 +763,7 @@ const MorningTrackingCompleteScreen: React.FC<MorningTrackingCompleteScreenProps
           {/* Overview Cards Group - scrollable if content overflows */}
           <ScrollView
             style={{ flex: 1, marginBottom: 16 }}
-            contentContainerStyle={{ paddingBottom: 4, paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingBottom: 4, paddingHorizontal: 16, flexGrow: 1, justifyContent: 'center' }}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             nestedScrollEnabled

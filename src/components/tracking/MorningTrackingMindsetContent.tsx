@@ -72,7 +72,7 @@ const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps
 
       {/* Cards Container */}
       <View style={styles.cardsContainer}>
-        {/* Higher Self Card */}
+        {/* Best Self Card */}
         <TouchableOpacity
           activeOpacity={1}
           onPressIn={() => handlePressIn(scale1)}
@@ -93,7 +93,7 @@ const MorningTrackingMindsetContent: React.FC<MorningTrackingMindsetContentProps
             </View>
 
             {/* Content */}
-            <Text style={styles.cardTitle}>Higher Self</Text>
+            <Text style={styles.cardTitle}>Best Self</Text>
             <Text style={styles.cardDescription}>
               Your best version & identity
             </Text>

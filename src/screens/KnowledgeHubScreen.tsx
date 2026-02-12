@@ -33,7 +33,7 @@ const KnowledgeHubScreen: React.FC<KnowledgeHubScreenProps> = ({ navigation }) =
   const vaults: VaultItem[] = [
     {
       id: '1',
-      title: 'Higher Self',
+      title: 'Best Self',
       subtitle: 'Your best version &\nidentity',
       icon: 'star',
       iconColor: '#6366F1',

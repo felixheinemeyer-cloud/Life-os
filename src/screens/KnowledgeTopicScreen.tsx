@@ -1311,6 +1311,7 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
           <View style={styles.titleSection}>
             <View style={styles.titleRow}>
               <View style={styles.titleIcon}>
+                <Ionicons name={currentTopic.icon.replace('-outline', '') as keyof typeof Ionicons.glyphMap} size={24} color="#FFFFFF" style={{ position: 'absolute' }} />
                 <Ionicons name={currentTopic.icon} size={24} color={ACCENT_COLOR} />
               </View>
               <Text style={styles.title}>{currentTopic.name}</Text>
@@ -1635,14 +1636,14 @@ const KnowledgeTopicScreen = ({ navigation, route }: KnowledgeTopicScreenProps) 
         </KeyboardAvoidingView>
 
         {/* InputAccessoryView - renders above keyboard on iOS */}
-        <InputAccessoryView nativeID="knowledgeEditorToolbar">
+        <InputAccessoryView nativeID="knowledgeEditorToolbar" backgroundColor="transparent">
           <View style={styles.keyboardToolbar}>
             <TouchableOpacity
-              style={styles.toolbarButton}
+              style={styles.toolbarImageButton}
               onPress={handlePickImage}
-              activeOpacity={0.6}
+              activeOpacity={0.7}
             >
-              <Ionicons name="image" size={20} color="#007AFF" />
+              <Ionicons name="image" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </InputAccessoryView>
@@ -1855,10 +1856,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   titleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#E8F4FE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -2016,11 +2018,10 @@ const styles = StyleSheet.create({
   keyboardToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    height: 44,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#B0B0B3',
-    backgroundColor: '#D1D1D6',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   toolbarButton: {
     width: 36,
@@ -2028,6 +2029,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 6,
+  },
+  toolbarImageButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -23,8 +23,6 @@ import StatisticsScreen from './src/screens/StatisticsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import MorningTrackingContainerScreen from './src/screens/MorningTrackingContainerScreen';
-import MorningTrackingMindsetEntriesScreen from './src/screens/MorningTrackingMindsetEntriesScreen';
-import MorningTrackingHigherSelfScreen from './src/screens/MorningTrackingHigherSelfScreen';
 import MorningTrackingCompleteScreen from './src/screens/MorningTrackingCompleteScreen';
 import EveningTrackingContainerScreen from './src/screens/EveningTrackingContainerScreen';
 import EveningTrackingCompleteScreen from './src/screens/EveningTrackingCompleteScreen';
@@ -127,8 +125,8 @@ const DashboardStack = () => {
       <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen as React.ComponentType<any>} />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
       <Stack.Screen name="MorningTracking" component={MorningTrackingContainerScreen} />
-      <Stack.Screen name="MorningTrackingMindsetEntries" component={MorningTrackingMindsetEntriesScreen} />
-      <Stack.Screen name="MorningTrackingHigherSelf" component={MorningTrackingHigherSelfScreen} />
+      <Stack.Screen name="MorningTrackingMindsetEntries" component={MindsetBeliefsScreen} />
+      <Stack.Screen name="MorningTrackingHigherSelf" component={HigherSelfScreen} />
       <Stack.Screen name="MorningTrackingComplete" component={MorningTrackingCompleteScreen} />
       <Stack.Screen name="EveningTracking" component={EveningTrackingContainerScreen} />
       <Stack.Screen name="EveningTrackingComplete" component={EveningTrackingCompleteScreen} />
@@ -138,6 +136,40 @@ const DashboardStack = () => {
       <Stack.Screen name="MonthlyTrackingComplete" component={MonthlyTrackingCompleteScreen} />
       <Stack.Screen name="MonthlyBodyTracking" component={MonthlyBodyTrackingContainerScreen} />
       <Stack.Screen name="MonthlyBodyTrackingComplete" component={MonthlyBodyTrackingCompleteScreen} />
+      {/* Wealth screens (also in KnowledgeStack, duplicated here for tracking flow access) */}
+      <Stack.Screen name="PhysicalWealthIntroAnimation" component={PhysicalWealthIntroAnimationScreen} />
+      <Stack.Screen name="PhysicalWealthIntro" component={PhysicalWealthIntroScreen} />
+      <Stack.Screen name="PhysicalWealthQuestions" component={PhysicalWealthQuestionsContainerScreen} />
+      <Stack.Screen name="PhysicalWealthOverview" component={PhysicalWealthOverviewScreen} />
+      <Stack.Screen name="PhysicalWealthEditQuestion" component={PhysicalWealthEditQuestionScreen} />
+      <Stack.Screen name="PhysicalWealthOptionalQuestion" component={PhysicalWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="PhysicalWealthCustomQuestion" component={PhysicalWealthCustomQuestionScreen} />
+      <Stack.Screen name="SocialWealthIntroAnimation" component={SocialWealthIntroAnimationScreen} />
+      <Stack.Screen name="SocialWealthIntro" component={SocialWealthIntroScreen} />
+      <Stack.Screen name="SocialWealthQuestions" component={SocialWealthQuestionsContainerScreen} />
+      <Stack.Screen name="SocialWealthOverview" component={SocialWealthOverviewScreen} />
+      <Stack.Screen name="SocialWealthOptionalQuestion" component={SocialWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="SocialWealthCustomQuestion" component={SocialWealthCustomQuestionScreen} />
+      <Stack.Screen name="SocialWealthEditQuestion" component={SocialWealthEditQuestionScreen} />
+      <Stack.Screen name="MentalWealthIntroAnimation" component={MentalWealthIntroAnimationScreen} />
+      <Stack.Screen name="MentalWealthIntro" component={MentalWealthIntroScreen} />
+      <Stack.Screen name="MentalWealthQuestions" component={MentalWealthQuestionsContainerScreen} />
+      <Stack.Screen name="MentalWealthOverview" component={MentalWealthOverviewScreen} />
+      <Stack.Screen name="MentalWealthEditQuestion" component={MentalWealthEditQuestionScreen} />
+      <Stack.Screen name="MentalWealthOptionalQuestion" component={MentalWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="MentalWealthCustomQuestion" component={MentalWealthCustomQuestionScreen} />
+      <Stack.Screen name="TimeWealthIntroAnimation" component={TimeWealthIntroAnimationScreen} />
+      <Stack.Screen name="TimeWealthIntro" component={TimeWealthIntroScreen} />
+      <Stack.Screen name="TimeWealthQuestions" component={TimeWealthQuestionsContainerScreen} />
+      <Stack.Screen name="TimeWealthOverview" component={TimeWealthOverviewScreen} />
+      <Stack.Screen name="TimeWealthOptionalQuestion" component={TimeWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="TimeWealthCustomQuestion" component={TimeWealthCustomQuestionScreen} />
+      <Stack.Screen name="FinancialWealthIntroAnimation" component={FinancialWealthIntroAnimationScreen} />
+      <Stack.Screen name="FinancialWealthIntro" component={FinancialWealthIntroScreen} />
+      <Stack.Screen name="FinancialWealthQuestions" component={FinancialWealthQuestionsContainerScreen} />
+      <Stack.Screen name="FinancialWealthOverview" component={FinancialWealthOverviewScreen} />
+      <Stack.Screen name="FinancialWealthOptionalQuestion" component={FinancialWealthOptionalQuestionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="FinancialWealthCustomQuestion" component={FinancialWealthCustomQuestionScreen} />
       <Stack.Screen
         name="StreakDetails"
         component={StreakScreen}

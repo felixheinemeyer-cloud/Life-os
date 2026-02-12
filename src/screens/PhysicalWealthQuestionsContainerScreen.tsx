@@ -103,7 +103,7 @@ const PhysicalWealthQuestionsContainerScreen: React.FC<PhysicalWealthQuestionsCo
       setCurrentStep(newStep);
       animateToStep(newStep);
     } else {
-      // Final step - complete the flow and go to Higher Self screen
+      // Final step - complete the flow and go to Best Self screen
       console.log('Physical Wealth questions complete:', questionsData);
       navigation?.navigate('HigherSelf');
     }
