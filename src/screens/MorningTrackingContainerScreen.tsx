@@ -44,7 +44,6 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
   const [currentStep, setCurrentStep] = useState(0);
   const mindsetStartTime = useRef<number | null>(null);
   const mindsetDuration = useRef(0);
-  const visitedSubScreen = useRef(false);
   const [trackingData, setTrackingData] = useState<TrackingData>({
     bedtime: { hour: 23, minute: 15 },
     wakeTime: { hour: 7, minute: 0 },
@@ -74,17 +73,6 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
     );
     Animated.parallel(animations).start();
   }, [currentStep]);
-
-  // Auto-complete when returning from a mindset sub-screen
-  useEffect(() => {
-    const unsubscribe = navigation?.addListener('focus', () => {
-      if (visitedSubScreen.current && currentStep === 3) {
-        visitedSubScreen.current = false;
-        handleContinue();
-      }
-    });
-    return unsubscribe;
-  }, [navigation, currentStep]);
 
   // Track time spent on mindset step (index 3)
   useEffect(() => {
@@ -229,7 +217,23 @@ const MorningTrackingContainerScreen: React.FC<MorningTrackingContainerScreenPro
             {/* Step 4: Mindset */}
             <View style={styles.page}>
               <MorningTrackingMindsetContent
-                onNavigate={(screen) => { visitedSubScreen.current = true; navigation?.navigate(screen); }}
+                onNavigate={(screen) => {
+                  // Capture mindset duration so far
+                  let currentMindsetMs = mindsetDuration.current;
+                  if (mindsetStartTime.current !== null) {
+                    currentMindsetMs += Date.now() - mindsetStartTime.current;
+                  }
+                  navigation?.navigate(screen, {
+                    fromTracking: true,
+                    trackingCompletionParams: {
+                      bedtime: trackingData.bedtime,
+                      wakeTime: trackingData.wakeTime,
+                      gratitudeText: trackingData.gratitudeText,
+                      intentionText: trackingData.intentionText,
+                      mindsetDurationMs: currentMindsetMs,
+                    },
+                  });
+                }}
                 onContinue={handleContinue}
               />
             </View>

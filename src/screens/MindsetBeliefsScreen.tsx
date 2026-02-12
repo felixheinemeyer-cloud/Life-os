@@ -25,6 +25,13 @@ const ACTION_WIDTH = 140; // 48 + 12 + 48 + 16 + 16 (two circular buttons + gaps
 interface MindsetBeliefsScreenProps {
   navigation: {
     goBack: () => void;
+    navigate: (screen: string, params?: object) => void;
+  };
+  route?: {
+    params?: {
+      fromTracking?: boolean;
+      trackingCompletionParams?: Record<string, unknown>;
+    };
   };
 }
 
@@ -34,8 +41,9 @@ interface BeliefEntry {
   createdAt: Date;
 }
 
-const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation }) => {
+const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const fromTracking = route?.params?.fromTracking ?? false;
 
   // Header animation values
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -333,6 +341,25 @@ const MindsetBeliefsScreen: React.FC<MindsetBeliefsScreenProps> = ({ navigation 
           </View>
         </Animated.View>
       </View>
+
+      {/* Finish Button Overlay - only when from tracking */}
+      {fromTracking && (
+        <View style={[styles.finishButtonContainer, { bottom: 16 }]}>
+          <TouchableOpacity
+            style={styles.finishButton}
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              navigation.navigate('MorningTrackingComplete', route?.params?.trackingCompletionParams ?? {});
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.finishButtonText}>Finish</Text>
+            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Add/Edit Modal */}
         <Modal
@@ -763,6 +790,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#6B7280',
+  },
+
+  // Finish Button (tracking flow)
+  finishButtonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    zIndex: 20,
+  },
+  finishButton: {
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  finishButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginRight: 8,
+    letterSpacing: -0.2,
   },
 
   scrollView: {

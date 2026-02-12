@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
   Easing,
   Platform,
@@ -118,11 +119,21 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
   const titleInputRef = useRef<TextInput>(null);
   const editBlockInputRefs = useRef<{ [key: number]: TextInput | null }>({});
 
+  // Dropdown state
+  const [showDropdown, setShowDropdown] = useState(false);
+
   // Animations
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(-20)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(16)).current;
+
+  // Dropdown animations
+  const dropdownScale = useRef(new Animated.Value(0)).current;
+  const dropdownOpacity = useRef(new Animated.Value(0)).current;
+  const dropdownContentOpacity = useRef(new Animated.Value(0)).current;
+  const iconRotation = useRef(new Animated.Value(0)).current;
+  const moreButtonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -174,16 +185,118 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
     });
   };
 
-  const handleEdit = () => {
+  const openDropdown = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setEditTitle(currentEntry.title);
-    setEditBlocks(entryToBlocks(currentEntry));
-    setEditFocusedBlockIndex(0);
-    setEditCursorPosition(0);
-    setIsEditing(true);
-    setTimeout(() => titleInputRef.current?.focus(), 300);
+    setShowDropdown(true);
+    dropdownScale.setValue(0);
+    dropdownOpacity.setValue(0);
+    dropdownContentOpacity.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 1,
+      duration: 200,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeDropdown = (callback?: () => void) => {
+    Animated.timing(dropdownContentOpacity, {
+      toValue: 0,
+      duration: 120,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    Animated.parallel([
+      Animated.timing(iconRotation, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownScale, {
+        toValue: 0,
+        duration: 240,
+        delay: 40,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dropdownOpacity, {
+        toValue: 0,
+        duration: 200,
+        delay: 60,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowDropdown(false);
+      if (callback) callback();
+    });
+  };
+
+  const handleMoreButtonPressIn = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreButtonPressOut = () => {
+    Animated.spring(moreButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handleMoreOptions = () => {
+    if (showDropdown) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
+  };
+
+  const handleEdit = () => {
+    closeDropdown(() => {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      setEditTitle(currentEntry.title);
+      setEditBlocks(entryToBlocks(currentEntry));
+      setEditFocusedBlockIndex(0);
+      setEditCursorPosition(0);
+      setIsEditing(true);
+      setTimeout(() => titleInputRef.current?.focus(), 300);
+    });
   };
 
   const handleSaveEdit = () => {
@@ -253,24 +366,26 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Entry',
-      'Are you sure you want to delete this entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (Platform.OS === 'ios') {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            }
-            if (onDelete) onDelete(currentEntry.id);
-            navigation.goBack();
+    closeDropdown(() => {
+      Alert.alert(
+        'Delete Entry',
+        'Are you sure you want to delete this entry?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              }
+              if (onDelete) onDelete(currentEntry.id);
+              navigation.goBack();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    });
   };
 
   const wasEdited = currentEntry.createdAt !== currentEntry.updatedAt;
@@ -356,7 +471,7 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
       </ScrollView>
 
       {/* Fixed Header */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={[styles.headerContainer, { paddingTop: insets.top, zIndex: showDropdown ? 100 : 10 }]} pointerEvents="box-none">
         <View style={styles.headerBlur} pointerEvents="none">
           <LinearGradient
             colors={[
@@ -388,25 +503,107 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
             >
               <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
             </TouchableOpacity>
-            <View style={styles.headerActions}>
+            <View style={styles.moreButtonContainer}>
               <TouchableOpacity
-                onPress={handleEdit}
-                style={styles.headerButton}
-                activeOpacity={0.7}
+                activeOpacity={1}
+                onPress={handleMoreOptions}
+                onPressIn={handleMoreButtonPressIn}
+                onPressOut={handleMoreButtonPressOut}
+                style={{ zIndex: 20 }}
               >
-                <Ionicons name="pencil-outline" size={20} color="#1F2937" />
+                <Animated.View style={[
+                  styles.headerButton,
+                  { transform: [{ scale: moreButtonScale }] }
+                ]}>
+                  <Animated.View style={{
+                    position: 'absolute',
+                    opacity: iconRotation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [1, 0, 0],
+                    }),
+                    transform: [{
+                      rotate: iconRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '90deg'],
+                      }),
+                    }],
+                  }}>
+                    <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
+                  </Animated.View>
+                  <Animated.View style={{
+                    position: 'absolute',
+                    opacity: iconRotation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0, 0, 1],
+                    }),
+                    transform: [{
+                      rotate: iconRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['-90deg', '0deg'],
+                      }),
+                    }],
+                  }}>
+                    <Ionicons name="close" size={20} color="#1F2937" />
+                  </Animated.View>
+                </Animated.View>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleDelete}
-                style={styles.headerButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-              </TouchableOpacity>
+
+              {showDropdown && (
+                <Animated.View
+                  style={[
+                    styles.inlineDropdownMenu,
+                    {
+                      opacity: dropdownOpacity,
+                      transform: [
+                        { translateX: dropdownScale.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [95, 0],
+                        })},
+                        { translateY: dropdownScale.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-45, 0],
+                        })},
+                        { scale: dropdownScale },
+                      ],
+                    }
+                  ]}
+                >
+                  <Animated.View style={{ opacity: dropdownContentOpacity }}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleEdit}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.dropdownItemIcon}>
+                        <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                      </View>
+                      <Text style={styles.dropdownItemText}>Edit Entry</Text>
+                    </TouchableOpacity>
+                    <View style={styles.dropdownDivider} />
+                    <TouchableOpacity
+                      style={[styles.dropdownItem, styles.dropdownItemDestructive]}
+                      onPress={handleDelete}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.dropdownItemIcon, styles.dropdownItemIconDestructive]}>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </View>
+                      <Text style={styles.dropdownItemTextDestructive}>Delete Entry</Text>
+                    </TouchableOpacity>
+                  </Animated.View>
+                </Animated.View>
+              )}
             </View>
           </View>
         </Animated.View>
       </View>
+
+      {/* Overlay to close dropdown when tapping outside */}
+      {showDropdown && (
+        <TouchableWithoutFeedback onPress={() => closeDropdown()}>
+          <View style={styles.dropdownOverlay} />
+        </TouchableWithoutFeedback>
+      )}
 
       {/* Edit Modal */}
       <Modal
@@ -493,14 +690,14 @@ const KnowledgeEntryDetailScreen: React.FC<KnowledgeEntryDetailScreenProps> = ({
         </KeyboardAvoidingView>
 
         {/* InputAccessoryView - renders above keyboard on iOS */}
-        <InputAccessoryView nativeID="knowledgeDetailEditorToolbar">
+        <InputAccessoryView nativeID="knowledgeDetailEditorToolbar" backgroundColor="transparent">
           <View style={styles.editKeyboardToolbar}>
             <TouchableOpacity
-              style={styles.editToolbarButton}
+              style={styles.editToolbarImageButton}
               onPress={handleEditPickImage}
-              activeOpacity={0.6}
+              activeOpacity={0.7}
             >
-              <Ionicons name="image" size={20} color="#007AFF" />
+              <Ionicons name="image" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </InputAccessoryView>
@@ -544,9 +741,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 10,
+  moreButtonContainer: {
+    position: 'relative',
+    zIndex: 100,
   },
   backButton: {
     width: 40,
@@ -571,12 +768,69 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 1,
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  },
+  inlineDropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 6,
+    minWidth: 190,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  dropdownItemIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownItemDestructive: {},
+  dropdownItemIconDestructive: {
+    backgroundColor: '#FEE2E2',
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: 14,
+    marginVertical: 2,
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  dropdownItemTextDestructive: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 
   // Scroll
@@ -766,18 +1020,18 @@ const styles = StyleSheet.create({
   editKeyboardToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    height: 44,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#B0B0B3',
-    backgroundColor: '#D1D1D6',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
-  editToolbarButton: {
-    width: 36,
-    height: 36,
+  editToolbarImageButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1F2937',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
   },
   roundButton: {
     width: 40,

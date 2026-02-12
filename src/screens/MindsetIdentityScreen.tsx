@@ -70,7 +70,7 @@ const MindsetIdentityScreen: React.FC<MindsetIdentityScreenProps> = ({ navigatio
 
         {/* Feature Cards */}
         <View style={styles.cardsContainer}>
-          {/* Higher Self Card */}
+          {/* Best Self Card */}
           <TouchableOpacity
             activeOpacity={1}
             onPressIn={() => handlePressIn(scale1)}
