@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
   Easing,
@@ -14,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WealthType, WEALTH_CONFIGS } from '../components/WealthButton';
@@ -38,22 +37,6 @@ interface HigherSelfScreenProps {
   };
 }
 
-// Calculate star points
-const createStarPath = (cx: number, cy: number, outerR: number, innerR: number, points: number) => {
-  let path = '';
-  const step = Math.PI / points;
-
-  for (let i = 0; i < 2 * points; i++) {
-    const r = i % 2 === 0 ? outerR : innerR;
-    const angle = i * step - Math.PI / 2;
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    path += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-  }
-  path += ' Z';
-  return path;
-};
-
 // Position for each wealth type on the star (5 points)
 const getWealthPosition = (index: number, centerX: number, centerY: number, radius: number) => {
   const angle = (index * 72 - 90) * (Math.PI / 180);
@@ -66,15 +49,14 @@ const getWealthPosition = (index: number, centerX: number, centerY: number, radi
 const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const fromTracking = route?.params?.fromTracking ?? false;
-  const [modalVisible, setModalVisible] = useState(false);
   const [nudgeVisible, setNudgeVisible] = useState(false);
   const nudgeShown = useRef(false);
 
   // Track which wealth areas have been defined
   const completedWealth: Record<WealthType, boolean> = {
     physical: true,
-    mental: false,
-    social: false,
+    mental: true,
+    social: true,
     financial: false,
     time: true,
   };
@@ -91,12 +73,19 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
     return filledIcons[type];
   };
 
+  // Gradient colors for each wealth type (light → medium → dark)
+  const WEALTH_GRADIENTS: Record<WealthType, [string, string, string]> = {
+    physical: ['#34D399', '#10B981', '#059669'],
+    mental: ['#93C5FD', '#60A5FA', '#3B82F6'],
+    social: ['#A78BFA', '#8B5CF6', '#7C3AED'],
+    financial: ['#FDE047', '#FACC15', '#EAB308'],
+    time: ['#FDBA74', '#FB923C', '#F97316'],
+  };
+
   // Animation values
   const fadeIn = useRef(new Animated.Value(0)).current;
   const starScale = useRef(new Animated.Value(0.8)).current;
   const starRotate = useRef(new Animated.Value(0)).current;
-  const modalScale = useRef(new Animated.Value(0.9)).current;
-  const modalOpacity = useRef(new Animated.Value(0)).current;
   const nudgeScale = useRef(new Animated.Value(0.9)).current;
   const nudgeOpacity = useRef(new Animated.Value(0)).current;
   const buttonAnims = useRef(
@@ -151,8 +140,8 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
     );
     Animated.parallel(buttonAnimations).start();
 
-    // Show nudge popup after animations settle (incomplete areas, not from tracking)
-    if (completedCount < 5 && !fromTracking && !nudgeShown.current) {
+    // Show nudge popup after animations settle (incomplete areas)
+    if (completedCount < 5 && !nudgeShown.current) {
       nudgeShown.current = true;
       setTimeout(() => {
         setNudgeVisible(true);
@@ -173,45 +162,11 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
     }
   }, []);
 
-  const openModal = () => {
+  const openBestSelfInfo = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setModalVisible(true);
-    Animated.parallel([
-      Animated.spring(modalScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 65,
-        useNativeDriver: true,
-      }),
-      Animated.timing(modalOpacity, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const closeModal = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.parallel([
-      Animated.timing(modalScale, {
-        toValue: 0.9,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(modalOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalVisible(false);
-      modalScale.setValue(0.9);
-    });
+    navigation.navigate('BestSelfInfo');
   };
 
   const closeNudge = () => {
@@ -305,8 +260,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
 
   const wealthOrder: WealthType[] = ['social', 'mental', 'financial', 'time', 'physical'];
 
-  const starPath = createStarPath(CENTER, CENTER, OUTER_RADIUS * 0.75, OUTER_RADIUS * 0.35, 5);
-
   return (
     <View style={styles.container}>
       {/* ScrollView - scrolls under the header */}
@@ -318,6 +271,26 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Hero text */}
+        <Animated.View style={[styles.heroSection, { opacity: fadeIn }]}>
+          <Text style={styles.heroLabel}>FELIX'S</Text>
+          <Text style={styles.heroTitle}>Best Self</Text>
+        </Animated.View>
+
+        {/* Progress */}
+        {completedCount < 5 && (
+          <Animated.View style={[styles.progressRow, { opacity: fadeIn }]}>
+            <View style={styles.progressTrack}>
+              {completedCount > 0 && (
+                <View
+                  style={[styles.progressFill, { width: `${(completedCount / 5) * 100}%` }]}
+                />
+              )}
+            </View>
+            <Text style={styles.progressLabel}>{completedCount} of 5</Text>
+          </Animated.View>
+        )}
+
         {/* Star Visualization */}
         <View style={styles.starContainer}>
           <Animated.View
@@ -328,43 +301,66 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
               },
             ]}
           >
-            {/* Background glow */}
-            <View style={styles.glowContainer}>
-              <LinearGradient
-                colors={['rgba(99, 102, 241, 0.15)', 'rgba(99, 102, 241, 0.05)', 'transparent']}
-                style={styles.glowGradient}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 1 }}
-              />
-            </View>
-
-            {/* Star SVG */}
+            {/* Glowing concentric rings */}
             <Svg width={STAR_SIZE} height={STAR_SIZE} style={styles.starSvg}>
-              {/* Outer decorative circles */}
-              <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS + 20} fill="none" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
-              <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS * 0.5} fill="none" stroke="#E5E7EB" strokeWidth="1" />
+              <Defs>
+                {wealthOrder.map((type, i) => {
+                  const spokeColor = WEALTH_GRADIENTS[type][1];
+                  const angle = (i * 72 - 90) * (Math.PI / 180);
+                  const r1 = 35;
+                  const r2 = OUTER_RADIUS + 15 - BUTTON_SIZE / 2 - 4;
+                  return (
+                    <SvgLinearGradient
+                      key={`spoke-grad-${i}`}
+                      id={`spokeGrad${i}`}
+                      x1={String(CENTER + r1 * Math.cos(angle))}
+                      y1={String(CENTER + r1 * Math.sin(angle))}
+                      x2={String(CENTER + r2 * Math.cos(angle))}
+                      y2={String(CENTER + r2 * Math.sin(angle))}
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <Stop offset="0%" stopColor={spokeColor} stopOpacity="0" />
+                      <Stop offset="100%" stopColor={spokeColor} stopOpacity="0.22" />
+                    </SvgLinearGradient>
+                  );
+                })}
+              </Defs>
+              {/* Orbit ring */}
+              <Circle
+                cx={CENTER}
+                cy={CENTER}
+                r={OUTER_RADIUS + 15}
+                fill="rgba(99, 102, 241, 0.03)"
+                stroke="rgba(99, 102, 241, 0.10)"
+                strokeWidth="1"
+              />
+              {/* Color-gradient spoke lines radiating outward */}
+              {wealthOrder.map((_type, i) => {
+                const angle = (i * 72 - 90) * (Math.PI / 180);
+                const r1 = 35;
+                const r2 = OUTER_RADIUS + 15 - BUTTON_SIZE / 2 - 4;
+                return (
+                  <Line
+                    key={`spoke-${i}`}
+                    x1={CENTER + r1 * Math.cos(angle)}
+                    y1={CENTER + r1 * Math.sin(angle)}
+                    x2={CENTER + r2 * Math.cos(angle)}
+                    y2={CENTER + r2 * Math.sin(angle)}
+                    stroke={`url(#spokeGrad${i})`}
+                    strokeWidth="1.5"
+                  />
+                );
+              })}
             </Svg>
 
             {/* Center Info Button */}
             <TouchableOpacity
               style={styles.centerIconTouchable}
-              onPress={openModal}
-              activeOpacity={0.8}
+              onPress={openBestSelfInfo}
+              activeOpacity={0.7}
             >
               <View style={styles.centerIcon}>
-                <LinearGradient
-                  colors={['#818CF8', '#6366F1', '#4F46E5']}
-                  style={styles.centerGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Svg width={24} height={24} viewBox="0 0 24 24">
-                    {/* Dot */}
-                    <Circle cx="12" cy="4" r="2" fill="#FFFFFF" />
-                    {/* Bar - perfectly centered */}
-                    <Rect x="10" y="9" width="4" height="12" rx="2" fill="#FFFFFF" />
-                  </Svg>
-                </LinearGradient>
+                <Ionicons name="star" size={22} color="#6366F1" />
               </View>
             </TouchableOpacity>
 
@@ -375,6 +371,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
               const isCompleted = completedWealth[type];
               const anim = buttonAnims[index];
               const displayColor = isCompleted ? config.color : '#9CA3AF';
+              const gradientColors = WEALTH_GRADIENTS[type];
 
               return (
                 <Animated.View
@@ -394,25 +391,35 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
                     activeOpacity={0.7}
                     style={styles.wealthTouchable}
                   >
-                    <LinearGradient
-                      colors={['#FFFFFF', '#F5F5F5']}
-                      style={[
-                        styles.wealthButton,
-                        { borderColor: displayColor },
-                        !isCompleted && styles.wealthButtonUndefined,
-                      ]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                    >
-                      <Ionicons
-                        name={getIconName(type)}
-                        size={26}
-                        color={displayColor}
-                      />
-                    </LinearGradient>
-                    <Text style={[styles.wealthLabel, { color: displayColor }]}>
-                      {config.title.replace(' Wealth', '')}
-                    </Text>
+                    {isCompleted ? (
+                      <LinearGradient
+                        colors={gradientColors}
+                        style={styles.wealthGradientRing}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <View style={styles.wealthInnerCircle}>
+                          <Ionicons
+                            name={getIconName(type)}
+                            size={26}
+                            color={config.color}
+                          />
+                        </View>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.wealthButtonUndefined}>
+                        <Ionicons
+                          name={getIconName(type)}
+                          size={26}
+                          color="#9CA3AF"
+                        />
+                      </View>
+                    )}
+                    <View style={styles.wealthLabelBackground}>
+                      <Text style={[styles.wealthLabel, { color: displayColor }]}>
+                        {config.title.replace(' Wealth', '')}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 </Animated.View>
               );
@@ -439,16 +446,16 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
             <Ionicons name="checkmark" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      ) : (
+      ) : completedCount < 5 ? (
         <Animated.View style={[styles.bottomContainer, { opacity: fadeIn, bottom: 24 }]}>
           <View style={styles.instructionCard}>
-            <Ionicons name="hand-left-outline" size={18} color="#6B7280" />
+            <Ionicons name="star" size={16} color="#6366F1" />
             <Text style={styles.instructionText}>
-              Tap any area to define your best self
+              Tap the star to learn more
             </Text>
           </View>
         </Animated.View>
-      )}
+      ) : null}
 
       {/* Fixed Header with Blur Background */}
       <View style={[styles.headerContainer, { paddingTop: insets.top }]} pointerEvents="box-none">
@@ -470,9 +477,7 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
         <Animated.View
           style={[
             styles.header,
-            {
-              opacity: fadeIn,
-            },
+            { opacity: fadeIn },
           ]}
           pointerEvents="box-none"
         >
@@ -483,25 +488,6 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
           >
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.title}>Your Best Self</Text>
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarTrack}>
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.progressBarSegment,
-                      index < completedCount && styles.progressBarSegmentFilled,
-                      index === 0 && styles.progressBarSegmentFirst,
-                      index === 4 && styles.progressBarSegmentLast,
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-            <Text style={styles.progressText}>{completedCount}/5 areas defined</Text>
-          </View>
           <View style={styles.headerSpacer} />
         </Animated.View>
       </View>
@@ -596,120 +582,11 @@ const HigherSelfScreen: React.FC<HigherSelfScreenProps> = ({ navigation, route }
         </View>
       </Modal>
 
-      {/* Info Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={closeModal}
-          />
-          <Animated.View
-            style={[
-              styles.modalContainer,
-              {
-                opacity: modalOpacity,
-                transform: [{ scale: modalScale }],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={['#FFFFFF', '#F9FAFB']}
-              style={styles.modalContent}
-            >
-              {/* Close Button */}
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={closeModal}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color="#9CA3AF" />
-              </TouchableOpacity>
-
-              {/* Scrollable Content */}
-              <ScrollView
-                style={styles.modalScrollView}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Header Icon */}
-                <View style={styles.modalIconContainer}>
-                  <LinearGradient
-                    colors={['#E0E7FF', '#C7D2FE']}
-                    style={styles.modalIconBackground}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Ionicons name="star" size={28} color="#6366F1" />
-                  </LinearGradient>
-                </View>
-
-                {/* Title */}
-                <Text style={styles.modalTitle}>What is Your Best Self?</Text>
-
-                {/* Description */}
-                <Text style={styles.modalParagraph}>
-                  Your Best Self is the highest version of who you can become — the person you aspire to be when you're living with intention, clarity, and purpose.
-                </Text>
-
-                {/* Quote Card */}
-                <View style={styles.modalQuoteCard}>
-                  <View style={styles.modalQuoteLine} />
-                  <View style={styles.modalQuoteContent}>
-                    <Text style={styles.modalQuoteText}>
-                      The person who knows their destination finds the way. The person who doesn't wanders endlessly.
-                    </Text>
-                    <Text style={styles.modalQuoteAttribution}>— Ancient Proverb</Text>
-                  </View>
-                </View>
-
-                {/* Why Section */}
-                <Text style={styles.modalSubtitle}>Why Design It?</Text>
-                <Text style={styles.modalParagraph}>
-                  Without a clear vision of who you want to become, daily decisions lack direction. By defining your Best Self across five key areas, you create a compass that guides every choice.
-                </Text>
-
-                {/* Pillars */}
-                <Text style={styles.modalSubtitle}>Five Pillars of Wealth</Text>
-                <View style={styles.modalPillarList}>
-                  {[
-                    { icon: 'fitness-outline', color: '#059669', bg: '#ECFDF5', name: 'Physical', desc: 'Body, energy & health' },
-                    { icon: 'bulb-outline', color: '#3B82F6', bg: '#EFF6FF', name: 'Mental', desc: 'Mind, clarity & resilience' },
-                    { icon: 'people-outline', color: '#8B5CF6', bg: '#F5F3FF', name: 'Social', desc: 'Relationships & connection' },
-                    { icon: 'bar-chart-outline', color: '#F59E0B', bg: '#FFFBEB', name: 'Financial', desc: 'Money & security' },
-                    { icon: 'time-outline', color: '#6366F1', bg: '#EEF2FF', name: 'Time', desc: 'Focus & priorities' },
-                  ].map((pillar, index) => (
-                    <View key={index} style={styles.modalPillarItem}>
-                      <View style={[styles.modalPillarIcon, { backgroundColor: pillar.bg }]}>
-                        <Ionicons name={pillar.icon as any} size={17} color={pillar.color} />
-                      </View>
-                      <View style={styles.modalPillarText}>
-                        <Text style={styles.modalPillarName}>{pillar.name}</Text>
-                        <Text style={styles.modalPillarDesc}>{pillar.desc}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-                <View style={styles.modalBottomSpacer} />
-              </ScrollView>
-            </LinearGradient>
-          </Animated.View>
-        </View>
-      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F0EEE8',
-  },
   container: {
     flex: 1,
     backgroundColor: '#F0EEE8',
@@ -744,11 +621,11 @@ const styles = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
   backButton: {
     width: 40,
@@ -765,47 +642,54 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  headerCenter: {
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    letterSpacing: -0.3,
-  },
-  progressBarContainer: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  progressBarTrack: {
-    flexDirection: 'row',
-    gap: 3,
-  },
-  progressBarSegment: {
-    width: 24,
-    height: 6,
-    backgroundColor: '#E5E7EB',
-  },
-  progressBarSegmentFilled: {
-    backgroundColor: '#1F2937',
-  },
-  progressBarSegmentFirst: {
-    borderTopLeftRadius: 3,
-    borderBottomLeftRadius: 3,
-  },
-  progressBarSegmentLast: {
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    marginTop: 6,
-  },
   headerSpacer: {
     width: 40,
+  },
+
+  // Hero
+  heroSection: {
+    paddingHorizontal: 24,
+    marginBottom: 4,
+  },
+  heroLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    fontSize: 38,
+    fontWeight: '800',
+    color: '#1F2937',
+    letterSpacing: -1,
+  },
+
+  // Progress
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 0,
+    gap: 10,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 3,
+    backgroundColor: '#E0DED8',
+    borderRadius: 1.5,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#1C1C1E',
+    borderRadius: 1.5,
+  },
+  progressLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    letterSpacing: -0.2,
   },
 
   // Star Container
@@ -819,18 +703,6 @@ const styles = StyleSheet.create({
     height: STAR_SIZE,
     position: 'relative',
   },
-  glowContainer: {
-    position: 'absolute',
-    width: STAR_SIZE,
-    height: STAR_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowGradient: {
-    width: STAR_SIZE * 0.9,
-    height: STAR_SIZE * 0.9,
-    borderRadius: STAR_SIZE * 0.45,
-  },
   starSvg: {
     position: 'absolute',
   },
@@ -838,25 +710,18 @@ const styles = StyleSheet.create({
   // Center Icon
   centerIconTouchable: {
     position: 'absolute',
-    left: CENTER - 28,
-    top: CENTER - 28,
-    width: 56,
-    height: 56,
+    left: CENTER - 24,
+    top: CENTER - 24,
+    width: 48,
+    height: 48,
   },
   centerIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  centerGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6366F126',
+    borderWidth: 1.5,
+    borderColor: '#6366F133',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -870,26 +735,48 @@ const styles = StyleSheet.create({
   wealthTouchable: {
     alignItems: 'center',
   },
-  wealthButton: {
+  wealthGradientRing: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
+    padding: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 6,
   },
+  wealthInnerCircle: {
+    width: BUTTON_SIZE - 5,
+    height: BUTTON_SIZE - 5,
+    borderRadius: (BUTTON_SIZE - 5) / 2,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   wealthButtonUndefined: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
     borderStyle: 'dashed',
+    borderColor: '#9CA3AF',
+    backgroundColor: '#FFFFFF',
+  },
+  wealthLabelBackground: {
+    backgroundColor: '#EDECEA',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
   },
   wealthLabel: {
     fontSize: 11,
     fontWeight: '600',
-    marginTop: 6,
     letterSpacing: -0.2,
   },
 
@@ -906,7 +793,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    paddingTop: 8, paddingBottom: 12,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
   },
@@ -959,7 +846,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: SCREEN_WIDTH - 40,
-    maxHeight: SCREEN_HEIGHT * 0.8,
+    maxHeight: SCREEN_HEIGHT * 0.88,
     borderRadius: 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
@@ -994,6 +881,9 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#6366F126',
+    borderWidth: 1.5,
+    borderColor: '#6366F133',
   },
   modalTitle: {
     fontSize: 22,
@@ -1007,7 +897,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   modalScrollView: {
-    maxHeight: SCREEN_HEIGHT * 0.5,
+    maxHeight: SCREEN_HEIGHT * 0.72,
   },
   modalParagraph: {
     fontSize: 14.5,
@@ -1062,32 +952,49 @@ const styles = StyleSheet.create({
   modalPillarItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 12,
+    borderWidth: 1,
+    borderColor: '#EEEDEA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  modalPillarIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+  modalPillarGradientRing: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    padding: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
+  },
+  modalPillarIconInner: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalPillarText: {
     flex: 1,
   },
   modalPillarName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   modalPillarDesc: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '400',
     color: '#9CA3AF',
-    marginTop: 1,
+    marginTop: 2,
+    letterSpacing: -0.1,
   },
   modalBottomSpacer: {
     height: 8,

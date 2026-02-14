@@ -1693,75 +1693,68 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
 
             <ScrollView
-              style={styles.impressionModalScroll}
+              style={{ flex: 1, backgroundColor: '#F0EEE8' }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 16, paddingTop: 20 }}
             >
-              {/* Impression Text Input */}
-              <View style={styles.impressionInputSection}>
-                <Text style={styles.impressionInputLabel}>
-                  What was your first impression of {person.name}?
-                </Text>
-                <View style={styles.impressionTextInputContainer}>
-                  <TextInput
-                    style={styles.impressionTextInput}
-                    placeholder="She walked in with this incredible energy..."
-                    placeholderTextColor="#9CA3AF"
-                    value={impressionText}
-                    onChangeText={setImpressionText}
-                    multiline
-                    textAlignVertical="top"
-                    autoFocus
-                  />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="sparkles-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>First Impression</Text>
                 </View>
+                <TextInput
+                  style={styles.formCardTextArea}
+                  placeholder={`What stood out about ${person.name}?`}
+                  placeholderTextColor="#9CA3AF"
+                  value={impressionText}
+                  onChangeText={setImpressionText}
+                  multiline
+                  textAlignVertical="top"
+                  autoFocus
+                />
               </View>
 
-              {/* When We Met Section */}
-              <View style={styles.impressionMetaSection}>
-                <Text style={styles.impressionMetaLabel}>When did you first meet?</Text>
-                <TouchableOpacity
-                  style={styles.impressionMetaButton}
-                  onPress={openWhenWeMetPicker}
-                  activeOpacity={0.7}
-                >
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="calendar-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>When you met</Text>
+                </View>
+                <TouchableOpacity onPress={openWhenWeMetPicker} activeOpacity={0.7}>
                   {whenWeMet ? (
-                    <View style={styles.impressionMetaSelected}>
-                      <View style={styles.impressionMetaSelectedIcon}>
-                        <Ionicons name="calendar" size={18} color={ACCENT_COLOR} />
-                      </View>
-                      <Text style={styles.impressionMetaSelectedText}>
+                    <View style={styles.formCardMetaRow}>
+                      <Text style={styles.formCardMetaText}>
                         {formatWhenWeMet(whenWeMet.toISOString())}
                       </Text>
                       <TouchableOpacity
                         onPress={clearWhenWeMet}
-                        style={styles.impressionMetaClear}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         <Ionicons name="close-circle" size={18} color="#C4C4C4" />
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <View style={styles.impressionMetaPlaceholder}>
-                      <Ionicons name="calendar-outline" size={18} color="#9CA3AF" />
-                      <Text style={styles.impressionMetaPlaceholderText}>Select when you met</Text>
-                      <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+                    <View style={styles.formCardMetaRow}>
+                      <Text style={styles.formCardMetaPlaceholder}>Select when you met</Text>
+                      <Ionicons name="chevron-forward" size={16} color="#C4C4C4" />
                     </View>
                   )}
                 </TouchableOpacity>
               </View>
 
-              {/* Remove Button - only show when editing existing impression */}
               {firstImpression && (
-                <View style={styles.impressionRemoveSection}>
-                  <TouchableOpacity
-                    style={styles.impressionRemoveButton}
-                    onPress={handleClearFirstImpression}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    <Text style={styles.impressionRemoveText}>Remove First Impression</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={handleClearFirstImpression}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Remove First Impression</Text>
+                </TouchableOpacity>
               )}
 
               <View style={{ height: 40 }} />
@@ -1864,121 +1857,82 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
 
             <ScrollView
-              style={styles.flagModalScroll}
+              style={{ flex: 1, backgroundColor: '#F0EEE8' }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 16, paddingTop: 20 }}
             >
-              {/* Flag Type Selector */}
-              <View style={styles.flagTypeSection}>
-                <Text style={styles.flagTypeSectionLabel}>Flag Type</Text>
-                <View style={styles.flagTypeButtons}>
+              <View style={styles.formCard}>
+                <View style={styles.flagTypeToggle}>
                   <TouchableOpacity
-                    style={[
-                      styles.flagTypeButton,
-                      flagType === 'green' && styles.flagTypeButtonGreenActive,
-                    ]}
+                    style={[styles.flagTypeOption, flagType === 'green' && styles.flagTypeOptionGreenActive]}
                     onPress={() => {
-                      if (Platform.OS === 'ios') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
+                      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setFlagType('green');
                     }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={flagType === 'green' ? '#15803D' : '#9CA3AF'}
-                    />
-                    <Text
-                      style={[
-                        styles.flagTypeButtonText,
-                        flagType === 'green' && styles.flagTypeButtonTextGreen,
-                      ]}
-                    >
-                      Green Flag
-                    </Text>
+                    <View style={[styles.flagTypeDot, { backgroundColor: flagType === 'green' ? '#22C55E' : '#D1D5DB' }]} />
+                    <Text style={[styles.flagTypeOptionText, flagType === 'green' && { color: '#15803D' }]}>Green</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[
-                      styles.flagTypeButton,
-                      flagType === 'red' && styles.flagTypeButtonRedActive,
-                    ]}
+                    style={[styles.flagTypeOption, flagType === 'red' && styles.flagTypeOptionRedActive]}
                     onPress={() => {
-                      if (Platform.OS === 'ios') {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
+                      if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setFlagType('red');
                     }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="alert-circle"
-                      size={20}
-                      color={flagType === 'red' ? '#DC2626' : '#9CA3AF'}
-                    />
-                    <Text
-                      style={[
-                        styles.flagTypeButtonText,
-                        flagType === 'red' && styles.flagTypeButtonTextRed,
-                      ]}
-                    >
-                      Red Flag
-                    </Text>
+                    <View style={[styles.flagTypeDot, { backgroundColor: flagType === 'red' ? '#EF4444' : '#D1D5DB' }]} />
+                    <Text style={[styles.flagTypeOptionText, flagType === 'red' && { color: '#DC2626' }]}>Red</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Flag Text Input */}
-              <View style={styles.flagInputSection}>
-                <Text style={styles.flagInputLabel}>
-                  {flagType === 'green' ? 'What\'s the positive trait?' : 'What\'s the concern?'}
-                </Text>
-                <View style={[
-                  styles.flagTextInputContainer,
-                  flagType === 'green' ? styles.flagTextInputContainerGreen : styles.flagTextInputContainerRed,
-                ]}>
-                  <TextInput
-                    style={styles.flagTextInput}
-                    placeholder={flagType === 'green' ? 'e.g., Great listener, Very supportive...' : 'e.g., Often late, Dismissive...'}
-                    placeholderTextColor="#9CA3AF"
-                    value={flagText}
-                    onChangeText={setFlagText}
-                    autoFocus
-                    maxLength={50}
-                  />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="flag-outline" size={20} color={flagType === 'green' ? '#22C55E' : '#E11D48'} />
+                  </View>
+                  <Text style={styles.formCardLabel}>{flagType === 'green' ? 'Positive trait' : 'Concern'}</Text>
                 </View>
+                <TextInput
+                  style={styles.formCardInput}
+                  placeholder={flagType === 'green' ? 'e.g., Great listener...' : 'e.g., Often late...'}
+                  placeholderTextColor="#9CA3AF"
+                  value={flagText}
+                  onChangeText={setFlagText}
+                  autoFocus
+                  maxLength={50}
+                />
                 <Text style={styles.flagCharCount}>{flagText.length}/50</Text>
               </View>
 
-              {/* Delete Button - only show when editing */}
               {editingFlag && (
-                <View style={styles.flagDeleteSection}>
-                  <TouchableOpacity
-                    style={styles.flagDeleteButton}
-                    onPress={() => {
-                      Alert.alert(
-                        'Delete Flag',
-                        `Remove "${editingFlag.text}"?`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: () => {
-                              handleDeleteFlag(editingFlag.id);
-                              handleCloseFlagModal();
-                            },
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={() => {
+                    Alert.alert(
+                      'Delete Flag',
+                      `Remove "${editingFlag.text}"?`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: () => {
+                            handleDeleteFlag(editingFlag.id);
+                            handleCloseFlagModal();
                           },
-                        ]
-                      );
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    <Text style={styles.flagDeleteText}>Delete Flag</Text>
-                  </TouchableOpacity>
-                </View>
+                        },
+                      ]
+                    );
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Delete Flag</Text>
+                </TouchableOpacity>
               )}
 
               <View style={{ height: 40 }} />
@@ -2025,59 +1979,69 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
             </View>
 
             <ScrollView
-              style={styles.dateModalScroll}
+              style={{ flex: 1, backgroundColor: '#F0EEE8' }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 16, paddingTop: 20 }}
             >
-              {/* When Section */}
-              <View style={styles.dateModalSection}>
-                <Text style={styles.dateModalSectionLabel}>When?</Text>
-                <TouchableOpacity
-                  style={styles.dateModalDateButton}
-                  onPress={openDateEntryPicker}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="calendar-outline" size={18} color={ACCENT_COLOR} />
-                  <Text style={styles.dateModalDateText}>
-                    {formatDateEntryDate(dateEntryDate.toISOString())}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="calendar-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>When</Text>
+                </View>
+                <TouchableOpacity onPress={openDateEntryPicker} activeOpacity={0.7}>
+                  <View style={styles.formCardMetaRow}>
+                    <Text style={styles.formCardMetaText}>
+                      {formatDateEntryDate(dateEntryDate.toISOString())}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color="#C4C4C4" />
+                  </View>
                 </TouchableOpacity>
               </View>
 
-              {/* What Section */}
-              <View style={styles.dateModalSection}>
-                <Text style={styles.dateModalSectionLabel}>What did you do?</Text>
-                <View style={styles.dateModalInputContainer}>
-                  <TextInput
-                    style={styles.dateModalInput}
-                    placeholder="e.g., Dinner and a walk by the river"
-                    placeholderTextColor="#9CA3AF"
-                    value={dateEntryTitle}
-                    onChangeText={setDateEntryTitle}
-                    maxLength={100}
-                  />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="text-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>What did you do?</Text>
                 </View>
+                <TextInput
+                  style={styles.formCardInput}
+                  placeholder="e.g., Dinner and a walk by the river"
+                  placeholderTextColor="#9CA3AF"
+                  value={dateEntryTitle}
+                  onChangeText={setDateEntryTitle}
+                  maxLength={100}
+                />
               </View>
 
-              {/* Where Section */}
-              <View style={styles.dateModalSection}>
-                <Text style={styles.dateModalSectionLabel}>Where? (optional)</Text>
-                <View style={styles.dateModalInputContainer}>
-                  <TextInput
-                    style={styles.dateModalInput}
-                    placeholder="e.g., Blue Bottle Coffee, Brooklyn"
-                    placeholderTextColor="#9CA3AF"
-                    value={dateEntryLocation}
-                    onChangeText={setDateEntryLocation}
-                    maxLength={80}
-                  />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="location-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>Where</Text>
                 </View>
+                <TextInput
+                  style={styles.formCardInput}
+                  placeholder="e.g., Blue Bottle Coffee, Brooklyn"
+                  placeholderTextColor="#9CA3AF"
+                  value={dateEntryLocation}
+                  onChangeText={setDateEntryLocation}
+                  maxLength={80}
+                />
               </View>
 
-              {/* Vibe Section */}
-              <View style={styles.dateModalSection}>
-                <Text style={styles.dateModalSectionLabel}>How did it go?</Text>
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="heart-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>How did it go?</Text>
+                </View>
                 <View style={styles.vibePickerContainer}>
                   {DATE_VIBES.map((vibe) => (
                     <TouchableOpacity
@@ -2108,51 +2072,50 @@ const DatingDetailScreen: React.FC<DatingDetailScreenProps> = ({ navigation, rou
                 </View>
               </View>
 
-              {/* Notes Section */}
-              <View style={styles.dateModalSection}>
-                <Text style={styles.dateModalSectionLabel}>Notes (optional)</Text>
-                <View style={styles.dateModalNotesContainer}>
-                  <TextInput
-                    style={styles.dateModalNotesInput}
-                    placeholder="Any memorable moments..."
-                    placeholderTextColor="#9CA3AF"
-                    value={dateEntryNotes}
-                    onChangeText={setDateEntryNotes}
-                    multiline
-                    textAlignVertical="top"
-                    maxLength={300}
-                  />
+              <View style={styles.formCard}>
+                <View style={styles.formCardHeader}>
+                  <View style={styles.formCardIcon}>
+                    <Ionicons name="document-text-outline" size={20} color="#E11D48" />
+                  </View>
+                  <Text style={styles.formCardLabel}>Notes</Text>
                 </View>
+                <TextInput
+                  style={styles.formCardTextArea}
+                  placeholder="Any memorable moments..."
+                  placeholderTextColor="#9CA3AF"
+                  value={dateEntryNotes}
+                  onChangeText={setDateEntryNotes}
+                  multiline
+                  textAlignVertical="top"
+                  maxLength={300}
+                />
               </View>
 
-              {/* Delete Button - only show when editing */}
               {editingDateEntry && (
-                <View style={styles.dateModalDeleteSection}>
-                  <TouchableOpacity
-                    style={styles.dateModalDeleteButton}
-                    onPress={() => {
-                      Alert.alert(
-                        'Delete Date',
-                        `Remove "${editingDateEntry.title}"?`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: () => {
-                              handleDeleteDateEntry(editingDateEntry.id);
-                              handleCloseDateModal();
-                            },
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={() => {
+                    Alert.alert(
+                      'Delete Date',
+                      `Remove "${editingDateEntry.title}"?`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: () => {
+                            handleDeleteDateEntry(editingDateEntry.id);
+                            handleCloseDateModal();
                           },
-                        ]
-                      );
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    <Text style={styles.dateModalDeleteText}>Delete Date</Text>
-                  </TouchableOpacity>
-                </View>
+                        },
+                      ]
+                    );
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text style={styles.dangerButtonText}>Delete Date</Text>
+                </TouchableOpacity>
               )}
 
               <View style={{ height: 40 }} />
@@ -3348,6 +3311,126 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 8,
   },
+
+  // Form Cards (shared modal pattern)
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  formCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  formCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formCardLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    letterSpacing: -0.3,
+  },
+  formCardInput: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+    padding: 0,
+  },
+  formCardTextArea: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+    lineHeight: 24,
+    padding: 0,
+    minHeight: 80,
+  },
+  formCardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  formCardMetaText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  formCardMetaPlaceholder: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  flagTypeToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 3,
+  },
+  flagTypeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  flagTypeOptionGreenActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  flagTypeOptionRedActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  flagTypeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  flagTypeOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  dangerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    gap: 8,
+  },
+  dangerButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+
   flagDeleteSection: {
     paddingHorizontal: 20,
     marginTop: 24,
