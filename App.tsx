@@ -104,6 +104,7 @@ import FinancialWealthOverviewScreen from './src/screens/FinancialWealthOverview
 import FinancialWealthOptionalQuestionScreen from './src/screens/FinancialWealthOptionalQuestionScreen';
 import FinancialWealthCustomQuestionScreen from './src/screens/FinancialWealthCustomQuestionScreen';
 import StreakScreen from './src/screens/StreakScreen';
+import BestSelfInfoScreen from './src/screens/BestSelfInfoScreen';
 import ProfileSettingsScreen from './src/screens/ProfileSettingsScreen';
 import ProfileEditScreen from './src/screens/ProfileEditScreen';
 
@@ -173,6 +174,11 @@ const DashboardStack = () => {
       <Stack.Screen
         name="StreakDetails"
         component={StreakScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="BestSelfInfo"
+        component={BestSelfInfoScreen}
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen
@@ -311,6 +317,11 @@ const KnowledgeStack = () => {
       <Stack.Screen name="FinancialWealthOverview" component={FinancialWealthOverviewScreen} />
       <Stack.Screen name="FinancialWealthOptionalQuestion" component={FinancialWealthOptionalQuestionScreen as React.ComponentType<any>} />
       <Stack.Screen name="FinancialWealthCustomQuestion" component={FinancialWealthCustomQuestionScreen} />
+      <Stack.Screen
+        name="BestSelfInfo"
+        component={BestSelfInfoScreen}
+        options={{ presentation: 'modal' }}
+      />
     </Stack.Navigator>
   );
 };

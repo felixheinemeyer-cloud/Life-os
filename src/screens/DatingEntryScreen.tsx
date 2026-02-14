@@ -1,26 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Animated,
-  Easing,
   Platform,
   TextInput,
   Keyboard,
   LayoutAnimation,
   UIManager,
-  Modal,
-  PanResponder,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -35,8 +29,8 @@ interface DatingPerson {
   source?: string;
   phoneNumber?: string;
   instagram?: string;
-  location?: string;
-  dateOfBirth?: string;
+  facebook?: string;
+  snapchat?: string;
   createdAt: string;
 }
 
@@ -64,14 +58,6 @@ const generateInitials = (name: string): string => {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
-// Helper function to format date
-const formatDate = (date: Date): string => {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-};
 
 // Custom animation config
 const layoutAnimConfig = {
@@ -101,19 +87,16 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
   const [name, setName] = useState(existingPerson?.name || '');
   const [phoneNumber, setPhoneNumber] = useState(existingPerson?.phoneNumber || '');
   const [instagram, setInstagram] = useState(existingPerson?.instagram || '');
-  const [location, setLocation] = useState(existingPerson?.location || '');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(
-    existingPerson?.dateOfBirth ? new Date(existingPerson.dateOfBirth) : null
-  );
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [facebook, setFacebook] = useState(existingPerson?.facebook || '');
+  const [snapchat, setSnapchat] = useState(existingPerson?.snapchat || '');
 
   // Expanded states for optional fields - expand fields that have data
   const getInitialExpandedFields = (): Set<string> => {
     const fields = new Set<string>();
     if (existingPerson?.phoneNumber) fields.add('phone');
     if (existingPerson?.instagram) fields.add('instagram');
-    if (existingPerson?.location) fields.add('location');
-    if (existingPerson?.dateOfBirth) fields.add('birthday');
+    if (existingPerson?.facebook) fields.add('facebook');
+    if (existingPerson?.snapchat) fields.add('snapchat');
     return fields;
   };
   const [expandedFields, setExpandedFields] = useState<Set<string>>(getInitialExpandedFields());
@@ -125,57 +108,9 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
   // Refs
   const phoneInputRef = useRef<TextInput>(null);
   const instagramInputRef = useRef<TextInput>(null);
-  const locationInputRef = useRef<TextInput>(null);
+  const facebookInputRef = useRef<TextInput>(null);
+  const snapchatInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Date picker modal animation
-  const SCREEN_HEIGHT = Dimensions.get('window').height;
-  const datePickerTranslateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const SWIPE_THRESHOLD = 100;
-
-  // Animate modal in when it opens
-  useEffect(() => {
-    if (showDatePicker) {
-      datePickerTranslateY.setValue(SCREEN_HEIGHT);
-      Animated.timing(datePickerTranslateY, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [showDatePicker]);
-
-  const datePickerPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return gestureState.dy > 10;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          datePickerTranslateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > SWIPE_THRESHOLD) {
-          Animated.timing(datePickerTranslateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setShowDatePicker(false);
-          });
-        } else {
-          Animated.spring(datePickerTranslateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            friction: 8,
-          }).start();
-        }
-      },
-    })
-  ).current;
 
   // Check if form is valid (only name required)
   const isFormValid = name.trim().length > 0;
@@ -185,8 +120,8 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     switch (field) {
       case 'phone': return phoneNumber.trim().length > 0;
       case 'instagram': return instagram.trim().length > 0;
-      case 'location': return location.trim().length > 0;
-      case 'birthday': return dateOfBirth !== null;
+      case 'facebook': return facebook.trim().length > 0;
+      case 'snapchat': return snapchat.trim().length > 0;
       default: return false;
     }
   };
@@ -211,8 +146,8 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
       source: existingPerson?.source || 'Added manually',
       phoneNumber: phoneNumber.trim() || undefined,
       instagram: instagram.trim() || undefined,
-      location: location.trim() || undefined,
-      dateOfBirth: dateOfBirth?.toISOString() || undefined,
+      facebook: facebook.trim() || undefined,
+      snapchat: snapchat.trim() || undefined,
       createdAt: isEditMode ? existingPerson.createdAt : new Date().toISOString(),
       ...(isEditMode ? { updatedAt: new Date().toISOString() } : {}),
     };
@@ -253,60 +188,7 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     });
   };
 
-  const handleDateChange = (_event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      setDateOfBirth(selectedDate);
-    }
-  };
 
-  const handleDatePress = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Keyboard.dismiss();
-
-    if (!isFieldExpanded('birthday')) {
-      LayoutAnimation.configureNext(layoutAnimConfig);
-      setExpandedFields(prev => new Set(prev).add('birthday'));
-    }
-    setShowDatePicker(true);
-  };
-
-  const handleDatePickerDone = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.timing(datePickerTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setShowDatePicker(false);
-    });
-  };
-
-  const handleClearDate = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.timing(datePickerTranslateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      LayoutAnimation.configureNext(layoutAnimConfig);
-      setDateOfBirth(null);
-      setExpandedFields(prev => {
-        const newSet = new Set(prev);
-        newSet.delete('birthday');
-        return newSet;
-      });
-      setShowDatePicker(false);
-    });
-  };
 
   const clearField = (field: string) => {
     if (Platform.OS === 'ios') {
@@ -322,8 +204,11 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
       case 'instagram':
         setInstagram('');
         break;
-      case 'location':
-        setLocation('');
+      case 'facebook':
+        setFacebook('');
+        break;
+      case 'snapchat':
+        setSnapchat('');
         break;
     }
 
@@ -346,16 +231,13 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
         <TouchableOpacity
           style={styles.addRow}
           onPress={() => {
-            if (field === 'birthday') {
-              handleDatePress();
-            } else {
-              const refs: { [key: string]: React.RefObject<TextInput | null> } = {
-                phone: phoneInputRef,
-                instagram: instagramInputRef,
-                location: locationInputRef,
-              };
-              toggleFieldExpanded(field, refs[field]);
-            }
+            const refs: { [key: string]: React.RefObject<TextInput | null> } = {
+              phone: phoneInputRef,
+              instagram: instagramInputRef,
+              facebook: facebookInputRef,
+              snapchat: snapchatInputRef,
+            };
+            toggleFieldExpanded(field, refs[field]);
           }}
           activeOpacity={0.6}
         >
@@ -423,45 +305,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
     );
   };
 
-  // Render birthday field (special case with date picker)
-  const renderBirthdayField = (isLast: boolean = false) => {
-    const expanded = isFieldExpanded('birthday');
-
-    if (!expanded) {
-      return renderAddRow('birthday', 'Birthday', 'calendar-outline', isLast);
-    }
-
-    return (
-      <View key="birthday">
-        <View style={styles.expandedFieldContainer}>
-          <View style={styles.expandedFieldHeader}>
-            <View style={styles.fieldIconCircle}>
-              <Ionicons name="calendar-outline" size={18} color="#BE123C" />
-            </View>
-            <Text style={styles.expandedFieldLabel}>Birthday</Text>
-            <TouchableOpacity
-              onPress={handleClearDate}
-              style={styles.clearFieldButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={styles.dateSelectButton}
-            onPress={handleDatePress}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.dateSelectText, !dateOfBirth && styles.dateSelectPlaceholder]}>
-              {dateOfBirth ? formatDate(dateOfBirth) : 'Select date...'}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-        {!isLast && <View style={styles.addRowDivider} />}
-      </View>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -561,25 +404,39 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
                 renderAddRow('instagram', 'Instagram', 'logo-instagram', false)
               )}
 
-              {/* Location */}
-              {isFieldExpanded('location') ? (
+              {/* Facebook */}
+              {isFieldExpanded('facebook') ? (
                 renderExpandedField(
-                  'location',
-                  'Location',
-                  'location-outline',
-                  location,
-                  setLocation,
-                  locationInputRef,
-                  'City, Country...',
+                  'facebook',
+                  'Facebook',
+                  'logo-facebook',
+                  facebook,
+                  setFacebook,
+                  facebookInputRef,
+                  'username',
                   'default',
                   false
                 )
               ) : (
-                renderAddRow('location', 'Location', 'location-outline', false)
+                renderAddRow('facebook', 'Facebook', 'logo-facebook', false)
               )}
 
-              {/* Birthday */}
-              {renderBirthdayField(true)}
+              {/* Snapchat */}
+              {isFieldExpanded('snapchat') ? (
+                renderExpandedField(
+                  'snapchat',
+                  'Snapchat',
+                  'logo-snapchat',
+                  snapchat,
+                  setSnapchat,
+                  snapchatInputRef,
+                  'username',
+                  'default',
+                  true
+                )
+              ) : (
+                renderAddRow('snapchat', 'Snapchat', 'logo-snapchat', true)
+              )}
             </View>
           </View>
 
@@ -621,79 +478,6 @@ const DatingEntryScreen: React.FC<DatingEntryScreenProps> = ({ navigation, route
         </View>
       </View>
 
-      {/* iOS Date Picker Modal */}
-      <Modal
-        visible={showDatePicker && Platform.OS === 'ios'}
-        transparent={true}
-        animationType="none"
-        onRequestClose={handleDatePickerDone}
-      >
-          <View style={styles.datePickerOverlay}>
-            <TouchableOpacity
-              style={styles.datePickerBackdrop}
-              activeOpacity={1}
-              onPress={handleDatePickerDone}
-            />
-            <Animated.View
-              style={[
-                styles.datePickerContainer,
-                { transform: [{ translateY: datePickerTranslateY }] },
-              ]}
-              {...datePickerPanResponder.panHandlers}
-            >
-              {/* Drag Handle */}
-              <View style={styles.datePickerHandle}>
-                <View style={styles.datePickerHandleBar} />
-              </View>
-
-              {/* Title */}
-              <Text style={styles.datePickerTitle}>Select Birthday</Text>
-
-              {/* Date Picker */}
-              <View style={styles.datePickerWrapper}>
-                <DateTimePicker
-                  value={dateOfBirth || new Date(2000, 0, 1)}
-                  mode="date"
-                  display="spinner"
-                  onChange={handleDateChange}
-                  maximumDate={new Date()}
-                  minimumDate={new Date(1900, 0, 1)}
-                  style={styles.datePicker}
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.datePickerActions}>
-                <TouchableOpacity
-                  onPress={handleClearDate}
-                  style={styles.datePickerClearButton}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.datePickerClearText}>Clear</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleDatePickerDone}
-                  style={styles.datePickerDoneButton}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.datePickerDoneText}>Confirm</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </View>
-        </Modal>
-
-      {/* Android Date Picker */}
-      {showDatePicker && Platform.OS === 'android' && (
-        <DateTimePicker
-          value={dateOfBirth || new Date(2000, 0, 1)}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-          minimumDate={new Date(1900, 0, 1)}
-        />
-      )}
     </View>
   );
 };
@@ -952,113 +736,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
 
-  // Date Select Button
-  dateSelectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginLeft: 50,
-    marginTop: 8,
-    paddingVertical: 4,
-  },
-  dateSelectText: {
-    fontSize: 17,
-    fontWeight: '400',
-    color: '#1F2937',
-  },
-  dateSelectPlaceholder: {
-    color: '#9CA3AF',
-  },
-
   // Bottom Spacer
   bottomSpacer: {
     height: 60,
-  },
-
-  // Date Picker Overlay (iOS)
-  datePickerOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    top: 0,
-    justifyContent: 'flex-end',
-  },
-  datePickerBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  datePickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-  },
-  datePickerHandle: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  datePickerHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E5E7EB',
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  datePickerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: -10,
-  },
-  datePicker: {
-    width: '100%',
-    height: 200,
-  },
-  datePickerActions: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 12,
-    gap: 10,
-  },
-  datePickerClearButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePickerClearText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  datePickerDoneButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#1F2937',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePickerDoneText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });
 

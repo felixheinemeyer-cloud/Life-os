@@ -388,6 +388,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
   const [isSwipingCard, setIsSwipingCard] = useState(false);
   const [settingsMenuVisible, setSettingsMenuVisible] = useState(false);
   const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'people' | 'general'>('people');
 
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ vibe: true });
@@ -675,6 +676,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         scrollEnabled={!isSwipingCard}>
 
+        {/* Spacer for header tab selector */}
+
+        {activeTab === 'people' && (<>
         {/* ── Person Selector ─────────────────────────────────── */}
         <ScrollView ref={personSelectorRef} horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.personSelectorContent} style={styles.personSelector}>
@@ -688,7 +692,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               style={[styles.personChip, index === activePersonIndex && styles.personChipActive]}
               onPress={() => switchPerson(index)} activeOpacity={0.7}>
               <LinearGradient
-                colors={index === activePersonIndex ? ['#FFFFFF', '#FFFFFF'] : ['#FFF1F2', '#FFE4E6']}
+                colors={index === activePersonIndex ? ['#FFF1F2', '#FFE4E6'] : ['#FFF1F2', '#FFE4E6']}
                 style={styles.personChipAvatar}>
                 <Text style={[styles.personChipInitials,
                   index === activePersonIndex && styles.personChipInitialsActive]}>
@@ -703,30 +707,29 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           ))}
         </ScrollView>
 
-        {/* ── Person Header Card ──────────────────────────────── */}
-        <View style={styles.personHeaderCard}>
-          <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personAvatar}>
-            <Text style={styles.personAvatarInitials}>{currentPerson.initials}</Text>
+        {/* ── Person Profile ──────────────────────────────────── */}
+        <View style={styles.personProfileSection}>
+          <LinearGradient colors={['#FFF1F2', '#FFE4E6', '#FECDD3']} style={styles.personProfileAvatar}>
+            <Text style={styles.personProfileInitials}>{currentPerson.initials}</Text>
           </LinearGradient>
-          <View style={styles.personHeaderCenter}>
-            <Text style={styles.personName} numberOfLines={1}>{currentPerson.name}</Text>
-          </View>
-          <View style={styles.personHeaderActions}>
+          <Text style={styles.personProfileName}>{currentPerson.name}</Text>
+          <View style={styles.personProfileActions}>
             {currentPerson.phoneNumber && (
-              <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.7}>
-                <Ionicons name="call-outline" size={17} color="#6B7280" />
+              <TouchableOpacity style={styles.profileActionBtn} onPress={handleCall} activeOpacity={0.7}>
+                <View style={styles.profileActionCircle}>
+                  <Ionicons name="call-outline" size={20} color="#1F2937" />
+                </View>
+                <Text style={styles.profileActionLabel}>Call</Text>
               </TouchableOpacity>
             )}
             {currentPerson.instagram && (
-              <TouchableOpacity style={styles.quickActionBtn} onPress={handleInstagram} activeOpacity={0.7}>
-                <Ionicons name="logo-instagram" size={17} color="#6B7280" />
+              <TouchableOpacity style={styles.profileActionBtn} onPress={handleInstagram} activeOpacity={0.7}>
+                <View style={styles.profileActionCircle}>
+                  <Ionicons name="logo-instagram" size={20} color="#1F2937" />
+                </View>
+                <Text style={styles.profileActionLabel}>Instagram</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.personHeaderEditBtn}
-              onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DatingEntry', { person: currentPerson }); }}
-              activeOpacity={0.7}>
-              <Ionicons name="pencil" size={14} color="#9CA3AF" />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -734,7 +737,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         <View style={styles.sectionsContainer}>
 
           {/* Vibe Check */}
-          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.vibe.border }]}>
+          <View style={[styles.expandableCard, {}]}>
             <SectionHeader sectionKey="vibe" icon="heart" label="Vibe Check" />
             {expandedSections.vibe && (
               <View style={styles.expandableContent}>
@@ -749,7 +752,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* First Impression */}
-          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.firstImpression.border }]}>
+          <View style={[styles.expandableCard, {}]}>
             <SectionHeader sectionKey="firstImpression" icon="sparkles" label="First Impression"
               preview={currentData.firstImpression ? '' : 'Tap to add'} />
             {expandedSections.firstImpression && (
@@ -780,7 +783,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* Flags */}
-          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.flags.border }]}>
+          <View style={[styles.expandableCard, {}]}>
             <SectionHeader sectionKey="flags" icon="flag" label="Flags"
               preview={currentData.flags.length > 0 ? `${greenFlags.length} green · ${redFlags.length} red` : 'None yet'} />
             {expandedSections.flags && (
@@ -796,14 +799,13 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.flagsEmptyText}>No flags yet</Text>
                 )}
                 <View style={styles.flagsAddRow}>
-                  <TouchableOpacity style={styles.flagsAddLink} onPress={() => handleAddFlag('green')} activeOpacity={0.7}>
-                    <Ionicons name="add-circle-outline" size={15} color="#22C55E" />
-                    <Text style={styles.flagsAddLinkGreenText}>Add green</Text>
+                  <TouchableOpacity style={[styles.flagsAddBtn, styles.flagsAddBtnGreen]} onPress={() => handleAddFlag('green')} activeOpacity={0.7}>
+                    <Ionicons name="add" size={16} color="#15803D" />
+                    <Text style={styles.flagsAddBtnGreenText}>Add green</Text>
                   </TouchableOpacity>
-                  <View style={styles.flagsAddDivider} />
-                  <TouchableOpacity style={styles.flagsAddLink} onPress={() => handleAddFlag('red')} activeOpacity={0.7}>
-                    <Ionicons name="add-circle-outline" size={15} color="#EF4444" />
-                    <Text style={styles.flagsAddLinkRedText}>Add red</Text>
+                  <TouchableOpacity style={[styles.flagsAddBtn, styles.flagsAddBtnRed]} onPress={() => handleAddFlag('red')} activeOpacity={0.7}>
+                    <Ionicons name="add" size={16} color="#DC2626" />
+                    <Text style={styles.flagsAddBtnRedText}>Add red</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -811,7 +813,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           </View>
 
           {/* Date History */}
-          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.dateHistory.border }]}>
+          <View style={[styles.expandableCard, {}]}>
             <SectionHeader sectionKey="dateHistory" icon="calendar" label="Date History"
               preview={currentData.dateHistory.length > 0
                 ? `${currentData.dateHistory.length} date${currentData.dateHistory.length > 1 ? 's' : ''}`
@@ -830,83 +832,36 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 ) : (
                   <Text style={styles.dateHistoryEmptyText}>No dates logged yet</Text>
                 )}
-                <TouchableOpacity style={styles.dateHistoryAddLink} onPress={handleAddDateEntry} activeOpacity={0.7}>
-                  <Ionicons name="add-circle-outline" size={15} color="#3B82F6" />
-                  <Text style={styles.dateHistoryAddLinkText}>Add date</Text>
+                <TouchableOpacity style={styles.dateHistoryAddBtn} onPress={handleAddDateEntry} activeOpacity={0.7}>
+                  <Ionicons name="add" size={16} color="#3B82F6" />
+                  <Text style={styles.dateHistoryAddBtnText}>Add date</Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
 
-          {/* Notes */}
-          <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.notes.border }]}>
-            <SectionHeader sectionKey="notes" icon="document-text" label="Notes"
-              preview={currentData.notes.length > 0 ? `${currentData.notes.length} note${currentData.notes.length > 1 ? 's' : ''}` : 'None yet'} />
-            {expandedSections.notes && (
-              <View style={styles.expandableContent}>
-                <TouchableOpacity style={styles.addNoteCard} onPress={handleAddNote} activeOpacity={0.7}>
-                  <Text style={styles.addNotePlaceholder}>Add a note...</Text>
-                  <Ionicons name="add-circle-outline" size={20} color="#10B981" />
-                </TouchableOpacity>
-                {currentData.notes.map(note => (
-                  <SwipeableNoteCard key={note.id} note={note}
-                    onEdit={() => handleEditNote(note)} onDelete={() => handleDeleteNote(note.id)}
-                    onSwipeStart={() => setIsSwipingCard(true)} onSwipeEnd={() => setIsSwipingCard(false)} />
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Details */}
-          {hasInfo && (
-            <View style={[styles.expandableCard, { borderLeftWidth: 3, borderLeftColor: SECTION_COLORS.details.border }]}>
-              <SectionHeader sectionKey="details" icon="person" label="Details" />
-              {expandedSections.details && (
-                <View style={styles.expandableContent}>
-                  {currentPerson.phoneNumber && (
-                    <TouchableOpacity style={styles.detailsRow} onPress={handleCall} activeOpacity={0.7}>
-                      <View style={[styles.detailsRowIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="call-outline" size={16} color="#10B981" /></View>
-                      <View style={styles.detailsRowContent}>
-                        <Text style={styles.detailsRowLabel}>PHONE</Text>
-                        <Text style={styles.detailsRowValue}>{currentPerson.phoneNumber}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
-                    </TouchableOpacity>
-                  )}
-                  {currentPerson.instagram && (
-                    <TouchableOpacity style={styles.detailsRow} onPress={handleInstagram} activeOpacity={0.7}>
-                      <View style={[styles.detailsRowIcon, { backgroundColor: '#FDF2F8' }]}><Ionicons name="logo-instagram" size={16} color="#EC4899" /></View>
-                      <View style={styles.detailsRowContent}>
-                        <Text style={styles.detailsRowLabel}>INSTAGRAM</Text>
-                        <Text style={styles.detailsRowValue}>@{currentPerson.instagram}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
-                    </TouchableOpacity>
-                  )}
-                  {currentPerson.location && (
-                    <View style={styles.detailsRow}>
-                      <View style={[styles.detailsRowIcon, { backgroundColor: '#FFF7ED' }]}><Ionicons name="location-outline" size={16} color="#F97316" /></View>
-                      <View style={styles.detailsRowContent}>
-                        <Text style={styles.detailsRowLabel}>LOCATION</Text>
-                        <Text style={styles.detailsRowValue}>{currentPerson.location}</Text>
-                      </View>
-                    </View>
-                  )}
-                  {currentPerson.dateOfBirth && (
-                    <View style={[styles.detailsRow, { borderBottomWidth: 0 }]}>
-                      <View style={[styles.detailsRowIcon, { backgroundColor: '#EEF2FF' }]}><Ionicons name="gift-outline" size={16} color="#6366F1" /></View>
-                      <View style={styles.detailsRowContent}>
-                        <Text style={styles.detailsRowLabel}>BIRTHDAY</Text>
-                        <Text style={styles.detailsRowValue}>{formatBirthday(currentPerson.dateOfBirth)}</Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              )}
+          {/* Notes Section */}
+          <View style={styles.notesSection}>
+            <View style={styles.notesSectionHeader}>
+              <Text style={styles.notesSectionTitle}>Notes</Text>
+              <Text style={styles.notesSectionSubtitle}>Thoughts, observations & reminders</Text>
             </View>
-          )}
+            <TouchableOpacity style={styles.addNoteCard} onPress={handleAddNote} activeOpacity={0.7}>
+              <Text style={styles.addNotePlaceholder}>Add a note...</Text>
+              <View style={styles.addNoteButton}>
+                <Ionicons name="add" size={20} color="#E11D48" />
+              </View>
+            </TouchableOpacity>
+            {currentData.notes.map(note => (
+              <SwipeableNoteCard key={note.id} note={note}
+                onEdit={() => handleEditNote(note)} onDelete={() => handleDeleteNote(note.id)}
+                onSwipeStart={() => setIsSwipingCard(true)} onSwipeEnd={() => setIsSwipingCard(false)} />
+            ))}
+          </View>
         </View>
+        </>)}
 
+        {activeTab === 'general' && (<>
         {/* ── Date Ideas ──────────────────────────────────────── */}
         <View style={styles.dateIdeasSection}>
           <View style={styles.dateIdeasHeader}>
@@ -979,6 +934,7 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
             ))}
           </View>
         </View>
+        </>)}
       </ScrollView>
 
       {/* ── Fixed Header ──────────────────────────────────────── */}
@@ -991,6 +947,22 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={24} color="#1F2937" style={{ marginLeft: -2 }} />
           </TouchableOpacity>
+          <View style={styles.tabSelector}>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'people' && styles.tabButtonActive]}
+              onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('people'); }}
+              activeOpacity={0.7}>
+              <Ionicons name="people-outline" size={16} color={activeTab === 'people' ? '#E11D48' : '#6B7280'} />
+              <Text style={[styles.tabText, activeTab === 'people' && styles.tabTextActive]}>People</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'general' && styles.tabButtonActive]}
+              onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('general'); }}
+              activeOpacity={0.7}>
+              <Ionicons name="compass-outline" size={16} color={activeTab === 'general' ? '#E11D48' : '#6B7280'} />
+              <Text style={[styles.tabText, activeTab === 'general' && styles.tabTextActive]}>Inspiration</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowMoreMenu(true); }}
             style={styles.headerBtn} activeOpacity={0.7}>
             <Ionicons name="ellipsis-horizontal" size={22} color="#1F2937" />
@@ -1003,7 +975,11 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
         <TouchableWithoutFeedback onPress={() => setShowMoreMenu(false)}>
           <View style={styles.menuOverlay}>
             <View style={styles.menuContainer}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); navigation.navigate('RelationshipSetup'); }} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMoreMenu(false); navigation.navigate('DatingEntry', { person: currentPerson }); }} activeOpacity={0.7}>
+                <Ionicons name="pencil-outline" size={18} color="#6B7280" />
+                <Text style={styles.menuItemText}>Edit {currentPerson.name}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: '#F3F4F6' }]} onPress={() => { setShowMoreMenu(false); navigation.navigate('RelationshipSetup'); }} activeOpacity={0.7}>
                 <Ionicons name="sync-outline" size={18} color="#6B7280" />
                 <Text style={styles.menuItemText}>Switch to Relationship</Text>
               </TouchableOpacity>
@@ -1065,43 +1041,48 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               <Ionicons name="checkmark" size={20} color={impressionText.trim() ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>What was your first impression of {currentPerson.name}?</Text>
-              <View style={styles.modalTextAreaContainer}>
-                <TextInput style={styles.modalTextArea} placeholder="She walked in with this incredible energy..."
-                  placeholderTextColor="#9CA3AF" value={impressionText} onChangeText={setImpressionText}
-                  multiline textAlignVertical="top" autoFocus />
+          <ScrollView style={{ flex: 1, backgroundColor: '#F0EEE8' }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16, paddingTop: 20 }}>
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="sparkles-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>First Impression</Text>
               </View>
+              <TextInput style={styles.formCardTextArea} placeholder={`What stood out about ${currentPerson.name}?`}
+                placeholderTextColor="#9CA3AF" value={impressionText} onChangeText={setImpressionText}
+                multiline textAlignVertical="top" autoFocus />
             </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>When did you first meet?</Text>
-              <TouchableOpacity style={styles.modalMetaButton} onPress={openWhenWeMetPicker} activeOpacity={0.7}>
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="calendar-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>When you met</Text>
+              </View>
+              <TouchableOpacity onPress={openWhenWeMetPicker} activeOpacity={0.7}>
                 {whenWeMet ? (
-                  <View style={styles.modalMetaSelected}>
-                    <Ionicons name="calendar" size={18} color={ACCENT_COLOR} />
-                    <Text style={styles.modalMetaSelectedText}>{formatWhenWeMet(whenWeMet.toISOString())}</Text>
+                  <View style={styles.formCardMetaRow}>
+                    <Text style={styles.formCardMetaText}>{formatWhenWeMet(whenWeMet.toISOString())}</Text>
                     <TouchableOpacity onPress={() => { setWhenWeMet(null); closeWhenWeMetPicker(); }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                       <Ionicons name="close-circle" size={18} color="#C4C4C4" />
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  <View style={styles.modalMetaPlaceholder}>
-                    <Ionicons name="calendar-outline" size={18} color="#9CA3AF" />
-                    <Text style={styles.modalMetaPlaceholderText}>Select when you met</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+                  <View style={styles.formCardMetaRow}>
+                    <Text style={styles.formCardMetaPlaceholder}>Select when you met</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#C4C4C4" />
                   </View>
                 )}
               </TouchableOpacity>
             </View>
             {currentData.firstImpression && (
-              <View style={styles.modalSection}>
-                <TouchableOpacity style={styles.dangerButton} onPress={handleClearFirstImpression} activeOpacity={0.7}>
-                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                  <Text style={styles.dangerButtonText}>Remove First Impression</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.dangerButton} onPress={handleClearFirstImpression} activeOpacity={0.7}>
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text style={styles.dangerButtonText}>Remove First Impression</Text>
+              </TouchableOpacity>
             )}
             <View style={{ height: 40 }} />
           </ScrollView>
@@ -1145,8 +1126,9 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               <Ionicons name="checkmark" size={20} color={flagText.trim() ? "#1F2937" : "#9CA3AF"} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <View style={styles.modalSection}>
+          <ScrollView style={{ flex: 1, backgroundColor: '#F0EEE8' }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16, paddingTop: 20 }}>
+            <View style={styles.formCard}>
               <View style={styles.flagTypeToggle}>
                 <TouchableOpacity style={[styles.flagTypeOption, flagType === 'green' && styles.flagTypeOptionGreenActive]}
                   onPress={() => { if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlagType('green'); }} activeOpacity={0.7}>
@@ -1160,27 +1142,28 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>{flagType === 'green' ? "What's the positive trait?" : "What's the concern?"}</Text>
-              <View style={styles.flagTextInputContainer}>
-                <TextInput style={styles.flagTextInput}
-                  placeholder={flagType === 'green' ? 'e.g., Great listener...' : 'e.g., Often late...'}
-                  placeholderTextColor="#C4C4C4" value={flagText} onChangeText={setFlagText} autoFocus maxLength={50} />
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="flag-outline" size={20} color={flagType === 'green' ? '#22C55E' : '#E11D48'} />
+                </View>
+                <Text style={styles.formCardLabel}>{flagType === 'green' ? 'Positive trait' : 'Concern'}</Text>
               </View>
+              <TextInput style={styles.formCardInput}
+                placeholder={flagType === 'green' ? 'e.g., Great listener...' : 'e.g., Often late...'}
+                placeholderTextColor="#9CA3AF" value={flagText} onChangeText={setFlagText} autoFocus maxLength={50} />
               <Text style={styles.flagCharCount}>{flagText.length}/50</Text>
             </View>
             {editingFlag && (
-              <View style={styles.modalSection}>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => {
-                  Alert.alert('Delete Flag', `Remove "${editingFlag.text}"?`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteFlag(editingFlag.id); setFlagModalVisible(false); setEditingFlag(null); }},
-                  ]);
-                }} activeOpacity={0.7}>
-                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                  <Text style={styles.dangerButtonText}>Delete Flag</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.dangerButton} onPress={() => {
+                Alert.alert('Delete Flag', `Remove "${editingFlag.text}"?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteFlag(editingFlag.id); setFlagModalVisible(false); setEditingFlag(null); }},
+                ]);
+              }} activeOpacity={0.7}>
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text style={styles.dangerButtonText}>Delete Flag</Text>
+              </TouchableOpacity>
             )}
             <View style={{ height: 40 }} />
           </ScrollView>
@@ -1202,51 +1185,63 @@ const DatingHomeScreen: React.FC<DatingHomeScreenProps> = ({ navigation }) => {
               <Ionicons name="checkmark" size={20} color={dateEntryTitle.trim() ? '#1F2937' : '#9CA3AF'} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>When?</Text>
-              <TouchableOpacity style={styles.modalMetaButton} onPress={openDateEntryPicker} activeOpacity={0.7}>
-                <View style={styles.modalMetaPlaceholder}>
-                  <Ionicons name="calendar-outline" size={18} color={ACCENT_COLOR} />
-                  <Text style={[styles.modalMetaPlaceholderText, { color: '#1F2937', fontWeight: '500' }]}>{formatDateEntryDate(dateEntryDate.toISOString())}</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#C4C4C4" />
+          <ScrollView style={{ flex: 1, backgroundColor: '#F0EEE8' }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16, paddingTop: 20 }}>
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="calendar-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>When</Text>
+              </View>
+              <TouchableOpacity onPress={openDateEntryPicker} activeOpacity={0.7}>
+                <View style={styles.formCardMetaRow}>
+                  <Text style={styles.formCardMetaText}>{formatDateEntryDate(dateEntryDate.toISOString())}</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#C4C4C4" />
                 </View>
               </TouchableOpacity>
             </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>Title</Text>
-              <View style={styles.modalInputWrapper}>
-                <TextInput style={styles.modalInput} placeholder="e.g., Coffee at Blue Bottle"
-                  placeholderTextColor="#9CA3AF" value={dateEntryTitle} onChangeText={setDateEntryTitle} maxLength={100} />
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="text-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>Title</Text>
               </View>
+              <TextInput style={styles.formCardInput} placeholder="e.g., Coffee at Blue Bottle"
+                placeholderTextColor="#9CA3AF" value={dateEntryTitle} onChangeText={setDateEntryTitle} maxLength={100} />
             </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>Where? (optional)</Text>
-              <View style={styles.modalInputWrapper}>
-                <TextInput style={styles.modalInput} placeholder="e.g., Blue Bottle Coffee, Brooklyn"
-                  placeholderTextColor="#9CA3AF" value={dateEntryLocation} onChangeText={setDateEntryLocation} maxLength={80} />
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="location-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>Where</Text>
               </View>
+              <TextInput style={styles.formCardInput} placeholder="e.g., Blue Bottle Coffee, Brooklyn"
+                placeholderTextColor="#9CA3AF" value={dateEntryLocation} onChangeText={setDateEntryLocation} maxLength={80} />
             </View>
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionLabel}>Notes (optional)</Text>
-              <View style={styles.modalTextAreaContainer}>
-                <TextInput style={[styles.modalTextArea, { minHeight: 80 }]} placeholder="Any memorable moments..."
-                  placeholderTextColor="#9CA3AF" value={dateEntryNotes} onChangeText={setDateEntryNotes}
-                  multiline textAlignVertical="top" maxLength={300} />
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardIcon}>
+                  <Ionicons name="document-text-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.formCardLabel}>Notes</Text>
               </View>
+              <TextInput style={styles.formCardTextArea} placeholder="Any memorable moments..."
+                placeholderTextColor="#9CA3AF" value={dateEntryNotes} onChangeText={setDateEntryNotes}
+                multiline textAlignVertical="top" maxLength={300} />
             </View>
             {editingDateEntry && (
-              <View style={styles.modalSection}>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => {
-                  Alert.alert('Delete Date', `Remove "${editingDateEntry.title}"?`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteDateEntry(editingDateEntry.id); setDateModalVisible(false); setEditingDateEntry(null); }},
-                  ]);
-                }} activeOpacity={0.7}>
-                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                  <Text style={styles.dangerButtonText}>Delete Date</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.dangerButton} onPress={() => {
+                Alert.alert('Delete Date', `Remove "${editingDateEntry.title}"?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => { handleDeleteDateEntry(editingDateEntry.id); setDateModalVisible(false); setEditingDateEntry(null); }},
+                ]);
+              }} activeOpacity={0.7}>
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text style={styles.dangerButtonText}>Delete Date</Text>
+              </TouchableOpacity>
             )}
             <View style={{ height: 40 }} />
           </ScrollView>
@@ -1309,6 +1304,19 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1,
   },
 
+  // Tab Selector
+  tabSelector: {
+    flex: 1, flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 22, padding: 3, marginHorizontal: 10,
+    borderWidth: 1, borderColor: 'rgba(0, 0, 0, 0.06)',
+  },
+  tabButton: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 8, paddingHorizontal: 6, borderRadius: 20, gap: 5,
+  },
+  tabButtonActive: { backgroundColor: '#FFF1F2' },
+  tabText: { fontSize: 13, fontWeight: '500', color: '#6B7280' },
+  tabTextActive: { color: '#E11D48', fontWeight: '600' },
+
   // Person Selector
   personSelector: { marginBottom: 16, maxHeight: 48 },
   personSelectorContent: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
@@ -1317,12 +1325,12 @@ const styles = StyleSheet.create({
     paddingLeft: 3, paddingRight: 12, paddingVertical: 3, borderRadius: 22, gap: 7,
     borderWidth: 1, borderColor: '#E5E7EB',
   },
-  personChipActive: { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' },
+  personChipActive: { backgroundColor: '#1F2937', borderColor: '#1F2937' },
   personChipAvatar: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   personChipInitials: { fontSize: 11, fontWeight: '700', color: ACCENT_COLOR },
   personChipInitialsActive: { color: '#E11D48' },
   personChipName: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  personChipNameActive: { color: '#1F2937' },
+  personChipNameActive: { color: '#FFFFFF' },
   addPersonChip: {
     width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
@@ -1330,33 +1338,66 @@ const styles = StyleSheet.create({
   },
 
   // Person Header Card
-  personHeaderCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, marginHorizontal: 16, marginBottom: 12,
-    paddingVertical: 14, paddingLeft: 20, paddingRight: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
+  personProfileSection: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 16,
   },
-  personCardAccent: {
-    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
-    backgroundColor: ACCENT_COLOR, borderTopLeftRadius: 20, borderBottomLeftRadius: 20,
+  profileAvatarRow: {
+    flexDirection: 'row', alignItems: 'center', marginBottom: 12,
   },
-  personAvatar: {
-    width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center',
+  personProfileAvatar: {
+    width: 88, height: 88, borderRadius: 44, justifyContent: 'center', alignItems: 'center',
+    marginBottom: 10,
   },
-  personAvatarInitials: { fontSize: 17, fontWeight: '700', color: '#E11D48' },
-  personHeaderCenter: { flex: 1 },
-  personHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  personProfileInitials: { fontSize: 32, fontWeight: '700', color: '#E11D48' },
+  personProfileName: {
+    fontSize: 24, fontWeight: '700', color: '#1F2937', letterSpacing: -0.5, marginBottom: 8,
+  },
+  profileMetaRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4,
+  },
+  profileMetaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+  },
+  profileMetaText: {
+    fontSize: 13, fontWeight: '500', color: '#9CA3AF', letterSpacing: -0.1,
+  },
+  profileMetaDot: {
+    fontSize: 13, color: '#D1D5DB',
+  },
+  profileInfoPills: {
+    flexDirection: 'column', alignItems: 'flex-start', gap: 6, marginLeft: 14,
+  },
+  profileInfoPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#FFFFFF', borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  profileInfoPillText: {
+    fontSize: 13, fontWeight: '500', color: '#6B7280', letterSpacing: -0.1,
+  },
+  personProfileActions: {
+    flexDirection: 'row', alignItems: 'center', gap: 24,
+  },
+  profileActionBtn: {
+    alignItems: 'center', gap: 6,
+  },
+  profileActionCircle: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#E5E7EB',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+  },
+  profileActionLabel: {
+    fontSize: 12, fontWeight: '500', color: '#6B7280', letterSpacing: -0.2,
+  },
   quickActionBtn: {
     width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: '#E5E7EB',
   },
-  personHeaderEditBtn: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: '#E5E7EB',
-  },
-  personName: { fontSize: 22, fontWeight: '700', color: '#1F2937', letterSpacing: -0.3 },
 
   // Expandable Sections
   sectionsContainer: { paddingHorizontal: 16, marginBottom: 24 },
@@ -1367,19 +1408,19 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 16, paddingHorizontal: 16,
+    paddingVertical: 18, paddingHorizontal: 16,
   },
   sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionLabel: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  sectionPreview: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
+  sectionLabel: { fontSize: 16, fontWeight: '600', color: '#1F2937', letterSpacing: -0.3 },
+  sectionPreview: { fontSize: 13, fontWeight: '500', color: '#9CA3AF', letterSpacing: -0.2 },
   expandableContent: { paddingHorizontal: 16, paddingBottom: 16, gap: 10 },
 
   // Vibe Rating
   vibeMetricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   vibeMetricLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   vibeMetricIcon: { width: 22, height: 22, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
-  vibeMetricLabel: { fontSize: 14, fontWeight: '500', color: '#374151' },
+  vibeMetricLabel: { fontSize: 14, fontWeight: '600', color: '#1F2937', letterSpacing: -0.2 },
   vibeSegmentsRow: { flexDirection: 'row', gap: 4, width: 130 },
   vibeSegmentTouch: { flex: 1 },
   vibeSegmentBg: { height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' },
@@ -1400,13 +1441,18 @@ const styles = StyleSheet.create({
   flagChipGreen: { backgroundColor: '#F0FDF4' },
   flagChipRed: { backgroundColor: '#FEF2F2' },
   flagDot: { width: 6, height: 6, borderRadius: 3 },
-  flagChipText: { fontSize: 13, fontWeight: '500' },
+  flagChipText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.2 },
   flagsEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 4 },
-  flagsAddRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  flagsAddLink: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8 },
-  flagsAddDivider: { width: 1, height: 14, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
-  flagsAddLinkGreenText: { fontSize: 13, fontWeight: '500', color: '#15803D' },
-  flagsAddLinkRedText: { fontSize: 13, fontWeight: '500', color: '#DC2626' },
+  flagsAddRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 14, gap: 8 },
+  flagsAddBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  flagsAddBtnGreen: { borderColor: '#BBF7D0' },
+  flagsAddBtnRed: { borderColor: '#FECACA' },
+  flagsAddBtnGreenText: { fontSize: 13, fontWeight: '600', color: '#15803D', letterSpacing: -0.2 },
+  flagsAddBtnRedText: { fontSize: 13, fontWeight: '600', color: '#DC2626', letterSpacing: -0.2 },
 
   // Date History
   dateHistoryTimeline: { paddingLeft: 4 },
@@ -1418,7 +1464,7 @@ const styles = StyleSheet.create({
   dateEntryLine: { flex: 1, width: 1.5, backgroundColor: '#DBEAFE', marginTop: 4, marginBottom: -4 },
   dateEntryContent: { flex: 1, paddingLeft: 12, paddingBottom: 14 },
   dateEntryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  dateEntryTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937', lineHeight: 19 },
+  dateEntryTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1F2937', lineHeight: 20, letterSpacing: -0.2 },
   dateEntryVibePill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginTop: 1,
@@ -1429,20 +1475,44 @@ const styles = StyleSheet.create({
   dateEntryLocation: { fontSize: 12, fontWeight: '400', color: '#9CA3AF' },
   dateEntryDate: { fontSize: 12, fontWeight: '500', color: '#9CA3AF' },
   dateHistoryEmptyText: { fontSize: 13, fontWeight: '400', color: '#9CA3AF', textAlign: 'center', paddingVertical: 4 },
-  dateHistoryAddLink: {
+  dateHistoryAddBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
-    paddingVertical: 4, marginTop: 2,
+    paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20,
+    borderWidth: 1.5, borderColor: '#BFDBFE', alignSelf: 'center', marginTop: 8,
   },
-  dateHistoryAddLinkText: { fontSize: 13, fontWeight: '500', color: '#3B82F6' },
+  dateHistoryAddBtnText: { fontSize: 13, fontWeight: '600', color: '#3B82F6', letterSpacing: -0.2 },
 
   // Notes
-  addNoteCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
-    borderRadius: 12, paddingLeft: 16, paddingRight: 12, paddingVertical: 10, marginBottom: 6,
+  notesSection: {
+    marginTop: 10,
+    marginBottom: 14,
   },
-  addNotePlaceholder: { flex: 1, fontSize: 14, fontWeight: '400', color: '#9CA3AF' },
-  noteCardWrapper: { marginBottom: 6, position: 'relative', overflow: 'hidden', borderRadius: 12 },
-  noteCardAnimatedWrapper: { backgroundColor: '#F9FAFB', borderRadius: 12 },
+  notesSectionHeader: {
+    marginBottom: 16,
+  },
+  notesSectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  notesSectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#6B7280',
+  },
+  addNoteCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 16, paddingLeft: 16, paddingRight: 8, paddingVertical: 10, marginBottom: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
+  },
+  addNotePlaceholder: { flex: 1, fontSize: 15, fontWeight: '400', color: '#9CA3AF' },
+  addNoteButton: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#FFF1F2', justifyContent: 'center', alignItems: 'center',
+  },
+  noteCardWrapper: { marginBottom: 12, position: 'relative', overflow: 'hidden', borderRadius: 16 },
+  noteCardAnimatedWrapper: { backgroundColor: '#FFFFFF', borderRadius: 16 },
   noteActionsContainer: {
     position: 'absolute', right: 0, top: 0, bottom: 0,
     flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 16, gap: 16,
@@ -1454,15 +1524,16 @@ const styles = StyleSheet.create({
   noteEditAction: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB', shadowColor: '#6B7280' },
   noteDeleteAction: { backgroundColor: '#FFFFFF', borderColor: '#FECACA', shadowColor: '#EF4444' },
   noteCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
-    borderRadius: 12, padding: 12, paddingLeft: 16,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 16, padding: 16, paddingLeft: 16,
     overflow: 'hidden',
+    shadowColor: '#E11D48', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
   },
   noteAccent: {
-    position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-    backgroundColor: '#10B981', borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+    backgroundColor: '#E11D48', borderTopLeftRadius: 16, borderBottomLeftRadius: 16,
   },
-  noteText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#374151', lineHeight: 20 },
+  noteText: { flex: 1, fontSize: 15, fontWeight: '400', color: '#1F2937', lineHeight: 22 },
 
   // Details
   detailsRow: {
@@ -1470,12 +1541,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
   },
   detailsRowIcon: {
-    width: 32, height: 32, borderRadius: 16,
-    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: '#FFF1F2',
+    justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   detailsRowContent: { flex: 1 },
   detailsRowLabel: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
-  detailsRowValue: { fontSize: 15, fontWeight: '500', color: '#1F2937' },
+  detailsRowValue: { fontSize: 15, fontWeight: '500', color: '#1F2937', letterSpacing: -0.2 },
 
   // Date Ideas Section
   dateIdeasSection: { marginBottom: 24 },
@@ -1539,7 +1611,7 @@ const styles = StyleSheet.create({
     borderRadius: 18, paddingVertical: 6, minWidth: 200,
     shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 8,
   },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, gap: 12 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12 },
   menuItemText: { fontSize: 15, fontWeight: '500', color: '#374151' },
 
   // Modals (shared)
@@ -1601,6 +1673,36 @@ const styles = StyleSheet.create({
   },
   flagTextInput: { fontSize: 16, fontWeight: '500', color: '#1F2937', padding: 0 },
   flagCharCount: { fontSize: 12, fontWeight: '500', color: '#C4C4C4', textAlign: 'right', marginTop: 8 },
+
+  // Form Cards (shared modal pattern)
+  formCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 4,
+  },
+  formCardHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14,
+  },
+  formCardIcon: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center',
+  },
+  formCardLabel: {
+    fontSize: 16, fontWeight: '600', color: '#374151', letterSpacing: -0.3,
+  },
+  formCardInput: {
+    fontSize: 16, fontWeight: '500', color: '#1F2937', padding: 0,
+  },
+  formCardTextArea: {
+    fontSize: 16, fontWeight: '500', color: '#1F2937', lineHeight: 24, padding: 0, minHeight: 80,
+  },
+  formCardMetaRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  formCardMetaText: {
+    fontSize: 15, fontWeight: '500', color: '#1F2937',
+  },
+  formCardMetaPlaceholder: {
+    fontSize: 15, fontWeight: '400', color: '#9CA3AF',
+  },
 
   // Vibe Picker (in date modal)
   vibePickerContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
